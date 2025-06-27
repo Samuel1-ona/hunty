@@ -163,7 +163,7 @@ export default function CreateGame() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f9f9ff] to-[#fce4ec] pb-28">
+    <div className="min-h-screen bg-gradient-to-tr from-blue-100 bg-purple-100 to-[#f9f9ff]pb-28">
       <Header
         isConnected={true}
         balance="24.2453"
@@ -172,7 +172,7 @@ export default function CreateGame() {
         onDisconnect={() => {}}
       />
 
-      <div className="max-w-[1600px] mx-40 pb-12 bg-white rounded-4xl  relative ">
+      <div className="max-w-[1500px] mx-40 pb-12 bg-white rounded-4xl  relative ">
         {/* the white background */}
         <div className="max-w-6xl mx-auto">
           {/* Navigation */}
@@ -193,7 +193,7 @@ export default function CreateGame() {
               {/* logo */ }
               <Image src="/icons/logo.png" alt="Logo" width={96} height={96} />
             </div>
-            <h1 className={`text-4xl md:text-5xl font-bold bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-transparent bg-clip-text mb-8 ${dynapuff.variable} antialiased `}>Create Hunty</h1>
+            <h1 className={`text-4xl md:text-5xl font-bold bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-transparent bg-clip-text mb-8 ${dynapuff.variable} antialiased `}>Create Scavenge Hunt</h1>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-8">
@@ -240,13 +240,13 @@ export default function CreateGame() {
                   <RewardsPanel rewards={rewards} onUpdateReward={updateReward} />
 
                   <div className="flex justify-between">
-                    <Button className="bg-gray-400 hover:bg-gray-500 text-white px-8 py-2 rounded-full flex items-center gap-2">
-                      <ArrowLeft className="w-4 h-4" />
+                    <Button className="bg-gradient-to-b from-[#576065] to-[#787884] hover:bg-gray-500 text-white px-8 py-2 rounded-xl flex items-center gap-2 text-xl font-black">
+                      <ArrowLeft className="w-6 h-6" />
                       Previous
                     </Button>
-                    <Button className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-2 rounded-full flex items-center gap-2">
+                    <Button className="bg-gradient-to-b from-[#576065] to-[#787884] hover:bg-gray-500 text-white px-8 py-2 rounded-xl flex items-center gap-2 text-xl font-black">
                       Next
-                      <span>→</span>
+                      <ArrowRight className="w-6 h-6" />
                     </Button>
                   </div>
                 </div>

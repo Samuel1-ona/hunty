@@ -68,7 +68,7 @@ export default function GameArcade() {
 
   return (
     <div
-      className={`min-h-screen bg-gradient-to-bl from-[#fce4ec] to-[#f9f9ff]`}
+      className={`min-h-screen bg-gradient-to-tr from-blue-100 bg-purple-100 to-[#f9f9ff]`}
     >
       {/* Header */}
       <Header
