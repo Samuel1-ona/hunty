@@ -1,5 +1,4 @@
-import { Hanken_Grotesk } from 'next/font/google';
-import { DynaPuff } from 'next/font/google';
+import { Hanken_Grotesk, DynaPuff } from 'next/font/google';
 
 
 export const hankenGrotesk = Hanken_Grotesk({
