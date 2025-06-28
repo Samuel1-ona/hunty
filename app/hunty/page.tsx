@@ -5,7 +5,7 @@ import { dynapuff } from "@/lib/font"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ArrowLeft, ArrowRight, Plus, Share, QrCode, Download } from "lucide-react"
+import { ArrowLeft, ArrowRight, Plus, Share, QrCode, Download, Printer } from "lucide-react"
 import { Header } from "@/components/Header"
 import { CreateGameTabs } from "@/components/CreateGameTabs"
 import { HuntForm } from "@/components/HuntForm"
@@ -16,6 +16,7 @@ import { PublishModal } from "@/components/PublishModal"
 import { GameCompleteModal } from "@/components/GameCompleteModal"
 import { PlayGame } from "@/components/PlayGame"
 import Image from "next/image"
+import ToggleButton from "@/components/ToggleButton"
 
 interface Hunt {
   id: number
@@ -23,6 +24,7 @@ interface Hunt {
   description: string
   link: string
   code: string
+  image?: string
 }
 
 interface Reward {
@@ -163,7 +165,7 @@ export default function CreateGame() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-tr from-blue-100 bg-purple-100 to-[#f9f9ff]pb-28">
+    <div className="min-h-screen bg-gradient-to-tr from-blue-100 bg-purple-100 to-[#f9f9ff] pb-28">
       <Header
         isConnected={true}
         balance="24.2453"
@@ -207,7 +209,6 @@ export default function CreateGame() {
                     <HuntForm
                       key={hunt.id}
                       hunt={hunt}
-                      canRemove={hunts.length > 1}
                       onUpdate={(field, value) => updateHunt(hunt.id, field, value)}
                       onRemove={() => removeHunt(hunt.id)}
                     />
@@ -254,42 +255,62 @@ export default function CreateGame() {
 
               {activeTab === "publish" && (
                 <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Give It A Name</label>
-                    <Input value={gameName} onChange={(e) => setGameName(e.target.value)} className="w-full" />
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xl font-normal text-[#808080]">Give It A Name</label>
+                    <Input value={gameName} onChange={(e) => setGameName(e.target.value)} />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Share Link/Generate QR Code</label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xl font-normal text-[#808080]">Set Timeframe</label>
+                    <div className="flex items-center gap-0.5"><Input placeholder="00"/><span className="text-2xl bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] font-medium bg-clip-text">:</span><Input placeholder="00"/></div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xl font-normal text-[#808080]">Timer</label>
+                    <ToggleButton/>  
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xl font-normal text-[#808080]">End Date</label>
+                    <div className="flex gap-[8px]">  
+                       <Input placeholder="dd/mm/yy"/>
+                       <Input  placeholder="00:00 AM"/></div>
+                    </div>
+
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xl font-normal text-[#808080]">Share Link/Generate QR Code</label>
                     <div className="flex gap-2">
-                      <Button className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-full flex items-center gap-2">
+                      <Button className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F]  hover:bg-slate-700 text-white px-4 py-2 rounded-full flex items-center gap-2">
                         <Share className="w-4 h-4" />
                         Share Now
                       </Button>
-                      <Button size="icon" variant="outline" className="rounded-full">
+                      <Button size="icon" variant="outline" className="rounded-lg">
                         <QrCode className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Save As Image</label>
+                  <div className="flex items-center justify-between mb-16">
+                  <label className="block text-xl font-normal text-[#808080]">Save As Image</label>
                     <div className="flex gap-2">
-                      <Button className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-full flex items-center gap-2">
+                      <Button className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] hover:bg-slate-700 text-white px-4 py-2 rounded-full flex items-center gap-2">
                         <Download className="w-4 h-4" />
                         Download
+                      </Button>
+                      <Button size="icon" variant="outline" className="rounded-lg">
+                        <Printer className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
 
-                  <div className="flex justify-between">
-                    <Button className="bg-gray-400 hover:bg-gray-500 text-white px-8 py-2 rounded-full flex items-center gap-2">
-                      <ArrowLeft className="w-4 h-4" />
+                  <div className="flex justify-between pb-12">
+                    <Button className="bg-gradient-to-b from-[#576065] to-[#787884] hover:bg-gray-500 text-white text-xl px-8 py-2 rounded-lg flex items-center gap-2">
+                      <ArrowLeft className="w-4 h-4 " />
                       Previous
                     </Button>
                     <Button
                       onClick={() => setShowPublishModal(true)}
-                      className="bg-green-600 hover:bg-green-700 text-white px-8 py-2 rounded-full flex items-center gap-2"
+                      className="bg-gradient-to-b from-[#39A437] to-[#194F0C] hover:bg-green-700 text-white text-xl px-6 py-3 rounded-lg flex items-center gap-2"
                     >
                       <span>📤</span>
                       Publish Game
