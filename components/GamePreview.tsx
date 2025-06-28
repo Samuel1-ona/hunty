@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Eye, ArrowRight } from "lucide-react"
 import Image from "next/image"
-import PlayCircle from "@/components/ui/play-circle"
+import PlayCircle from "@/components/icons/PlayCircle"
 
 interface Hunt {
   id: number
