@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Plus, Minus } from "lucide-react"
-import Trash from "@/components/ui/trash"
+import Trash from "@/components/icons/trash"
 import Coin from "@/components/icons/Coin"
 interface Reward {
   place: number
