@@ -178,7 +178,7 @@ export default function CreateGame() {
 
       <div className="max-w-[1500px] mx-40 pb-12 bg-white rounded-4xl  relative ">
         {/* the white background */}
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           {/* Navigation */}
           <div className="flex items-center gap-4 mb-7">
             <Button
@@ -200,9 +200,9 @@ export default function CreateGame() {
             <h1 className={`text-4xl md:text-5xl font-bold bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-transparent bg-clip-text mb-8 ${dynapuff.variable} antialiased `}>Create Scavenge Hunt</h1>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-8">
+          <div className="grid lg:grid-cols-2 gap-7">
             {/* Left Panel */}
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg">
+            <div className="">
               <CreateGameTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
               {activeTab === "create" && (
