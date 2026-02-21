@@ -1,58 +1,55 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { X } from "lucide-react"
-
-interface WalletOption {
-  id: string
-  name: string
-  icon: string
-  description?: string
-}
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { X, Loader2 } from "lucide-react";
 
 interface WalletModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onConnect: (address: string) => void
+  isOpen: boolean;
+  onClose: () => void;
+  /** Pass the `connect` function from useFreighterWallet() */
+  onConnect: () => Promise<{ error?: string }>;
 }
 
-const walletOptions: WalletOption[] = []
-
 export function WalletModal({ isOpen, onClose, onConnect }: WalletModalProps) {
-  const [isConnecting, setIsConnecting] = useState(false)
-  const [selectedWallet, setSelectedWallet] = useState<WalletOption | null>(null)
-  const [displayName, setDisplayName] = useState("")
-  const [walletAddress, setWalletAddress] = useState("")
+  const [connecting, setConnecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleWalletSelect = (wallet: WalletOption) => {
-    setSelectedWallet(wallet)
-    setIsConnecting(true)
-    setWalletAddress("0xe5f...E5")
-  }
+  const handleConnect = async () => {
+    setConnecting(true);
+    setError(null);
 
-  const handleContinue = () => {
-    onConnect(walletAddress)
-    onClose()
-    setIsConnecting(false)
-    setSelectedWallet(null)
-    setDisplayName("")
-  }
+    const result = await onConnect();
+
+    if (result.error) {
+      setError(result.error);
+      setConnecting(false);
+      return;
+    }
+
+    // Success — close modal, state is managed by useFreighterWallet in parent
+    handleClose();
+  };
 
   const handleClose = () => {
-    onClose()
-    setIsConnecting(false)
-    setSelectedWallet(null)
-    setDisplayName("")
-  }
+    setConnecting(false);
+    setError(null);
+    onClose();
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle className="text-slate-800 font-semibold">Connect a wallet</DialogTitle>
+          <DialogTitle className="text-slate-800 font-semibold">
+            Connect a wallet
+          </DialogTitle>
           <Button
             variant="ghost"
             size="icon"
@@ -63,55 +60,50 @@ export function WalletModal({ isOpen, onClose, onConnect }: WalletModalProps) {
           </Button>
         </DialogHeader>
 
-        {!isConnecting ? (
-          <div className="space-y-3">
-            {walletOptions.length > 0 ? (
-              walletOptions.map((wallet) => (
-                <Button
-                  key={wallet.id}
-                  onClick={() => handleWalletSelect(wallet)}
-                  className="w-full bg-slate-800 hover:bg-slate-700 text-white p-4 rounded-xl flex items-center gap-3 justify-start h-auto"
-                >
-                  <span className="text-xl">{wallet.icon}</span>
-                  <div className="text-left">
-                    <div className="font-medium">{wallet.name}</div>
-                    {wallet.description && <div className="text-sm opacity-80">{wallet.description}</div>}
-                  </div>
-                </Button>
-              ))
-            ) : (
-              <div className="text-center py-8 text-slate-600">
-                <p>No wallet options available.</p>
+        <div className="space-y-4 py-2">
+          {/* Freighter wallet option */}
+          <Button
+            onClick={handleConnect}
+            disabled={connecting}
+            className="w-full bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white p-4 rounded-xl flex items-center gap-3 justify-start h-auto"
+          >
+            <span className="text-2xl">🚀</span>
+            <div className="text-left flex-1">
+              <div className="font-semibold text-base">Freighter</div>
+              <div className="text-xs opacity-75">
+                Stellar browser extension
               </div>
+            </div>
+            {connecting && (
+              <Loader2 className="h-4 w-4 animate-spin ml-auto shrink-0" />
             )}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-slate-700 block mb-2">Wallet Address</label>
-              <div className="bg-gray-100 p-3 rounded-lg text-sm text-slate-600">{walletAddress}</div>
-            </div>
+          </Button>
 
-            <div>
-              <label className="text-sm font-medium text-slate-700 block mb-2">Set a Display Name (optional)</label>
-              <Input
-                placeholder="DisplayName"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full"
-              />
-            </div>
+          {/* Waiting hint */}
+          {connecting && (
+            <p className="text-center text-sm text-slate-500">
+              Approve the connection in your Freighter extension…
+            </p>
+          )}
 
-            <Button
-              onClick={handleContinue}
-              className="w-full bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-full flex items-center gap-2"
-            >
-              Continue
-              <span>→</span>
-            </Button>
-          </div>
-        )}
+          {/* Error message */}
+          {error && (
+            <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+              {error}
+              {error.includes("not found") && (
+                <a
+                  href="https://freighter.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block mt-1 underline font-medium hover:text-red-900"
+                >
+                  Install Freighter →
+                </a>
+              )}
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
