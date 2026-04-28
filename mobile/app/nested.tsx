@@ -4,7 +4,9 @@ export default function NestedScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Nested Screen</Text>
-      <Text style={styles.subtitle}>Press Android back button to test navigation</Text>
+      <Text style={styles.subtitle}>
+        Press Android back button to test navigation
+      </Text>
     </View>
   );
 }

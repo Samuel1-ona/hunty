@@ -10,10 +10,15 @@ export const unstable_settings = {
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.safeArea} edges={['top', 'right', 'bottom', 'left']}>
+      <SafeAreaView
+        style={styles.safeArea}
+        edges={['top', 'right', 'bottom', 'left']}
+      >
         <View style={styles.errorContainer}>
           <Text style={styles.errorTitle}>Something went wrong</Text>
-          <Text style={styles.errorMessage}>{error.message || 'Unexpected navigation error.'}</Text>
+          <Text style={styles.errorMessage}>
+            {error.message || 'Unexpected navigation error.'}
+          </Text>
           <Pressable style={styles.retryButton} onPress={retry}>
             <Text style={styles.retryButtonText}>Try again</Text>
           </Pressable>
@@ -27,7 +32,6 @@ export default function RootLayout() {
   const router = useRouter();
 
   const [loaded, error] = useFonts();
-
 
   useEffect(() => {
     if (loaded || error) {
@@ -44,7 +48,10 @@ export default function RootLayout() {
       return false;
     };
 
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction
+    );
 
     return () => backHandler.remove();
   }, [router]);
@@ -55,7 +62,10 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.safeArea} edges={['top', 'right', 'bottom', 'left']}>
+      <SafeAreaView
+        style={styles.safeArea}
+        edges={['top', 'right', 'bottom', 'left']}
+      >
         <Stack
           screenOptions={{
             headerStyle: {
