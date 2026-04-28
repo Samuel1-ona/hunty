@@ -1,0 +1,13 @@
+[package]
+name = "hunty-core"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Main Soroban contract for the Hunty scavenger hunt game."
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { version = "26.0.0-rc.1", features = ["testutils"] }

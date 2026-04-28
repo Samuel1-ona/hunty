@@ -1,0 +1,13 @@
+[package]
+name = "nft-reward"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Soroban contract responsible for NFT reward minting in Hunty."
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { version = "26.0.0-rc.1", features = ["testutils"] }

@@ -318,23 +318,27 @@ Hunty consists of three main smart contracts:
 git clone https://github.com/Samuel1-ona/Hunty-contract.git
 cd Hunty-contract
 
-# Build all contracts
-cd contracts/hunty-core && make build
-cd ../reward-manager && make build
-cd ../nft-reward && make build
+# Build the web app
+pnpm install
+pnpm build
+
+# Build the Soroban contract workspace
+cd contracts/hunty-core && cargo build
+cd ../reward-manager && cargo build
+cd ../nft-reward && cargo build
 ```
 
 ### Running Tests
 
 ```bash
-# Test individual contracts
-cd contracts/hunty-core && make test
-cd ../reward-manager && make test
-cd ../nft-reward && make test
+# Test the web app
+pnpm test
 
-# Or test all contracts from root
-cargo test --workspace
+# Test the Soroban contract workspace
+cd contracts && cargo test --workspace
 ```
+
+> Note: This repo now includes a Soroban contract workspace at `contracts/` with `hunty-core`, `reward-manager`, and `nft-reward`.
 
 ## Project Structure
 
