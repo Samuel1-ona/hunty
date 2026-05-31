@@ -325,6 +325,8 @@ export default function HuntCompleted({ xlmEarned, nftsEarned, onClaim }: HuntCo
                         background: 'rgba(0,0,0,0.3)',
                       }}
                     >
+                      {/* NFT thumbnails can come from arbitrary external sources. */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img 
                         src={nft.thumbnailUrl} 
                         alt={nft.name}

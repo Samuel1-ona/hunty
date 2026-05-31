@@ -7,7 +7,7 @@ import { ArrowLeft, Pencil, BarChart3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardTitle } from "@/components/ui/card"
 import { Header } from "@/components/Header"
-import { useFreighterWallet } from "@/hooks/useFreighterWallet"
+import { useWallet } from "@/lib/context/WalletContext"
 import type { StoredHunt } from "@/lib/types"
 import { getHuntsByCreator } from "@/lib/huntStore"
 
@@ -30,7 +30,7 @@ function StatusBadge({ status }: { status: StoredHunt["status"] }) {
 
 export default function CreatorPage() {
   const router = useRouter()
-  const { connected, publicKey, connect } = useFreighterWallet()
+  const { connected, publicKey, connect } = useWallet()
   const [hunts, setHunts] = useState<StoredHunt[]>([])
 
   const loadHunts = useCallback(() => {
@@ -96,9 +96,18 @@ export default function CreatorPage() {
             <p className="mb-4 text-slate-600">
               You haven&apos;t created any hunts yet.
             </p>
-            <Button asChild className="bg-[#0C0C4F] hover:bg-slate-800 text-white">
-              <Link href="/hunty">Create your first hunt</Link>
-            </Button>
+            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Button asChild className="bg-[#0C0C4F] hover:bg-slate-800 text-white">
+                <Link href="/hunty">Create your first hunt</Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="border-[#0C0C4F] text-[#0C0C4F] hover:bg-[#0C0C4F] hover:text-white"
+              >
+                <Link href="/hunty/templates">Browse templates</Link>
+              </Button>
+            </div>
           </Card>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

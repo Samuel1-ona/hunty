@@ -34,11 +34,11 @@ export function PlayGame({
   onGameComplete,
   gameCompleteModal,
   huntId,
-  playerAddress,
 }: PlayGameProps) {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [solvedClues, setSolvedClues] = useState<Set<number>>(new Set());
+  const [huntEnded, setHuntEnded] = useState(false);
 
   const solvedCount = solvedClues.size;
 
@@ -85,6 +85,18 @@ export function PlayGame({
       toast.error(error);
     }
   }, [error]);
+
+  // Check if hunt has ended
+  useEffect(() => {
+    if (huntInfo?.endTime) {
+      const now = Math.floor(Date.now() / 1000);
+      if (now >= huntInfo.endTime) {
+        setHuntEnded(true);
+      } else {
+        setHuntEnded(false);
+      }
+    }
+  }, [huntInfo?.endTime]);
 
   const fetchedClues = fetched?.clues ?? null;
   const huntInfo = fetched?.huntInfo ?? null;
@@ -178,6 +190,27 @@ export function PlayGame({
     );
   }
 
+  // Show hunt ended message
+  if (huntEnded) {
+    return (
+      <div className="min-h-screen bg-gradient-to-tr from-blue-100 bg-purple-100 to-[#f9f9ff] flex items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-6 text-center rounded-3xl bg-white dark:bg-slate-900 px-8 py-10 shadow-lg border border-slate-100 dark:border-white/5">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+            Hunt Ended
+          </h2>
+          <p className="text-slate-600 dark:text-slate-400 text-lg">
+            This hunt has ended. Final score: <span className="font-bold text-slate-900 dark:text-white">{score}</span>
+          </p>
+          <div className="pt-4">
+            <Button onClick={onExit} className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-white px-6 py-2 rounded-full">
+              Go Home
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const activeHunt = hunts[currentCardIndex];
 
   return (
@@ -263,6 +296,7 @@ export function PlayGame({
                 currentIndex={currentCardIndex + 1}
                 totalHunts={hunts.length}
                 points={hunts[currentCardIndex]?.points}
+                huntEnded={huntEnded}
               />
             </div>
 

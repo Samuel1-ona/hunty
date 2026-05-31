@@ -50,6 +50,28 @@ test.describe("Hunt Creation", () => {
     await expect(titleInputs).toHaveCount(2);
   });
 
+  test("creator can start from a template and edit the pre-filled fields", async ({ page }) => {
+    await page.goto("/hunty/templates");
+
+    await page.getByRole("link", { name: /start city walking tour/i }).click();
+
+    await expect(page).toHaveURL(/\/hunty$/);
+
+    const titleInputs = page.getByPlaceholder("Title of the Hunt");
+    const descriptionInputs = page.getByPlaceholder("Description");
+    const codeInputs = page.getByPlaceholder("Enter Code to Unlock next challenge");
+
+    await expect(titleInputs).toHaveCount(3);
+    await expect(titleInputs.nth(0)).toHaveValue("Mural at Sunrise Alley");
+    await expect(descriptionInputs.nth(0)).toHaveValue(
+      "Find the alley mural with the giant orange sun and note the year painted in the corner."
+    );
+    await expect(codeInputs.nth(0)).toHaveValue("2019");
+
+    await titleInputs.nth(0).fill("Edited Template Clue");
+    await expect(titleInputs.nth(0)).toHaveValue("Edited Template Clue");
+  });
+
   test("publish tab validates form fields", async ({ page }) => {
     await page.goto("/hunty?tab=publish");
 

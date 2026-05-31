@@ -32,6 +32,8 @@ export interface StoredHunt {
   is_private?: boolean
   /** Optional game cover CID/URL for hunt cards and sharing previews. */
   coverImageCid?: string
+  /** Active editorial banner showcase at the top of the Arcade. */
+  isFeaturedOfWeek?: boolean
 }
 
 export type HuntInfo = {
@@ -97,6 +99,11 @@ export type ActivateHuntResult = {
 
 export type AddClueResult = {
   txHash: string
+}
+
+export type ExtendHuntResult = {
+  txHash: string
+  newEndTime: number
 }
 
 // ─── Leaderboard ─────────────────────────────────────────────────────────────
@@ -192,6 +199,15 @@ export interface HuntCard {
   hint?: string
   hintCost?: number
   points?: number
+}
+
+export interface HuntDraft {
+  id: number
+  title: string
+  description: string
+  link: string
+  code: string
+  image?: string
 }
 
 // ─── Profile Dashboard Types ───────────────────────────────────────────────────

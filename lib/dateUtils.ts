@@ -56,8 +56,13 @@ export function formatISOString(isoString: string): string {
  */
 export function getCountdown(endUnixSeconds: number): string | null {
   const now = Math.floor(Date.now() / 1000)
-  const diff = endUnixSeconds - now
+  let diff = endUnixSeconds - now
+  
+  // Clamp to zero - if time has elapsed, return null
   if (diff <= 0) return null
+  
+  // Additional safety: ensure diff is never negative in calculations
+  diff = Math.max(0, diff)
 
   const days = Math.floor(diff / 86400)
   const hours = Math.floor((diff % 86400) / 3600)

@@ -5,9 +5,9 @@ import { normalizeNetworkError, AnswerIncorrectError } from "./errors"
 import { SOROBAN_RPC_URL, NETWORK_PASSPHRASE } from "./config"
 import { getActiveWalletAdapter } from "@/lib/walletAdapter"
 
-import type { ClueInfo, HuntInfo, CreateHuntResult, SubmitAnswerResult, ActivateHuntResult, AddClueResult, LeaderboardEntry, FastestPlayerEntry } from "@/lib/types"
+import type { ClueInfo, HuntInfo, CreateHuntResult, SubmitAnswerResult, ActivateHuntResult, AddClueResult, ExtendHuntResult, LeaderboardEntry, FastestPlayerEntry } from "@/lib/types"
 
-export type { ClueInfo, HuntInfo, CreateHuntResult, SubmitAnswerResult, ActivateHuntResult, AddClueResult, LeaderboardEntry, FastestPlayerEntry }
+export type { ClueInfo, HuntInfo, CreateHuntResult, SubmitAnswerResult, ActivateHuntResult, AddClueResult, ExtendHuntResult, LeaderboardEntry, FastestPlayerEntry }
 
 // AnswerIncorrectError is re-exported from the central errors module for
 // backwards-compatible imports (e.g. `import { AnswerIncorrectError } from "@/lib/contracts/hunt"`).
@@ -166,6 +166,46 @@ export async function addClue(
 }
 
 /**
+ * Calls the smart contract's extend_end_time(hunt_id: u64, new_end_time: u64) to extend a hunt's duration.
+ * Requires wallet and Soroban RPC.
+ */
+export async function extendEndTime(
+  huntId: number,
+  newEndTime: number
+): Promise<ExtendHuntResult> {
+  if (typeof window === "undefined") throw new Error("Browser environment required")
+
+  const server = new Server(SOROBAN_RPC_URL)
+  const wallet = getActiveWalletAdapter()
+  const publicKey = await wallet.getPublicKey()
+
+  const account = (await withSorobanRpcRetry(() => server.getAccount(publicKey))) as Account
+  const payload = JSON.stringify({
+    action: "extend_end_time",
+    hunt_id: huntId,
+    new_end_time: newEndTime,
+  })
+  const key = `extend_end_time:${Date.now()}`
+  const op = Operation.manageData({ name: key, value: payload })
+
+  const tx = new TransactionBuilder(account, {
+    fee: "100",
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(op)
+    .setTimeout(180)
+    .build()
+
+  const signedXdr = await wallet.signTransaction(tx.toXDR())
+
+  const res = (await withSorobanRpcRetry(() => server.submitTransaction(signedXdr))) as {
+    hash?: string
+  }
+  if (!res?.hash) throw new Error("Transaction submission failed")
+  return { txHash: res.hash, newEndTime }
+}
+
+/**
  * Retrieves the hunt leaderboard. 
  * Attempts to fetch "live" data from the contract account's data attributes 
  * (leveraging the manageData pattern) with a robust mock data fallback.
@@ -211,11 +251,25 @@ export async function get_hunt_fastest_players(huntId: number): Promise<FastestP
 
       if (response.ok) {
         const body = await response.json()
-        const rows = Array.isArray(body?.data) ? body.data : Array.isArray(body?.entries) ? body.entries : []
+        type FastestCompletionRow = {
+          address?: string
+          name?: string
+          points?: number
+          completion_time_seconds?: number
+          duration_seconds?: number
+          completion_time_ms?: number
+          duration_ms?: number
+        }
+
+        const rows: FastestCompletionRow[] = Array.isArray(body?.data)
+          ? body.data
+          : Array.isArray(body?.entries)
+            ? body.entries
+            : []
 
         if (rows.length > 0) {
           return rows
-            .map((entry: any) => ({
+            .map((entry) => ({
               address: entry.address,
               name: entry.name,
               points: typeof entry.points === "number" ? entry.points : undefined,
@@ -314,12 +368,15 @@ export async function pollTransaction(txHash: string): Promise<boolean> {
   }
 
   const server = new Server(SOROBAN_RPC_URL);
+  const maybeServer = server as Server & {
+    getTransaction?: (hash: string) => Promise<{ status: string }>
+  }
   
   for (let i = 0; i < 15; i++) {
     try {
       // Try using stellar-sdk SorobanRpc method if available
-      if (typeof (server as any).getTransaction === 'function') {
-        const res = await (server as any).getTransaction(txHash);
+      if (typeof maybeServer.getTransaction === "function") {
+        const res = await maybeServer.getTransaction(txHash);
         if (res && res.status !== "NOT_FOUND" && res.status !== "PENDING") {
           if (res.status === "SUCCESS") return true;
           throw new Error(`Transaction failed with status: ${res.status}`);
@@ -345,8 +402,8 @@ export async function pollTransaction(txHash: string): Promise<boolean> {
           }
         }
       }
-    } catch (e: any) {
-      if (e.message.includes("Transaction failed")) {
+    } catch (e: unknown) {
+      if (e instanceof Error && e.message.includes("Transaction failed")) {
         throw e;
       }
       console.warn("Polling error:", e);

@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import { useLocalStorage } from "@/hooks/useLocalStorage"
 import { useForm } from "react-hook-form"
@@ -25,23 +26,24 @@ import { RewardsPanel } from "@/components/RewardsPanel"
 import { GamePreview } from "@/components/GamePreview"
 import { PublishModal } from "@/components/PublishModal"
 import ToggleButton from "@/components/ToggleButton"
-import type { Reward } from "@/lib/types"
+import type { HuntDraft, Reward } from "@/lib/types"
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { toast } from "sonner"
 import { downloadElementAsImage } from "@/lib/downloadAsImage"
+import { buildDraftHuntsFromTemplate, getStarterTemplateBySlug } from "@/lib/huntTemplates"
 
-interface Hunt {
-  id: number
-  title: string
-  description: string
-  link: string
-  code: string
-  image?: string
+const EMPTY_HUNT_DRAFT: HuntDraft = {
+  id: 1,
+  title: "",
+  description: "",
+  link: "",
+  code: "",
 }
 
 export default function CreateGame() {  
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<"create" | "rewards" | "publish" | "leaderboard">("create")
-  const [hunts, setHunts] = useLocalStorage<Hunt[]>("draft-hunts", [{ id: 1, title: "", description: "", link: "", code: "" }])
+  const [hunts, setHunts] = useLocalStorage<HuntDraft[]>("draft-hunts", [EMPTY_HUNT_DRAFT])
   const [rewards, setRewards] = useLocalStorage<Reward[]>("draft-rewards", []);
   const [gameName, setGameName] = useLocalStorage("draft-gameName", "Hunty")
   const [startDate, setStartDate] = useLocalStorage("draft-startDate", "")
@@ -54,7 +56,9 @@ export default function CreateGame() {
   const [timerEnabled, setTimerEnabled] = useState(false)
   const [isPrivate, setIsPrivate] = useState(false)
   const [isPublishing, setIsPublishing] = useState(false);
+  const [selectedTemplateTitle, setSelectedTemplateTitle] = useState<string | null>(null)
   const previewContainerRef = useRef<HTMLDivElement | null>(null)
+  const appliedTemplateRef = useRef<string | null>(null)
   const router = useRouter()
 
 
@@ -77,6 +81,22 @@ export default function CreateGame() {
       }
     }
   }, []);
+
+  useEffect(() => {
+    const templateSlug = searchParams.get("template")
+    if (!templateSlug || appliedTemplateRef.current === templateSlug) return
+
+    const template = getStarterTemplateBySlug(templateSlug)
+    if (!template) return
+
+    appliedTemplateRef.current = templateSlug
+    setGameName(template.title)
+    setHunts(buildDraftHuntsFromTemplate(template))
+    setActiveTab("create")
+    setSelectedTemplateTitle(template.title)
+    toast.success(`Loaded ${template.title}. You can edit every field before publishing.`)
+    router.replace("/hunty")
+  }, [router, searchParams, setGameName, setHunts])
 
   const rewardPool = rewards.reduce((sum, r) => sum + r.amount, 0)
 
@@ -372,6 +392,33 @@ export default function CreateGame() {
                       transition={{ duration: 0.3, ease: "easeInOut" }}
                       className="space-y-6"
                     >
+                      <div className="rounded-3xl border border-sky-100 bg-gradient-to-r from-white to-sky-50 p-5 shadow-sm">
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                          <div>
+                            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-sky-700">
+                              Quick start
+                            </p>
+                            <h2 className="mt-1 text-xl font-bold text-slate-900">
+                              {selectedTemplateTitle
+                                ? `${selectedTemplateTitle} is loaded`
+                                : "Need inspiration before you build?"}
+                            </h2>
+                            <p className="mt-2 text-sm leading-6 text-slate-600">
+                              {selectedTemplateTitle
+                                ? "Tweak the clue titles, descriptions, answers, and anything else until it feels like yours."
+                                : "Browse starter hunts with sample clue cards, then bring one back here fully editable."}
+                            </p>
+                          </div>
+                          <Button
+                            asChild
+                            variant="outline"
+                            className="rounded-2xl border-[#0C0C4F] px-5 py-6 text-sm font-semibold text-[#0C0C4F] hover:bg-[#0C0C4F] hover:text-white"
+                          >
+                            <Link href="/hunty/templates">Start from Template</Link>
+                          </Button>
+                        </div>
+                      </div>
+
                       {hunts.map((hunt) => (
                         <HuntForm
                           key={hunt.id}

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2, Loader2, Printer } from "lucide-react";
 import picture from "@/public/static-images/image1.png";
 import { Skeleton } from "@/components/ui/skeleton";
+import sanitizeHtml from "@/lib/sanitizeHtml";
 import { submitAnswer, AnswerIncorrectError, pollTransaction } from "@/lib/contracts/hunt";
 import { resolveImageSrc, GATEWAY_COUNT } from "@/lib/ipfs";
 import type { HuntCard as Hunt } from "@/lib/types";
@@ -28,6 +29,8 @@ interface HuntCardsProps {
   points?: number;
   /** Whether this clue has been solved. */
   solved?: boolean;
+  /** Whether the hunt has ended. */
+  huntEnded?: boolean;
 }
 
 const DEFAULT_POINTS = 10;
@@ -44,6 +47,7 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
   onScoreUpdate,
   points,
   solved = false,
+  huntEnded = false,
 }) => {
   const hunt = hunts && hunts.length > 0 ? hunts[0] : {} as Hunt;
   const [input, setInput] = useState("");
@@ -176,7 +180,7 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
     );
   }
 
-  const isLocked = !isActive || preview || isPending || solved;
+  const isLocked = !isActive || preview || isPending || solved || huntEnded;
 
   return (
     <div className={`rounded-xl sm:rounded-2xl shadow-lg w-full max-w-[400px] transition-all duration-300 relative print:shadow-none print:border-none print:max-w-none print:scale-100 print:m-0 print:opacity-100 ${isActive ? "sm:scale-105 border-2 border-blue-400 dark:border-blue-500" : preview ? "opacity-70" : "opacity-90"} bg-white dark:bg-slate-900`}>
@@ -195,9 +199,7 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
         <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 line-clamp-2 print:text-3xl print:mb-4">
           {hunt.title || "Untitled Hunt"}
         </h3>
-        <p className="text-xs sm:text-sm opacity-90 mb-4 sm:mb-6 line-clamp-3 print:text-lg print:opacity-100 print:mb-8">
-          {hunt.description || "No description provided."}
-        </p>
+        <p className="text-xs sm:text-sm opacity-90 mb-4 sm:mb-6 line-clamp-3 print:text-lg print:opacity-100 print:mb-8" dangerouslySetInnerHTML={{ __html: sanitizeHtml(hunt.description || "No description provided.") }} />
         <div className="flex justify-center">
           {hunt.link || hunt.image ? (
             <Image
@@ -231,10 +233,10 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
             >
               Reveal Hint (-{hunt.hintCost || 0} pts)
             </Button>
-          ) : (
+              ) : (
             <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 p-2 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm border border-blue-100 dark:border-blue-900/30">
               <span className="font-semibold text-blue-900 dark:text-blue-200 mr-2">Hint:</span>
-              {hunt.hint}
+              <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(hunt.hint || "") }} />
             </div>
           )}
         </div>
@@ -278,16 +280,22 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
 
       {/* Feedback */}
       <div className="bg-white dark:bg-slate-900 rounded-b-xl sm:rounded-b-2xl -mt-4 pb-4 px-4 sm:px-6 min-h-[36px] print:hidden">
-        {success && (
+        {huntEnded && (
+          <div className="flex items-center justify-center gap-2 text-red-600 dark:text-red-400 font-bold text-sm sm:text-base">
+            <span>🏁</span>
+            Hunt Ended
+          </div>
+        )}
+        {!huntEnded && success && (
           <div className="flex items-center justify-center gap-2 text-green-600 dark:text-green-400 font-bold text-sm sm:text-base animate-bounce">
             <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
             Solved!
           </div>
         )}
-        {!success && isPending && (
+        {!huntEnded && !success && isPending && (
           <p className="text-center text-slate-400 dark:text-slate-500 text-xs sm:text-sm">Submitting...</p>
         )}
-        {!success && !isPending && error && (
+        {!huntEnded && !success && !isPending && error && (
           <p className="text-center text-red-500 dark:text-red-400 font-semibold text-xs sm:text-sm">{error}</p>
         )}
       </div>

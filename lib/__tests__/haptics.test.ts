@@ -29,7 +29,7 @@ import {
   triggerImpact,
   triggerSelection,
   hapticTriggers,
-} from '../../mobile/utils/haptics';
+} from '../haptics';
 
 describe('Haptics Platform Safety', () => {
   it('does not throw errors on unsupported OS (web)', async () => {

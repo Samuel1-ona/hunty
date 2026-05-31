@@ -31,7 +31,7 @@ interface WalletState {
 /**
  * Wallet store — persisted to localStorage so the session survives page refreshes.
  *
- * Sync this store whenever useFreighterWallet fires connect / disconnect,
+ * Sync this store whenever useWallet fires connect / disconnect,
  * or call setWallet / clearWallet directly.
  */
 export const useWalletStore = create<WalletState>()(

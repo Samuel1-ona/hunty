@@ -1,7 +1,6 @@
 "use client"
 
 import React, { forwardRef } from "react"
-import Image from "next/image"
 import { Trophy, Star, ShieldCheck } from "lucide-react"
 
 interface AchievementCertificateProps {
@@ -52,7 +51,7 @@ export const AchievementCertificate = forwardRef<HTMLDivElement, AchievementCert
           </p>
           
           <h3 className="text-xl font-bold text-amber-100 mb-6 italic">
-            "{huntTitle}"
+            &ldquo;{huntTitle}&rdquo;
           </h3>
 
           <div className="grid grid-cols-2 gap-8 w-full max-w-sm border-t border-b border-white/10 py-4">

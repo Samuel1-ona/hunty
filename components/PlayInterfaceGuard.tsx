@@ -5,7 +5,6 @@ import { checkRegistrationStatus } from "@/lib/contracts/player-registration";
 import type { RegistrationStatus } from "@/lib/types";
 import { RegistrationButton } from "@/components/RegistrationButton";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2 } from "lucide-react";
 
 interface PlayInterfaceGuardProps {
   huntId: number;

@@ -18,7 +18,7 @@ const CLUES_KEY = "hunty_clues"
 // Seed timestamps: active hunts end 7 days from first load, completed hunts in the past.
 const NOW_SECONDS = Math.floor(Date.now() / 1000)
 
-const SEED_HUNTS: StoredHunt[] = [
+export const SEED_HUNTS: StoredHunt[] = [
   {
     id: 1,
     title: "City Secrets",
@@ -154,6 +154,12 @@ export function updateHuntStatus(huntId: number, status: HuntStatus): void {
   writeHunts(hunts)
 }
 
+/** Update a hunt's end time (e.g. after extend_end_time). */
+export function updateHuntEndTime(huntId: number, newEndTime: number): void {
+  const hunts = readHunts().map((h) => (h.id === huntId ? { ...h, endTime: newEndTime } : h))
+  writeHunts(hunts)
+}
+
 /** Delete multiple hunts by IDs. */
 export function deleteHunts(ids: number[]): void {
   const hunts = readHunts().filter((h) => !ids.includes(h.id))
@@ -252,4 +258,13 @@ export function getFeaturedHunts(limit = 3): StoredHunt[] {
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
     .map((s) => s.hunt)
+}
+
+/** Set/unset a hunt as the featured Hunt of the Week in local storage. */
+export function setLocalFeaturedHunt(huntId: number | null): void {
+  const hunts = readHunts().map((h) => ({
+    ...h,
+    isFeaturedOfWeek: h.id === huntId ? true : false,
+  }))
+  writeHunts(hunts)
 }

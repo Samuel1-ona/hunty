@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import Image from "next/image"
 import confetti from "canvas-confetti"
 
 import { Button } from "@/components/ui/button"
@@ -21,6 +22,9 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
+import { ACHIEVEMENTS } from "@/lib/achievements/config"
+import { checkAndAwardAchievements } from "@/lib/achievements/service"
+import Image from "next/image"
 
 interface GameCompleteModalProps {
   isOpen: boolean
@@ -45,6 +49,7 @@ export function GameCompleteModal({
 }: GameCompleteModalProps) {
   const certificateRef = useRef<HTMLDivElement>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [newAchievements, setNewAchievements] = useState<string[]>([])
 
   const { data: registrationStatus } = useQuery({
     queryKey: ["registrationStatus", huntId, playerAddress],
@@ -65,8 +70,36 @@ export function GameCompleteModal({
         spread: 80,
         origin: { y: 0.6 }
       });
+
+      // Check and award achievements on hunt completion
+      if (playerAddress) {
+        try {
+          const earned = checkAndAwardAchievements(playerAddress, {
+            totalHuntsCompleted: 1, // This is a completion
+            totalHuntsWon: 1, // Assuming 1st place = win
+            totalNftsEarned: 0,
+            fastestCompletionSeconds: undefined,
+          })
+
+          if (earned.length > 0) {
+            setNewAchievements(earned)
+            // Show toast for each new achievement
+            earned.forEach((achievementId) => {
+              const achievement = ACHIEVEMENTS[achievementId as keyof typeof ACHIEVEMENTS]
+              if (achievement) {
+                toast.success(`🎉 Achievement Unlocked: ${achievement.title}!`, {
+                  description: achievement.description,
+                  duration: 5000,
+                })
+              }
+            })
+          }
+        } catch (error) {
+          console.error("Failed to check achievements:", error)
+        }
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, playerAddress]);
 
   const handleShareAchievement = async (platform?: "twitter" | "farcaster") => {
     if (!certificateRef.current) return
@@ -115,6 +148,36 @@ export function GameCompleteModal({
               <span className="font-bold text-lg">{reward}</span>
             </div>
           </div>
+
+          {/* New Achievements Display */}
+          {newAchievements.length > 0 && (
+            <div className="mt-4 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl border border-yellow-200 dark:border-yellow-800">
+              <p className="text-sm font-semibold text-yellow-900 dark:text-yellow-200 mb-3">
+                🎉 New Achievements Unlocked!
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {newAchievements.map((achievementId) => {
+                  const achievement = ACHIEVEMENTS[achievementId as keyof typeof ACHIEVEMENTS]
+                  return achievement ? (
+                    <div
+                      key={achievementId}
+                      className="flex items-center gap-2 p-2 bg-white dark:bg-slate-800 rounded-lg"
+                    >
+                      <span className="text-2xl">{achievement.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                          {achievement.title}
+                        </p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 truncate">
+                          {achievement.description}
+                        </p>
+                      </div>
+                    </div>
+                  ) : null
+                })}
+              </div>
+            </div>
+          )}
 
           {playerProgress && (
             <div className="mt-6 border-t border-slate-100 pt-6">

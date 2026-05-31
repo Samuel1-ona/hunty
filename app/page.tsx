@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Header } from "@/components/Header"
 import { getAllHunts, type StoredHunt } from "@/lib/huntStore"
 import { LeaderboardTable } from "@/components/LeaderBoardTable"
+import { HuntOfTheWeekBanner } from "@/components/HuntOfTheWeekBanner"
 import { hankenGrotesk } from "@/lib/font"
 import OnboardingTour from "@/components/OnboardingTour"
 import { GlobalActivityFeed } from "@/components/GlobalActivityFeed"
@@ -172,6 +173,9 @@ export default function GameArcade() {
 
       {/* Main Content */}
       <div className="max-w-[1600px] px-14 pt-10 pb-12 bg-white dark:bg-slate-900 mx-auto rounded-4xl relative">
+        {/* Featured Hunt of the Week Hero Banner */}
+        <HuntOfTheWeekBanner />
+
         {/* Logo and Title */}
         <div className="text-center mb-8">
           <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-[#0C0C4F] shadow-lg absolute left-1/2 top-1 -translate-x-1/2 -translate-y-1/2">

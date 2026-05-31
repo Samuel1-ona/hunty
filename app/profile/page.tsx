@@ -6,8 +6,9 @@ import { formatISOString } from "@/lib/dateUtils"
 import { Header } from "@/components/Header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { useFreighterWallet, shortenAddress } from "@/hooks/useFreighterWallet"
+import { useWallet, shortenAddress } from "@/lib/context/WalletContext"
 import { NftGallery } from "@/components/NftGallery"
+import { BadgeWall } from "@/components/BadgeWall"
 import type { NftRewardDetail } from "@/components/NftDetailModal"
 
 type HuntProgressStatus = "Completed" | "In-Progress"
@@ -117,7 +118,7 @@ async function fetchPlayerRewards(address: string): Promise<NftReward[]> {
 
 
 export default function UserProfilePage() {
-  const { connected, publicKey } = useFreighterWallet()
+  const { connected, publicKey } = useWallet()
   const [hunts, setHunts] = useState<PlayerHuntProgress[]>([])
   const [nftRewards, setNftRewards] = useState<NftReward[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -288,6 +289,10 @@ export default function UserProfilePage() {
               </div>
               
               <NftGallery nfts={nftRewards} />
+            </section>
+
+            <section aria-label="Achievements" className="mt-8">
+              <BadgeWall playerAddress={publicKey} />
             </section>
 
             <section aria-label="Hunt history" className="mt-10 space-y-8">

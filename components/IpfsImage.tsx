@@ -27,7 +27,7 @@ export const ipfsImageLoader = ({ src, width, quality }: { src: string; width: n
  * All other Image props are passed through.
  */
 export const IpfsImage: React.FC<ImageProps> = (props) => {
-  const { src, width, quality, ...rest } = props;
+  const { src, width, quality, alt = "", ...rest } = props;
   // Ensure src is provided; Next.js Image requires it.
   if (!src) {
     console.warn('IpfsImage: src prop is missing');
@@ -38,6 +38,7 @@ export const IpfsImage: React.FC<ImageProps> = (props) => {
   return (
     <Image
       {...rest}
+      alt={alt}
       src={src as string}
       width={effectiveWidth}
       quality={quality ?? 75}

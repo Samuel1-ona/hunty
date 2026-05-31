@@ -8,7 +8,6 @@ import {
   ShieldCheck, 
   Smartphone, 
   HelpCircle,
-  ExternalLink,
   ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -47,8 +46,8 @@ export function WalletBottomSheet({ isOpen, onClose, onConnect }: WalletBottomSh
       } else {
         onClose();
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to connect");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to connect");
     } finally {
       setConnectingProvider(null);
     }
@@ -176,7 +175,7 @@ export function WalletBottomSheet({ isOpen, onClose, onConnect }: WalletBottomSh
                             <div>
                               <h4 className="font-bold text-slate-900 dark:text-white">Why a wallet?</h4>
                               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                                Hunty is decentralized. We don't store your keys or access your funds. Wallets act as your digital ID and vault.
+                                Hunty is decentralized. We don&apos;t store your keys or access your funds. Wallets act as your digital ID and vault.
                               </p>
                             </div>
                           </div>
@@ -198,7 +197,7 @@ export function WalletBottomSheet({ isOpen, onClose, onConnect }: WalletBottomSh
                                 </div>
                                 <div className="flex gap-2">
                                   <span className="font-bold text-slate-900 dark:text-white">3.</span>
-                                  <span>Come back here and tap "Connect" to link your account.</span>
+                                  <span>Come back here and tap &ldquo;Connect&rdquo; to link your account.</span>
                                 </div>
                               </div>
                             </div>

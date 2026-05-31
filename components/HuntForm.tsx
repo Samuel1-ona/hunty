@@ -14,10 +14,10 @@ import { withTransactionToast } from "@/lib/txToast"
 import { uploadToIPFS } from "@/lib/ipfs"
 import { toast } from "sonner"
 import { HuntCards } from "./HuntCards"
-import type { HuntCard } from "@/lib/types"
+import type { HuntDraft } from "@/lib/types"
 
 interface HuntFormProps {
-  hunt: HuntCard
+  hunt: HuntDraft
   onUpdate: (field: string, value: string) => void
   onRemove: () => void
   huntId?: number

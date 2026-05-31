@@ -8,6 +8,27 @@ interface DropdownMenuProps {
   children: React.ReactNode
 }
 
+type SetOpen = React.Dispatch<React.SetStateAction<boolean>>
+
+interface DropdownMenuTriggerProps {
+  children: React.ReactNode
+  asChild?: boolean
+  onClick?: React.MouseEventHandler<HTMLDivElement>
+}
+
+interface DropdownMenuContentProps {
+  children: React.ReactNode
+  className?: string
+  align?: "start" | "center" | "end"
+  setOpen?: SetOpen
+}
+
+interface DropdownMenuItemProps {
+  children: React.ReactNode
+  className?: string
+  onClick?: React.MouseEventHandler<HTMLDivElement>
+}
+
 export function DropdownMenu({ children }: DropdownMenuProps) {
   const [open, setOpen] = React.useState(false)
   const containerRef = React.useRef<HTMLDivElement>(null)
@@ -25,13 +46,13 @@ export function DropdownMenu({ children }: DropdownMenuProps) {
   return (
     <div className="relative inline-block w-full" ref={containerRef}>
       {React.Children.map(children, (child) => {
-        if (React.isValidElement(child) && child.type === DropdownMenuTrigger) {
-          return React.cloneElement(child as React.ReactElement<any>, {
+        if (React.isValidElement<DropdownMenuTriggerProps>(child) && child.type === DropdownMenuTrigger) {
+          return React.cloneElement(child, {
             onClick: () => setOpen(!open),
           })
         }
-        if (React.isValidElement(child) && child.type === DropdownMenuContent) {
-          return <AnimatePresence>{open && React.cloneElement(child as React.ReactElement<any>, { setOpen })}</AnimatePresence>
+        if (React.isValidElement<DropdownMenuContentProps>(child) && child.type === DropdownMenuContent) {
+          return <AnimatePresence>{open && React.cloneElement(child, { setOpen })}</AnimatePresence>
         }
         return child
       })}
@@ -39,11 +60,11 @@ export function DropdownMenu({ children }: DropdownMenuProps) {
   )
 }
 
-export function DropdownMenuTrigger({ children, asChild, onClick }: any) {
+export function DropdownMenuTrigger({ children, onClick }: DropdownMenuTriggerProps) {
   return <div onClick={onClick}>{children}</div>
 }
 
-export function DropdownMenuContent({ children, className, setOpen }: any) {
+export function DropdownMenuContent({ children, className, setOpen }: DropdownMenuContentProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -56,11 +77,11 @@ export function DropdownMenuContent({ children, className, setOpen }: any) {
       )}
     >
       {React.Children.map(children, (child) => {
-        if (React.isValidElement(child)) {
-          return React.cloneElement(child as React.ReactElement<any>, {
-            onClick: (e: any) => {
+        if (React.isValidElement<DropdownMenuItemProps>(child)) {
+          return React.cloneElement(child, {
+            onClick: (e: React.MouseEvent<HTMLDivElement>) => {
               child.props.onClick?.(e)
-              setOpen(false)
+              setOpen?.(false)
             },
           })
         }
@@ -70,7 +91,7 @@ export function DropdownMenuContent({ children, className, setOpen }: any) {
   )
 }
 
-export function DropdownMenuItem({ children, className, onClick }: any) {
+export function DropdownMenuItem({ children, className, onClick }: DropdownMenuItemProps) {
   return (
     <div
       onClick={onClick}
