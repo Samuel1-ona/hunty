@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { 
-  X, 
-  ChevronRight, 
-  ShieldCheck, 
-  Smartphone, 
+import {
+  X,
+  ChevronRight,
+  ShieldCheck,
+  Smartphone,
   HelpCircle,
-  ChevronDown
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { WalletProvider } from "@/lib/walletAdapter";
@@ -20,8 +20,14 @@ interface WalletBottomSheetProps {
   onConnect: (provider: WalletProvider) => Promise<{ error?: string }>;
 }
 
-export function WalletBottomSheet({ isOpen, onClose, onConnect }: WalletBottomSheetProps) {
-  const [connectingProvider, setConnectingProvider] = useState<WalletProvider | null>(null);
+export function WalletBottomSheet({
+  isOpen,
+  onClose,
+  onConnect,
+}: WalletBottomSheetProps) {
+  const prefersReducedMotion = useReducedMotion();
+  const [connectingProvider, setConnectingProvider] =
+    useState<WalletProvider | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showEducation, setShowEducation] = useState(false);
 
@@ -60,19 +66,22 @@ export function WalletBottomSheet({ isOpen, onClose, onConnect }: WalletBottomSh
         <>
           {/* Backdrop */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={prefersReducedMotion ? false : { opacity: 0 }}
+            animate={prefersReducedMotion ? {} : { opacity: 1 }}
+            exit={prefersReducedMotion ? {} : { opacity: 0 }}
             onClick={onClose}
             className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
           />
-
           {/* Bottom Sheet */}
           <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            initial={prefersReducedMotion ? false : { y: "100%" }}
+            animate={prefersReducedMotion ? {} : { y: 0 }}
+            exit={prefersReducedMotion ? {} : { y: "100%" }}
+            transition={
+              prefersReducedMotion
+                ? { duration: 0 }
+                : { type: "spring", damping: 25, stiffness: 200 }
+            }
             className="fixed bottom-0 left-0 right-0 z-50 flex max-h-[90vh] flex-col rounded-t-[2.5rem] bg-white p-6 shadow-2xl dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800"
           >
             {/* Handle */}
@@ -80,8 +89,12 @@ export function WalletBottomSheet({ isOpen, onClose, onConnect }: WalletBottomSh
 
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Connect Wallet</h2>
-                <p className="text-slate-500 dark:text-slate-400 mt-1">Select your preferred Stellar wallet</p>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+                  Connect Wallet
+                </h2>
+                <p className="text-slate-500 dark:text-slate-400 mt-1">
+                  Select your preferred Stellar wallet
+                </p>
               </div>
               <Button
                 variant="ghost"
@@ -107,8 +120,12 @@ export function WalletBottomSheet({ isOpen, onClose, onConnect }: WalletBottomSh
                     <span className="text-2xl font-bold">🐂</span>
                   </div>
                   <div className="flex-1 text-left">
-                    <div className="font-bold text-lg text-slate-900 dark:text-white leading-tight">xBull Wallet</div>
-                    <div className="text-sm text-slate-500 dark:text-slate-400">Perfect for power users & mobile</div>
+                    <div className="font-bold text-lg text-slate-900 dark:text-white leading-tight">
+                      xBull Wallet
+                    </div>
+                    <div className="text-sm text-slate-500 dark:text-slate-400">
+                      Perfect for power users & mobile
+                    </div>
                   </div>
                   <ChevronRight className="h-5 w-5 text-slate-300 group-hover:text-orange-500 transition-colors" />
                 </div>
@@ -126,8 +143,12 @@ export function WalletBottomSheet({ isOpen, onClose, onConnect }: WalletBottomSh
                     <span className="text-2xl font-bold">🦞</span>
                   </div>
                   <div className="flex-1 text-left">
-                    <div className="font-bold text-lg text-slate-900 dark:text-white leading-tight">Lobstr</div>
-                    <div className="text-sm text-slate-500 dark:text-slate-400">The most popular Stellar wallet</div>
+                    <div className="font-bold text-lg text-slate-900 dark:text-white leading-tight">
+                      Lobstr
+                    </div>
+                    <div className="text-sm text-slate-500 dark:text-slate-400">
+                      The most popular Stellar wallet
+                    </div>
                   </div>
                   <ChevronRight className="h-5 w-5 text-slate-300 group-hover:text-blue-500 transition-colors" />
                 </div>
@@ -142,8 +163,20 @@ export function WalletBottomSheet({ isOpen, onClose, onConnect }: WalletBottomSh
                   </div>
                   {error.includes("not found") && (
                     <div className="mt-2 flex gap-3">
-                      <a href="https://xbull.app" target="_blank" className="underline font-medium decoration-red-200">Get xBull</a>
-                      <a href="https://lobstr.co" target="_blank" className="underline font-medium decoration-red-200">Get Lobstr</a>
+                      <a
+                        href="https://xbull.app"
+                        target="_blank"
+                        className="underline font-medium decoration-red-200"
+                      >
+                        Get xBull
+                      </a>
+                      <a
+                        href="https://lobstr.co"
+                        target="_blank"
+                        className="underline font-medium decoration-red-200"
+                      >
+                        Get Lobstr
+                      </a>
                     </div>
                   )}
                 </div>
@@ -151,24 +184,43 @@ export function WalletBottomSheet({ isOpen, onClose, onConnect }: WalletBottomSh
 
               {/* Educational Section */}
               <div className="mt-8 rounded-3xl bg-slate-50 dark:bg-slate-800/50 p-6 border border-slate-100 dark:border-slate-800">
-                <button 
+                <button
                   onClick={() => setShowEducation(!showEducation)}
-                  aria-label={showEducation ? "Hide wallet education" : "Show wallet education"}
+                  aria-label={
+                    showEducation
+                      ? "Hide wallet education"
+                      : "Show wallet education"
+                  }
                   className="flex w-full items-center justify-between"
                 >
                   <div className="flex items-center gap-3">
                     <HelpCircle className="h-5 w-5 text-indigo-500" />
-                    <span className="font-semibold text-slate-900 dark:text-white">New to Web3?</span>
+                    <span className="font-semibold text-slate-900 dark:text-white">
+                      New to Web3?
+                    </span>
                   </div>
-                  <ChevronDown className={cn("h-5 w-5 text-slate-400 transition-transform", showEducation && 'rotate-180')} />
+                  <ChevronDown
+                    className={cn(
+                      "h-5 w-5 text-slate-400 transition-transform",
+                      showEducation && "rotate-180",
+                    )}
+                  />
                 </button>
 
                 <AnimatePresence>
                   {showEducation && (
                     <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
+                      initial={
+                        prefersReducedMotion ? false : { height: 0, opacity: 0 }
+                      }
+                      animate={
+                        prefersReducedMotion
+                          ? {}
+                          : { height: "auto", opacity: 1 }
+                      }
+                      exit={
+                        prefersReducedMotion ? {} : { height: 0, opacity: 0 }
+                      }
                       className="overflow-hidden"
                     >
                       <div className="pt-6 space-y-6">
@@ -178,9 +230,13 @@ export function WalletBottomSheet({ isOpen, onClose, onConnect }: WalletBottomSh
                               <ShieldCheck className="h-5 w-5" />
                             </div>
                             <div>
-                              <h4 className="font-bold text-slate-900 dark:text-white">Why a wallet?</h4>
+                              <h4 className="font-bold text-slate-900 dark:text-white">
+                                Why a wallet?
+                              </h4>
                               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                                Hunty is decentralized. We don&apos;t store your keys or access your funds. Wallets act as your digital ID and vault.
+                                Hunty is decentralized. We don&apos;t store your
+                                keys or access your funds. Wallets act as your
+                                digital ID and vault.
                               </p>
                             </div>
                           </div>
@@ -190,19 +246,35 @@ export function WalletBottomSheet({ isOpen, onClose, onConnect }: WalletBottomSh
                               <Smartphone className="h-5 w-5" />
                             </div>
                             <div>
-                              <h4 className="font-bold text-slate-900 dark:text-white">The Process</h4>
+                              <h4 className="font-bold text-slate-900 dark:text-white">
+                                The Process
+                              </h4>
                               <div className="mt-2 text-sm text-slate-500 dark:text-slate-400 space-y-2">
                                 <div className="flex gap-2">
-                                  <span className="font-bold text-slate-900 dark:text-white">1.</span>
-                                  <span>Install xBull or Lobstr from the App Store.</span>
+                                  <span className="font-bold text-slate-900 dark:text-white">
+                                    1.
+                                  </span>
+                                  <span>
+                                    Install xBull or Lobstr from the App Store.
+                                  </span>
                                 </div>
                                 <div className="flex gap-2">
-                                  <span className="font-bold text-slate-900 dark:text-white">2.</span>
-                                  <span>Create an account and save your Secret Phrase safely.</span>
+                                  <span className="font-bold text-slate-900 dark:text-white">
+                                    2.
+                                  </span>
+                                  <span>
+                                    Create an account and save your Secret
+                                    Phrase safely.
+                                  </span>
                                 </div>
                                 <div className="flex gap-2">
-                                  <span className="font-bold text-slate-900 dark:text-white">3.</span>
-                                  <span>Come back here and tap &ldquo;Connect&rdquo; to link your account.</span>
+                                  <span className="font-bold text-slate-900 dark:text-white">
+                                    3.
+                                  </span>
+                                  <span>
+                                    Come back here and tap &ldquo;Connect&rdquo;
+                                    to link your account.
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -211,7 +283,9 @@ export function WalletBottomSheet({ isOpen, onClose, onConnect }: WalletBottomSh
 
                         <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl p-4 border border-indigo-100 dark:border-indigo-900/30">
                           <p className="text-xs text-indigo-700 dark:text-indigo-300 leading-relaxed">
-                            <strong>Safe & Secure:</strong> Your private keys never leave your device. You only authorize specific actions like joining a hunt.
+                            <strong>Safe & Secure:</strong> Your private keys
+                            never leave your device. You only authorize specific
+                            actions like joining a hunt.
                           </p>
                         </div>
                       </div>
@@ -224,9 +298,13 @@ export function WalletBottomSheet({ isOpen, onClose, onConnect }: WalletBottomSh
             {connectingProvider && (
               <div className="absolute inset-x-0 bottom-0 top-[88px] flex items-center justify-center bg-white/50 backdrop-blur-[2px] dark:bg-slate-900/50 rounded-t-[2.5rem]">
                 <div className="flex flex-col items-center gap-4">
-                  <motion.div 
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                  <motion.div
+                    animate={prefersReducedMotion ? {} : { rotate: 360 }}
+                    transition={
+                      prefersReducedMotion
+                        ? { duration: 0 }
+                        : { repeat: Infinity, duration: 1, ease: "linear" }
+                    }
                     className="h-10 w-10 border-4 border-indigo-500 border-t-transparent rounded-full"
                   />
                   <p className="font-medium text-slate-900 dark:text-white italic">

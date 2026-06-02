@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react"
 import { Trophy, CheckCircle2, Loader2 } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import {
@@ -29,15 +29,25 @@ function relativeTime(timestampSeconds: number): string {
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function ActivityItem({ event }: { event: ActivityEvent }) {
-  const isCompleted = event.type === "HuntCompleted"
+function ActivityItem({
+  event,
+  prefersReducedMotion,
+}: {
+  event: ActivityEvent;
+  prefersReducedMotion: boolean;
+}) {
+  const isCompleted = event.type === "HuntCompleted";
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -12 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 12 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: -12 }}
+      animate={prefersReducedMotion ? {} : { opacity: 1, y: 0 }}
+      exit={prefersReducedMotion ? {} : { opacity: 0, y: 12 }}
+      transition={
+        prefersReducedMotion
+          ? { duration: 0 }
+          : { duration: 0.35, ease: "easeOut" }
+      }
       className="flex items-center gap-3 py-2.5 px-4 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-md transition-shadow backdrop-blur-sm"
     >
       {/* Icon */}
@@ -46,7 +56,7 @@ function ActivityItem({ event }: { event: ActivityEvent }) {
           "shrink-0 rounded-full p-1.5",
           isCompleted
             ? "bg-gradient-to-br from-[#39A437] to-[#194F0C] text-white"
-            : "bg-gradient-to-br from-[#3737A4] to-[#0C0C4F] text-white"
+            : "bg-gradient-to-br from-[#3737A4] to-[#0C0C4F] text-white",
         )}
       >
         {isCompleted ? (
@@ -63,7 +73,9 @@ function ActivityItem({ event }: { event: ActivityEvent }) {
             {anonymizeAddress(event.address)}
           </span>{" "}
           {isCompleted ? "completed" : "solved a clue in"}{" "}
-          <span className="font-medium text-slate-700 dark:text-slate-300 italic">{event.huntTitle}</span>
+          <span className="font-medium text-slate-700 dark:text-slate-300 italic">
+            {event.huntTitle}
+          </span>
         </p>
       </div>
 
@@ -72,7 +84,7 @@ function ActivityItem({ event }: { event: ActivityEvent }) {
         {relativeTime(event.timestamp)}
       </span>
     </motion.div>
-  )
+  );
 }
 
 function SkeletonItem() {
@@ -106,6 +118,7 @@ export function GlobalActivityFeed({
 }: GlobalActivityFeedProps) {
   const [events, setEvents] = useState<ActivityEvent[]>([])
   const [loading, setLoading] = useState(true)
+  const prefersReducedMotion = useReducedMotion();
   const [error, setError] = useState<string | null>(null)
   const isMountedRef = useRef(false)
   const previousEventIdsRef = useRef<Set<string>>(new Set())
@@ -200,11 +213,15 @@ export function GlobalActivityFeed({
         ) : (
           <AnimatePresence initial={false}>
             {events.map((event) => (
-              <ActivityItem key={event.id} event={event} />
+              <ActivityItem
+                key={event.id}
+                event={event}
+                prefersReducedMotion={!!prefersReducedMotion}
+              />
             ))}
           </AnimatePresence>
         )}
       </div>
     </section>
-  )
+  );
 }

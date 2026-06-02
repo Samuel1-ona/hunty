@@ -2,7 +2,7 @@
 
 import React from "react"
 import Image from "next/image"
-import { motion } from "framer-motion"
+import { motion, useReducedMotion } from "framer-motion";
 import { 
   Dialog, 
   DialogContent, 
@@ -39,6 +39,7 @@ interface NftDetailModalProps {
 }
 
 export function NftDetailModal({ nft, isOpen, onClose }: NftDetailModalProps) {
+  const prefersReducedMotion = useReducedMotion();
   if (!nft) return null
 
   return (
@@ -48,9 +49,15 @@ export function NftDetailModal({ nft, isOpen, onClose }: NftDetailModalProps) {
           {/* Image Section */}
           <div className="relative w-full md:w-1/2 aspect-square bg-linear-to-br from-indigo-50 to-purple-50 flex items-center justify-center p-8">
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.1, duration: 0.5, type: "spring" }}
+              initial={
+                prefersReducedMotion ? false : { scale: 0.8, opacity: 0 }
+              }
+              animate={prefersReducedMotion ? {} : { scale: 1, opacity: 1 }}
+              transition={
+                prefersReducedMotion
+                  ? { duration: 0 }
+                  : { delay: 0.1, duration: 0.5, type: "spring" }
+              }
               className="relative w-full h-full drop-shadow-2xl"
             >
               <Image
@@ -62,12 +69,14 @@ export function NftDetailModal({ nft, isOpen, onClose }: NftDetailModalProps) {
               />
             </motion.div>
             <div className="absolute top-4 left-4">
-               <span className={cn(
-                 "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                 nft.claimed
-                   ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
-                   : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
-               )}>
+              <span
+                className={cn(
+                  "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                  nft.claimed
+                    ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                    : "bg-amber-500/10 text-amber-600 border border-amber-500/20",
+                )}
+              >
                 {nft.claimed ? "Verified" : "Unclaimed"}
               </span>
             </div>
@@ -78,13 +87,16 @@ export function NftDetailModal({ nft, isOpen, onClose }: NftDetailModalProps) {
             <DialogHeader className="p-0 text-left">
               <div className="flex items-center gap-2 text-indigo-600 mb-1">
                 <Trophy className="w-4 h-4" />
-                <span className="text-xs font-bold uppercase tracking-widest">Trophy #{nft.id}</span>
+                <span className="text-xs font-bold uppercase tracking-widest">
+                  Trophy #{nft.id}
+                </span>
               </div>
               <DialogTitle className="text-2xl sm:text-3xl font-black bg-linear-to-b from-[#3737A4] to-[#0C0C4F] bg-clip-text text-transparent leading-tight">
                 {nft.name}
               </DialogTitle>
               <DialogDescription className="text-slate-500 mt-2 text-sm leading-relaxed">
-                {nft.description || "An exclusive digital trophy earned by solving challenging clues in the Hunty Scavenger Hunt."}
+                {nft.description ||
+                  "An exclusive digital trophy earned by solving challenging clues in the Hunty Scavenger Hunt."}
               </DialogDescription>
             </DialogHeader>
 
@@ -94,7 +106,9 @@ export function NftDetailModal({ nft, isOpen, onClose }: NftDetailModalProps) {
                 <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3">
                   <div className="flex items-center gap-2 text-slate-400 mb-1">
                     <Calendar className="w-3 h-3" />
-                    <span className="text-[10px] font-bold uppercase">Earned On</span>
+                    <span className="text-[10px] font-bold uppercase">
+                      Earned On
+                    </span>
                   </div>
                   <div className="text-sm font-semibold text-slate-800">
                     {formatISOString(nft.earnedAt)}
@@ -103,7 +117,9 @@ export function NftDetailModal({ nft, isOpen, onClose }: NftDetailModalProps) {
                 <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3">
                   <div className="flex items-center gap-2 text-slate-400 mb-1">
                     <Zap className="w-3 h-3" />
-                    <span className="text-[10px] font-bold uppercase">Hunt</span>
+                    <span className="text-[10px] font-bold uppercase">
+                      Hunt
+                    </span>
                   </div>
                   <div className="text-sm font-semibold text-slate-800 truncate">
                     {nft.huntName || "Legacy Hunt"}
@@ -114,12 +130,21 @@ export function NftDetailModal({ nft, isOpen, onClose }: NftDetailModalProps) {
               {/* Attributes */}
               {nft.attributes && nft.attributes.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Attributes</h4>
+                  <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">
+                    Attributes
+                  </h4>
                   <div className="flex flex-wrap gap-2">
                     {nft.attributes.map((attr, idx) => (
-                      <div key={idx} className="bg-indigo-50 border border-indigo-100/50 rounded-xl px-3 py-1.5 flex flex-col items-center min-w-[80px]">
-                        <span className="text-[9px] text-indigo-400 uppercase font-bold">{attr.trait_type}</span>
-                        <span className="text-xs font-bold text-indigo-700">{attr.value}</span>
+                      <div
+                        key={idx}
+                        className="bg-indigo-50 border border-indigo-100/50 rounded-xl px-3 py-1.5 flex flex-col items-center min-w-[80px]"
+                      >
+                        <span className="text-[9px] text-indigo-400 uppercase font-bold">
+                          {attr.trait_type}
+                        </span>
+                        <span className="text-xs font-bold text-indigo-700">
+                          {attr.value}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -133,11 +158,17 @@ export function NftDetailModal({ nft, isOpen, onClose }: NftDetailModalProps) {
                 Download Certificate
               </Button>
               <div className="flex gap-2">
-                <Button variant="outline" className="flex-1 border-slate-200 text-slate-700 rounded-xl h-11 flex items-center justify-center gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 border-slate-200 text-slate-700 rounded-xl h-11 flex items-center justify-center gap-2"
+                >
                   <Share2 className="w-4 h-4" />
                   Share
                 </Button>
-                <Button variant="outline" className="flex-1 border-slate-200 text-slate-700 rounded-xl h-11 flex items-center justify-center gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 border-slate-200 text-slate-700 rounded-xl h-11 flex items-center justify-center gap-2"
+                >
                   <ExternalLink className="w-4 h-4" />
                   Explorer
                 </Button>
@@ -147,5 +178,5 @@ export function NftDetailModal({ nft, isOpen, onClose }: NftDetailModalProps) {
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

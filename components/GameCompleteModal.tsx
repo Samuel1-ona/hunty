@@ -3,7 +3,7 @@
 import { useEffect } from "react"
 import Image from "next/image"
 import confetti from "canvas-confetti"
-
+import { useReducedMotion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Coin from "@/components/icons/Coin"
@@ -48,6 +48,7 @@ export function GameCompleteModal({
   huntId,
   playerAddress,
 }: GameCompleteModalProps) {
+  const prefersReducedMotion = useReducedMotion();
   const { price: xlmUsdPrice } = useXlmUsdPrice();
 
   const currencyFormatter = new Intl.NumberFormat(undefined, {
@@ -77,12 +78,13 @@ export function GameCompleteModal({
 
   useEffect(() => {
     if (isOpen) {
-      confetti({
-        particleCount: 150,
-        spread: 80,
-        origin: { y: 0.6 }
-      });
-
+      if (!prefersReducedMotion) {
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 },
+        });
+      }
       // Check and award achievements on hunt completion
       if (playerAddress) {
         try {
@@ -91,27 +93,31 @@ export function GameCompleteModal({
             totalHuntsWon: 1, // Assuming 1st place = win
             totalNftsEarned: 0,
             fastestCompletionSeconds: undefined,
-          })
+          });
 
           if (earned.length > 0) {
-            setNewAchievements(earned)
+            setNewAchievements(earned);
             // Show toast for each new achievement
             earned.forEach((achievementId) => {
-              const achievement = ACHIEVEMENTS[achievementId as keyof typeof ACHIEVEMENTS]
+              const achievement =
+                ACHIEVEMENTS[achievementId as keyof typeof ACHIEVEMENTS];
               if (achievement) {
-                toast.success(`🎉 Achievement Unlocked: ${achievement.title}!`, {
-                  description: achievement.description,
-                  duration: 5000,
-                })
+                toast.success(
+                  `🎉 Achievement Unlocked: ${achievement.title}!`,
+                  {
+                    description: achievement.description,
+                    duration: 5000,
+                  },
+                );
               }
-            })
+            });
           }
         } catch (error) {
-          logger.error("Failed to check achievements:", error)
+          logger.error("Failed to check achievements:", error);
         }
       }
     }
-  }, [isOpen, playerAddress]);
+  }, [isOpen, playerAddress, prefersReducedMotion]);
 
   const handleShareAchievement = async (platform?: "twitter" | "farcaster") => {
     if (!certificateRef.current) return
