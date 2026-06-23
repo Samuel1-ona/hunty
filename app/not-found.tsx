@@ -13,10 +13,10 @@ export default function NotFound() {
 
       <main className="relative max-w-3xl mx-auto px-6 pt-24 text-center">
         <h1 className="text-6xl font-extrabold mb-4">404</h1>
-        <p className="text-zinc-400 text-lg mb-8">We couldn't find that hunt.</p>
+        <p className="text-zinc-400 text-lg mb-8">We couldn&apos;t find that hunt.</p>
 
         <div className="mx-auto max-w-xl">
-          <p className="text-zinc-300 mb-6">The hunt you tried to access doesn't exist or may have been removed.</p>
+          <p className="text-zinc-300 mb-6">The hunt you tried to access doesn&apos;t exist or may have been removed.</p>
           <Link href="/" className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-black font-semibold px-5 py-3 rounded-md">
             Return to Game Arcade
           </Link>

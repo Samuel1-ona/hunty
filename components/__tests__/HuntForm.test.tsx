@@ -40,7 +40,7 @@ vi.mock("@/lib/crypto", () => ({
 }))
 
 vi.mock("@/lib/txToast", () => ({
-  withTransactionToast: vi.fn().mockImplementation(async (fn: Function) => fn(() => {})),
+  withTransactionToast: vi.fn().mockImplementation(async (fn: () => Promise<void>) => fn()),
 }))
 
 vi.mock("@/lib/logger", () => ({

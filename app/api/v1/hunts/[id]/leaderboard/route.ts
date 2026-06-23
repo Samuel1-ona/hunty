@@ -50,6 +50,7 @@ export async function GET(
       },
     });
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error(`Error fetching leaderboard for hunt ${huntId}:`, error);
     return NextResponse.json({ error: "Failed to fetch leaderboard" }, { status: 500 });
   }

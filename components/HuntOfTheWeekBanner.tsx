@@ -6,6 +6,7 @@ import { Trophy, ArrowRight, Sparkles, Award, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { HuntCoverImage } from "@/components/HuntCoverImage"
+import { cn } from "@/lib/utils"
 
 export function HuntOfTheWeekBanner() {
   // 1. Fetch the server-side featured hunt ID

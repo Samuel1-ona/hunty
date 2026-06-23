@@ -71,7 +71,7 @@ function CreateGameContent() {
     initial: prefersReducedMotion ? false : { x: direction > 0 ? 50 : -50, opacity: 0 },
     animate: prefersReducedMotion ? {} : { x: 0, opacity: 1 },
     exit: prefersReducedMotion ? {} : { x: direction > 0 ? -50 : 50, opacity: 0 },
-    transition: prefersReducedMotion ? { duration: 0 } : { duration: 0.3, ease: "easeInOut" },
+    transition: prefersReducedMotion ? { duration: 0 } : { duration: 0.3, ease: "easeInOut" as const },
   }
 
   const tabToIndex = { create: 0, rewards: 1, publish: 2, leaderboard: 3 }

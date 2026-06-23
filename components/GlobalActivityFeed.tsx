@@ -5,6 +5,7 @@ import { Trophy, CheckCircle2, Loader2 } from "lucide-react"
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { logger } from "@/lib/logger"
 import {
   type ActivityEvent,
   anonymizeAddress,
