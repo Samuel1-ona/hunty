@@ -31,7 +31,7 @@ describe("LeaderboardTable", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    ;(get_hunt_leaderboard as any).mockResolvedValue(mockLeaderboardData)
+    ;(get_hunt_leaderboard as ReturnType<typeof vi.fn>).mockResolvedValue(mockLeaderboardData)
   })
 
   it("renders loading skeleton when isLoading is true and data is empty", () => {
@@ -206,9 +206,9 @@ describe("LeaderboardTable", () => {
     ]
 
     const renderSpy = vi.fn()
-    const TestWrapper = (props: any) => {
+    const TestWrapper = (props: { huntId?: number; data?: unknown[]; isLoading?: boolean }) => {
       renderSpy()
-      return <LeaderboardTable {...props} />
+      return <LeaderboardTable {...(props as Parameters<typeof LeaderboardTable>[0])} />
     }
 
     const { rerender } = render(

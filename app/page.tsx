@@ -249,12 +249,12 @@ export default function GameArcade() {
 
       const savedReward = sessionStorage.getItem("arcade_rewardFilter")
       if (savedReward && ["all", "XLM", "NFT", "Both"].includes(savedReward)) {
-        setRewardFilter(savedReward as any)
+        setRewardFilter(savedReward as "all" | "XLM" | "NFT" | "Both")
       }
 
       const savedStatus = sessionStorage.getItem("arcade_statusFilter")
       if (savedStatus && ["all", "Active", "Completed"].includes(savedStatus)) {
-        setStatusFilter(savedStatus as any)
+        setStatusFilter(savedStatus as "all" | "Active" | "Completed")
       }
       isLoadedRef.current = true
     }
