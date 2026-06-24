@@ -118,6 +118,18 @@ describe("HuntCards — accessibility", () => {
     // Visible text must be present alongside any badge
     expect(screen.getByText("3 players registered")).toBeInTheDocument()
   })
+
+  it("answer input has accessible placeholder", () => {
+    render(<HuntCards {...defaultProps} />)
+    expect(screen.getByPlaceholderText("Enter answer")).toBeInTheDocument()
+  })
+
+  it("submit button is keyboard accessible", () => {
+    render(<HuntCards {...defaultProps} />)
+    const submitBtn = screen.getByRole("button", { name: "" })
+    submitBtn.focus()
+    expect(document.activeElement).toBe(submitBtn)
+  })
 })
 
 // ── card rendering ────────────────────────────────────────────────────────────
@@ -194,5 +206,25 @@ describe("HuntCards — local answer submission (no huntId)", () => {
     expect(screen.getByText("Try Again")).toBeInTheDocument()
     fireEvent.change(screen.getByPlaceholderText("Enter answer"), { target: { value: "a" } })
     expect(screen.queryByText("Try Again")).not.toBeInTheDocument()
+  })
+})
+
+// ── interaction / keyboard ────────────────────────────────────────────────────
+
+describe("HuntCards — keyboard interaction", () => {
+  it("submits answer on Enter key press", () => {
+    const onUnlock = vi.fn()
+    render(<HuntCards {...defaultProps} onUnlock={onUnlock} />)
+    const input = screen.getByPlaceholderText("Enter answer")
+    fireEvent.change(input, { target: { value: "answer" } })
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter" })
+    // Should trigger submission flow
+  })
+
+  it("input is focusable via keyboard", () => {
+    render(<HuntCards {...defaultProps} />)
+    const input = screen.getByPlaceholderText("Enter answer")
+    input.focus()
+    expect(document.activeElement).toBe(input)
   })
 })

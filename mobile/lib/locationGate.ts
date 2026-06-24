@@ -1,7 +1,11 @@
 import * as Location from 'expo-location';
 import type { Clue } from '@lib/types';
-
-const DEFAULT_GEOFENCE_RADIUS_METERS = 100;
+import {
+  DEFAULT_GEOFENCE_RADIUS_METERS,
+  getClueGeofenceRadiusMeters,
+  getDistanceMeters,
+  isLocationWithinGeofence,
+} from '@lib/locationServices';
 
 export type GeofenceCheckResult =
   | { allowed: true; distanceMeters: number; radiusMeters: number }
@@ -12,30 +16,6 @@ type GeofencedClue = Clue & {
   longitude: number;
   geofenceRadiusMeters?: number;
 };
-
-function toRadians(value: number): number {
-  return (value * Math.PI) / 180;
-}
-
-export function getDistanceMeters(
-  from: { latitude: number; longitude: number },
-  to: { latitude: number; longitude: number },
-): number {
-  const earthRadiusMeters = 6_371_000;
-  const latDelta = toRadians(to.latitude - from.latitude);
-  const lonDelta = toRadians(to.longitude - from.longitude);
-  const fromLat = toRadians(from.latitude);
-  const toLat = toRadians(to.latitude);
-
-  const a =
-    Math.sin(latDelta / 2) * Math.sin(latDelta / 2) +
-    Math.cos(fromLat) *
-      Math.cos(toLat) *
-      Math.sin(lonDelta / 2) *
-      Math.sin(lonDelta / 2);
-
-  return 2 * earthRadiusMeters * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
 
 export function hasClueGeofence(clue: Clue): clue is GeofencedClue {
   const candidate = clue as GeofencedClue;
@@ -68,10 +48,7 @@ export async function verifyClueGeofence(clue: Clue): Promise<GeofenceCheckResul
       accuracy: Location.Accuracy.Highest,
     });
 
-    const radiusMeters =
-      typeof clue.geofenceRadiusMeters === 'number' && clue.geofenceRadiusMeters > 0
-        ? clue.geofenceRadiusMeters
-        : DEFAULT_GEOFENCE_RADIUS_METERS;
+    const radiusMeters = getClueGeofenceRadiusMeters(clue);
 
     const distanceMeters = getDistanceMeters(
       {
@@ -84,7 +61,7 @@ export async function verifyClueGeofence(clue: Clue): Promise<GeofenceCheckResul
       },
     );
 
-    if (distanceMeters > radiusMeters) {
+    if (!isLocationWithinGeofence(distanceMeters, radiusMeters)) {
       return {
         allowed: false,
         distanceMeters,
@@ -105,3 +82,5 @@ export async function verifyClueGeofence(clue: Clue): Promise<GeofenceCheckResul
     };
   }
 }
+
+export { DEFAULT_GEOFENCE_RADIUS_METERS };

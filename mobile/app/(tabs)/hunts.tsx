@@ -49,7 +49,6 @@ export default function HuntsScreen() {
       return;
     }
 
-    haptics.triggerImpact('light');
     setLoadingHuntId(hunt.id);
     setProgress({
       hunt_id: hunt.id,

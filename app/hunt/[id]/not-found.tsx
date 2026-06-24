@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <main className="min-h-screen bg-stone-950 flex items-center justify-center px-6" role="main">
+    <div role="main" className="min-h-screen bg-stone-950 flex items-center justify-center px-6">
       <div className="text-center max-w-md">
         <div className="text-6xl mb-6" aria-hidden="true">🌿</div>
         <h1 className="font-display text-3xl font-bold text-cream mb-3">Hunt Not Found</h1>
@@ -24,6 +24,6 @@ export default function NotFound() {
           </Link>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

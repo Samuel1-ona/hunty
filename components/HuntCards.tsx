@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2, Loader2, Printer } from "lucide-react";
 import picture from "@/public/static-images/image1.png";
-import { Skeleton } from "@/components/ui/skeleton";
+import { HuntCardSkeleton } from "@/components/LoadingSkeletons";
 import { cn } from "@/lib/utils";
 import sanitizeHtml from "@/lib/sanitizeHtml";
 import { submitAnswer, AnswerIncorrectError, pollTransaction } from "@/lib/contracts/hunt";
@@ -235,25 +235,13 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
 
   if (isLoading) {
     return (
-      <div className={cn(
-        "rounded-xl sm:rounded-2xl shadow-lg w-full max-w-[400px] transition-all duration-300",
-        isActive ? "sm:scale-105 border-2 border-blue-400" : preview ? "opacity-70" : "opacity-90"
-      )}>
-        <div className="rounded-t-xl sm:rounded-t-2xl p-4 sm:p-6 bg-gradient-to-b from-[#3737A4] to-[#0C0C4F]">
-          <div className="flex justify-end mb-2">
-            <Skeleton className="h-3 sm:h-4 w-12 bg-white/20" />
-          </div>
-          <Skeleton className="h-6 sm:h-7 w-3/4 mb-2 bg-white/20" />
-          <Skeleton className="h-3 sm:h-4 w-full mb-2 bg-white/20" />
-          <Skeleton className="h-3 sm:h-4 w-5/6 mb-4 bg-white/20" />
-          <Skeleton className="w-[140px] sm:w-[180px] h-[140px] sm:h-[180px] rounded-md bg-white/20" />
-        </div>
-        <div className="bg-white dark:bg-slate-900 flex gap-2 p-4 sm:p-6 rounded-b-xl sm:rounded-b-2xl items-center">
-          <Skeleton className="flex-1 h-9 sm:h-10 rounded-full bg-gray-200 dark:bg-slate-800" />
-          <Skeleton className="h-9 sm:h-10 w-[60px] sm:w-[72px] rounded-lg sm:rounded-xl bg-gray-200 dark:bg-slate-800" />
-        </div>
-      </div>
-    );
+      <HuntCardSkeleton
+        className={cn(
+          "w-full max-w-[400px] transition-all duration-300",
+          isActive ? "sm:scale-105 border-2 border-blue-400" : preview ? "opacity-70" : "opacity-90"
+        )}
+      />
+    )
   }
 
   const isLocked = !isActive || preview || isPending || solved || huntEnded;

@@ -2,7 +2,7 @@
 
 import { logger } from "@/lib/logger"
 import { Suspense, useState, useEffect, useRef } from "react"
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
+import { motion, AnimatePresence, useReducedMotion, type Easing } from "framer-motion"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
@@ -12,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 
 import { z } from "zod"
 import { createHunt } from "@/lib/contracts/hunt"
+import { createRewardEscrow } from "@/lib/contracts/rewardManager"
 import { withTransactionToast } from "@/lib/txToast"
 import { addHunt as addStoredHunt, getAllHuntsIncludingPrivate } from "@/lib/huntStore"
 
@@ -71,7 +72,7 @@ function CreateGameContent() {
     initial: prefersReducedMotion ? false : { x: direction > 0 ? 50 : -50, opacity: 0 },
     animate: prefersReducedMotion ? {} : { x: 0, opacity: 1 },
     exit: prefersReducedMotion ? {} : { x: direction > 0 ? -50 : 50, opacity: 0 },
-    transition: prefersReducedMotion ? { duration: 0 } : { duration: 0.3, ease: "easeInOut" },
+    transition: prefersReducedMotion ? { duration: 0 } : { duration: 0.3, ease: "easeInOut" as Easing },
   }
 
   const tabToIndex = { create: 0, rewards: 1, publish: 2, leaderboard: 3 }
@@ -318,11 +319,16 @@ function CreateGameContent() {
       const end_time = Math.floor(new Date(formValues.endDate).getTime() / 1000)
       const description = formValues.hunts.map((h) => `${h.title}: ${h.description}`).join("\n")
       const coverImageCid = formValues.hunts[0]?.image?.trim() || undefined
+      const existing = getAllHuntsIncludingPrivate()
+      const localId =
+        existing.length > 0 ? Math.max(...existing.map((h) => h.id)) + 1 : 1
+
+      let rewardEscrowTxHash: string | undefined
 
       await withTransactionToast(
         async (setStage) => {
           setStage("approving")
-          return createHunt(
+          const created = await createHunt(
             "",
             formValues.gameName,
             description,
@@ -333,6 +339,17 @@ function CreateGameContent() {
             formValues.emailNotifications,
             formValues.isPrivate,
           )
+          const escrow = await createRewardEscrow({
+            huntId: localId,
+            rewardType: formValues.rewardType,
+            rewards: formValues.rewards,
+            expiresAt: end_time,
+          })
+          rewardEscrowTxHash = escrow?.depositTxHash
+
+          return {
+            txHash: escrow?.depositTxHash ?? created.txHash,
+          }
         },
         {
           pending:   "Pending — preparing your hunt…",
@@ -341,9 +358,6 @@ function CreateGameContent() {
         },
       );
 
-      const existing = getAllHuntsIncludingPrivate()
-      const localId =
-        existing.length > 0 ? Math.max(...existing.map((h) => h.id)) + 1 : 1
       addStoredHunt({
         id: localId,
         title: formValues.gameName,
@@ -352,6 +366,9 @@ function CreateGameContent() {
         status: "Draft",
         rewardType: formValues.rewardType,
         rewardPool,
+        rewards: formValues.rewards.map(({ place, amount }) => ({ place, amount })),
+        rewardEscrowTxHash,
+        rewardEscrowBalance: formValues.rewardType === "NFT" ? 0 : rewardPool,
         playerCount: 0,
         createdAt: Math.floor(Date.now() / 1000),
         startTime: start_time,

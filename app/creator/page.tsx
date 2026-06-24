@@ -7,9 +7,11 @@ import { ArrowLeft, Pencil, BarChart3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardTitle } from "@/components/ui/card"
 import { Header } from "@/components/Header"
+import { RewardHistorySection } from "@/components/RewardHistorySection"
 import { useWallet } from "@/lib/context/WalletContext"
 import type { StoredHunt } from "@/lib/types"
 import { getHuntsByCreator } from "@/lib/huntStore"
+import { fetchCreatorRewardHistory } from "@/lib/rewardHistory"
 
 function StatusBadge({ status }: { status: StoredHunt["status"] }) {
   const config = {
@@ -32,6 +34,7 @@ export default function CreatorPage() {
   const router = useRouter()
   const { connected, publicKey, connect } = useWallet()
   const [hunts, setHunts] = useState<StoredHunt[]>([])
+  const [rewardHistory, setRewardHistory] = useState<Awaited<ReturnType<typeof fetchCreatorRewardHistory>>>([])
 
   const loadHunts = useCallback(() => {
     if (!publicKey) {
@@ -44,6 +47,30 @@ export default function CreatorPage() {
   useEffect(() => {
     loadHunts()
   }, [loadHunts])
+
+  useEffect(() => {
+    if (!publicKey) {
+      setRewardHistory([])
+      return
+    }
+
+    let cancelled = false
+
+    const loadRewardHistory = async () => {
+      try {
+        const data = await fetchCreatorRewardHistory(publicKey)
+        if (!cancelled) setRewardHistory(data)
+      } catch (err) {
+        console.error("Failed to load creator reward history:", err)
+      }
+    }
+
+    loadRewardHistory()
+
+    return () => {
+      cancelled = true
+    }
+  }, [publicKey])
 
   const handleCardClick = (hunt: StoredHunt) => {
     if (hunt.status === "Draft") {
@@ -110,54 +137,66 @@ export default function CreatorPage() {
             </div>
           </Card>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {hunts.map((hunt) => {
-              const isDraft = hunt.status === "Draft"
-              const isActive = hunt.status === "Active"
-              const isClickable = isDraft || isActive
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {hunts.map((hunt) => {
+                const isDraft = hunt.status === "Draft"
+                const isActive = hunt.status === "Active"
+                const isClickable = isDraft || isActive
 
-              return (
-                <Card
-                  key={hunt.id}
-                  className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow ${
-                    isClickable
-                      ? "cursor-pointer hover:shadow-md"
-                      : "opacity-90"
-                  }`}
-                  onClick={() => isClickable && handleCardClick(hunt)}
-                >
-                  <div className="p-5">
-                    <div className="mb-2 flex items-center justify-between gap-2">
-                      <CardTitle className="line-clamp-2 text-lg">
-                        {hunt.title}
-                      </CardTitle>
-                      <StatusBadge status={hunt.status} />
-                    </div>
-                    <CardDescription className="mb-4 line-clamp-3 text-sm text-slate-600">
-                      {hunt.description}
-                    </CardDescription>
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-xs text-slate-500">
-                        {hunt.cluesCount} {hunt.cluesCount === 1 ? "clue" : "clues"}
-                      </span>
-                      {isDraft && (
-                        <span className="flex items-center gap-1 text-xs text-amber-700">
-                          <Pencil className="h-3 w-3" />
-                          Edit
+                return (
+                  <Card
+                    key={hunt.id}
+                    className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow ${
+                      isClickable
+                        ? "cursor-pointer hover:shadow-md"
+                        : "opacity-90"
+                    }`}
+                    onClick={() => isClickable && handleCardClick(hunt)}
+                  >
+                    <div className="p-5">
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <CardTitle className="line-clamp-2 text-lg">
+                          {hunt.title}
+                        </CardTitle>
+                        <StatusBadge status={hunt.status} />
+                      </div>
+                      <CardDescription className="mb-4 line-clamp-3 text-sm text-slate-600">
+                        {hunt.description}
+                      </CardDescription>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-xs text-slate-500">
+                          {hunt.cluesCount} {hunt.cluesCount === 1 ? "clue" : "clues"}
                         </span>
-                      )}
-                      {isActive && (
-                        <span className="flex items-center gap-1 text-xs text-emerald-700">
-                          <BarChart3 className="h-3 w-3" />
-                          Live Statistics
-                        </span>
-                      )}
+                        {isDraft && (
+                          <span className="flex items-center gap-1 text-xs text-amber-700">
+                            <Pencil className="h-3 w-3" />
+                            Edit
+                          </span>
+                        )}
+                        {isActive && (
+                          <span className="flex items-center gap-1 text-xs text-emerald-700">
+                            <BarChart3 className="h-3 w-3" />
+                            Live Statistics
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </Card>
-              )
-            })}
-          </div>
+                  </Card>
+                )
+              })}
+            </div>
+
+            <div className="mt-10">
+              <RewardHistorySection
+                title="Reward Distribution"
+                description="All rewards you distributed across your created hunts, with explorer links and filters."
+                entries={rewardHistory}
+                showRecipient
+                recipientLabel="Recipient"
+              />
+            </div>
+          </>
         )}
       </div>
     </div>

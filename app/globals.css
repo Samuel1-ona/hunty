@@ -114,11 +114,45 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring/50 transition-colors duration-300;
   }
   body {
-    @apply bg-background text-foreground transition-colors duration-300;
+    @apply bg-background text-foreground;
   }
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.55),
+    transparent
+  );
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+.dark .skeleton-shimmer::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.12),
+    transparent
+  );
 }
 
 /* Skip to content link for keyboard/screen reader accessibility */
@@ -139,7 +173,19 @@
 .skip-to-content:focus {
   top: 1rem;
 }
+/* ─── Page transition ──────────────────────────────────────────────────────
+   The motion.div rendered by PageTransitionWrapper.
+   will-change promotes the layer early so the browser doesn't repaint the
+   full page on the first frame of each animation.
+   -------------------------------------------------------------------------- */
+[data-page-transition] {
+  will-change: opacity, transform;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  /* CSS-level safety net on top of the JS useReducedMotion hook.
+     Framer Motion respects the hook, but this catches any edge cases
+     where the component hasn't hydrated yet. */
   *,
   *::before,
   *::after {

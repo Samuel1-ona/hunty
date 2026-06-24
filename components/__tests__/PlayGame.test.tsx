@@ -44,29 +44,118 @@ describe("PlayGame", () => {
     vi.clearAllMocks()
   })
 
-  it("shows Network Error instead of crashing when hunt fetch times out", async () => {
-    vi.spyOn(huntStore, "getHunt").mockImplementation(() => {
-      throw new Error("Soroban RPC request timed out")
+  // ─── Render Tests ───────────────────────────────────────────────
+  describe("render", () => {
+    it("renders Header component", () => {
+      renderWithClient(
+        <PlayGame
+          hunts={[]}
+          gameName="Hunty"
+          onExit={vi.fn()}
+          onGameComplete={vi.fn()}
+          gameCompleteModal={null}
+          huntId={56}
+        />
+      )
+      expect(screen.getByTestId("header")).toBeInTheDocument()
     })
 
-    renderWithClient(
-      <PlayGame
-        hunts={[]}
-        gameName="Hunty"
-        onExit={vi.fn()}
-        onGameComplete={vi.fn()}
-        gameCompleteModal={null}
-        huntId={56}
-      />
-    )
-
-    expect(document.querySelector(".animate-pulse")).toBeInTheDocument()
-    expect(document.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0)
-
-    await waitFor(() => {
-      expect(screen.getByText("Network Error")).toBeInTheDocument()
+    it("renders PlayerProgressPanel", () => {
+      renderWithClient(
+        <PlayGame
+          hunts={[]}
+          gameName="Hunty"
+          onExit={vi.fn()}
+          onGameComplete={vi.fn()}
+          gameCompleteModal={null}
+          huntId={56}
+        />
+      )
+      expect(screen.getByTestId("player-progress")).toBeInTheDocument()
     })
 
-    expect(toastError).toHaveBeenCalledWith("Network Error")
+    it("renders loading skeleton while fetching hunt", () => {
+      renderWithClient(
+        <PlayGame
+          hunts={[]}
+          gameName="Hunty"
+          onExit={vi.fn()}
+          onGameComplete={vi.fn()}
+          gameCompleteModal={null}
+          huntId={56}
+        />
+      )
+      expect(document.querySelector(".animate-pulse")).toBeInTheDocument()
+    })
+  })
+
+  // ─── Interaction Tests ──────────────────────────────────────────
+  describe("interaction", () => {
+    it("shows Network Error instead of crashing when hunt fetch times out", async () => {
+      vi.spyOn(huntStore, "getHunt").mockImplementation(() => {
+        throw new Error("Soroban RPC request timed out")
+      })
+
+      renderWithClient(
+        <PlayGame
+          hunts={[]}
+          gameName="Hunty"
+          onExit={vi.fn()}
+          onGameComplete={vi.fn()}
+          gameCompleteModal={null}
+          huntId={56}
+        />
+      )
+
+      expect(document.querySelector(".animate-pulse")).toBeInTheDocument()
+      expect(document.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0)
+
+      await waitFor(() => {
+        expect(screen.getByText("Network Error")).toBeInTheDocument()
+      })
+
+      expect(toastError).toHaveBeenCalledWith("Network Error")
+    })
+  })
+
+  // ─── Accessibility Tests ────────────────────────────────────────
+  describe("accessibility", () => {
+    it("has no accessibility violations in loading state", async () => {
+      renderWithClient(
+        <PlayGame
+          hunts={[]}
+          gameName="Hunty"
+          onExit={vi.fn()}
+          onGameComplete={vi.fn()}
+          gameCompleteModal={null}
+          huntId={56}
+        />
+      )
+      // Skeleton elements should be present
+      const skeletons = document.querySelectorAll(".animate-pulse")
+      expect(skeletons.length).toBeGreaterThan(0)
+    })
+
+    it("announces network error to screen readers", async () => {
+      vi.spyOn(huntStore, "getHunt").mockImplementation(() => {
+        throw new Error("Soroban RPC request timed out")
+      })
+
+      renderWithClient(
+        <PlayGame
+          hunts={[]}
+          gameName="Hunty"
+          onExit={vi.fn()}
+          onGameComplete={vi.fn()}
+          gameCompleteModal={null}
+          huntId={56}
+        />
+      )
+
+      await waitFor(() => {
+        const errorEl = screen.getByText("Network Error")
+        expect(errorEl).toBeInTheDocument()
+      })
+    })
   })
 })

@@ -10,6 +10,10 @@ interface HuntCoverImageProps {
   className?: string
 }
 
+// Tiny dark blur placeholder shown while the cover image loads.
+const BLUR_PLACEHOLDER =
+  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiMxZTI5M2IiLz48L3N2Zz4=";
+
 export function HuntCoverImage({ src, alt, className }: HuntCoverImageProps) {
   const [gatewayIdx, setGatewayIdx] = useState(0)
 
@@ -26,9 +30,10 @@ export function HuntCoverImage({ src, alt, className }: HuntCoverImageProps) {
           alt={alt}
           fill
           loading="lazy"
+          placeholder="blur"
+          blurDataURL={BLUR_PLACEHOLDER}
           className="object-cover"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          unoptimized
         />
       </div>
     )
@@ -41,6 +46,8 @@ export function HuntCoverImage({ src, alt, className }: HuntCoverImageProps) {
         alt={alt}
         fill
         loading="lazy"
+        placeholder="blur"
+        blurDataURL={BLUR_PLACEHOLDER}
         className="object-cover"
         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         onError={() => {
@@ -48,7 +55,6 @@ export function HuntCoverImage({ src, alt, className }: HuntCoverImageProps) {
             setGatewayIdx((idx) => idx + 1)
           }
         }}
-        unoptimized
       />
     </div>
   )

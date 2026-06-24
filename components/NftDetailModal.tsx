@@ -30,6 +30,8 @@ export interface NftRewardDetail {
   claimed: boolean
   attributes?: NftAttribute[]
   huntName?: string
+  /** ipfs:// URI pointing to the SEP-0039 metadata JSON for this NFT. */
+  metadataUri?: string
 }
 
 interface NftDetailModalProps {
@@ -137,7 +139,18 @@ export function NftDetailModal({ nft, isOpen, onClose }: NftDetailModalProps) {
                   <Share2 className="w-4 h-4" />
                   Share
                 </Button>
-                <Button variant="outline" className="flex-1 border-slate-200 text-slate-700 rounded-xl h-11 flex items-center justify-center gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 border-slate-200 text-slate-700 rounded-xl h-11 flex items-center justify-center gap-2"
+                  onClick={() => {
+                    const uri = nft.metadataUri ?? nft.imageUri
+                    // Resolve ipfs:// to a public gateway for browser navigation
+                    const url = uri.startsWith("ipfs://")
+                      ? `https://ipfs.io/ipfs/${uri.slice(7)}`
+                      : uri
+                    window.open(url, "_blank", "noopener,noreferrer")
+                  }}
+                >
                   <ExternalLink className="w-4 h-4" />
                   Explorer
                 </Button>

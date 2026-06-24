@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getHuntById } from "@/lib/huntStore";
 import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
+import { getPublicHuntByIdOptimized } from "@/lib/db/queryOptimizer";
 
 /**
  * GET /api/v1/hunts/[id]
@@ -24,15 +24,11 @@ export async function GET(
     return NextResponse.json({ error: "Invalid hunt ID" }, { status: 400 });
   }
 
-  const hunt = getHuntById(huntId);
+  const requestId = req.headers.get("x-request-id") ?? undefined;
+  const hunt = getPublicHuntByIdOptimized(huntId, requestId);
 
   if (!hunt) {
     return NextResponse.json({ error: "Hunt not found" }, { status: 404 });
-  }
-
-  // Public endpoint should only expose public hunts.
-  if (hunt.is_private) {
-    return NextResponse.json({ error: "Access denied. This hunt is private." }, { status: 403 });
   }
 
   return NextResponse.json({ data: hunt });

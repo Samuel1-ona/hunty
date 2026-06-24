@@ -1,0 +1,39 @@
+name: Playwright Cross-Browser Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  playwright-tests:
+    name: Playwright tests — ${{ matrix.project }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox, webkit, msedge, iphone, pixel, chromium-dark]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests for project
+        env:
+          CI: true
+          WALLET_EXTENSION_PATH: ${{ secrets.WALLET_EXTENSION_PATH }}
+        run: npx playwright test --project=${{ matrix.project }} --reporter=github

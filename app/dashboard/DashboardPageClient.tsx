@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Header } from "@/components/Header"
 import { HuntDashboard } from "@/components/HuntDashboard"
+import { RewardHistoryPanel } from "@/components/RewardHistoryPanel"
 import type { StoredHunt } from "@/lib/types"
 import {
   getCreatorHunts,
@@ -200,6 +201,8 @@ export function DashboardPageClient({
         <p className="mb-8 text-slate-600">
           Activate a draft hunt so players can see it in the Game Arcade. Active hunts cannot be edited.
         </p>
+
+        <RewardHistoryPanel hunts={hunts} onRefresh={refresh} />
 
         <HuntDashboard
           hunts={historyView.pageHunts}

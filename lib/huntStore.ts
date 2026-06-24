@@ -27,6 +27,12 @@ export const SEED_HUNTS: StoredHunt[] = [
     status: "Active",
     rewardType: "XLM",
     rewardPool: 150,
+    poolBalance: 150,
+    rewardDistribution: [
+      { place: 1, amount: 100 },
+      { place: 2, amount: 30 },
+      { place: 3, amount: 20 },
+    ],
     playerCount: 32,
     createdAt: NOW_SECONDS - 2 * 86400,
     startTime: NOW_SECONDS - 86400,
@@ -40,6 +46,8 @@ export const SEED_HUNTS: StoredHunt[] = [
     status: "Active",
     rewardType: "NFT",
     rewardPool: 40,
+    poolBalance: 40,
+    rewardDistribution: [],
     playerCount: 21,
     createdAt: NOW_SECONDS - 4 * 86400,
     startTime: NOW_SECONDS - 2 * 86400,
@@ -53,6 +61,8 @@ export const SEED_HUNTS: StoredHunt[] = [
     status: "Completed",
     rewardType: "Both",
     rewardPool: 250,
+    poolBalance: 0,
+    rewardDistribution: [],
     playerCount: 14,
     createdAt: NOW_SECONDS - 12 * 86400,
     startTime: NOW_SECONDS - 10 * 86400,
@@ -66,6 +76,8 @@ export const SEED_HUNTS: StoredHunt[] = [
     status: "Draft",
     rewardType: "XLM",
     rewardPool: 80,
+    poolBalance: 80,
+    rewardDistribution: [],
     playerCount: 0,
     createdAt: NOW_SECONDS - 3 * 86400,
   },
@@ -77,6 +89,8 @@ export const SEED_HUNTS: StoredHunt[] = [
     status: "Draft",
     rewardType: "NFT",
     rewardPool: 25,
+    poolBalance: 25,
+    rewardDistribution: [],
     playerCount: 0,
     createdAt: NOW_SECONDS - 86400,
   },
@@ -160,6 +174,24 @@ export function updateHuntEndTime(huntId: number, newEndTime: number): void {
   writeHunts(hunts)
 }
 
+/** Update reward escrow metadata after deposits, payouts, or refunds. */
+export function updateHuntRewardEscrow(
+  huntId: number,
+  rewardEscrowBalance: number,
+  rewardEscrowTxHash?: string
+): void {
+  const hunts = readHunts().map((h) =>
+    h.id === huntId
+      ? {
+          ...h,
+          rewardEscrowBalance,
+          ...(rewardEscrowTxHash ? { rewardEscrowTxHash } : {}),
+        }
+      : h
+  )
+  writeHunts(hunts)
+}
+
 /** Delete multiple hunts by IDs. */
 export function deleteHunts(ids: number[]): void {
   const hunts = readHunts().filter((h) => !ids.includes(h.id))
@@ -182,6 +214,67 @@ export function archiveHunts(ids: number[]): void {
 /** Get a single hunt by ID */
 export function getHuntById(id: number): StoredHunt | undefined {
   return readHunts().find((h) => h.id === id)
+}
+
+/** Get reward-pool related data for a hunt. */
+export function getHuntPool(huntId: number) {
+  const hunt = getHuntById(huntId)
+  if (!hunt) return null
+  return {
+    rewardPool: hunt.rewardPool ?? 0,
+    poolBalance: hunt.poolBalance ?? hunt.rewardPool ?? 0,
+    distribution: hunt.rewardDistribution ?? [],
+    lowThreshold: hunt.poolLowBalanceThreshold ?? Math.max(1, (hunt.rewardPool ?? 0) * 0.2),
+  }
+}
+
+/** Deposit XLM into a hunt's reward pool. Updates both `rewardPool` and `poolBalance`. */
+export function depositToPool(huntId: number, amount: number): boolean {
+  if (amount <= 0) return false
+  const hunts = readHunts().map((h) => {
+    if (h.id !== huntId) return h
+    const prevTotal = h.rewardPool ?? 0
+    const prevBalance = h.poolBalance ?? prevTotal
+    return { ...h, rewardPool: prevTotal + amount, poolBalance: prevBalance + amount }
+  })
+  writeHunts(hunts)
+  return true
+}
+
+/** Alias for deposit. */
+export function topUpPool(huntId: number, amount: number): boolean {
+  return depositToPool(huntId, amount)
+}
+
+/** Withdraw unclaimed rewards after a hunt ends or is not active anymore. */
+export function withdrawUnclaimedRewards(huntId: number, amount: number): boolean {
+  const hunt = getHuntById(huntId)
+  if (!hunt) return false
+  if (hunt.status === "Active") return false
+  const prevBalance = hunt.poolBalance ?? hunt.rewardPool ?? 0
+  const withdrawAmount = Math.min(amount, prevBalance)
+  const hunts = readHunts().map((h) =>
+    h.id === huntId ? { ...h, poolBalance: prevBalance - withdrawAmount, rewardPool: Math.max(0, (h.rewardPool ?? 0) - withdrawAmount) } : h
+  )
+  writeHunts(hunts)
+  return true
+}
+
+/** Set a distribution plan for a hunt's reward pool. */
+export function setDistributionPlan(huntId: number, distribution: { place: number; amount: number }[]) {
+  const hunts = readHunts().map((h) =>
+    h.id === huntId ? { ...h, rewardDistribution: distribution, rewardPool: distribution.reduce((s, d) => s + d.amount, 0), poolBalance: distribution.reduce((s, d) => s + d.amount, 0) } : h
+  )
+  writeHunts(hunts)
+}
+
+/** Returns whether the pool is considered low based on configured threshold. */
+export function isPoolLow(huntId: number): boolean {
+  const hunt = getHuntById(huntId)
+  if (!hunt) return false
+  const balance = hunt.poolBalance ?? hunt.rewardPool ?? 0
+  const threshold = hunt.poolLowBalanceThreshold ?? Math.max(1, (hunt.rewardPool ?? 0) * 0.2)
+  return balance < threshold
 }
 
 /** Add a new hunt (e.g. after createHunt). */

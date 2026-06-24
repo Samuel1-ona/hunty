@@ -4,10 +4,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 
 // Mock next-themes
 const setThemeMock = vi.fn()
-let currentTheme = "light"
+let currentResolvedTheme = "light"
 
 vi.mock("next-themes", () => ({
-  useTheme: () => ({ theme: currentTheme, setTheme: setThemeMock }),
+  useTheme: () => ({ resolvedTheme: currentResolvedTheme, setTheme: setThemeMock }),
 }))
 
 // Mock useIsMounted to always return true
@@ -20,7 +20,7 @@ import { ThemeToggle } from "../ThemeToggle"
 describe("ThemeToggle", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    currentTheme = "light"
+    currentResolvedTheme = "light"
   })
 
   it("renders with 'Switch to dark mode' label in light mode", () => {
@@ -31,7 +31,7 @@ describe("ThemeToggle", () => {
   })
 
   it("renders with 'Switch to light mode' label in dark mode", () => {
-    currentTheme = "dark"
+    currentResolvedTheme = "dark"
     render(<ThemeToggle />)
     expect(
       screen.getByRole("button", { name: "Switch to light mode" })
@@ -45,8 +45,18 @@ describe("ThemeToggle", () => {
   })
 
   it("calls setTheme with 'light' when clicked in dark mode", () => {
-    currentTheme = "dark"
+    currentResolvedTheme = "dark"
     render(<ThemeToggle />)
+    fireEvent.click(screen.getByRole("button", { name: "Switch to light mode" }))
+    expect(setThemeMock).toHaveBeenCalledWith("light")
+  })
+
+  it("resolves correctly when theme is system and resolvedTheme is dark", () => {
+    currentResolvedTheme = "dark" // Represents OS dark mode while preference is "system"
+    render(<ThemeToggle />)
+    expect(
+      screen.getByRole("button", { name: "Switch to light mode" })
+    ).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Switch to light mode" }))
     expect(setThemeMock).toHaveBeenCalledWith("light")
   })

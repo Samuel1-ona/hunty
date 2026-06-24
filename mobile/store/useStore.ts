@@ -188,3 +188,34 @@ export const usePlayerStore = create<PlayerState>()(
     },
   ),
 );
+
+// ─── Settings Store ───────────────────────────────────────────────────────────
+
+interface SettingsState {
+  hapticsEnabled: boolean;
+  setHapticsEnabled: (enabled: boolean) => void;
+}
+
+export const useSettingsStore = create<SettingsState>()(
+  persist(
+    (set) => ({
+      hapticsEnabled: true,
+      setHapticsEnabled: (enabled) => set({ hapticsEnabled: enabled }),
+    }),
+    {
+      name: "hunty-settings",
+      storage: {
+        getItem: async (key: string) => {
+          const value = await SecureStore.getItemAsync(key);
+          return value ?? null;
+        },
+        setItem: async (key: string, value: string) => {
+          await SecureStore.setItemAsync(key, value);
+        },
+        removeItem: async (key: string) => {
+          await SecureStore.deleteItemAsync(key);
+        },
+      } as any,
+    },
+  ),
+);

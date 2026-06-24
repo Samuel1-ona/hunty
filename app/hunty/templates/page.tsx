@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowLeft, Sparkles } from "lucide-react"
 
@@ -12,6 +13,20 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { STARTER_HUNT_TEMPLATES } from "@/lib/huntTemplates"
+
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hunty.app"
+
+export const metadata: Metadata = {
+  title: "Hunt Templates | Hunty",
+  description: "Browse starter scavenger hunt templates. Pick a template, customize the clues, and publish your own blockchain-powered treasure hunt.",
+  openGraph: {
+    title: "Hunt Templates | Hunty",
+    description: "Browse starter scavenger hunt templates. Pick a template, customize the clues, and publish your own blockchain-powered treasure hunt.",
+  },
+  alternates: {
+    canonical: `${baseUrl}/hunty/templates`,
+  },
+}
 
 export default function HuntTemplatesPage() {
   return (

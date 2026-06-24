@@ -177,6 +177,7 @@ export default function CreatorStatsPage() {
                       onChange={(e) => setExtendHours(e.target.value)}
                       className="w-20 px-3 py-2 rounded-md border border-blue-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="1"
+                      aria-label="Hours to extend"
                     />
                     <span className="text-sm text-blue-900">hours</span>
                   </div>

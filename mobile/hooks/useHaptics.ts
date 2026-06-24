@@ -5,6 +5,7 @@ import {
   triggerSelection,
   hapticTriggers,
 } from '../utils/haptics';
+import { useSettingsStore } from '../store/useStore';
 
 interface UseHapticsOptions {
   /** Minimum delay between haptic triggers in milliseconds. Defaults to 150ms. */
@@ -18,19 +19,21 @@ interface UseHapticsOptions {
 export function useHaptics(options: UseHapticsOptions = {}) {
   const { cooldownMs = 150 } = options;
   const lastTriggeredRef = useRef<number>(0);
+  const hapticsEnabled = useSettingsStore((state) => state.hapticsEnabled);
 
   /**
    * Internal gate to enforce cooldown rules
    */
   const executeWithCooldown = useCallback(
     (action: () => any) => {
+      if (!hapticsEnabled) return;
       const now = Date.now();
       if (now - lastTriggeredRef.current >= cooldownMs) {
         lastTriggeredRef.current = now;
         action();
       }
     },
-    [cooldownMs]
+    [cooldownMs, hapticsEnabled]
   );
 
   const safeJoinSuccess = useCallback(() => {

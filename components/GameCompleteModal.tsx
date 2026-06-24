@@ -28,6 +28,7 @@ import { toast } from "sonner"
 import { ACHIEVEMENTS } from "@/lib/achievements/config"
 import { checkAndAwardAchievements } from "@/lib/achievements/service"
 import { logger } from "@/lib/logger"
+import type { RewardReceipt } from "@/lib/types"
 
 interface GameCompleteModalProps {
   isOpen: boolean
@@ -36,6 +37,7 @@ interface GameCompleteModalProps {
   onReplay: () => void
   onViewLeaderboard: () => void
   reward: number
+  rewardReceipt?: RewardReceipt | null
   huntId?: number
   playerAddress?: string
 }
@@ -47,6 +49,7 @@ export function GameCompleteModal({
   onReplay,
   onViewLeaderboard,
   reward,
+  rewardReceipt,
   huntId,
   playerAddress,
 }: GameCompleteModalProps) {
@@ -67,16 +70,20 @@ export function GameCompleteModal({
   const [newAchievements, setNewAchievements] = useState<string[]>([])
 
   const { data: registrationStatus } = useQuery({
-    queryKey: ["registrationStatus", huntId, playerAddress],
+    queryKey: queryKeys.registration.status(huntId, playerAddress),
     queryFn: () => (huntId && playerAddress ? checkRegistrationStatus(huntId, playerAddress) : null),
     enabled: isOpen && !!huntId && !!playerAddress,
-    staleTime: SOROBAN_READ_STALE_TIME_MS,
+    staleTime: Math.max(SOROBAN_READ_STALE_TIME_MS, queryCachePolicy.registrationStatus.staleTime),
+    gcTime: queryCachePolicy.registrationStatus.gcTime,
+    refetchInterval: queryCachePolicy.registrationStatus.refetchInterval,
+    refetchIntervalInBackground: true,
   });
 
   const playerProgress = registrationStatus?.progressData ? {
     is_completed: registrationStatus.progressData.completed,
     reward_claimed: registrationStatus.progressData.reward_claimed,
-    hunt_id: huntId
+    hunt_id: huntId,
+    reward_amount: reward,
   } : undefined;
 
   useEffect(() => {
@@ -171,6 +178,25 @@ export function GameCompleteModal({
               )}
             </div>
           </div>
+
+          {rewardReceipt && (
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-left">
+              <p className="text-sm font-semibold text-emerald-900">Reward receipt</p>
+              <div className="mt-2 space-y-1 text-xs text-emerald-800">
+                <p>
+                  Amount: <span className="font-semibold">{rewardReceipt.amount.toFixed(7)} XLM</span>
+                </p>
+                {rewardReceipt.rank && (
+                  <p>
+                    Winner rank: <span className="font-semibold">#{rewardReceipt.rank}</span>
+                  </p>
+                )}
+                <p className="break-all">
+                  Tx: <span className="font-mono">{rewardReceipt.txHash}</span>
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* New Achievements Display */}
           {newAchievements.length > 0 && (

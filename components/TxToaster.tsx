@@ -9,6 +9,7 @@ export function TxToaster() {
       richColors
       expand
       closeButton
+      containerAriaLabel="Transaction status notifications"
     />
   )
 }

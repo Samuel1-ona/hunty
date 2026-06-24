@@ -1,5 +1,6 @@
 import { toast } from "sonner"
 import { mapContractError } from "@/lib/contracts/errors"
+import { announceSr } from "@/components/SrAnnouncer"
 
 // ─── Stage type ───────────────────────────────────────────────────────────────
 
@@ -68,10 +69,12 @@ export async function withTransactionToast<T>(
   const msgs: Required<TxToastMessages> = { ...DEFAULTS, ...messages }
 
   // Stage 1 — Pending
+  announceSr(msgs.pending)
   const toastId = toast.loading(msgs.pending)
 
   const setStage: SetStageFn = (stage) => {
     if (stage === "approving") {
+      announceSr(msgs.approving)
       // Update the same toast in-place so it doesn't flicker
       toast.loading(msgs.approving, { id: toastId })
     }
@@ -81,6 +84,7 @@ export async function withTransactionToast<T>(
     const result = await fn(setStage)
 
     // Stage 3 — Confirmed
+    announceSr(msgs.confirmed)
     toast.success(msgs.confirmed, { id: toastId })
 
     return result
@@ -89,8 +93,10 @@ export async function withTransactionToast<T>(
 
     if (mapped.isUserRejection) {
       // Yellow warning — user intentionally cancelled, not an error.
+      announceSr("Transaction cancelled")
       toast.warning(mapped.message, { id: toastId })
     } else {
+      announceSr("Failed: " + mapped.message)
       toast.error(mapped.message, { id: toastId })
     }
 

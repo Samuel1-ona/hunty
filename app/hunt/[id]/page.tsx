@@ -1,5 +1,6 @@
+import { Suspense } from "react";
 import { Header } from "@/components/Header";
-import { getHunt } from "@/lib/huntStore";
+import { getAllHunts, getHunt } from "@/lib/huntStore";
 import type { HuntStatus } from "@/lib/types";
 import { formatTimestamp } from "@/lib/dateUtils";
 import { Metadata } from "next";
@@ -7,6 +8,7 @@ import { notFound } from "next/navigation";
 import HuntDetailClient from "./share";
 import { HuntCountdown } from "./HuntCountdown";
 import { FastestPlayersStrip } from "@/components/FastestPlayersStrip";
+import HuntPageSkeleton from "./loading";
 
 export async function generateMetadata({
   params,
@@ -77,8 +79,11 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-const page = async ({ params }: PageProps) => {
-  const { id } = await params;
+export function generateStaticParams() {
+  return getAllHunts().map((hunt) => ({ id: String(hunt.id) }));
+}
+
+async function HuntPageContent({ id }: { id: string }) {
   const huntDetails = await getHunt(id);
   if (!huntDetails) return notFound();
 
@@ -99,9 +104,13 @@ const page = async ({ params }: PageProps) => {
 
   const status = statusStyles[huntDetails.status] ?? statusStyles["upcoming"];
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hunty.app"
+
   return (
     <div className="min-h-screen bg-[#0b0c10] text-white pb-24">
       
+      <StructuredData data={huntStructuredData(huntDetails, baseUrl)} />
+
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/3 w-150 h-100 bg-violet-700/20 rounded-full blur-[120px]" />
         <div className="absolute bottom-0 right-1/4 w-100p h-75 bg-indigo-600/15 rounded-full blur-[100px]" />
@@ -109,7 +118,7 @@ const page = async ({ params }: PageProps) => {
 
       <Header />
 
-      <main className="relative max-w-3xl mx-auto px-6 pt-16">
+      <div role="main" className="relative max-w-3xl mx-auto px-6 pt-16">
         {/* Status badge */}
         <div className="mb-6">
           <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold tracking-widest uppercase ${status.classes}`}>
@@ -131,26 +140,26 @@ const page = async ({ params }: PageProps) => {
         {/* Metadata cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-12">
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-            <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Hunt ID</p>
+            <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Hunt ID</p>
             <p className="text-white font-semibold text-lg">#{huntDetails.id}</p>
           </div>
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-            <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Clues</p>
+            <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Clues</p>
             <p className="text-white font-semibold text-lg">{huntDetails.cluesCount}</p>
           </div>
           <div className="col-span-2 sm:col-span-1 bg-white/5 border border-white/10 rounded-2xl p-5">
-            <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Status</p>
+            <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Status</p>
             <p className="text-white font-semibold text-lg capitalize">{huntDetails.status}</p>
           </div>
           {huntDetails.startTime && (
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-              <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Starts</p>
+              <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Starts</p>
               <p className="text-white font-semibold text-sm">{formatTimestamp(huntDetails.startTime)}</p>
             </div>
           )}
           {huntDetails.endTime && (
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-              <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Ends</p>
+              <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Ends</p>
               <p className="text-white font-semibold text-sm">{formatTimestamp(huntDetails.endTime)}</p>
             </div>
           )}
@@ -162,8 +171,18 @@ const page = async ({ params }: PageProps) => {
         <FastestPlayersStrip huntId={huntDetails.id} />
 
         <HuntDetailClient hunt={huntDetails}  />
-      </main>
+      </div>
     </div>
+  );
+}
+
+const page = async ({ params }: PageProps) => {
+  const { id } = await params;
+
+  return (
+    <Suspense fallback={<HuntPageSkeleton />}>
+      <HuntPageContent id={id} />
+    </Suspense>
   );
 };
 

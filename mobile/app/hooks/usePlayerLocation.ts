@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import * as Location from 'expo-location';
 
 export type PlayerLocation = {
@@ -10,14 +10,17 @@ export type LocationState = {
   location: PlayerLocation | null;
   error: string | null;
   loading: boolean;
+  permissionGranted: boolean;
+  shareLocation: boolean;
+  setShareLocation: (value: boolean) => void;
 };
 
 export function usePlayerLocation(): LocationState {
-  const [state, setState] = useState<LocationState>({
-    location: null,
-    error: null,
-    loading: true,
-  });
+  const [location, setLocation] = useState<PlayerLocation | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [permissionGranted, setPermissionGranted] = useState(false);
+  const [shareLocation, setShareLocation] = useState(true);
 
   useEffect(() => {
     let subscription: Location.LocationSubscription | null = null;
@@ -25,34 +28,51 @@ export function usePlayerLocation(): LocationState {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        setState({ location: null, error: 'Location permission denied.', loading: false });
+        setPermissionGranted(false);
+        setError('Location permission denied.');
+        setLoading(false);
         return;
       }
 
-      // Get a quick initial fix
-      const initial = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      setState({
-        location: { latitude: initial.coords.latitude, longitude: initial.coords.longitude },
-        error: null,
-        loading: false,
-      });
+      setPermissionGranted(true);
 
-      // Then watch for updates
+      try {
+        const initial = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        setLocation({ latitude: initial.coords.latitude, longitude: initial.coords.longitude });
+        setError(null);
+      } catch {
+        setError('Unable to resolve your current location.');
+      } finally {
+        setLoading(false);
+      }
+
+      if (!shareLocation) {
+        return;
+      }
+
       subscription = await Location.watchPositionAsync(
         { accuracy: Location.Accuracy.Balanced, distanceInterval: 10 },
         (pos) => {
-          setState((prev) => ({
-            ...prev,
-            location: { latitude: pos.coords.latitude, longitude: pos.coords.longitude },
-          }));
-        }
+          setLocation({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+          setError(null);
+        },
       );
     })();
 
     return () => {
       subscription?.remove();
     };
-  }, []);
+  }, [shareLocation]);
 
-  return state;
+  return useMemo(
+    () => ({
+      location,
+      error,
+      loading,
+      permissionGranted,
+      shareLocation,
+      setShareLocation,
+    }),
+    [error, loading, location, permissionGranted, shareLocation],
+  );
 }

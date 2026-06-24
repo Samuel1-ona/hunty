@@ -14,7 +14,8 @@
       "@hooks/*": ["./hooks/*"],
       "@utils/*": ["./utils/*"],
       "@config/*": ["./config/*"],
-      "@app/*": ["./app/*"]
+      "@app/*": ["./app/*"],
+      "@shared/*": ["../shared/*"]
     }
   }
 }

@@ -21,6 +21,7 @@ module.exports = function (api) {
                 '@services': './services',
                 '@hooks': './hooks',
                 '@app': './app',
+                '@shared': '../shared',
               },
             },
           ],

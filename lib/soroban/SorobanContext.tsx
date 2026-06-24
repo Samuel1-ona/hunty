@@ -15,6 +15,7 @@ import {
   createSorobanServer,
   getSorobanNetworkPassphrase,
   getSorobanRpcUrl,
+  getSorobanRpcOptimizer,
 } from "./client"
 
 export type SorobanConnectionStatus =
@@ -54,6 +55,7 @@ export function SorobanProvider({ children }: { children: ReactNode }) {
     setConnectionStatus("connecting")
     setConnectionError(null)
     const s = createSorobanServer()
+    getSorobanRpcOptimizer()
     setServer(s)
     try {
       const health = await s.getHealth()

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedButton, ThemedCustomText, ThemedView } from '@components/themed';
 import { EmptyState } from '@components/EmptyState';
+import { HuntyRefreshControl } from '@components/HuntyRefreshControl';
 import { useTheme } from '@providers/ThemeProvider';
 import { useWalletStore } from '@store/useStore';
 import { formatISOString } from '@lib/dateUtils';
@@ -227,7 +228,7 @@ export default function ProfileScreen() {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
+        refreshControl={<HuntyRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <View style={styles.header}>
           <ThemedCustomText variant="h2" style={styles.centeredBold}>

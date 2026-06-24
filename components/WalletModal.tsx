@@ -4,7 +4,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -55,16 +57,17 @@ export function WalletModal({ isOpen, onClose, onConnect }: WalletModalProps) {
           <DialogTitle className="text-slate-800 dark:text-slate-100 font-semibold">
             Connect a wallet
           </DialogTitle>
-          <Button
-            variant="ghost"
-            size="icon"
+          <DialogClose
             onClick={handleClose}
+            className="h-6 w-6 rounded-full bg-pink-500 hover:bg-pink-600 text-white inline-flex items-center justify-center"
             aria-label="Close wallet modal"
-            className="h-6 w-6 rounded-full bg-pink-500 hover:bg-pink-600 text-white"
           >
             <X className="h-4 w-4" />
-          </Button>
+          </DialogClose>
         </DialogHeader>
+        <DialogDescription className="sr-only">
+          Choose a Stellar wallet provider to connect to Hunty.
+        </DialogDescription>
 
         <div className="space-y-4 py-2">
           <Button

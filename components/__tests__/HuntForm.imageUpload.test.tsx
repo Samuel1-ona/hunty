@@ -39,7 +39,7 @@ vi.mock("@/lib/crypto", () => ({
 }))
 
 vi.mock("@/lib/txToast", () => ({
-  withTransactionToast: vi.fn().mockImplementation(async (fn: Function) => fn(() => {})),
+  withTransactionToast: vi.fn().mockImplementation(async (fn: (...args: unknown[]) => unknown) => fn(() => {})),
 }))
 
 vi.mock("@/components/HuntCards", () => ({

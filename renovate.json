@@ -1,0 +1,92 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":enableVulnerabilityAlertsWithLabel(security)",
+    "npm:unpublishSafe"
+  ],
+  "enabledManagers": [
+    "github-actions",
+    "npm"
+  ],
+  "rangeStrategy": "bump",
+  "prConcurrentLimit": 10,
+  "prHourlyLimit": 4,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": [
+      "before 6am on monday"
+    ],
+    "automerge": true,
+      "platformAutomerge": false
+  },
+  "packageRules": [
+    {
+      "description": "Automerge patch updates after required checks pass",
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true,
+      "stabilityDays": 2,
+      "labels": [
+        "dependencies",
+        "automerge",
+        "patch"
+      ]
+    },
+    {
+      "description": "Group minor dependency updates",
+      "matchUpdateTypes": [
+        "minor"
+      ],
+      "groupName": "minor dependency updates",
+      "labels": [
+        "dependencies",
+        "minor"
+      ]
+    },
+    {
+      "description": "Group major dependency updates for coordinated review",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "groupName": "major dependency updates",
+      "labels": [
+        "dependencies",
+        "major"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "Keep Expo and React Native updates together",
+      "matchPackageNames": [
+        "/^expo/",
+        "/^@expo\\//",
+        "/^react-native/"
+      ],
+      "groupName": "expo and react native packages"
+    },
+    {
+      "description": "Keep React packages together",
+      "matchPackageNames": [
+        "react",
+        "react-dom",
+        "@types/react",
+        "@types/react-dom"
+      ],
+      "groupName": "react packages"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": [
+      "security",
+      "dependencies"
+    ],
+    "automerge": false
+  }
+}

@@ -155,3 +155,110 @@ export async function seedHuntData(
     { hunts, clues }
   );
 }
+
+// ─────────────────────────────────────────────────────────────────
+// Error Scenario Helpers
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * Simulate wallet connection failure for testing error recovery.
+ * The wallet modal will appear but connection attempts will fail.
+ */
+export async function simulateWalletConnectionFailure(page: Page) {
+  await page.addInitScript(() => {
+    (window as any).freighter = {
+      request: async () => {
+        throw new Error("User rejected the request");
+      },
+      isConnected: false,
+    };
+  });
+}
+
+/**
+ * Simulate wallet disconnection after connection was established.
+ * Useful for testing recovery when wallet becomes unavailable.
+ */
+export async function simulateWalletDisconnection(page: Page) {
+  await page.evaluate(() => {
+    localStorage.removeItem("freighter_public_key");
+    (window as any).freighter = null;
+    (window as any).soroban = null;
+  });
+}
+
+/**
+ * Intercept API responses and return specific error codes.
+ * Useful for testing error handling for various HTTP errors.
+ */
+export async function mockApiErrorResponse(
+  page: Page,
+  pattern: string,
+  statusCode: number = 500,
+  responseBody: Record<string, unknown> = {}
+) {
+  await page.route(pattern, (route) => {
+    route.abort("failed");
+  });
+}
+
+/**
+ * Mock API responses to timeout after a delay.
+ * Useful for testing timeout handling and loading states.
+ */
+export async function mockApiTimeout(
+  page: Page,
+  pattern: string,
+  delayMs: number = 10000
+) {
+  await page.route(pattern, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+    route.abort("timedout");
+  });
+}
+
+/**
+ * Clear all stored hunt data from localStorage.
+ * Useful for testing behavior with no cached data.
+ */
+export async function clearStoredHuntData(page: Page) {
+  await page.evaluate(() => {
+    localStorage.removeItem("hunty_hunts");
+    localStorage.removeItem("hunty_clues");
+    localStorage.removeItem("hunty_player_registrations");
+  });
+}
+
+/**
+ * Inject corrupted hunt data into localStorage.
+ * Useful for testing recovery from malformed cached data.
+ */
+export async function injectCorruptedHuntData(page: Page) {
+  await page.evaluate(() => {
+    localStorage.setItem("hunty_hunts", "{ invalid json");
+    localStorage.setItem("hunty_clues", "[ broken array");
+  });
+}
+
+/**
+ * Wait for a successful wallet connection and verify it worked.
+ */
+export async function verifyWalletConnected(
+  page: Page,
+  publicKey: string = MOCK_PUBLIC_KEY
+) {
+  const shortKey = `${publicKey.slice(0, 6)}...${publicKey.slice(-6)}`;
+  
+  // Check that shortened wallet address is visible
+  await page.locator(`text=${shortKey}`).waitFor({ state: "visible", timeout: 10000 });
+}
+
+/**
+ * Mock a contract call failure (used during hunt registration or submission).
+ * Simulates what happens when blockchain interaction fails.
+ */
+export async function mockContractCallFailure(page: Page, method: string = "") {
+  await page.route("**/api/contract/**", (route) => {
+    route.abort("failed");
+  });
+}

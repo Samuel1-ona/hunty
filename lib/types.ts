@@ -18,6 +18,12 @@ export interface StoredHunt {
   rewardType: "XLM" | "NFT" | "Both"
   /** Total reward pool value used for creator-side sorting. */
   rewardPool?: number
+  /** Per-place XLM reward buckets funded by the creator. */
+  rewards?: Reward[]
+  /** Escrow transaction hash proving the creator funded the XLM reward pool. */
+  rewardEscrowTxHash?: string
+  /** Amount still available in the XLM escrow. */
+  rewardEscrowBalance?: number
   /** Creator-side participant count snapshot for dashboard sorting. */
   playerCount?: number
   /** Unix timestamp in seconds when the hunt draft was created locally. */
@@ -93,6 +99,12 @@ export interface ClueRow {
 
 export type CreateHuntResult = {
   txHash: string
+}
+
+export type ClaimRewardResult = {
+  txHash: string
+  /** ipfs:// URI for the SEP-0039 compliant metadata JSON uploaded before minting. */
+  metadataUri: string
 }
 
 export type SubmitAnswerResult = {
@@ -179,6 +191,36 @@ export interface RewardPlayerProgress {
   is_completed: boolean
   reward_claimed: boolean
   hunt_id?: number | string
+  reward_amount?: number
+}
+
+export type RewardReceiptType = "deposit" | "distribution" | "claim" | "refund"
+
+export interface RewardReceipt {
+  id: string
+  huntId: number
+  type: RewardReceiptType
+  txHash: string
+  amount: number
+  from?: string
+  to?: string
+  rank?: number
+  createdAt: number
+}
+
+export type RewardHistoryType = "XLM" | "NFT"
+
+export interface RewardHistoryEntry {
+  id: string
+  type: RewardHistoryType
+  amount?: number
+  description: string
+  txHash: string
+  earnedAt: string
+  huntId?: number
+  huntName?: string
+  recipient?: string
+  explorerUrl: string
 }
 
 // ─── Activity Feed ───────────────────────────────────────────────────────────
@@ -189,6 +231,8 @@ export interface ActivityEvent {
   id: string
   /** Full Stellar G-address of the participant */
   address: string
+  /** Optional display name resolved from the player's profile */
+  displayName?: string
   huntTitle: string
   huntId: number
   timestamp: number
@@ -295,6 +339,8 @@ export interface NftRewardDetail {
   claimed: boolean
   huntName?: string
   attributes?: NftAttribute[]
+  /** ipfs:// URI pointing to the SEP-0039 metadata JSON file for this NFT. */
+  metadataUri?: string
 }
 
 export interface ProfileSummary {
@@ -306,4 +352,38 @@ export interface ProfileSummary {
   totalNftRewards: number
   claimedNftRewards: number
   unclaimedNftRewards: number
+}
+
+// ─── Core Web Vitals ────────────────────────────────────────────────────────────
+
+export type WebVitalMetric = "LCP" | "FID" | "CLS" | "TTFB" | "INP" | "FCP"
+
+export interface PerformanceMetric {
+  name: WebVitalMetric
+  value: number
+  rating: "good" | "needs-improvement" | "poor"
+  timestamp: number
+  url: string
+}
+
+export interface PerformanceBudget {
+  name: WebVitalMetric
+  good: number
+  poor: number
+}
+
+export interface PerformanceReportEntry {
+  id: string
+  metrics: PerformanceMetric[]
+  timestamp: number
+  url: string
+  userAgent: string
+}
+
+export interface PerformanceAlert {
+  metric: WebVitalMetric
+  value: number
+  threshold: number
+  timestamp: number
+  url: string
 }

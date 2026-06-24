@@ -4,7 +4,7 @@ import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
 
 /**
  * GET /api/v1/hunts/[id]/leaderboard
- * Get hunt leaderboard with pagination.
+ * Get hunt leaderboard with cursor pagination.
  */
 export async function GET(
   req: Request,
@@ -25,8 +25,13 @@ export async function GET(
   }
 
   const { searchParams } = new URL(req.url);
-  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+  const cursorParam = searchParams.get("cursor");
+  const cursor = cursorParam ? parseInt(cursorParam, 10) : null;
   const limit = Math.max(1, Math.min(100, parseInt(searchParams.get("limit") || "10", 10)));
+
+  if (cursorParam && (cursor == null || Number.isNaN(cursor))) {
+    return NextResponse.json({ error: "Invalid cursor" }, { status: 400 });
+  }
 
   try {
     const leaderboard = await get_hunt_leaderboard(huntId);
@@ -36,20 +41,21 @@ export async function GET(
     const sorted = [...leaderboard].sort((a, b) => b.points - a.points);
     
     const total = sorted.length;
-    const totalPages = Math.ceil(total / limit);
-    const offset = (page - 1) * limit;
-    const paginated = sorted.slice(offset, offset + limit);
+    const pageStart = cursor == null ? 0 : Math.max(0, cursor);
+    const paginated = sorted.slice(pageStart, pageStart + limit);
+    const nextCursor = paginated.length === limit ? pageStart + paginated.length : null;
 
     return NextResponse.json({
       data: paginated,
       pagination: {
         total,
-        page,
         limit,
-        totalPages,
+        cursor,
+        nextCursor,
       },
     });
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error(`Error fetching leaderboard for hunt ${huntId}:`, error);
     return NextResponse.json({ error: "Failed to fetch leaderboard" }, { status: 500 });
   }

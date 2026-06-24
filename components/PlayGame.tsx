@@ -8,10 +8,11 @@ import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { HuntPageSkeletonLayout } from "@/components/LoadingSkeletons";
 import { Header } from "@/components/Header";
 import { PlayerProgressPanel } from "@/components/PlayerProgressPanel";
 import { get_clue_info, get_hunt } from "@/lib/contracts/hunt";
+import { queryCachePolicy, queryKeys } from "@/lib/queryKeys";
 import { SOROBAN_READ_STALE_TIME_MS } from "@/lib/soroban/queryConfig";
 
 import { HuntCards } from "./HuntCards";
@@ -50,7 +51,7 @@ export function PlayGame({
     error: queryError,
     refetch,
   } = useQuery({
-    queryKey: ["huntClues", huntId],
+    queryKey: queryKeys.hunts.clues(huntId),
     queryFn: async () => {
       if (huntId == null) return null;
       const huntInfo = await get_hunt(huntId);
@@ -73,7 +74,10 @@ export function PlayGame({
       return { clues, huntInfo };
     },
     enabled: huntId != null,
-    staleTime: SOROBAN_READ_STALE_TIME_MS,
+    staleTime: Math.max(SOROBAN_READ_STALE_TIME_MS, queryCachePolicy.hunts.staleTime),
+    gcTime: queryCachePolicy.hunts.gcTime,
+    refetchInterval: queryCachePolicy.hunts.refetchInterval,
+    refetchIntervalInBackground: true,
   });
 
   const error: string | null = queryError instanceof Error ? queryError.message : queryError ? "Failed to fetch clues" : null;
@@ -141,20 +145,7 @@ export function PlayGame({
 
   if (loading && !hasHunts) {
     return (
-      <div className="min-h-screen bg-gradient-to-tr from-blue-100 bg-purple-100 to-[#f9f9ff] flex items-center justify-center p-4">
-        <div className="w-full max-w-md space-y-6 text-center rounded-3xl bg-white dark:bg-slate-900 px-8 py-10 shadow-lg border border-slate-100 dark:border-white/5">
-          <div className="space-y-3">
-            <Skeleton className="h-8 w-3/4 mx-auto bg-slate-100 dark:bg-slate-800" />
-            <Skeleton className="h-4 w-full bg-slate-100 dark:bg-slate-800" />
-            <Skeleton className="h-4 w-5/6 mx-auto bg-slate-100 dark:bg-slate-800" />
-          </div>
-          <div className="pt-4">
-            <Button variant="ghost" onClick={onExit} className="dark:text-slate-400 dark:hover:text-white">
-              Go Back
-            </Button>
-          </div>
-        </div>
-      </div>
+      <HuntPageSkeletonLayout />
     );
   }
 

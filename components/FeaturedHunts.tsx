@@ -6,6 +6,7 @@ import { Trophy, Clock, Sparkles, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { HuntCoverImage } from "@/components/HuntCoverImage"
+import { queryCachePolicy, queryKeys } from "@/lib/queryKeys"
 import { cn } from "@/lib/utils"
 
 function timeRemaining(endTime?: number): string {
@@ -21,8 +22,12 @@ function timeRemaining(endTime?: number): string {
 
 export function FeaturedHunts() {
   const { data: featured = [], isLoading } = useQuery({
-    queryKey: ["featuredHunts"],
+    queryKey: queryKeys.hunts.featured(),
     queryFn: () => getFeaturedHunts(3),
+    staleTime: queryCachePolicy.featuredHunts.staleTime,
+    gcTime: queryCachePolicy.featuredHunts.gcTime,
+    refetchInterval: queryCachePolicy.featuredHunts.refetchInterval,
+    refetchIntervalInBackground: true,
   })
 
   if (!isLoading && featured.length === 0) return null

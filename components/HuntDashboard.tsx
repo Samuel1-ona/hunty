@@ -3,7 +3,6 @@
 import Link from "next/link"
 import { useState, type MouseEvent as ReactMouseEvent } from "react"
 import { Plus, Trash2, Trophy, Copy, X } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { ActivateHuntModal } from "@/components/ActivateHuntModal"
+import { EmptyState } from "@/components/EmptyState"
 import { LeaderboardTable } from "@/components/LeaderBoardTable"
 import { deleteHunts, archiveHunts } from "@/lib/huntStore"
 import {
@@ -107,6 +107,7 @@ export function HuntDashboard({
   const [clueRows, setClueRows] = useState<ClueRow[]>([
     { id: 1, question: "", answer: "", points: 10 },
   ])
+  const [poolHuntId, setPoolHuntId] = useState<number | null>(null)
   const [isSavingClues, setIsSavingClues] = useState(false)
 
   const visibleHuntIds = hunts.map((hunt) => hunt.id)
@@ -336,51 +337,8 @@ export function HuntDashboard({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {hunts.map((hunt) => {
-          const isDraft = hunt.status === "Draft"
-          const isActive = hunt.status === "Active"
-          const isCompleted = hunt.status === "Completed"
-          const hasClues = hunt.cluesCount > 0
-          const canActivate = isDraft && hasClues
-
-          return (
-            <Card
-              key={hunt.id}
-              className={cn(
-                "group relative overflow-hidden rounded-2xl border transition-all",
-                selectedIds.has(hunt.id)
-                  ? "border-blue-400 dark:border-blue-500 bg-blue-50/30 dark:bg-blue-900/10 ring-1 ring-blue-400 dark:ring-blue-500"
-                  : "border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-white/20 shadow-sm"
-              )}
-            >
-              <div className="absolute right-3 top-3 z-10">
-                <Checkbox
-                  checked={selectedIds.has(hunt.id)}
-                  onCheckedChange={() => toggleSelect(hunt.id)}
-                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                  className="h-5 w-5 rounded-md border-slate-300 dark:border-white/20"
-                  aria-label={`Select hunt ${hunt.title}`}
-                />
-              </div>
-              <Link href={`/hunt/${hunt.id}`}>
-              <div className="p-5">
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <CardTitle className="line-clamp-2 text-lg dark:text-white">{hunt.title}</CardTitle>
-                    <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-md text-xs text-slate-500 dark:text-slate-400 font-mono">
-                      #{hunt.id}
-                      <button
-                        onClick={(e) => handleCopyId(e, hunt.id)}
-                        aria-label={`Copy hunt ID ${hunt.id}`}
-                        className="hover:text-slate-800 dark:hover:text-white transition-colors"
-                      >
-                        <Copy className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                  <StatusBadge status={hunt.status} />
       {hunts.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-slate-300 bg-white/70 px-6 py-14 text-center shadow-sm dark:border-white/10 dark:bg-slate-950/50">
+        <div className="col-span-full rounded-3xl border border-dashed border-slate-300 bg-white/70 px-6 py-14 text-center shadow-sm dark:border-white/10 dark:bg-slate-950/50">
           <p className="text-lg font-semibold text-slate-900 dark:text-white">
             No hunts found for this filter
           </p>
@@ -389,18 +347,6 @@ export function HuntDashboard({
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {hunts.map((hunt) => {
-        {hunts.length === 0 ? (
-          <div className="col-span-full rounded-3xl border border-dashed border-slate-300 bg-white/70 px-6 py-14 text-center shadow-sm dark:border-white/10 dark:bg-slate-950/50">
-            <p className="text-lg font-semibold text-slate-900 dark:text-white">
-              No hunts found for this filter
-            </p>
-            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-              Try another status or sort option to explore your hunt history.
-            </p>
-          </div>
-        ) : (
           hunts.map((hunt) => {
             const isDraft = hunt.status === "Draft"
             const isActive = hunt.status === "Active"
@@ -411,17 +357,18 @@ export function HuntDashboard({
             return (
               <Card
                 key={hunt.id}
-                className={`group relative overflow-hidden rounded-2xl border transition-all ${
+                className={cn(
+                  "group relative overflow-hidden rounded-2xl border transition-all",
                   selectedIds.has(hunt.id)
-                    ? "border-blue-400 bg-blue-50/30 ring-1 ring-blue-400 dark:border-blue-500 dark:bg-blue-900/10 dark:ring-blue-500"
-                    : "border-slate-200 bg-white shadow-sm hover:border-slate-300 dark:border-white/10 dark:bg-slate-900 dark:hover:border-white/20"
-                }`}
+                    ? "border-blue-400 dark:border-blue-500 bg-blue-50/30 dark:bg-blue-900/10 ring-1 ring-blue-400 dark:ring-blue-500"
+                    : "border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-white/20 shadow-sm"
+                )}
               >
                 <div className="absolute right-3 top-3 z-10">
                   <Checkbox
                     checked={selectedIds.has(hunt.id)}
                     onCheckedChange={() => toggleSelect(hunt.id)}
-                    onClick={(event) => event.stopPropagation()}
+                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
                     className="h-5 w-5 rounded-md border-slate-300 dark:border-white/20"
                     aria-label={`Select hunt ${hunt.title}`}
                   />
@@ -430,17 +377,15 @@ export function HuntDashboard({
                   <div className="p-5">
                     <div className="mb-2 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <CardTitle className="line-clamp-2 text-lg dark:text-white">
-                          {hunt.title}
-                        </CardTitle>
-                        <div className="flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-500 dark:bg-white/5 dark:text-slate-400">
+                        <CardTitle className="line-clamp-2 text-lg dark:text-white">{hunt.title}</CardTitle>
+                        <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-md text-xs text-slate-500 dark:text-slate-400 font-mono">
                           #{hunt.id}
                           <button
-                            onClick={(event) => handleCopyId(event, hunt.id)}
+                            onClick={(e) => handleCopyId(e, hunt.id)}
                             aria-label={`Copy hunt ID ${hunt.id}`}
-                            className="transition-colors hover:text-slate-800 dark:hover:text-white"
+                            className="hover:text-slate-800 dark:hover:text-white transition-colors"
                           >
-                            <Copy className="h-3 w-3" />
+                            <Copy className="w-3 h-3" />
                           </button>
                         </div>
                       </div>
@@ -509,6 +454,7 @@ export function HuntDashboard({
             )
           })
         )}
+      </div>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -680,6 +626,10 @@ export function HuntDashboard({
           </div>
         </DialogContent>
       </Dialog>
+
+      {poolHuntId !== null && (
+        <RewardPoolManager huntId={poolHuntId} isOpen={poolHuntId !== null} onClose={() => setPoolHuntId(null)} />
+      )}
     </>
   )
 }

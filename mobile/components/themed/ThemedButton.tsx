@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useTheme } from '@providers/ThemeProvider';
 import { ThemedCustomText } from './ThemedCustomText';
+import { useHaptics } from '@hooks/useHaptics';
 
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'success' | 'ghost';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -84,6 +85,7 @@ export const ThemedButton: React.FC<ThemedButtonProps> = ({
 }) => {
   const [pressed, setPressed] = useState(false);
   const { colors } = useTheme();
+  const haptics = useHaptics();
 
   const variantStyle = variantStyles[variant](colors);
   const sizeStyle = sizeStyles[size];
@@ -112,8 +114,11 @@ export const ThemedButton: React.FC<ThemedButtonProps> = ({
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: disabled || loading, busy: loading }}
       onPress={(e) => {
-        if (!disabled && !loading && onPress) {
-          onPress(e);
+        if (!disabled && !loading) {
+          haptics.triggerImpact('light');
+          if (onPress) {
+            onPress(e);
+          }
         }
       }}
       onPressIn={() => !disabled && setPressed(true)}

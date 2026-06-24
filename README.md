@@ -69,6 +69,36 @@ pnpm test
 pnpm run e2e
 ```
 
+## Docker development
+
+This repository includes a local Docker development environment for the web app and a PostgreSQL database container.
+
+1. Build and start the development stack:
+
+```bash
+docker compose up --build
+```
+
+2. Open the web app at:
+
+```bash
+http://localhost:3000
+```
+
+3. PostgreSQL is available at `localhost:5432` with:
+
+- `POSTGRES_USER=hunty`
+- `POSTGRES_PASSWORD=hunty`
+- `POSTGRES_DB=hunty_dev`
+
+4. Code changes are mounted from the host into the container, so hot reload works automatically.
+
+5. Stop the stack:
+
+```bash
+docker compose down
+```
+
 ## Notes
 
 - This project prefers `pnpm`; a `pnpm-lock.yaml` is included.

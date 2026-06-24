@@ -1,20 +1,14 @@
 // "use client"
 
-import React, { useMemo, useState } from "react";
-import Image from "next/image";
-import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
-import { Card, CardContent } from "@/components/ui/card";
-import { resolveImageSrc } from "@/lib/ipfs";
-import { NftDetailModal, type NftRewardDetail } from "./NftDetailModal";
-import { Trophy, Star } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
+import React, { useState } from "react"
+import Image from "next/image"
+import { motion } from "framer-motion"
+import { cn } from "@/lib/utils"
+import { Card, CardContent } from "@/components/ui/card"
+import { resolveImageSrc } from "@/lib/ipfs"
+import { NftDetailModal, type NftRewardDetail } from "./NftDetailModal"
+import { EmptyState } from "@/components/EmptyState"
+import { Trophy, Star } from "lucide-react"
 
 interface NftGalleryProps {
   nfts: NftRewardDetail[];
@@ -73,16 +67,13 @@ export function NftGallery({ nfts }: NftGalleryProps) {
 
   if (nfts.length === 0) {
     return (
-      <div className="rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50/50 py-16 text-center">
-        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100">
-          <Trophy className="w-8 h-8 text-slate-300" />
-        </div>
-        <h3 className="text-lg font-bold text-slate-700">No trophies yet</h3>
-        <p className="text-slate-500 max-w-xs mx-auto mt-2 text-sm">
-          Complete hunts to earn exclusive NFT rewards and build your collection!
-        </p>
-      </div>
-    );
+      <EmptyState
+        icon={<Trophy className="w-10 h-10 text-slate-500 dark:text-slate-400" />}
+        title="Complete hunts to earn NFTs"
+        description="Your NFT gallery is empty right now. Finish a scavenger hunt to unlock your first collectible reward."
+        action={{ label: "Browse hunts", href: "/" }}
+      />
+    )
   }
 
   return (

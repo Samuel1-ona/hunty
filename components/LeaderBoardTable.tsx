@@ -1,11 +1,13 @@
 "use client"
 
 import React, { useEffect, useState, useCallback, memo } from "react"
-import { Skeleton } from "@/components/ui/skeleton"
+import { LeaderboardTableSkeleton } from "@/components/LoadingSkeletons"
 import { cn } from "@/lib/utils"
 import { get_hunt_leaderboard } from "@/lib/contracts/hunt"
 import { logger } from "@/lib/logger"
 import Medal from "@/components/icons/Medal"
+import { EmptyState } from "@/components/EmptyState"
+import { Trophy } from "lucide-react"
 import type { LeaderboardDisplayEntry } from "@/lib/types"
 
 interface LeaderboardTableProps {
@@ -80,8 +82,13 @@ function LeaderboardTableComponent({ huntId, data: initialData, isLoading: initi
 
   if (!isLoading && data.length === 0) {
     return (
-      <div className={cn(containerClass, "p-12 text-center bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-700")}>
-        <p className="text-slate-500 dark:text-slate-400 font-medium">No players on the leaderboard yet. Be the first!</p>
+      <div className={cn(containerClass, "p-0")}>
+        <EmptyState
+          icon={<Trophy className="w-10 h-10 text-slate-500 dark:text-slate-400" />}
+          title="Be the first to complete!"
+          description="No players have finished this leaderboard yet. Jump into a hunt to claim the top spot."
+          action={{ label: "Explore hunts", href: "/" }}
+        />
       </div>
     )
   }
@@ -98,20 +105,7 @@ function LeaderboardTableComponent({ huntId, data: initialData, isLoading: initi
         </thead>
         <tbody>
           {(isLoading && data.length === 0) ? (
-            Array.from({ length: 5 }).map((_, index) => (
-              <tr key={`skeleton-${index}`} className="bg-white dark:bg-slate-900">
-                <td className="px-4 py-3 flex items-center justify-center gap-2 text-center border-r-2 border-[#808080] dark:border-slate-700 border-b-2">
-                  <Skeleton className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-800" />
-                  <Skeleton className="w-4 h-5 bg-slate-200 dark:bg-slate-800" />
-                </td>
-                <td className="px-4 py-3 border-r-2 border-[#808080] dark:border-slate-700 border-b-2">
-                  <Skeleton className="w-1/2 h-5 bg-slate-200 dark:bg-slate-800" />
-                </td>
-                <td className="px-4 py-3 text-center border border-b-2 border-[#808080] dark:border-slate-700">
-                  <Skeleton className="w-8 h-5 mx-auto bg-slate-200 dark:bg-slate-800" />
-                </td>
-              </tr>
-            ))
+            <LeaderboardTableSkeleton />
           ) : (
             data.map((entry, index) => {
               // Requirement: Visually distinguish rank 1, 2, and 3

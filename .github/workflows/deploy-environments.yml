@@ -1,0 +1,138 @@
+name: Environment-Specific Deployment
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+      - develop
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy to"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "8"
+
+jobs:
+  deploy-staging:
+    if: github.ref == 'refs/heads/staging' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build for Staging
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_ENVIRONMENT: staging
+          NEXT_PUBLIC_SOROBAN_RPC_URL: ${{ secrets.STAGING_SOROBAN_RPC_URL }}
+          NEXT_PUBLIC_SOROBAN_NETWORK_PASSPHRASE: ${{ secrets.STAGING_SOROBAN_NETWORK_PASSPHRASE }}
+          NEXT_PUBLIC_SOROBAN_NETWORK_TYPE: testnet
+          NEXT_PUBLIC_API_URL: ${{ secrets.STAGING_API_URL }}
+          NEXT_PUBLIC_GRAPHQL_URL: ${{ secrets.STAGING_GRAPHQL_URL }}
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+          PINATA_JWT: ${{ secrets.STAGING_PINATA_JWT }}
+          RESEND_API_KEY: ${{ secrets.STAGING_RESEND_API_KEY }}
+          CSP_REPORT_ONLY: true
+          NEXT_PUBLIC_ENABLE_STAGING_BANNER: true
+
+      - name: Deploy to Vercel (Staging)
+        uses: vercel/action@v5
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          environment: preview
+
+  deploy-production:
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build for Production
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_ENVIRONMENT: production
+          NEXT_PUBLIC_SOROBAN_RPC_URL: ${{ secrets.PROD_SOROBAN_RPC_URL }}
+          NEXT_PUBLIC_SOROBAN_NETWORK_PASSPHRASE: ${{ secrets.PROD_SOROBAN_NETWORK_PASSPHRASE }}
+          NEXT_PUBLIC_SOROBAN_NETWORK_TYPE: mainnet
+          NEXT_PUBLIC_API_URL: ${{ secrets.PROD_API_URL }}
+          NEXT_PUBLIC_GRAPHQL_URL: ${{ secrets.PROD_GRAPHQL_URL }}
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          PINATA_JWT: ${{ secrets.PROD_PINATA_JWT }}
+          RESEND_API_KEY: ${{ secrets.PROD_RESEND_API_KEY }}
+          CSP_REPORT_ONLY: false
+          NEXT_PUBLIC_ENABLE_STAGING_BANNER: false
+
+      - name: Deploy to Vercel (Production)
+        uses: vercel/action@v5
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          environment: production

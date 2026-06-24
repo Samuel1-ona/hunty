@@ -1,0 +1,38 @@
+name: Security Tests and Scans
+
+on:
+  push:
+    branches: [ main, '**' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security_checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: |
+          npm ci
+
+      - name: Dependency vulnerability scan (npm audit)
+        run: |
+          npm audit --audit-level=moderate || true
+
+      - name: Run Playwright security tests
+        run: |
+          npm run security:test || true
+
+      - name: OWASP ZAP baseline scan
+        uses: zaproxy/action-baseline@v0.8.0
+        with:
+          target: 'http://localhost:3000'
+        # NOTE: The ZAP baseline expects a running server; adjust pipeline to
+        # start the application before this step when enabling scans.

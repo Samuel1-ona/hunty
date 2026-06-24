@@ -11,7 +11,10 @@ import { Button } from "@/components/ui/button"
 import { WalletContext, shortenAddress } from "@/lib/context/WalletContext"
 import { NftGallery } from "@/components/NftGallery"
 import { BadgeWall } from "@/components/BadgeWall"
+import { ProfilePageSkeleton } from "@/components/LoadingSkeletons"
 import type { NftRewardDetail } from "@/components/NftDetailModal"
+import { RewardHistorySection } from "@/components/RewardHistorySection"
+import { fetchPlayerRewardHistory } from "@/lib/rewardHistory"
 
 // ---------------------------------------------------------------------------
 // #355 — Registered Hunts types and fetcher
@@ -173,6 +176,7 @@ export default function UserProfilePage() {
   const publicKey = wallet?.publicKey ?? ""
   const [hunts, setHunts] = useState<PlayerHuntProgress[]>([])
   const [nftRewards, setNftRewards] = useState<NftReward[]>([])
+  const [rewardHistory, setRewardHistory] = useState<ReturnType<typeof fetchPlayerRewardHistory> extends Promise<infer U> ? U : never>([])
   const [registrations, setRegistrations] = useState<RegisteredHunt[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -226,9 +230,19 @@ export default function UserProfilePage() {
       }
     }
 
+    const loadRewardHistory = async () => {
+      try {
+        const data = await fetchPlayerRewardHistory(publicKey!)
+        if (!cancelled) setRewardHistory(data)
+      } catch (err) {
+        logger.error("Failed to load reward history:", err)
+      }
+    }
+
     load()
     loadRewards()
     loadRegistrations()
+    loadRewardHistory()
 
     return () => {
       cancelled = true
@@ -302,6 +316,8 @@ export default function UserProfilePage() {
               Use the <span className="font-semibold">Connect Wallet</span> button in the header to get started.
             </p>
           </div>
+        ) : isLoading ? (
+          <ProfilePageSkeleton />
         ) : (
           <>
             <section aria-label="Player statistics" className="mt-6">
@@ -355,6 +371,12 @@ export default function UserProfilePage() {
               
               <NftGallery nfts={nftRewards} />
             </section>
+
+            <RewardHistorySection
+              title="Reward History"
+              description="All rewards you have received, with transaction links and date filters."
+              entries={rewardHistory}
+            />
 
             <section aria-label="Achievements" className="mt-8">
               <BadgeWall playerAddress={publicKey} />

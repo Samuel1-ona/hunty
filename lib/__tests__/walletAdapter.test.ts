@@ -104,9 +104,13 @@ describe("walletAdapter", () => {
   });
 
   describe("getActiveWalletAdapter with Freighter", () => {
-    const { getAddress, signTransaction } = vi.mocked(await import("@stellar/freighter-api"));
+    let getAddress: ReturnType<typeof vi.fn>;
+    let signTransaction: ReturnType<typeof vi.fn>;
 
-    beforeEach(() => {
+    beforeEach(async () => {
+      const mocked = vi.mocked(await import("@stellar/freighter-api"));
+      getAddress = mocked.getAddress;
+      signTransaction = mocked.signTransaction;
       vi.clearAllMocks();
     });
 
@@ -194,9 +198,11 @@ describe("walletAdapter", () => {
   });
 
   describe("connectWalletProvider with Freighter", () => {
-    const { getAddress } = vi.mocked(await import("@stellar/freighter-api"));
+    let getAddress: ReturnType<typeof vi.fn>;
 
-    beforeEach(() => {
+    beforeEach(async () => {
+      const mocked = vi.mocked(await import("@stellar/freighter-api"));
+      getAddress = mocked.getAddress;
       vi.clearAllMocks();
     });
 
@@ -242,9 +248,13 @@ describe("walletAdapter", () => {
   });
 
   describe("Error handling and user-friendly messages", () => {
-    const { getAddress, signTransaction } = vi.mocked(await import("@stellar/freighter-api"));
+    let getAddress: ReturnType<typeof vi.fn>;
+    let signTransaction: ReturnType<typeof vi.fn>;
 
-    beforeEach(() => {
+    beforeEach(async () => {
+      const mocked = vi.mocked(await import("@stellar/freighter-api"));
+      getAddress = mocked.getAddress;
+      signTransaction = mocked.signTransaction;
       vi.clearAllMocks();
     });
 

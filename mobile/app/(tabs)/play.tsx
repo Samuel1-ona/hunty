@@ -1,21 +1,44 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedButton, ThemedCustomText, ThemedView } from '@components/themed';
 import { EmptyState } from '@components/EmptyState';
+import { QRScanner } from '@components/QRScanner';
 import { useTheme } from '@providers/ThemeProvider';
+import { useHaptics } from '@hooks/useHaptics';
 import { getHuntClues } from '@store/huntStore';
 import { usePlayerStore, useWalletStore } from '@store/useStore';
 import type { Clue } from '@lib/types';
+import { verifyQrAgainstClue } from '@lib/qrCodeDecryptor';
+import { matchesClueAnswer } from '@lib/clueAnswerVerification';
 import { useToast } from '@providers/ToastProvider';
 import { ClueMarkdownRenderer } from '@components/ClueMarkdownRenderer';
 import { verifyClueGeofence } from '@/lib/locationGate';
+import { usePlayerLocation } from '@app/hooks/usePlayerLocation';
 
 export default function PlayScreen() {
+  // Network status
+  const [isOnline, setIsOnline] = useState(true);
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsOnline(state.isConnected && state.isInternetReachable);
+    });
+    return () => unsubscribe();
+  }, []);
+
   const router = useRouter();
   const { colors } = useTheme();
+  const haptics = useHaptics();
   const { showToast } = useToast();
   const { network } = useWalletStore();
+  const {
+    location,
+    error: locationError,
+    loading: locationLoading,
+    permissionGranted,
+    shareLocation,
+    setShareLocation,
+  } = usePlayerLocation();
   const {
     currentProgress,
     updateClueIndex,
@@ -27,7 +50,9 @@ export default function PlayScreen() {
   const [answer, setAnswer] = useState('');
   const [clues, setClues] = useState<Clue[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [error, setError] = useState('');
+  // Removed duplicate showToast declaration
 
   useEffect(() => {
     if (!currentProgress?.hunt_id) {
@@ -68,8 +93,20 @@ export default function PlayScreen() {
     return `Clue ${activeClueIndex + 1} of ${clues.length}`;
   }, [activeClueIndex, allSolved, clues.length]);
 
-  const handleSubmit = async () => {
-    if (!activeClue || isSubmitting) {
+  const submitClueAnswer = async (submittedAnswer: string, fromQr = false) => {
+    if (!activeClue || !currentProgress?.hunt_id || isSubmitting) {
+      return;
+    }
+
+    // If offline, queue the answer and update progress locally
+    if (!isOnline) {
+      await queueClueAnswer(currentProgress.hunt_id, activeClue.id, answer.trim());
+      // Mark clue completed locally
+      markClueCompleted(currentProgress.hunt_id, activeClueIndex);
+      // Advance to next clue
+      updateClueIndex(activeClueIndex + 1);
+      setAnswer('');
+      showToast({ message: 'Answer queued. It will be submitted when back online.', type: 'info' });
       return;
     }
 
@@ -89,11 +126,20 @@ export default function PlayScreen() {
       const locationCheck = await verifyClueGeofence(activeClue);
       if (!locationCheck.allowed) {
         setError(locationCheck.reason);
+        haptics.triggerNotification('error');
         return;
       }
 
-      if (answer.trim().toLowerCase() !== activeClue.answer.toLowerCase()) {
+      if (fromQr) {
+        const qrCheck = await verifyQrAgainstClue(submittedAnswer, activeClue, currentProgress.hunt_id);
+        if (!qrCheck.match) {
+          showToast({ message: qrCheck.reason, type: 'error' });
+          setError(qrCheck.reason);
+          return;
+        }
+      } else if (!(await matchesClueAnswer(submittedAnswer, activeClue, currentProgress.hunt_id))) {
         setError('Incorrect answer. Review the clue and try again.');
+        haptics.triggerNotification('error');
         return;
       }
 
@@ -101,6 +147,7 @@ export default function PlayScreen() {
       markClueCompleted(currentProgress.hunt_id, activeClueIndex);
 
       if (isLastClue) {
+        haptics.triggerImpact('heavy');
         markCompleted();
         router.push({
           pathname: '/transaction/pending',
@@ -111,6 +158,7 @@ export default function PlayScreen() {
           },
         });
       } else {
+        haptics.triggerNotification('success');
         updateClueIndex(activeClueIndex + 1);
       }
 
@@ -118,6 +166,14 @@ export default function PlayScreen() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSubmit = async () => {
+    await submitClueAnswer(answer);
+  };
+
+  const handleQrScan = async (data: string) => {
+    await submitClueAnswer(data, true);
   };
 
   return (
@@ -128,6 +184,42 @@ export default function PlayScreen() {
             Active Hunt Session
           </ThemedCustomText>
           <ThemedCustomText variant="body">{progressLabel}</ThemedCustomText>
+        </View>
+
+        <View style={[styles.locationCard, { backgroundColor: colors.background, borderColor: colors.border }]}> 
+          <View style={styles.locationHeader}> 
+            <ThemedCustomText variant="label" weight="700">
+              Location services
+            </ThemedCustomText>
+            <Switch
+              value={shareLocation}
+              onValueChange={setShareLocation}
+              disabled={!permissionGranted}
+              trackColor={{ false: '#cbd5e1', true: colors.primary }}
+            />
+          </View>
+          <ThemedCustomText variant="caption" style={styles.locationCopy}>
+            {permissionGranted
+              ? shareLocation
+                ? 'GPS tracking is enabled for live geofence checks and low-power updates.'
+                : 'Location sharing is paused. Clues can still be checked using a one-time GPS read.'
+              : 'Allow location access to use location-based clues and geofencing.'}
+          </ThemedCustomText>
+          {locationLoading ? (
+            <ThemedCustomText variant="caption" color="warning">
+              Requesting location access…
+            </ThemedCustomText>
+          ) : null}
+          {locationError ? (
+            <ThemedCustomText variant="caption" color="error">
+              {locationError}
+            </ThemedCustomText>
+          ) : null}
+          {location ? (
+            <ThemedCustomText variant="caption" style={styles.locationMeta}>
+              Live coordinates: {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
+            </ThemedCustomText>
+          ) : null}
         </View>
 
         {clues.map((clue, index) => {
@@ -163,6 +255,8 @@ export default function PlayScreen() {
         })}
 
         {!allSolved && activeClue ? (
+        <>
+          <OfflineBanner />
           <View style={[styles.answerPanel, { backgroundColor: colors.background, borderColor: colors.border }]}>
             <ThemedCustomText variant="h3" weight="700">
               Submit answer
@@ -195,10 +289,23 @@ export default function PlayScreen() {
               fullWidth
               onPress={handleSubmit}
             />
+            <ThemedButton
+              text="Scan QR checkpoint"
+              variant="secondary"
+              fullWidth
+              onPress={() => setScannerOpen(true)}
+            />
             <ThemedButton text="Abandon hunt" variant="ghost" fullWidth onPress={clearProgress} />
           </View>
         ) : null}
       </ScrollView>
+
+      <QRScanner
+        isOpen={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={handleQrScan}
+        title="Scan checkpoint QR"
+      />
     </ThemedView>
   );
 }
@@ -226,6 +333,23 @@ const styles = StyleSheet.create({
   },
   clueMeta: {
     opacity: 0.75,
+  },
+  locationCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    gap: 8,
+  },
+  locationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  locationCopy: {
+    opacity: 0.8,
+  },
+  locationMeta: {
+    opacity: 0.65,
   },
   answerPanel: {
     borderRadius: 16,

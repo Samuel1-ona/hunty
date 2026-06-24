@@ -1,15 +1,12 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
 import { Plus, Minus } from "lucide-react"
 import Trash from "@/components/icons/trash"
 import Coin from "@/components/icons/Coin"
-import { useState } from "react"
-import { logger } from "@/lib/logger"
 import { useXlmUsdPrice } from "@/hooks/useXlmUsdPrice"
 import type { Reward, RewardPlayerProgress } from "@/lib/types"
-import { claimReward } from "@/lib/contracts/rewardManager"
+import { ClaimRewardFlow } from "@/components/ClaimRewardFlow"
 
 export type { Reward, RewardPlayerProgress as PlayerProgress }
 
@@ -21,12 +18,9 @@ export interface RewardsPanelProps {
   onDeleteReward?: (place: number) => void;
   error?: string;
   playerProgress?: RewardPlayerProgress;
-  onClaimReward?: (hunt_id?: number | string) => Promise<void>;
 }
 
-export function RewardsPanel({ rewards, rewardType = "XLM", onUpdateReward, onAddReward, onDeleteReward, error, playerProgress, onClaimReward }: RewardsPanelProps) {
-  const [isClaiming, setIsClaiming] = useState(false);
-  const [claimed, setClaimed] = useState(playerProgress?.reward_claimed || false);
+export function RewardsPanel({ rewards, rewardType = "XLM", onUpdateReward, onAddReward, onDeleteReward, error, playerProgress }: RewardsPanelProps) {
   const { price: xlmUsdPrice } = useXlmUsdPrice()
 
   const currencyFormatter = new Intl.NumberFormat(undefined, {
@@ -39,28 +33,7 @@ export function RewardsPanel({ rewards, rewardType = "XLM", onUpdateReward, onAd
   const totalRewardUsd =
     xlmUsdPrice != null ? currencyFormatter.format(totalRewardXlm * xlmUsdPrice) : null
 
-  const handleClaim = async () => {
-    setIsClaiming(true);
-    try {
-      if (onClaimReward) {
-        await onClaimReward(playerProgress?.hunt_id);
-      } else {
-        if (playerProgress?.hunt_id == null) {
-          throw new Error("Missing hunt_id for reward claim")
-        }
-        const parsed = Number(playerProgress.hunt_id)
-        if (Number.isNaN(parsed)) {
-          throw new Error("Invalid hunt_id for reward claim")
-        }
-        await claimReward(parsed)
-      }
-      setClaimed(true);
-    } catch (e) {
-      logger.error(e);
-    } finally {
-      setIsClaiming(false);
-    }
-  };
+  const totalRewardAmount = totalRewardXlm > 0 ? totalRewardXlm : (playerProgress?.reward_amount ?? 0)
 
   return (
     <div className="space-y-6">
@@ -149,18 +122,20 @@ export function RewardsPanel({ rewards, rewardType = "XLM", onUpdateReward, onAd
 
       {playerProgress?.is_completed && (
         <div className="flex justify-center mt-6">
-          <Button
-            onClick={handleClaim}
-            disabled={claimed || isClaiming}
-            className={cn(
-              "px-8 py-3 rounded-full text-white font-bold text-lg w-full max-w-sm",
-              claimed
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-b from-[#39A437] to-[#194F0C] hover:opacity-90'
-            )}
-          >
-            {claimed ? "Claimed" : isClaiming ? "Claiming..." : "Claim Prize"}
-          </Button>
+          {playerProgress.reward_claimed ? (
+            <div className="flex items-center gap-2 text-green-600 dark:text-green-400 font-semibold">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Reward Claimed
+            </div>
+          ) : (
+            <ClaimRewardFlow
+              huntId={Number(playerProgress.hunt_id)}
+              rewardAmount={totalRewardAmount}
+              rewardType={rewardType}
+            />
+          )}
         </div>
       )}
     </div>

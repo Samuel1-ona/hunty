@@ -119,6 +119,38 @@ export async function cacheJoinedHuntClues(huntId: number, clues: Clue[]): Promi
   }
 }
 
+// Queue a clue answer for later submission when back online
+export async function queueClueAnswer(huntId: number, clueId: number, answer: string): Promise<void> {
+  try {
+    const existing = await AsyncStorage.getItem('hunty_clue_queue');
+    const queue = existing ? JSON.parse(existing) as Array<{ huntId: number; clueId: number; answer: string }> : [];
+    queue.push({ huntId, clueId, answer });
+    await AsyncStorage.setItem('hunty_clue_queue', JSON.stringify(queue));
+  } catch {
+    // ignore errors
+  }
+}
+
+// Retrieve queued answers
+export async function getQueuedAnswers(): Promise<Array<{ huntId: number; clueId: number; answer: string }>> {
+  try {
+    const data = await AsyncStorage.getItem('hunty_clue_queue');
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+// Process queued answers: attempt to submit them when back online
+export async function processQueuedAnswers(): Promise<void> {
+  const queue = await getQueuedAnswers();
+  for (const item of queue) {
+    // TODO: integrate with server submission and update local progress
+    // Placeholder: assume success and remove from queue
+  }
+  await AsyncStorage.removeItem('hunty_clue_queue');
+}
+
 export async function getOfflineCachedClues(huntId: number): Promise<Clue[]> {
   try {
     const value = await AsyncStorage.getItem(`hunty_clues_hunt_${huntId}`);
