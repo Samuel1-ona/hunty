@@ -1,0 +1,17 @@
+node_modules
+.pnp
+.pnp.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.DS_Store
+/dist
+/.next
+/out
+.env*
+.idea
+.vscode
+*.log
+**/__tests__
+**/coverage

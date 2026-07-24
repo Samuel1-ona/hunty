@@ -1,0 +1,28 @@
+appId: host.exp.Exponent
+---
+# Baseline E2E: load hunts feed, open a hunt, open wallet connect modal
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "hunts-feed"
+    timeout: 30000
+- assertVisible:
+    id: "hunts-feed"
+- tapOn:
+    id: "hunt-feed-item-1"
+- extendedWaitUntil:
+    visible:
+      id: "hunt-detail-screen"
+    timeout: 10000
+- assertVisible:
+    id: "connect-wallet-button"
+- tapOn:
+    id: "connect-wallet-button"
+- extendedWaitUntil:
+    visible:
+      id: "wallet-connect-modal"
+    timeout: 5000
+- assertVisible:
+    id: "wallet-option-xbull"
+- assertVisible:
+    id: "wallet-option-lobstr"

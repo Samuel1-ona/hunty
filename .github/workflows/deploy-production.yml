@@ -1,0 +1,92 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  deploy-production:
+    name: Deploy to Production Environment
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://hunty.app
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build application
+        run: npm run build
+
+      - name: Create deployment status
+        uses: chrnorm/deployment-status@v2
+        if: always()
+        with:
+          token: '${{ secrets.GITHUB_TOKEN }}'
+          environment-url: https://hunty.app
+          state: ${{ job.status }}
+          deployment-id: ${{ github.run_id }}
+
+      # Add your actual deployment steps here
+      # For example, if using Vercel:
+      # - name: Deploy to Vercel Production
+      #   uses: amondnet/vercel-action@v25
+      #   with:
+      #     vercel-token: ${{ secrets.VERCEL_TOKEN }}
+      #     vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+      #     vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+      #     scope: ${{ secrets.VERCEL_ORG_ID }}
+      #     prod: true
+
+      # Or if using a custom deployment script:
+      - name: Deploy production environment
+        run: |
+          echo "Deploying version ${{ github.event.inputs.version }} to production..."
+          # Add your deployment command here
+          # Example: ./scripts/deploy-production.sh
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        if: success()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          release_name: Release ${{ github.event.inputs.version }}
+          body: |
+            Production deployment triggered manually.
+            Version: ${{ github.event.inputs.version }}
+            Commit: ${{ github.sha }}
+          draft: false
+          prerelease: false
+
+      - name: Notify production deployment complete
+        if: success()
+        run: |
+          echo "✅ Deployment to production completed successfully"
+          echo "Version: ${{ github.event.inputs.version }}"
+          echo "Environment URL: https://hunty.app"
+
+      - name: Notify production deployment failure
+        if: failure()
+        run: |
+          echo "❌ Deployment to production failed"
+          exit 1

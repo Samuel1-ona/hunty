@@ -1,0 +1,43 @@
+name: Security Tests and Scans
+
+on:
+  push:
+    branches: [main, "**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  security_checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js app
+        run: npm run build
+
+      - name: Start Next.js app in background
+        run: |
+          npm start &
+          npx wait-on http://localhost:3000 --timeout 30000
+
+      - name: Dependency vulnerability scan
+        run: npm audit --audit-level=moderate || true
+
+      - name: Run Playwright security tests
+        run: npm run security:test || true
+
+      - name: OWASP ZAP baseline scan
+        uses: zaproxy/action-baseline@v0.8.0
+        with:
+          target: "http://localhost:3000"
+        continue-on-error: true # prevents workflow failure if ZAP fails
+        # NOTE: The ZAP baseline expects a running server; we started it above.

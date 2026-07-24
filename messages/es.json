@@ -1,0 +1,148 @@
+{
+  "common": {
+    "appName": "Hunty",
+    "loading": "Cargando...",
+    "error": "Ocurrió un error",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "continue": "Continuar",
+    "confirm": "Confirmar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "view": "Ver",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "sort": "Ordenar",
+    "submit": "Enviar",
+    "reset": "Restablecer",
+    "noResults": "No se encontraron resultados",
+    "skipToContent": "Saltar al contenido",
+    "yes": "Sí",
+    "no": "No"
+  },
+  "header": {
+    "connectWallet": "Conectar Billetera",
+    "connectedWallet": "Billetera conectada",
+    "copyAddress": "Copiar dirección",
+    "copied": "¡Copiado!",
+    "disconnectWallet": "Desconectar billetera",
+    "balance": "Saldo"
+  },
+  "home": {
+    "title": "La Máxima Arcade de Juegos Web3",
+    "metaTitle": "Hunty - Juego Descentralizado de Búsqueda del Tesoro",
+    "metaDescription": "Crea emocionantes búsquedas del tesoro con múltiples pistas y desafíos. Involucra a los jugadores en cazas del tesoro inmersivas y recompénsalos con tokens XLM o NFTs exclusivos en la blockchain de Stellar.",
+    "createGame": "Crear Juego",
+    "myHunts": "Mis Cacerías",
+    "leaderboard": "Tabla de Líderes",
+    "playGame": "Jugar",
+    "enterGameLink": "Ingresar Enlace de Juego",
+    "gameLinkPlaceholder": "https://www.galagorch.com/g/***",
+    "howToPlay": "Cómo Jugar Hunty",
+    "hintToUnlock": "Pista Para Desbloquear",
+    "enterCodePlaceholder": "Ingresa el código para desbloquear",
+    "globalLeaderboard": "Tabla de Líderes Global",
+    "discoveryArcade": "Arcade de Descubrimiento",
+    "discoverySubtitle": "Encuentra el desafío perfecto para ti",
+    "olderInactiveHunts": "Cacerías Antiguas / Inactivas",
+    "loadingArchive": "Cargando archivo...",
+    "loadingMoreHunts": "Cargando más cacerías...",
+    "endOfArchive": "Has llegado al final del archivo de cacerías.",
+    "noInactiveHunts": "No hay cacerías inactivas todavía.",
+    "noActiveHunts": "No hay cacerías activas disponibles en este momento.",
+    "noSearchResults": "Ninguna cacería coincide con tu búsqueda.",
+    "beFirstToCreate": "¡Sé el primero en crear una!",
+    "searchTitle": "Buscar por título..."
+  },
+  "hunt": {
+    "clue": "Pista",
+    "clues": "Pistas",
+    "reward": "Recompensa",
+    "trending": "Tendencia",
+    "play": "Jugar",
+    "watchLive": "Ver En Vivo",
+    "players": "jugadores",
+    "player": "jugador",
+    "status": {
+      "active": "Activo",
+      "completed": "Completado",
+      "inactive": "Inactivo"
+    }
+  },
+  "filters": {
+    "allPrizes": "Todos los Premios",
+    "all": "Todos",
+    "live": "En Vivo",
+    "ended": "Finalizado",
+    "newestFirst": "Más Recientes",
+    "oldestFirst": "Más Antiguos",
+    "mostClues": "Más Pistas",
+    "fewestClues": "Menos Pistas",
+    "results": "{count} resultado",
+    "resultsPlural": "{count} resultados",
+    "loadedOf": "{visible} de {total} cargados"
+  },
+  "wallet": {
+    "connectTitle": "Conectar una billetera",
+    "noWalletOptions": "No hay opciones de billetera disponibles.",
+    "walletAddress": "Dirección de Billetera",
+    "displayName": "Establecer un Nombre de Visualización (opcional)",
+    "displayNamePlaceholder": "NombreDeUsuario"
+  },
+  "navigation": {
+    "home": "Inicio",
+    "dashboard": "Panel de Control",
+    "profile": "Perfil",
+    "settings": "Configuración",
+    "help": "Ayuda",
+    "admin": "Administrador"
+  },
+  "dashboard": {
+    "title": "Panel de Control",
+    "myHunts": "Mis Cacerías",
+    "createNew": "Crear Nueva Cacería",
+    "noHunts": "Aún no has creado ninguna cacería."
+  },
+  "profile": {
+    "title": "Perfil",
+    "editProfile": "Editar Perfil",
+    "username": "Nombre de usuario",
+    "email": "Correo electrónico",
+    "walletAddress": "Dirección de Billetera",
+    "joinedDate": "Registrado",
+    "huntsCreated": "Cacerías Creadas",
+    "huntsCompleted": "Cacerías Completadas"
+  },
+  "settings": {
+    "title": "Configuración",
+    "language": "Idioma",
+    "selectLanguage": "Seleccionar Idioma",
+    "theme": "Tema",
+    "darkMode": "Modo Oscuro",
+    "lightMode": "Modo Claro",
+    "systemDefault": "Predeterminado del Sistema",
+    "notifications": "Notificaciones",
+    "account": "Cuenta",
+    "privacy": "Privacidad",
+    "security": "Seguridad"
+  },
+  "footer": {
+    "rights": "Todos los derechos reservados.",
+    "privacyPolicy": "Política de Privacidad",
+    "termsOfService": "Términos de Servicio",
+    "contact": "Contacto"
+  },
+  "errors": {
+    "notFound": "Página no encontrada",
+    "serverError": "Error del servidor",
+    "unauthorized": "No autorizado",
+    "networkError": "Error de red. Por favor, inténtalo de nuevo."
+  },
+  "language": {
+    "en": "Inglés",
+    "es": "Español"
+  }
+}

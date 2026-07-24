@@ -1,0 +1,68 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy-staging:
+    name: Deploy to Staging Environment
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.hunty.app
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Create deployment status
+        uses: chrnorm/deployment-status@v2
+        if: always()
+        with:
+          token: '${{ secrets.GITHUB_TOKEN }}'
+          environment-url: https://staging.hunty.app
+          state: ${{ job.status }}
+          deployment-id: ${{ github.run_id }}
+
+      # Add your actual deployment steps here
+      # For example, if using Vercel:
+      # - name: Deploy to Vercel Staging
+      #   uses: amondnet/vercel-action@v25
+      #   with:
+      #     vercel-token: ${{ secrets.VERCEL_TOKEN }}
+      #     vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+      #     vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+      #     scope: ${{ secrets.VERCEL_ORG_ID }}
+      #     alias: staging
+
+      # Or if using a custom deployment script:
+      - name: Deploy staging environment
+        run: |
+          echo "Deploying to staging environment..."
+          # Add your deployment command here
+          # Example: ./scripts/deploy-staging.sh
+
+      - name: Notify deployment complete
+        if: success()
+        run: |
+          echo "✅ Deployment to staging completed successfully"
+          echo "Environment URL: https://staging.hunty.app"
+
+      - name: Notify deployment failure
+        if: failure()
+        run: |
+          echo "❌ Deployment to staging failed"
+          exit 1

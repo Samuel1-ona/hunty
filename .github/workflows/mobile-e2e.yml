@@ -1,0 +1,42 @@
+name: Mobile E2E (Maestro)
+
+on:
+  pull_request:
+    paths:
+      - 'mobile/**'
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  maestro:
+    name: Maestro baseline flows
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: npm install --legacy-peer-deps
+
+      - name: Validate Maestro E2E baseline
+        working-directory: mobile
+        run: node scripts/validate-maestro-baseline.js
+
+      - name: Install Maestro CLI
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+
+      - name: Verify Maestro CLI
+        run: maestro --version
