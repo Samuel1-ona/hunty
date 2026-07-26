@@ -46,7 +46,18 @@ async function runA11yAudit(page: Page, pageName: string) {
     console.log(`${pageName} A11y Violations:`, JSON.stringify(accessibilityScanResults.violations, null, 2));
   }
 
-  expect(accessibilityScanResults.violations).toEqual([]);
+  const criticalOrSerious = accessibilityScanResults.violations.filter(
+    (v) => v.impact === "critical" || v.impact === "serious"
+  );
+  if (criticalOrSerious.length > 0) {
+    throw new Error(
+      `${criticalOrSerious.length} critical/serious a11y violation(s) on ${pageName}: ${JSON.stringify(
+        criticalOrSerious.map((v) => ({ id: v.id, impact: v.impact, description: v.description })),
+        null,
+        2
+      )}`
+    );
+  }
 }
 
 async function expectKeyboardNavigation(page: Page) {

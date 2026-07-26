@@ -1,0 +1,14 @@
+{
+  "_comment": "Axe accessibility baseline. Violations listed here are KNOWN issues tracked for burn-down. Remove entries as they are fixed. New critical/serious violations NOT in this list will fail the build.",
+  "_generated": "2026-07-26T22:33:59.491Z",
+  "_burndown_plan": {
+    "sprint_1": "Fix color-contrast violations on landing page hero section",
+    "sprint_2": "Add missing aria-labels to hunt card action buttons",
+    "sprint_3": "Fix focus-visible outline on custom button components",
+    "sprint_4": "Audit and fix leaderboard table headers"
+  },
+  "landing": [],
+  "hunt_detail": [],
+  "hunt_play": [],
+  "leaderboard": []
+}

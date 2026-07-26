@@ -36,4 +36,13 @@ jobs:
         env:
           CI: true
           WALLET_EXTENSION_PATH: ${{ secrets.WALLET_EXTENSION_PATH }}
+          A11Y_REPORTS: true
         run: npx playwright test --project=${{ matrix.project }} --reporter=github
+
+      - name: Upload a11y reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a11y-reports-${{ matrix.project }}
+          path: apps/web/test-results/a11y/
+          retention-days: 30
