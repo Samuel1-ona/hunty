@@ -24,6 +24,7 @@
   "dependencies": {
     "@hunty/types": "workspace:*",
     "@hunty/ui": "workspace:*",
+    "@sentry/nextjs": "^8.55.0",
     "@ducanh2912/next-pwa": "^10.2.9",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-collection": "^1.1.7",

@@ -152,3 +152,34 @@ export async function sendTestAlert(): Promise<string> {
   await dispatchAlert(event)
   return event.id
 }
+
+/**
+ * Report an error-rate spike to all configured alert channels.
+ *
+ * Fires only when the provided `errorRate` exceeds the configured threshold
+ * (MONITORING.alerts.errorRateThreshold). Callers should compute the error
+ * rate as a fraction between 0 and 1 (e.g. 0.06 = 6 %).
+ *
+ * @param errorRate    - Fraction of requests that resulted in errors (0–1).
+ * @param windowMinutes - Observation window length in minutes (default: 5).
+ */
+export async function reportErrorRateSpike(
+  errorRate: number,
+  windowMinutes: number = 5,
+): Promise<void> {
+  if (errorRate < MONITORING.alerts.errorRateThreshold) return
+
+  await dispatchAlert({
+    id: generateId(),
+    level: "critical",
+    title: "Error Rate Spike Detected",
+    message: `Error rate ${(errorRate * 100).toFixed(1)}% exceeds threshold ${(MONITORING.alerts.errorRateThreshold * 100).toFixed(1)}% over ${windowMinutes}-minute window`,
+    source: "error-rate-monitor",
+    timestamp: new Date().toISOString(),
+    metadata: {
+      errorRate,
+      threshold: MONITORING.alerts.errorRateThreshold,
+      windowMinutes,
+    },
+  })
+}

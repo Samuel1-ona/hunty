@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 
 import { logger } from "@/lib/logger"
+import { captureException } from "@/lib/errorTracking"
 
 export default function GlobalError({
   error,
@@ -13,8 +14,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     logger.error("[GlobalError] Fatal error:", error)
-    // Sentry-ready: pass error to your Sentry DSN when configured.
-    // Sentry.captureException(error)
+    captureException(error, { digest: error.digest, boundary: 'GlobalError' })
   }, [error])
 
   return (

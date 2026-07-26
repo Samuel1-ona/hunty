@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useEffect } from "react"
 
 import { logger } from "@/lib/logger"
+import { captureException } from "@/lib/errorTracking"
 
 export default function Error({
   error,
@@ -14,7 +15,7 @@ export default function Error({
 }) {
   useEffect(() => {
     logger.error("[RouteError] Unhandled error:", error)
-    // Sentry-ready: Sentry.captureException(error)
+    captureException(error, { digest: error.digest, boundary: 'RouteError' })
   }, [error])
 
   return (

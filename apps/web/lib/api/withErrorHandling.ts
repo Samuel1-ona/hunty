@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { errorResponse, REQUEST_ID_HEADER } from "./response";
+import { captureException } from "@/lib/errorTracking";
 
 type RouteHandler<Context, Req extends Request = Request> = (
   req: Req,
@@ -16,6 +17,7 @@ function generateRequestId(): string {
  *    the standard { error, code, details? } JSON response
  *  - every response (success or error) carries an `x-request-id` header,
  *    reusing an inbound `x-request-id` header when the caller provided one
+ *  - unhandled errors are forwarded to the error tracking system
  *
  * Usage:
  *   export const GET = withErrorHandling(async (req) => { ... })
@@ -38,6 +40,13 @@ export function withErrorHandling<Context = unknown, Req extends Request = Reque
       }
       return response;
     } catch (error) {
+      // Forward to error tracking (Sentry when configured, logger fallback otherwise)
+      captureException(error, {
+        requestId,
+        url: req?.url,
+        method: req?.method,
+        boundary: 'withErrorHandling',
+      });
       return errorResponse(error, requestId);
     }
   };

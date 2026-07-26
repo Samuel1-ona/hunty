@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
@@ -160,5 +161,22 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+const sentryWebpackPluginOptions = {
+  // Source map uploads require SENTRY_AUTH_TOKEN env var
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  org: process.env.SENTRY_ORG || 'hunty',
+  project: process.env.SENTRY_PROJECT || 'hunty-web',
+  // Suppress source map upload logs when not configured
+  silent: !process.env.SENTRY_AUTH_TOKEN,
+  // Upload source maps only in production CI
+  widenClientFileUpload: true,
+  // Don't block build if Sentry upload fails
+  dryRun: !process.env.SENTRY_AUTH_TOKEN,
+  // Automatically tree-shake Sentry logger when not needed
+  disableLogger: true,
+};
+
+export default process.env.NEXT_PUBLIC_SENTRY_DSN
+  ? withSentryConfig(withNextIntl(nextConfig), sentryWebpackPluginOptions)
+  : withNextIntl(nextConfig);
 

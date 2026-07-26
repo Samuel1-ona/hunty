@@ -8,6 +8,11 @@ import { WebVitalsReporter } from "@/components/WebVitalsReporter"
 import { queryCachePolicy } from "@/lib/queryKeys"
 import { WalletProvider } from "@/lib/context/WalletContext"
 
+// Error tracking is initialised automatically by sentry.client.config.ts which
+// Next.js loads before the app renders. The unhandledrejection handler is set up
+// there via initErrorTracking(). Wallet-specific user context (setUser) should be
+// wired in WalletContext once the user connects their wallet.
+
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
     () =>
