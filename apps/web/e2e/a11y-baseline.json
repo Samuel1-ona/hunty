@@ -1,0 +1,8 @@
+{
+  "_comment": "Axe accessibility baseline — known violations that are being burned down. Remove entries as they are fixed.",
+  "_burndown": "Target: zero entries by next major release.",
+  "landing": [],
+  "hunt_detail": [],
+  "play": [],
+  "leaderboard": []
+}
