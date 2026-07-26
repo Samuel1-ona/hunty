@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { Suspense } from "react"
+import { headers } from "next/headers"
 
 import "./globals.css"
 import { hankenGrotesk } from "@/lib/font"
@@ -8,8 +9,7 @@ import { PageSkeleton } from "@/components/PageSkeleton"
 import { PageTransitionWrapper } from "@/components/PageTransitionWrapper"
 import Providers from "./providers"
 import PWAInstallPrompt from "@/components/PWAInstallPrompt"
-import { PageSkeleton } from "@/components/PageSkeleton"
-import { PageTransitionWrapper } from "@/components/PageTransitionWrapper"
+import { TestnetWarning } from "@/components/NetworkIndicator"
 
 export const viewport: Viewport = {
   themeColor: "#7c3aed",
@@ -117,6 +117,7 @@ export default async function RootLayout({
         suppressHydrationWarning
       >
         <Providers>
+          <TestnetWarning />
           <a href="#main-content" className="skip-to-content">
             Skip to content
           </a>

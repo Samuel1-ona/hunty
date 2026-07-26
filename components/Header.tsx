@@ -24,9 +24,11 @@ import {
   ChevronDown,
   Gamepad2,
   HelpCircle,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import { getUnreadNotificationCount } from "@/lib/notifications/rankTracker"
 import { createWeeklyDigestNotification, shouldSendWeeklyDigest } from "@/lib/notifications/weeklyDigest"
+import { NetworkIndicator } from "./NetworkIndicator"
 
 // ÔöÇÔöÇÔöÇ Nav structure ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 
@@ -63,6 +65,12 @@ const NAV_ITEMS = [
     label: "Profile",
     icon: User,
     href: "/profile",
+    mega: null,
+  },
+  {
+    label: "Settings",
+    icon: SettingsIcon,
+    href: "/settings",
     mega: null,
   },
 ];
@@ -416,6 +424,9 @@ export function Header({ balance = "0" }: { balance?: string }) {
 
           {/* Right side actions */}
           <div className="flex items-center gap-2 ml-auto">
+            {/* Network Indicator */}
+            <NetworkIndicator variant="pill" showIcon={true} />
+
             {/* Search */}
             <button
               onClick={() => { setSearchOpen((v) => !v); setNotifOpen(false); }}
@@ -514,6 +525,15 @@ export function Header({ balance = "0" }: { balance?: string }) {
                           <HelpCircle className="w-4 h-4 text-slate-400 flex-shrink-0" />
                           <span>Take Tour</span>
                         </button>
+
+                        <Link
+                          href="/settings"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-left"
+                        >
+                          <SettingsIcon className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                          <span>Settings</span>
+                        </Link>
 
                         <div className="h-px bg-slate-100 dark:bg-white/5 mx-3" />
                         <button
