@@ -1,8 +1,13 @@
 "use client";
 
 import { X } from "lucide-react";
-import React, { useEffect, useMemo,useState } from "react";
-import Joyride, { CallBackProps, STATUS, Step, TooltipRenderProps } from "react-joyride";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import Joyride, {
+  CallBackProps,
+  STATUS,
+  Step,
+  TooltipRenderProps,
+} from "react-joyride";
 
 import { useWallet } from "@/lib/context/WalletContext";
 
@@ -46,40 +51,55 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ tourType }) => {
     };
   }, [tourType]);
 
+  const finishTour = useCallback(
+    (markSeen: boolean) => {
+      setRun(false);
+      if (markSeen || dontShowAgain) {
+        localStorage.setItem(storageKey, "true");
+      }
+    },
+    [dontShowAgain, storageKey]
+  );
+
   const playerSteps: Step[] = [
     {
       target: "body",
       placement: "center",
       title: "Welcome to Hunty! 🎯",
-      content: "Hunty is a decentralized Web3 scavenger hunt platform. Browse active challenges, solve clues, and unlock real crypto rewards and exclusive NFTs!",
+      content:
+        "Hunty is a decentralized Web3 scavenger hunt platform. Browse active challenges, solve clues, and unlock real crypto rewards and exclusive NFTs!",
       disableBeacon: true,
     },
     {
       target: "#wallet-button",
       placement: "bottom",
       title: "Connect Your Wallet 🔑",
-      content: "Connect your Stellar wallet to build your profile, start solving clues, and automatically claim your earnings.",
+      content:
+        "Connect your Stellar wallet to build your profile, start solving clues, and automatically claim your earnings.",
       disableBeacon: true,
     },
     {
       target: "#play-button",
       placement: "bottom",
       title: "Play Active Hunts 🎮",
-      content: "If you have a game link, paste it in the field below or click 'Play Game' to start solving active hunts immediately.",
+      content:
+        "If you have a game link, paste it in the field below or click 'Play Game' to start solving active hunts immediately.",
       disableBeacon: true,
     },
     {
       target: "#discovery-arcade",
       placement: "top",
       title: "Explore the Discovery Arcade 🗺️",
-      content: "Browse the arcade of live and completed hunts. Filter by reward types (XLM, NFTs) or search for specific hunts by name or creator.",
+      content:
+        "Browse the arcade of live and completed hunts. Filter by reward types (XLM, NFTs) or search for specific hunts by name or creator.",
       disableBeacon: true,
     },
     {
       target: "#balance-pill",
       placement: "bottom",
       title: "Track Your Earnings 💰",
-      content: "Your current Stellar balance is updated in real-time right here in the header once connected.",
+      content:
+        "Your current Stellar balance is updated in real-time right here in the header once connected.",
       disableBeacon: true,
     },
   ];
@@ -89,28 +109,32 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ tourType }) => {
       target: "body",
       placement: "center",
       title: "Creator Dashboard 🛠️",
-      content: "Welcome to the Creator Workspace. Here you can design, deploy, and fund your custom scavenger hunts, and monitor player engagement.",
+      content:
+        "Welcome to the Creator Workspace. Here you can design, deploy, and fund your custom scavenger hunts, and monitor player engagement.",
       disableBeacon: true,
     },
     {
       target: "#creator-create-button",
       placement: "bottom",
       title: "Create a Scavenger Hunt 📝",
-      content: "Design clues, hints, upload cover images, configure rules, and lock rewards (XLM/NFTs) inside a Soroban smart contract.",
+      content:
+        "Design clues, hints, upload cover images, configure rules, and lock rewards (XLM/NFTs) inside a Soroban smart contract.",
       disableBeacon: true,
     },
     {
       target: "#creator-templates-button",
       placement: "bottom",
       title: "Start from a Template 📑",
-      content: "Use our pre-made scavenger hunt templates to quickly launch local, educational, or virtual challenges.",
+      content:
+        "Use our pre-made scavenger hunt templates to quickly launch local, educational, or virtual challenges.",
       disableBeacon: true,
     },
     {
       target: "#reward-history-section",
       placement: "top",
       title: "Reward Distributions 💸",
-      content: "Check transaction history, see who claimed rewards, and view public explorer links for your hunt transactions on the Stellar ledger.",
+      content:
+        "Check transaction history, see who claimed rewards, and view public explorer links for your hunt transactions on the Stellar ledger.",
       disableBeacon: true,
     },
   ];
@@ -134,16 +158,9 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ tourType }) => {
     const { status, action, index } = data;
 
     if (action === "close") {
-      setRun(false);
-      if (dontShowAgain) {
-        localStorage.setItem(storageKey, "true");
-      }
+      finishTour(dontShowAgain);
     } else if (([STATUS.FINISHED, STATUS.SKIPPED] as string[]).includes(status)) {
-      setRun(false);
-      // Mark tour as seen when completed or skipped, or if explicit opt-out is checked
-      if (dontShowAgain || status === STATUS.FINISHED || status === STATUS.SKIPPED) {
-        localStorage.setItem(storageKey, "true");
-      }
+      finishTour(true);
     } else {
       setStepIndex(index);
     }
@@ -165,6 +182,8 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ tourType }) => {
     return (
       <div
         {...tooltipProps}
+        role="dialog"
+        aria-labelledby={`tour-step-${index}-title`}
         className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl p-6 max-w-sm w-[340px] text-slate-900 dark:text-white relative animate-in zoom-in-95 duration-200"
       >
         {/* Top row: step count / close */}
@@ -174,7 +193,8 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ tourType }) => {
           </span>
           <button
             {...closeProps}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1"
+            type="button"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3737A4]"
             aria-label="Close tour"
           >
             <X className="w-4 h-4" />
@@ -183,7 +203,10 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ tourType }) => {
 
         {/* Title */}
         {step.title && (
-          <h3 className="text-base font-bold bg-gradient-to-br from-[#3737A4] to-[#0C0C4F] dark:from-indigo-400 dark:to-purple-400 text-transparent bg-clip-text mb-2">
+          <h3
+            id={`tour-step-${index}-title`}
+            className="text-base font-bold bg-gradient-to-br from-[#3737A4] to-[#0C0C4F] dark:from-indigo-400 dark:to-purple-400 text-transparent bg-clip-text mb-2"
+          >
             {step.title}
           </h3>
         )}
@@ -201,9 +224,10 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ tourType }) => {
               type="checkbox"
               checked={dontShowAgain}
               onChange={(e) => setDontShowAgain(e.target.checked)}
-              className="rounded border-slate-300 dark:border-slate-700 text-[#3737A4] focus:ring-[#3737A4] w-3.5 h-3.5"
+              className="rounded border-slate-300 dark:border-slate-700 text-[#3737A4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3737A4] w-3.5 h-3.5"
+              aria-label="Don't show this tour again"
             />
-            <span>Don't show this tour again</span>
+            <span>Don&apos;t show this tour again</span>
           </label>
 
           <div className="flex items-center justify-between gap-2">
@@ -211,7 +235,8 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ tourType }) => {
             {continuous && !isLastStep ? (
               <button
                 {...skipProps}
-                className="text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                type="button"
+                className="text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors rounded px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3737A4]"
               >
                 Skip Tour
               </button>
@@ -224,7 +249,8 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ tourType }) => {
               {index > 0 && (
                 <button
                   {...backProps}
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                  type="button"
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3737A4]"
                 >
                   Back
                 </button>
@@ -233,7 +259,8 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ tourType }) => {
               {/* Next or Finish button */}
               <button
                 {...primaryProps}
-                className="px-4 py-1.5 bg-gradient-to-r from-[#3737A4] to-[#0C0C4F] dark:from-indigo-600 dark:to-indigo-800 text-white rounded-xl text-xs font-bold hover:opacity-90 transition-opacity shadow-sm"
+                type="button"
+                className="px-4 py-1.5 bg-gradient-to-r from-[#3737A4] to-[#0C0C4F] dark:from-indigo-600 dark:to-indigo-800 text-white rounded-xl text-xs font-bold hover:opacity-90 transition-opacity shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3737A4] focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
               >
                 {isLastStep ? "Finish" : "Next"}
               </button>
@@ -253,6 +280,8 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ tourType }) => {
       scrollToFirstStep
       steps={steps}
       tooltipComponent={TourTooltip}
+      // Joyride's default Esc behavior closes the tour; we then persist the
+      // opt-in ("don't show again") in handleJoyrideCallback.
       styles={{
         options: {
           arrowColor: "transparent",
