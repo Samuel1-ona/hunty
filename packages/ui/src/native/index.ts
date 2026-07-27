@@ -10,8 +10,8 @@
  * without pulling in the full React Native implementation.
  */
 export type {
+  SharedBadgeProps as BadgeProps,
   SharedButtonProps as ButtonProps,
   SharedCardProps as CardProps,
-  SharedBadgeProps as BadgeProps,
   SharedEmptyStateProps as EmptyStateProps,
 } from "@hunty/types"

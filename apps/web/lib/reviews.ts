@@ -160,44 +160,5 @@ export async function writeCompletions(
 
 export function getHuntsWithRatings(hunts: StoredHunt[]): StoredHunt[] {
   return applyRatingsToHunts(hunts, readReviewsSync());
-  const reviews = readReviewsSync()
-  const huntRatings: Record<number, { sum: number; count: number; diffSum: number; diffCount: number }> = {}
-  
-  const diffValues: Record<string, number> = { "Easy": 1, "Medium": 2, "Hard": 3, "Expert": 4 }
-
-  for (const review of reviews) {
-    if (review.moderated) continue
-    if (!huntRatings[review.huntId]) {
-      huntRatings[review.huntId] = { sum: 0, count: 0, diffSum: 0, diffCount: 0 }
-    }
-    huntRatings[review.huntId].sum += review.rating
-    huntRatings[review.huntId].count += 1
-    if (review.difficultyRating && diffValues[review.difficultyRating]) {
-      huntRatings[review.huntId].diffSum += diffValues[review.difficultyRating]
-      huntRatings[review.huntId].diffCount += 1
-    }
-  }
-
-  return hunts.map(hunt => {
-    const agg = huntRatings[hunt.id]
-    let averageRating = undefined
-    let reviewCount = 0
-    let averageDifficulty = undefined
-
-    if (agg && agg.count > 0) {
-      averageRating = Math.round((agg.sum / agg.count) * 10) / 10
-      reviewCount = agg.count
-    }
-    if (agg && agg.diffCount > 0) {
-      averageDifficulty = Math.round((agg.diffSum / agg.diffCount) * 10) / 10
-    }
-    
-    return {
-      ...hunt,
-      averageRating,
-      reviewCount,
-      averageDifficulty,
-    }
-  })
 }
  

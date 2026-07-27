@@ -99,7 +99,7 @@ export function WalletConnectModal({
       try {
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 
-        if (isMobile && wallet.platforms.includes("ios") || wallet.platforms.includes("android")) {
+        if (isMobile && (wallet.platforms.includes("ios") || wallet.platforms.includes("android"))) {
           setView("connecting")
           const { uri } = await connectWalletConnect()
           openWalletDeepLink(wallet.name, uri)
@@ -152,7 +152,7 @@ export function WalletConnectModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" showCloseButton>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {view === "list" && (

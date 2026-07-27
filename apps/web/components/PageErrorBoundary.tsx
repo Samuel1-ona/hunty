@@ -4,7 +4,7 @@ import { type ReactNode } from "react"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { logger } from "@/lib/logger"
 
-function PageErrorFallback({ error, reset }: { error: Error; reset: () => void }) {
+function PageErrorFallback({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <div className="min-h-screen bg-gradient-to-tr from-blue-100 via-purple-100 to-[#f9f9ff] dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 flex items-center justify-center p-8">
       <div className="fixed inset-0 pointer-events-none">

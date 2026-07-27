@@ -110,12 +110,12 @@ describe("HuntForm — clue validation (Zod + react-hook-form)", () => {
 
     it("renders the clue question input", () => {
       renderForm()
-      expect(screen.getByPlaceholderText(/title of the hunt/i)).toBeInTheDocument()
+      expect(screen.getByPlaceholderText(/riddle \/ question/i)).toBeInTheDocument()
     })
 
     it("renders the clue answer input", () => {
       renderForm()
-      expect(screen.getByPlaceholderText(/enter code to unlock/i)).toBeInTheDocument()
+      expect(screen.getByPlaceholderText(/answer \(use \| for multiple\)/i)).toBeInTheDocument()
     })
 
     it("renders the save clues button", () => {
@@ -147,7 +147,7 @@ describe("HuntForm — clue validation (Zod + react-hook-form)", () => {
       renderForm()
 
       // Leave question empty, fill only the answer
-      const answerInput = screen.getByPlaceholderText(/enter code to unlock/i)
+      const answerInput = screen.getByPlaceholderText(/answer \(use \| for multiple\)/i)
       await user.type(answerInput, "some-answer")
 
       // Submit the clue form
@@ -167,7 +167,7 @@ describe("HuntForm — clue validation (Zod + react-hook-form)", () => {
       const user = userEvent.setup()
       renderForm()
 
-      const questionInput = screen.getByPlaceholderText(/title of the hunt/i)
+      const questionInput = screen.getByPlaceholderText(/riddle \/ question/i)
       await user.type(questionInput, "What planet is closest to the Sun?")
 
       // Leave answer empty
@@ -190,10 +190,10 @@ describe("HuntForm — clue validation (Zod + react-hook-form)", () => {
       // Fill the default clue to allow it to be removed (need 0 clues)
       // The form enforces min(1) via Zod — removing all rows and submitting
       // should surface the "At least one clue is required" error.
-      const questionInput = screen.getByPlaceholderText(/title of the hunt/i)
+      const questionInput = screen.getByPlaceholderText(/riddle \/ question/i)
       await user.clear(questionInput)
 
-      const answerInput = screen.getByPlaceholderText(/enter code to unlock/i)
+      const answerInput = screen.getByPlaceholderText(/answer \(use \| for multiple\)/i)
       await user.clear(answerInput)
 
       const saveBtn = screen.getByRole("button", { name: /save clues?/i })
@@ -339,7 +339,7 @@ describe("HuntForm — clue validation (Zod + react-hook-form)", () => {
       const user = userEvent.setup()
       renderForm()
 
-      const questionInput = screen.getByPlaceholderText(/title of the hunt/i)
+      const questionInput = screen.getByPlaceholderText(/riddle \/ question/i)
       questionInput.focus()
 
       await user.keyboard("{Tab}")

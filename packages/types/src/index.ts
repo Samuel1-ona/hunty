@@ -12,3 +12,6 @@ export * from "./player"
 export * from "./reward"
 export * from "./achievement"
 export * from "./guards"
+export * from "./component-types"
+export * from "./token-types"
+

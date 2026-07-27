@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { render, screen, waitFor } from "@testing-library/react"
 import React from "react"
 import { beforeEach,describe, expect, it, vi } from "vitest"
@@ -19,6 +20,10 @@ vi.mock("@/lib/logger", () => ({
 
 vi.mock("@/components/icons/Medal", () => ({
   default: ({ position }: { position: number }) => <div data-testid={`medal-${position}`}>Medal {position}</div>,
+}))
+
+vi.mock("@/components/SeasonInfo", () => ({
+  SeasonInfo: () => <div data-testid="season-info" />,
 }))
 
 vi.mock("@/store/useStore", () => ({
@@ -72,10 +77,11 @@ describe("LeaderboardTable", () => {
     })
 
     it("renders empty state when no data is available", async () => {
-      render(<LeaderboardTable data={[]} isLoading={false} />)
+      ;(get_hunt_leaderboard as unknown as { mockResolvedValue: (v: unknown) => void }).mockResolvedValueOnce([])
+      render(<LeaderboardTable huntId={1} data={[]} isLoading={false} />)
       
       await waitFor(() => {
-        expect(screen.getByText(/Be the first to complete/)).toBeInTheDocument()
+        expect(screen.getByText(/No results for these filters/)).toBeInTheDocument()
       })
     })
 
@@ -205,12 +211,13 @@ describe("LeaderboardTable", () => {
     })
 
     it("renders snapshot of empty state", async () => {
+      ;(get_hunt_leaderboard as unknown as { mockResolvedValue: (v: unknown) => void }).mockResolvedValueOnce([])
       const { container } = render(
-        <LeaderboardTable data={[]} isLoading={false} />
+        <LeaderboardTable huntId={1} data={[]} isLoading={false} />
       )
       
       await waitFor(() => {
-        expect(screen.getByText(/Be the first to complete/)).toBeInTheDocument()
+        expect(screen.getByText(/No results for these filters/)).toBeInTheDocument()
       })
       
       expect(container).toMatchSnapshot()

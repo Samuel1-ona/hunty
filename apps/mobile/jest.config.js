@@ -15,11 +15,21 @@ module.exports = {
 
   // Transform expo/* packages since they ship ESM
   transformIgnorePatterns: [
-    'node_modules/(?!(expo|@expo|expo-notifications|expo-device|expo-constants|expo-secure-store|expo-modules-core|react-native|@react-native))',
+    'node_modules/(?!(.*\\.pnpm|expo.*|@expo.*|react-native.*|@react-native.*|@testing-library.*))',
   ],
 
-  // Manual mocks for native/expo modules
   moduleNameMapper: {
+    '^@sentry/react-native$': '<rootDir>/__mocks__/@sentry/react-native.js',
+    '^@react-native-async-storage/async-storage$': '<rootDir>/__mocks__/@react-native-async-storage/async-storage.js',
+    '^expo-crypto$': '<rootDir>/__mocks__/expo-crypto.js',
+    '^expo-local-authentication$': '<rootDir>/__mocks__/expo-local-authentication.js',
+    '^expo-random$': '<rootDir>/__mocks__/expo-random.js',
+    '^expo-secure-store$': '<rootDir>/__mocks__/expo-secure-store.js',
+    '^expo-notifications$': '<rootDir>/__mocks__/expo-notifications.js',
+    '^expo-constants$': '<rootDir>/__mocks__/expo-constants.js',
+    '^expo-device$': '<rootDir>/__mocks__/expo-device.js',
+    '^expo-modules-core$': '<rootDir>/__mocks__/expo-modules-core.js',
+    '^react-native$': '<rootDir>/__mocks__/react-native.js',
     '^@config/(.*)$': '<rootDir>/config/$1',
     '^@services/(.*)$': '<rootDir>/services/$1',
     '^@hooks/(.*)$': '<rootDir>/hooks/$1',

@@ -55,9 +55,11 @@ describe("serverTime", () => {
   })
 
   it("computes offset from serverNowMs", () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(4_000)
     const snap = computeOffsetFromServerPayload({ serverNowMs: 5_000 }, 4_000)
     expect(snap.offsetMs).toBe(1_000)
-    expect(getServerSyncedNowMs()).toBe(Date.now() + 1_000)
+    expect(getServerSyncedNowMs()).toBe(5_000)
   })
 
   it("accepts ISO timestamp payloads", () => {

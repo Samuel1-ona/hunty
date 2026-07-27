@@ -1,4 +1,5 @@
 import Server from "@stellar/stellar-sdk";
+import { createSorobanRpcOptimizer } from "./rpcOptimization";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const SorobanServer = Server as any;

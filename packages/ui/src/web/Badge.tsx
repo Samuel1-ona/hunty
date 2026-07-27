@@ -1,7 +1,8 @@
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "./utils"
 import type { SharedBadgeProps } from "@hunty/types"
+import { cva, type VariantProps } from "class-variance-authority"
+import * as React from "react"
+
+import { cn } from "./utils"
 
 const badgeVariants = cva(
   "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
@@ -26,7 +27,7 @@ const badgeVariants = cva(
 export interface BadgeProps
   extends React.ComponentProps<"span">,
     VariantProps<typeof badgeVariants>,
-    SharedBadgeProps {}
+    Omit<SharedBadgeProps, "variant"> {}
 
 export function Badge({ label, variant, className, testID, ...props }: BadgeProps) {
   return (

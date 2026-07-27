@@ -1,8 +1,9 @@
-import * as React from "react"
+import type { SharedButtonProps } from "@hunty/types"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
+import * as React from "react"
+
 import { cn } from "./utils"
-import type { SharedButtonProps } from "@hunty/types"
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring/50 cursor-pointer",
@@ -32,7 +33,7 @@ const buttonVariants = cva(
 export interface ButtonProps
   extends Omit<React.ComponentProps<"button">, "onPointerDown">,
     VariantProps<typeof buttonVariants>,
-    Omit<SharedButtonProps, "icon" | "onPress"> {
+    Omit<SharedButtonProps, "icon" | "onPress" | "variant" | "size"> {
   asChild?: boolean
   /** Icon rendered before label */
   icon?: React.ReactNode

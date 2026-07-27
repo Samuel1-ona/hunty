@@ -2,6 +2,13 @@
   "name": "hunty",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "overrides": {
+      "react": "19.0.0",
+      "react-dom": "19.0.0"
+    }
+  },
   "description": "Cross-platform scavenger hunt dApp using Next.js, Expo, IPFS, and Stellar/Soroban.",
   "scripts": {
     "dev": "turbo run dev",

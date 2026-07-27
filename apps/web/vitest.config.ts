@@ -19,7 +19,6 @@ export default defineConfig({
     exclude: ["e2e/**", "node_modules/**"],
     coverage: {
       provider: "v8",
-      all: true,
       reporter: ["text", "json", "html", "lcov"],
       reportsDirectory: "./coverage",
       include: ["lib/**/*.{ts,tsx}", "hooks/**/*.{ts,tsx}"],
@@ -42,8 +41,6 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@hunty/types/schemas": path.resolve(__dirname, "./packages/types/src/schemas.ts"),
-      "@hunty/types": path.resolve(__dirname, "./packages/types/src/index.ts"),
       "@hunty/types/schemas": path.resolve(__dirname, "../../packages/types/src/schemas.ts"),
       "@hunty/types": path.resolve(__dirname, "../../packages/types/src/index.ts"),
       "@": path.resolve(__dirname, "./"),

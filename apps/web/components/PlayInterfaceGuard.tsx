@@ -144,8 +144,9 @@ export function PlayInterfaceGuard({
             <RegistrationButton
               huntId={huntId}
               playerAddress={playerAddress}
-              registrationStatus={registrationStatus}
+              registrationStatus={{ ...registrationStatus, isWaitlisted: false }}
               onRegister={handleRegister}
+              onWaitlist={async () => {}}
             />
           </div>
         </div>

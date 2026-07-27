@@ -7,4 +7,10 @@ module.exports = {
     'react-hooks/exhaustive-deps': 'warn',
   },
   ignorePatterns: ['node_modules/', '.expo/', 'dist/', 'build/'],
+  overrides: [
+    {
+      files: ['**/__tests__/**/*', '**/__mocks__/**/*', '**/*.test.*', '**/*.spec.*', 'jest.config.*', 'jest.setup.*'],
+      env: { jest: true },
+    },
+  ],
 };

@@ -14,36 +14,32 @@ import {
   trackScreenView,
   trackUserAction,
 } from '@services/analytics';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 // ───────────────────────────────────────────────────────────
 // Mocks
 // ───────────────────────────────────────────────────────────
 
-vi.mock('@sentry/react-native', () => ({
-  init: vi.fn(),
-  close: vi.fn(),
-  captureMessage: vi.fn(),
-  captureException: vi.fn(),
-  addBreadcrumb: vi.fn(),
-  setUser: vi.fn(),
-  setTags: vi.fn(),
-  configureScope: vi.fn((cb) => cb({ setTag: vi.fn() })),
-  startTransaction: vi.fn(() => ({
-    setData: vi.fn(),
-    finish: vi.fn(),
+jest.mock('@sentry/react-native', () => ({
+  init: jest.fn(),
+  close: jest.fn(),
+  captureMessage: jest.fn(),
+  captureException: jest.fn(),
+  addBreadcrumb: jest.fn(),
+  setUser: jest.fn(),
+  setTags: jest.fn(),
+  configureScope: jest.fn((cb: any) => cb({ setTag: jest.fn() })),
+  startTransaction: jest.fn(() => ({
+    setData: jest.fn(),
+    finish: jest.fn(),
   })),
-  withScope: vi.fn((cb) => cb({ setExtra: vi.fn() })),
+  withScope: jest.fn((cb: any) => cb({ setExtra: jest.fn() })),
 }));
 
-vi.mock('@react-native-async-storage/async-storage', () => ({
-  default: {
-    getItem: vi.fn(),
-    setItem: vi.fn(),
-  },
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  getItem: jest.fn(),
+  setItem: jest.fn(),
 }));
 
-vi.mock('expo-constants', () => ({
+jest.mock('expo-constants', () => ({
   default: {
     expoConfig: { version: '1.0.0', ios: { buildNumber: '1' } },
     platform: { ios: {} },
@@ -57,12 +53,12 @@ vi.mock('expo-constants', () => ({
 
 describe('Analytics Service', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('initializeAnalytics', () => {
     it('initializes Sentry when DSN is provided and not opted out', async () => {
-      (AsyncStorage.getItem as ReturnType<typeof vi.fn>).mockResolvedValue('false');
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValue('false');
 
       await initializeAnalytics({ sentryDsn: 'https://test@sentry.io/1' });
 
@@ -75,7 +71,7 @@ describe('Analytics Service', () => {
     });
 
     it('does not initialize Sentry when opted out', async () => {
-      (AsyncStorage.getItem as ReturnType<typeof vi.fn>).mockResolvedValue('true');
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValue('true');
 
       await initializeAnalytics({ sentryDsn: 'https://test@sentry.io/1' });
 
@@ -83,7 +79,7 @@ describe('Analytics Service', () => {
     });
 
     it('does not initialize Sentry when DSN is missing', async () => {
-      (AsyncStorage.getItem as ReturnType<typeof vi.fn>).mockResolvedValue('false');
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValue('false');
 
       await initializeAnalytics({ sentryDsn: '' });
 
@@ -100,7 +96,7 @@ describe('Analytics Service', () => {
     });
 
     it('optIn persists status and re-initializes', async () => {
-      (AsyncStorage.getItem as ReturnType<typeof vi.fn>).mockResolvedValue('true');
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValue('true');
 
       await optIn();
 
@@ -108,14 +104,14 @@ describe('Analytics Service', () => {
     });
 
     it('getOptOutStatus returns true when stored', async () => {
-      (AsyncStorage.getItem as ReturnType<typeof vi.fn>).mockResolvedValue('true');
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValue('true');
 
       const result = await getOptOutStatus();
       expect(result).toBe(true);
     });
 
     it('getOptOutStatus returns false when not stored', async () => {
-      (AsyncStorage.getItem as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
 
       const result = await getOptOutStatus();
       expect(result).toBe(false);
@@ -210,17 +206,19 @@ describe('Analytics Service', () => {
   });
 
   describe('onNavigationStateChange', () => {
-    it('tracks screen view on route change', () => {
+    it('tracks screen view on route change', async () => {
+      await initializeAnalytics({ sentryDsn: 'https://test@sentry.io/1' });
       onNavigationStateChange('HuntDetail');
 
       expect(Sentry.addBreadcrumb).toHaveBeenCalled();
     });
 
-    it('does not track duplicate consecutive screens', () => {
-      onNavigationStateChange('HuntDetail');
-      onNavigationStateChange('HuntDetail');
+    it('does not track duplicate consecutive screens', async () => {
+      await initializeAnalytics({ sentryDsn: 'https://test@sentry.io/1' });
+      onNavigationStateChange('NewScreen');
+      onNavigationStateChange('NewScreen');
 
-      const calls = (Sentry.addBreadcrumb as ReturnType<typeof vi.fn>).mock.calls;
+      const calls = (Sentry.addBreadcrumb as jest.Mock).mock.calls;
       expect(calls.filter((c) => c[0]?.message === 'screen_view').length).toBe(1);
     });
   });

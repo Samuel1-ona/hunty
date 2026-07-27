@@ -518,7 +518,7 @@ function CreateGameContent() {
         emailNotifications: formValues.emailNotifications,
         is_private: formValues.isPrivate,
         sequential: formValues.sequential,
-        maxParticipants: formValues.hunts[0]?.maxParticipants,
+        maxParticipants: (formValues.hunts[0] as any)?.maxParticipants,
         coverImageCid,
         category,
         tags,

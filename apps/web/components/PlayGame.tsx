@@ -117,6 +117,7 @@ export function PlayGame({
   const hasHunts = hunts.length > 0;
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentCardIndex(0);
     setScore(0);
     setSolvedClues(new Set());
@@ -133,6 +134,7 @@ export function PlayGame({
     if (huntId == null || !playerAddress || !gameName) return;
 
     const attempt = ensureActiveAttempt(playerAddress, huntId, gameName);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAttemptId(attempt.id);
     attemptIdRef.current = attempt.id;
   }, [gameName, huntId, playerAddress]);
@@ -232,7 +234,6 @@ export function PlayGame({
       }
       const finalScore = score + pointsAwarded;
       if (playerAddress && attemptIdRef.current && huntId != null) {
-        const activeAttempt = getActiveAttempt(playerAddress, huntId);
         completeHuntAttempt(playerAddress, attemptIdRef.current, finalScore);
         attemptIdRef.current = null;
         setAttemptId(null);
@@ -401,7 +402,7 @@ export function PlayGame({
                 playerAddress={playerAddress}
                 attemptId={attemptId ?? undefined}
                 onScoreUpdate={handleScoreUpdate}
-                onUnlock={(pointsAwarded) => handleClueUnlock(currentCardIndex, pointsAwarded)}
+                onUnlock={(pointsAwarded: number) => handleClueUnlock(currentCardIndex, pointsAwarded)}
                 currentIndex={currentCardIndex + 1}
                 totalHunts={hunts.length}
                 points={hunts[currentCardIndex]?.points}

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach,describe, expect, it, vi } from "vitest"
@@ -30,6 +31,10 @@ describe("WalletConnectModal", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    Object.defineProperty(navigator, "userAgent", {
+      value: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+      configurable: true,
+    })
     mockConnect.mockResolvedValue({
       uri: "wc:test-uri",
       qrDataUrl: "data:image/png;base64,test",
@@ -81,12 +86,11 @@ describe("WalletConnectModal", () => {
   // ─── Interaction Tests ──────────────────────────────────────────
   describe("interaction", () => {
     it("shows QR code view when desktop wallet is selected", async () => {
-      const { user } = renderModal()
-      
       Object.defineProperty(navigator, "userAgent", {
         value: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
         configurable: true,
       })
+      const { user } = renderModal()
 
       await user.click(screen.getByLabelText("Connect Lobstr wallet"))
 
@@ -96,12 +100,11 @@ describe("WalletConnectModal", () => {
     })
 
     it("shows connecting view when mobile wallet is selected", async () => {
-      const { user } = renderModal()
-      
       Object.defineProperty(navigator, "userAgent", {
         value: "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0)",
         configurable: true,
       })
+      const { user } = renderModal()
 
       await user.click(screen.getByLabelText("Connect Lobstr wallet"))
 
@@ -133,20 +136,23 @@ describe("WalletConnectModal", () => {
     })
 
     it("copies URI to clipboard", async () => {
-      const { user } = renderModal()
-      
       Object.defineProperty(navigator, "userAgent", {
         value: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
         configurable: true,
       })
+      const { user } = renderModal()
 
       await user.click(screen.getByLabelText("Connect Lobstr wallet"))
       await waitFor(() => screen.getByText("Scan with Wallet"))
 
       const writeText = vi.fn().mockResolvedValue(undefined)
-      Object.assign(navigator, { clipboard: { writeText } })
+      Object.defineProperty(navigator, "clipboard", {
+        value: { writeText },
+        writable: true,
+        configurable: true,
+      })
 
-      await user.click(screen.getByRole("button", { name: /Copy URI/i }))
+      await user.click(screen.getByRole("button", { name: /Copy WalletConnect URI/i }))
 
       await waitFor(() => {
         expect(writeText).toHaveBeenCalledWith("wc:test-uri")
@@ -154,12 +160,11 @@ describe("WalletConnectModal", () => {
     })
 
     it("cancels connection and returns to list", async () => {
-      const { user } = renderModal()
-      
       Object.defineProperty(navigator, "userAgent", {
         value: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
         configurable: true,
       })
+      const { user } = renderModal()
 
       await user.click(screen.getByLabelText("Connect Lobstr wallet"))
       await waitFor(() => screen.getByText("Scan with Wallet"))
@@ -194,12 +199,11 @@ describe("WalletConnectModal", () => {
     })
 
     it("QR code has alt text", async () => {
-      const { user } = renderModal()
-      
       Object.defineProperty(navigator, "userAgent", {
         value: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
         configurable: true,
       })
+      const { user } = renderModal()
 
       await user.click(screen.getByLabelText("Connect Lobstr wallet"))
       await waitFor(() => screen.getByText("Scan with Wallet"))
@@ -209,17 +213,16 @@ describe("WalletConnectModal", () => {
     })
 
     it("copy button announces its purpose", async () => {
-      const { user } = renderModal()
-      
       Object.defineProperty(navigator, "userAgent", {
         value: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
         configurable: true,
       })
+      const { user } = renderModal()
 
       await user.click(screen.getByLabelText("Connect Lobstr wallet"))
       await waitFor(() => screen.getByText("Scan with Wallet"))
 
-      expect(screen.getByRole("button", { name: /Copy URI/i })).toBeInTheDocument()
+      expect(screen.getByRole("button", { name: /Copy WalletConnect URI/i })).toBeInTheDocument()
     })
   })
 })

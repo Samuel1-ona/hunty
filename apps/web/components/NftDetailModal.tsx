@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion"
+import { motion, useReducedMotion } from "framer-motion"
 import { Calendar, Download, ExternalLink, Send,Share2, Trophy, Zap } from "lucide-react"
 import Image from "next/image"
 import React from "react"
@@ -42,6 +42,7 @@ interface NftDetailModalProps {
 }
 
 export function NftDetailModal({ nft, isOpen, onClose, onTransfer }: NftDetailModalProps) {
+  const prefersReducedMotion = useReducedMotion()
   if (!nft) return null
 
   return (

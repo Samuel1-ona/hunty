@@ -1,7 +1,8 @@
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "./utils"
 import type { SharedCardProps } from "@hunty/types"
+import { cva, type VariantProps } from "class-variance-authority"
+import * as React from "react"
+
+import { cn } from "./utils"
 
 const cardVariants = cva("flex flex-col rounded-xl text-card-foreground", {
   variants: {
@@ -17,7 +18,7 @@ const cardVariants = cva("flex flex-col rounded-xl text-card-foreground", {
 export interface CardProps
   extends React.ComponentProps<"div">,
     VariantProps<typeof cardVariants>,
-    Omit<SharedCardProps, "children" | "onPress"> {
+    Omit<SharedCardProps, "children" | "onPress" | "variant"> {
   children: React.ReactNode
   onPress?: () => void
 }

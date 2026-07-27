@@ -1,16 +1,8 @@
 "use client"
 
-import { Core } from "@walletconnect/core"
-import type { SessionTypes } from "@walletconnect/types"
-import { buildApprovedNamespaces, getSdkError } from "@walletconnect/utils"
-import { Web3Wallet } from "@walletconnect/web3wallet"
-import QRCode from "qrcode"
-
 import { logger } from "@/lib/logger"
 
 const WALLET_CONNECT_SESSION_KEY = "hunty_wc_session"
-const STELLAR_NAMESPACE = "stellar"
-const STELLAR_CHAIN = "stellar:pubnet"
 
 export type WalletConnectSession = {
   topic: string
@@ -184,5 +176,18 @@ export function subscribeWalletConnect(callback: (state: WalletConnectState) => 
   callback(currentState)
   return () => {
     stateListeners = stateListeners.filter((listener) => listener !== callback)
+  }
+}
+
+/** Resets all module-level state – intended for use in tests only. */
+export function resetWalletConnect(): void {
+  currentSession = null
+  stateListeners = []
+  currentState = {
+    connected: false,
+    connecting: false,
+    session: null,
+    qrCode: null,
+    error: null,
   }
 }

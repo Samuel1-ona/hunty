@@ -1,21 +1,30 @@
-import { describe, it, expect } from 'vitest';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { describe, expect, it } from 'vitest';
 // @ts-expect-error supertest has no types installed
 import request from 'supertest';
-import { describe, expect,it } from 'vitest';
 
-import { GET as getFeatured } from '../../app/api/admin/featured/route';
-import { GET as getAnalytics } from '../../app/api/analytics/route';
-import { GET as getIpfs } from '../../app/api/ipfs/route';
-import { GET as getLeaderboard } from '../../app/api/v1/hunts/[id]/leaderboard/route';
-// Import handlers from the app directory.
-import { GET as getHunts } from '@/app/api/v1/hunts/route';
+import { GET as getFeatured } from '@/app/api/admin/featured/route';
+import { GET as getAnalytics } from '@/app/api/analytics/performance/route';
+import { POST as postIpfs } from '@/app/api/ipfs/route';
+import { GET as getLeaderboardOgImage } from '@/app/api/og/leaderboard/route';
 import { GET as getLeaderboard } from '@/app/api/v1/hunts/[id]/leaderboard/route';
 import { GET as getPublicLeaderboard } from '@/app/api/v1/hunts/[id]/leaderboard/public/route';
-import { GET as getLeaderboardOgImage } from '@/app/api/og/leaderboard/route';
-import { GET as getFeatured } from '@/app/api/admin/featured/route';
-import { POST as postIpfs } from '@/app/api/ipfs/route';
-import { GET as getAnalytics } from '@/app/api/analytics/performance/route';
-import { GET as getHunts } from '../../app/api/v1/hunts/route';
+import { GET as getHunts } from '@/app/api/v1/hunts/route';
+
+vi.mock("@/lib/contracts/hunt", () => ({
+  get_hunt_leaderboard: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock("next/og", () => ({
+  ImageResponse: class ImageResponse extends Response {
+    constructor() {
+      super("fake-image-data", {
+        status: 200,
+        headers: { "content-type": "image/png" },
+      });
+    }
+  },
+}));
 
 function handlerToExpress(handler: any) {
   return async (req: any, res: any) => {

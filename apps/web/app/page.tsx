@@ -26,56 +26,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { usePlayerCounts } from "@/hooks/usePlayerCounts";
 import { useRecentlyCompleted } from "@/hooks/useRecentlyCompleted";
 import { hankenGrotesk } from "@/lib/font";
-import { getAllHunts, getHunt, type StoredHunt } from "@/lib/huntStore";
+import { getAllHunts, getHunt, getHuntCapacity, getRemainingSpots, type StoredHunt } from "@/lib/huntStore";
 import { queryCachePolicy, queryKeys } from "@/lib/queryKeys";
 import type { PlayerCountResult } from "@/lib/types";
-"use client"
-
-import { useInfiniteQuery,useQueryClient } from "@tanstack/react-query"
-import { useWindowVirtualizer } from "@tanstack/react-virtual"
-import { ArrowRight, HelpCircle,Search, Trophy, X } from "lucide-react"
-import dynamic from "next/dynamic"
-import Image from "next/image"
-import Link from "next/link"
-import dynamic from "next/dynamic"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { X, ArrowRight, Trophy, Search, HelpCircle } from "lucide-react"
-import { Card, CardDescription, CardTitle } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { HuntCardSkeletonGrid } from "@/components/LoadingSkeletons"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Header } from "@/components/Header"
-import { getAllHunts, getHunt, type StoredHunt } from "@/lib/huntStore"
-import { getHuntCapacity, getRemainingSpots } from "@/lib/huntStore"
-import { LeaderboardTable } from "@/components/LeaderBoardTable"
-import { EmptyState } from "@/components/EmptyState"
-import { HuntOfTheWeekBanner } from "@/components/HuntOfTheWeekBanner"
-import { hankenGrotesk } from "@/lib/font"
-import { HuntCoverImage } from "@/components/HuntCoverImage"
-import { ErrorBoundary } from "@/components/ErrorBoundary"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-
-import { Footer } from "@/components/Footer"
-import { Header } from "@/components/Header"
-import { HuntCoverImage } from "@/components/HuntCoverImage"
-import { HuntOfTheWeekBanner } from "@/components/HuntOfTheWeekBanner"
-import { LeaderboardTable } from "@/components/LeaderBoardTable"
-import { HuntCardSkeletonGrid } from "@/components/LoadingSkeletons"
-import { Button } from "@/components/ui/button"
-import { Card, CardDescription, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
-import { usePlayerCounts } from "@/hooks/usePlayerCounts"
-import { useRecentlyCompleted } from "@/hooks/useRecentlyCompleted"
-import { hankenGrotesk } from "@/lib/font"
-import { getAllHunts, getHunt, type StoredHunt } from "@/lib/huntStore"
-import { queryCachePolicy, queryKeys } from "@/lib/queryKeys"
-import { StarRating } from "@/components/StarRating"
-import { FavoriteButton } from "@/components/FavoriteButton"
-import type { PlayerCountResult } from "@/lib/types"
 
 const OnboardingTour = dynamic(() => import("@/components/OnboardingTour"), {
   ssr: false,

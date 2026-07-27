@@ -1,7 +1,8 @@
-import * as React from "react"
-import { cn } from "./utils"
-import { Button } from "./Button"
 import type { SharedEmptyStateProps } from "@hunty/types"
+import * as React from "react"
+
+import { Button } from "./Button"
+import { cn } from "./utils"
 
 export interface EmptyStateProps extends SharedEmptyStateProps {
   className?: string

@@ -37,7 +37,7 @@ describe("tags", () => {
   })
 
   it("autocompletes from corpus", () => {
-    expect(autocompleteTags("mur", ["mural", "museum", "park"])).toEqual(
+    expect(autocompleteTags("mu", ["mural", "museum", "park"])).toEqual(
       expect.arrayContaining(["mural", "museum"]),
     )
   })

@@ -210,7 +210,7 @@ export function getRewardHistory(huntId: number): RewardReceipt[] {
     {
       id: `deposit_${huntId}`,
       huntId,
-      type: "deposit",
+      type: "deposit" as const,
       txHash: escrow.depositTxHash,
       amount: escrow.totalPool,
       from: escrow.creator,

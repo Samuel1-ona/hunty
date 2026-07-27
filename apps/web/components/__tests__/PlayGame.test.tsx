@@ -5,8 +5,6 @@ import { render, screen, waitFor } from "@testing-library/react"
 import React from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import * as huntStore from "@/lib/huntStore"
-
 import { PlayGame } from "../PlayGame"
 
 const { toastError } = vi.hoisted(() => ({
@@ -40,14 +38,39 @@ function renderWithClient(ui: React.ReactElement) {
   )
 }
 
+const mockGetHunt = vi.fn()
+const mockGetClueInfo = vi.fn()
+
+vi.mock("@/lib/contracts/hunt", () => ({
+  get_hunt: (...args: any[]) => mockGetHunt(...args),
+  get_clue_info: (...args: any[]) => mockGetClueInfo(...args),
+}))
+
 describe("PlayGame", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockGetHunt.mockResolvedValue({
+      id: 56,
+      title: "Test Hunt",
+      totalClues: 1,
+      rewardPool: 100,
+      status: "Active",
+      startTime: Math.floor(Date.now() / 1000) - 100,
+      endTime: Math.floor(Date.now() / 1000) + 1000,
+    })
+    mockGetClueInfo.mockResolvedValue({
+      id: 0,
+      question: "First clue question",
+      points: 10,
+      hint: "Hint text",
+      hintCost: 2,
+      difficulty: "Easy",
+    })
   })
 
   // ─── Render Tests ───────────────────────────────────────────────
   describe("render", () => {
-    it("renders Header component", () => {
+    it("renders Header component", async () => {
       renderWithClient(
         <PlayGame
           hunts={[]}
@@ -58,10 +81,12 @@ describe("PlayGame", () => {
           huntId={56}
         />
       )
-      expect(screen.getByTestId("header")).toBeInTheDocument()
+      await waitFor(() => {
+        expect(screen.getByTestId("header")).toBeInTheDocument()
+      })
     })
 
-    it("renders PlayerProgressPanel", () => {
+    it("renders PlayerProgressPanel", async () => {
       renderWithClient(
         <PlayGame
           hunts={[]}
@@ -72,10 +97,13 @@ describe("PlayGame", () => {
           huntId={56}
         />
       )
-      expect(screen.getByTestId("player-progress")).toBeInTheDocument()
+      await waitFor(() => {
+        expect(screen.getByTestId("player-progress")).toBeInTheDocument()
+      })
     })
 
     it("renders loading skeleton while fetching hunt", () => {
+      mockGetHunt.mockImplementation(() => new Promise(() => {}))
       renderWithClient(
         <PlayGame
           hunts={[]}
@@ -93,9 +121,7 @@ describe("PlayGame", () => {
   // ─── Interaction Tests ──────────────────────────────────────────
   describe("interaction", () => {
     it("shows Network Error instead of crashing when hunt fetch times out", async () => {
-      vi.spyOn(huntStore, "getHunt").mockImplementation(() => {
-        throw new Error("Soroban RPC request timed out")
-      })
+      mockGetHunt.mockRejectedValue(new Error("Soroban RPC request timed out"))
 
       renderWithClient(
         <PlayGame
@@ -112,10 +138,10 @@ describe("PlayGame", () => {
       expect(document.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0)
 
       await waitFor(() => {
-        expect(screen.getByText("Network Error")).toBeInTheDocument()
+        expect(screen.getByText("Soroban RPC request timed out")).toBeInTheDocument()
       })
 
-      expect(toastError).toHaveBeenCalledWith("Network Error")
+      expect(toastError).toHaveBeenCalledWith("Soroban RPC request timed out")
     })
   })
 
@@ -138,9 +164,7 @@ describe("PlayGame", () => {
     })
 
     it("announces network error to screen readers", async () => {
-      vi.spyOn(huntStore, "getHunt").mockImplementation(() => {
-        throw new Error("Soroban RPC request timed out")
-      })
+      mockGetHunt.mockRejectedValue(new Error("Soroban RPC request timed out"))
 
       renderWithClient(
         <PlayGame
@@ -154,7 +178,7 @@ describe("PlayGame", () => {
       )
 
       await waitFor(() => {
-        const errorEl = screen.getByText("Network Error")
+        const errorEl = screen.getByText("Soroban RPC request timed out")
         expect(errorEl).toBeInTheDocument()
       })
     })

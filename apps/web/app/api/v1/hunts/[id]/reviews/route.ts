@@ -82,7 +82,7 @@ export async function POST(
       playerAddress,
       rating: ratingVal,
       text: typeof text === "string" ? text.trim() : undefined,
-      difficultyRating: typeof difficultyRating === "string" ? difficultyRating : undefined,
+      difficultyRating: (typeof difficultyRating === "string" ? difficultyRating : undefined) as HuntReview["difficultyRating"],
       createdAt: Date.now(),
     }
 
