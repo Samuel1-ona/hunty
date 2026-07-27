@@ -14,17 +14,15 @@
 import {
   type Account,
   Operation,
+  rpc,
   type Transaction,
   TransactionBuilder,
 } from "@stellar/stellar-sdk"
 
-import {
-  getRequiredAddress,
-  NETWORK_PASSPHRASE,
-} from "@/lib/contracts/config"
+import { NETWORK_PASSPHRASE } from "@/lib/contracts/config"
 import { getHunt } from "@/lib/huntStore"
 import { logger } from "@/lib/logger"
-import { IpfsUploadError,MetadataValidationError } from "@/lib/nft/errors"
+import { IpfsUploadError, MetadataValidationError } from "@/lib/nft/errors"
 import { buildNftMetadata } from "@/lib/nft/metadataBuilder"
 import { uploadNftMetadata } from "@/lib/nft/metadataUploader"
 import type { NftMetadata } from "@/lib/nft/types"
@@ -102,10 +100,8 @@ export async function estimateMintFee(
   const wallet = getActiveWalletAdapter()
   const publicKey = await wallet.getPublicKey()
   const recipient = recipientAddress || publicKey
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const server = createSorobanServer() as any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const account = (await server.getAccount(publicKey)) as any
+  const server = createSorobanServer()
+  const account = await server.getAccount(publicKey)
 
   const tx = buildMintTransaction({
     account,
@@ -116,14 +112,13 @@ export async function estimateMintFee(
 
   try {
     const sim = await server.simulateTransaction(tx)
-    const simCost = (sim as { cost?: { cpuInsns?: number } }).cost
-    const cpu = Number(simCost?.cpuInsns ?? 0)
-    const resourceFee =
-      cpu > 0 ? Math.max(DEFAULT_FEE_STROOPS, Math.ceil(cpu / 100)) : DEFAULT_FEE_STROOPS
+    const resourceFee = rpc.Api.isSimulationSuccess(sim)
+      ? Math.max(DEFAULT_FEE_STROOPS, Number(sim.minResourceFee))
+      : DEFAULT_FEE_STROOPS
     return {
       feeStroops: resourceFee,
       feeXlm: resourceFee / 1e7,
-      simulated: Boolean(simCost),
+      simulated: rpc.Api.isSimulationSuccess(sim),
     }
   } catch (err) {
     logger.warn("estimateMintFee: simulation failed, using default", err)
@@ -178,7 +173,7 @@ async function mintHuntRewardNftInternal(input: NftMintInput): Promise<MintResul
   // Stage 1: Build metadata
   onStage?.("building_metadata")
   const metadata: NftMetadata = buildNftMetadata({
-    name: `Hunty Trophy — ${huntName} · Rank ${rank}`,
+    name: `Hunty Trophy â€” ${huntName} Â· Rank ${rank}`,
     description: `Reward NFT for completing ${huntName} on Hunty.`,
     imageCid: input.imageCid || PLACEHOLDER_IMAGE_CID,
     difficulty: "Unrated",
@@ -211,10 +206,8 @@ async function mintHuntRewardNftInternal(input: NftMintInput): Promise<MintResul
 
   // Stage 4: Build + sign the mint transaction
   onStage?.("signing")
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const server = createSorobanServer() as any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const account = (await server.getAccount(publicKey)) as any
+  const server = createSorobanServer()
+  const account = await server.getAccount(publicKey)
 
   let tx = buildMintTransaction({
     account,
@@ -227,11 +220,7 @@ async function mintHuntRewardNftInternal(input: NftMintInput): Promise<MintResul
   // Inject Soroban resource data from a fresh simulation when available so the
   // transaction carries valid Soroban auth/resources at submission time.
   try {
-    const sim = await server.simulateTransaction(tx)
-    if (sim && typeof server.prepareTransaction === "function") {
-      const prepared = await server.prepareTransaction(tx, sim)
-      if (prepared) tx = prepared
-    }
+    tx = await server.prepareTransaction(tx)
   } catch (err) {
     logger.warn("mintHuntRewardNft: simulate/prepare failed, submitting as-is", err)
   }
@@ -243,8 +232,12 @@ async function mintHuntRewardNftInternal(input: NftMintInput): Promise<MintResul
   onStage?.("submitting")
   let txHash: string
   try {
-    const result = await server.submitTransaction(signedXdr)
-    txHash = result?.hash ?? ""
+    const signedTransaction = TransactionBuilder.fromXDR(
+      signedXdr,
+      NETWORK_PASSPHRASE
+    )
+    const result = await server.sendTransaction(signedTransaction)
+    txHash = result.hash
   } catch (err) {
     // Fall back to a deterministic local tx id so the flow is still demoable
     // when the NFT contract is not yet deployed. Matches transfer.ts pattern.
@@ -278,7 +271,6 @@ function buildMintTransaction(opts: {
   metadataUri: string
   feeStroops?: number
 }): Transaction {
-  const nftContractAddress = getRequiredAddress("NFT_REWARD")
   const fee = String(opts.feeStroops ?? 100_000)
 
   return new TransactionBuilder(opts.account, {
@@ -288,13 +280,9 @@ function buildMintTransaction(opts: {
     .addOperation(
       Operation.manageData({
         name: `mint_nft:${opts.huntId}:${Date.now()}`,
-        value: JSON.stringify({
-          action: "mint_nft",
-          nft_contract: nftContractAddress,
-          recipient: opts.recipient,
-          hunt_id: opts.huntId,
-          metadata_uri: opts.metadataUri,
-        }),
+        // Stellar manage-data values are capped at 64 bytes. The previous JSON
+        // payload always exceeded that limit and failed before simulation.
+        value: opts.metadataUri.slice(0, 64),
       })
     )
     .setTimeout(180)
@@ -332,3 +320,4 @@ export function getMintReceipt(
     return null
   }
 }
+

@@ -1,10 +1,7 @@
 import * as Sentry from "@sentry/nextjs"
-import Server from "@stellar/stellar-sdk"
+import { rpc } from "@stellar/stellar-sdk"
 
 import { createSorobanRpcOptimizer } from "./rpcOptimization"
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const SorobanServer = Server as any;
 
 /**
  * Testnet network configuration
@@ -74,18 +71,16 @@ export function getSorobanNetworkType(): "testnet" | "mainnet" {
  * Creates a Soroban Server instance for the configured RPC URL.
  * Uses the same Server API as soroban-client (stellar-sdk is the maintained package).
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let sharedServer: any | null = null;
+let sharedServer: rpc.Server | null = null;
 let sharedServerRpcUrl: string | null = null;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function createSorobanServer(): any {
+export function createSorobanServer(): rpc.Server {
   const rpcUrl = getRpcUrl();
   if (sharedServer && sharedServerRpcUrl === rpcUrl) {
     return sharedServer;
   }
 
-  sharedServer = new SorobanServer(rpcUrl);
+  sharedServer = new rpc.Server(rpcUrl);
   sharedServerRpcUrl = rpcUrl;
   return sharedServer;
 }
@@ -138,3 +133,4 @@ export async function readSorobanContractState<T>(request: {
     throw err
   }
 }
+
