@@ -1,8 +1,10 @@
-// Generic modal with Escape-to-close support
+// Generic modal with Escape-to-close support and proper focus management
 
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
+
+import { useFocusTrap } from '@/lib/hooks/useFocusTrap';
 
 interface ModalProps {
   isOpen: boolean;
@@ -19,10 +21,11 @@ export default function Modal({
   children,
   size = 'md',
 }: ModalProps) {
-  const modalRef = useRef<HTMLDivElement>(null);
+  // Traps Tab focus inside the dialog and restores focus to the trigger on close.
+  const modalRef = useFocusTrap<HTMLDivElement>(isOpen);
 
-  // Close on Escape key
-  useEffect(() => {
+  // Escape closes the modal (in addition to focus trap, which is for Tab only).
+  React.useEffect(() => {
     if (!isOpen) return;
 
     const handleEscape = (e: KeyboardEvent) => {
@@ -35,50 +38,15 @@ export default function Modal({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
-  // Lock body scroll
-  useEffect(() => {
+  // Lock body scroll while open
+  React.useEffect(() => {
     if (isOpen) {
+      const prev = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+      return () => {
+        document.body.style.overflow = prev;
+      };
     }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
-
-  // Focus trap
-  useEffect(() => {
-    if (!isOpen || !modalRef.current) return;
-
-    const modal = modalRef.current;
-    const focusableElements = modal.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-    const firstElement = focusableElements[0];
-    const lastElement = focusableElements[focusableElements.length - 1];
-
-    const handleTabKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab') return;
-
-      if (e.shiftKey) {
-        if (document.activeElement === firstElement) {
-          e.preventDefault();
-          lastElement?.focus();
-        }
-      } else {
-        if (document.activeElement === lastElement) {
-          e.preventDefault();
-          firstElement?.focus();
-        }
-      }
-    };
-
-    // Focus first element
-    firstElement?.focus();
-
-    modal.addEventListener('keydown', handleTabKey);
-    return () => modal.removeEventListener('keydown', handleTabKey);
   }, [isOpen]);
 
   const sizeClasses = {
@@ -118,6 +86,7 @@ export default function Modal({
               {title}
             </h2>
             <button
+              type="button"
               onClick={onClose}
               className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               aria-label="Close modal"

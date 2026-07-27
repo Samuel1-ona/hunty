@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { NotificationPanel } from "@/components/NotificationPanel";
 import { Button } from "@/components/ui/button";
 import { useIsMounted } from "@/hooks/useIsMounted";
+import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
 import { useWallet } from "@/lib/context/WalletContext";
 import { getUnreadNotificationCount } from "@/lib/notifications/rankTracker";
 import {
@@ -80,17 +81,46 @@ const NAV_ITEMS = [
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function SearchBar({ open, onClose }: { open: boolean; onClose: () => void }) {
+function SearchBar({
+  open,
+  onClose,
+  previousFocusRef,
+}: {
+  open: boolean;
+  onClose: () => void;
+  previousFocusRef: React.RefObject<HTMLElement | null>;
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
+  // Shared focus trap handles Tab cycling. We pass previousFocusRef-driven
+  // restoration (not the trap's default) because we want to focus the input
+  // first, not the trap's auto-selected first element (the close button).
+  const containerRef = useFocusTrap<HTMLDivElement>(open, {
+    autoFocus: false,
+  });
 
+  // Move focus into the search input on open so SR users land on the field.
   useEffect(() => {
     if (open) inputRef.current?.focus();
   }, [open]);
 
+  // Restore focus to the trigger button after the overlay closes.
+  useEffect(() => {
+    if (!open && previousFocusRef.current) {
+      previousFocusRef.current.focus();
+      previousFocusRef.current = null;
+    }
+  }, [open, previousFocusRef]);
+
   if (!open) return null;
 
   return (
-    <div className="absolute inset-x-0 top-full mt-2 z-50 px-4 md:px-8">
+    <div
+      ref={containerRef}
+      className="absolute inset-x-0 top-full mt-2 z-50 px-4 md:px-8"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Search"
+    >
       <div className="max-w-2xl mx-auto bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 overflow-hidden">
         <div className="flex items-center gap-3 px-4 py-3">
           <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
@@ -99,13 +129,19 @@ function SearchBar({ open, onClose }: { open: boolean; onClose: () => void }) {
             type="search"
             aria-label="Search hunts, creators, rewards"
             placeholder="Search hunts, creators, rewards…"
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.preventDefault();
+                onClose();
+              }
+            }}
             className="flex-1 bg-transparent text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none text-base"
-            onKeyDown={(e) => e.key === "Escape" && onClose()}
           />
           <button
+            type="button"
             onClick={onClose}
             aria-label="Close search"
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3737A4]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -120,7 +156,7 @@ function SearchBar({ open, onClose }: { open: boolean; onClose: () => void }) {
                 key={tag}
                 href={`/?search=${encodeURIComponent(tag)}`}
                 onClick={onClose}
-                className="text-xs px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-[#3737A4]/10 hover:text-[#3737A4] dark:hover:text-indigo-400 transition-colors"
+                className="text-xs px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-[#3737A4]/10 hover:text-[#3737A4] dark:hover:text-indigo-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3737A4]"
               >
                 {tag}
               </Link>
@@ -134,12 +170,16 @@ function SearchBar({ open, onClose }: { open: boolean; onClose: () => void }) {
 
 function MegaMenu({ items }: { items: { label: string; href: string; desc: string }[] }) {
   return (
-    <div className="absolute left-1/2 -translate-x-1/2 top-full mt-3 w-64 z-50 bg-white dark:bg-slate-950 rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 p-2 animate-in fade-in slide-in-from-top-2 duration-150">
+    <div
+      className="absolute left-1/2 -translate-x-1/2 top-full mt-3 w-64 z-50 bg-white dark:bg-slate-950 rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 p-2 animate-in fade-in slide-in-from-top-2 duration-150"
+      role="menu"
+    >
       {items.map((item) => (
         <Link
           key={item.href + item.label}
           href={item.href}
-          className="flex flex-col gap-0.5 px-3 py-2.5 rounded-xl hover:bg-[#3737A4]/5 dark:hover:bg-indigo-900/20 group transition-colors"
+          role="menuitem"
+          className="flex flex-col gap-0.5 px-3 py-2.5 rounded-xl hover:bg-[#3737A4]/5 dark:hover:bg-indigo-900/20 group transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3737A4]"
         >
           <span className="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-[#3737A4] dark:group-hover:text-indigo-400 transition-colors">
             {item.label}
@@ -168,32 +208,56 @@ function MobileMenu({
   onConnectWallet: () => void;
   onDisconnect: () => void;
 }) {
+  const menuRef = useFocusTrap<HTMLDivElement>(open);
+
+  // Escape closes the mobile menu (handled here because focus trap alone only
+  // intercepts Tab). Radix Dialog handles its own Escape, but MobileMenu is a
+  // bare <div> overlay and needs the listener.
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white dark:bg-slate-950 overflow-y-auto">
+    <div
+      ref={menuRef}
+      className="fixed inset-0 z-50 flex flex-col bg-white dark:bg-slate-950 overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Mobile navigation"
+    >
       {/* Header row */}
       <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-white/5">
         <span className="text-2xl font-black bg-gradient-to-br from-[#2F2FFF] to-[#E87785] bg-clip-text text-transparent">
           Hunty
         </span>
         <button
+          type="button"
           onClick={onClose}
           aria-label="Close menu"
-          className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5"
+          className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3737A4]"
         >
           <X className="w-6 h-6 text-slate-700 dark:text-slate-300" />
         </button>
       </div>
 
       {/* Nav links */}
-      <nav className="flex flex-col gap-1 px-4 py-4">
+      <nav className="flex flex-col gap-1 px-4 py-4" aria-label="Mobile primary">
         {NAV_ITEMS.map(({ label, href, icon: Icon }) => (
           <Link
             key={href}
             href={href}
             onClick={onClose}
-            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-800 dark:text-slate-200 hover:bg-[#3737A4]/5 dark:hover:bg-indigo-900/20 hover:text-[#3737A4] dark:hover:text-indigo-400 font-semibold transition-colors"
+            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-800 dark:text-slate-200 hover:bg-[#3737A4]/5 dark:hover:bg-indigo-900/20 hover:text-[#3737A4] dark:hover:text-indigo-400 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3737A4]"
           >
             <Icon className="w-5 h-5" />
             {label}
@@ -223,11 +287,12 @@ function MobileMenu({
             <div className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-900">
               <WalletBalance variant="row" />
               <button
+                type="button"
                 onClick={() => {
                   onDisconnect();
                   onClose();
                 }}
-                className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-600 font-medium"
+                className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-600 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 rounded"
               >
                 <LogOut className="w-4 h-4" />
                 Disconnect
@@ -270,6 +335,13 @@ export function Header() {
   const notifRef = useRef<HTMLDivElement>(null);
   const megaTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Refs of the trigger buttons so we can restore focus when overlay closes.
+  const walletButtonRef = useRef<HTMLButtonElement | null>(null);
+  const notifButtonRef = useRef<HTMLButtonElement | null>(null);
+  const searchButtonRef = useRef<HTMLButtonElement | null>(null);
+  const hamburgerButtonRef = useRef<HTMLButtonElement | null>(null);
+  const searchPreviousFocusRef = useRef<HTMLElement | null>(null);
+
   // Sticky + shadow on scroll
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -305,6 +377,46 @@ export function Header() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  // Escape closes any open overlay; focus is restored by the open → !open
+  // transitions in the per-overlay effects below.
+  useEffect(() => {
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      if (searchOpen) {
+        event.preventDefault();
+        setSearchOpen(false);
+        return;
+      }
+      if (notifOpen) {
+        event.preventDefault();
+        setNotifOpen(false);
+        notifButtonRef.current?.focus();
+        return;
+      }
+      if (dropdownOpen) {
+        event.preventDefault();
+        setDropdownOpen(false);
+        walletButtonRef.current?.focus();
+        return;
+      }
+      if (mobileOpen) {
+        event.preventDefault();
+        setMobileOpen(false);
+        hamburgerButtonRef.current?.focus();
+      }
+    }
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [searchOpen, notifOpen, dropdownOpen, mobileOpen]);
+
+  // When the search overlay closes, restore focus to the trigger.
+  useEffect(() => {
+    if (!searchOpen && searchPreviousFocusRef.current) {
+      searchPreviousFocusRef.current.focus();
+      searchPreviousFocusRef.current = null;
+    }
+  }, [searchOpen]);
 
   const handleCopy = async () => {
     if (!publicKey) return;
@@ -363,18 +475,29 @@ export function Header() {
                 className="relative"
                 onMouseEnter={() => mega && openMega(label)}
                 onMouseLeave={() => mega && closeMega()}
+                onFocus={() => mega && openMega(label)}
+                onBlur={(event) => {
+                  // Close on blur only if focus leaves the entire nav-item subtree
+                  if (!mega) return;
+                  const next = event.relatedTarget as Node | null;
+                  if (next && event.currentTarget.contains(next)) return;
+                  closeMega();
+                }}
               >
                 <Link
                   href={href}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors",
+                    "flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3737A4]",
                     "text-slate-600 dark:text-slate-300 hover:text-[#3737A4] dark:hover:text-indigo-400 hover:bg-[#3737A4]/5 dark:hover:bg-indigo-900/20"
                   )}
+                  aria-haspopup={mega ? "menu" : undefined}
+                  aria-expanded={mega ? activeMega === label : undefined}
                 >
                   <Icon className="w-4 h-4" />
                   {label}
                   {mega && (
                     <ChevronDown
+                      aria-hidden="true"
                       className={cn(
                         "w-3.5 h-3.5 transition-transform duration-150",
                         activeMega === label && "rotate-180"
@@ -383,7 +506,10 @@ export function Header() {
                   )}
                 </Link>
                 {mega && activeMega === label && (
-                  <div onMouseEnter={() => openMega(label)} onMouseLeave={() => closeMega()}>
+                  <div
+                    onMouseEnter={() => openMega(label)}
+                    onMouseLeave={() => closeMega()}
+                  >
                     <MegaMenu items={mega} />
                   </div>
                 )}
@@ -395,12 +521,18 @@ export function Header() {
           <div className="flex items-center gap-2 ml-auto">
             {/* Search */}
             <button
+              ref={searchButtonRef}
+              type="button"
               onClick={() => {
+                searchPreviousFocusRef.current = searchButtonRef.current;
                 setSearchOpen((v) => !v);
                 setNotifOpen(false);
+                setDropdownOpen(false);
               }}
               aria-label="Search"
-              className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-[#3737A4] dark:hover:text-indigo-400 transition-colors"
+              aria-expanded={searchOpen}
+              aria-haspopup="dialog"
+              className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-[#3737A4] dark:hover:text-indigo-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3737A4]"
             >
               <Search className="w-5 h-5" />
             </button>
@@ -408,12 +540,17 @@ export function Header() {
             {/* Notification bell */}
             <div className="relative" ref={notifRef}>
               <button
+                ref={notifButtonRef}
+                type="button"
                 onClick={() => {
                   setNotifOpen((v) => !v);
                   setSearchOpen(false);
+                  setDropdownOpen(false);
                 }}
                 aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
-                className="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-[#3737A4] dark:hover:text-indigo-400 transition-colors"
+                aria-expanded={notifOpen}
+                aria-haspopup="dialog"
+                className="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-[#3737A4] dark:hover:text-indigo-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3737A4]"
               >
                 <Bell className="w-5 h-5" />
                 {unreadCount > 0 && (
@@ -438,7 +575,14 @@ export function Header() {
                 {/* Wallet button */}
                 <div className="relative" ref={dropdownRef}>
                   <Button
-                    onClick={() => setDropdownOpen((v) => !v)}
+                    ref={walletButtonRef}
+                    onClick={() => {
+                      setDropdownOpen((v) => !v);
+                      setNotifOpen(false);
+                      setSearchOpen(false);
+                    }}
+                    aria-haspopup="menu"
+                    aria-expanded={dropdownOpen}
                     className="border-2 border-transparent flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-900 hover:opacity-80 rounded-xl"
                     style={{
                       background:
@@ -455,6 +599,7 @@ export function Header() {
                     </span>
                     <ChevronDown
                       data-testid="wallet-chevron"
+                      aria-hidden="true"
                       className={cn(
                         "w-3.5 h-3.5 text-[#3737A4] transition-transform duration-150",
                         dropdownOpen && "rotate-180"
@@ -464,7 +609,11 @@ export function Header() {
 
                   {/* Wallet dropdown */}
                   {dropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-72 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950 shadow-xl z-50 overflow-hidden">
+                    <div
+                      role="menu"
+                      aria-label="Wallet options"
+                      className="absolute right-0 mt-2 w-72 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950 shadow-xl z-50 overflow-hidden"
+                    >
                       <div className="px-4 py-3 bg-gradient-to-r from-[#0C0C4F] to-[#4A4AFF] flex items-start gap-3">
                         {publicKey && (
                           <WalletIdenticon
@@ -485,9 +634,11 @@ export function Header() {
                       </div>
                       <div className="p-2 flex flex-col gap-1">
                         <button
+                          type="button"
+                          role="menuitem"
                           onClick={handleCopy}
                           aria-label="Copy wallet address"
-                          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-left"
+                          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3737A4]"
                         >
                           {copied ? (
                             <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
@@ -502,8 +653,9 @@ export function Header() {
                             href={getStellarAccountExplorerUrl(publicKey)}
                             target="_blank"
                             rel="noreferrer noopener"
+                            role="menuitem"
                             aria-label="View wallet address on Stellar explorer"
-                            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-left"
+                            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3737A4]"
                           >
                             <ExternalLink className="w-4 h-4 text-slate-400 flex-shrink-0" />
                             <span>View on explorer</span>
@@ -511,6 +663,8 @@ export function Header() {
                         )}
 
                         <button
+                          type="button"
+                          role="menuitem"
                           onClick={() => {
                             const type = window.location.pathname.includes("/creator")
                               ? "creator"
@@ -523,7 +677,7 @@ export function Header() {
                             setDropdownOpen(false);
                           }}
                           aria-label="Take onboarding tour"
-                          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-left"
+                          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3737A4]"
                         >
                           <HelpCircle className="w-4 h-4 text-slate-400 flex-shrink-0" />
                           <span>Take Tour</span>
@@ -531,8 +685,10 @@ export function Header() {
 
                         <div className="h-px bg-slate-100 dark:bg-white/5 mx-3" />
                         <button
+                          type="button"
+                          role="menuitem"
                           onClick={handleDisconnect}
-                          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-left font-medium"
+                          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-left font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                         >
                           <LogOut className="w-4 h-4 flex-shrink-0" />
                           Disconnect wallet
@@ -554,16 +710,24 @@ export function Header() {
 
             {/* Mobile hamburger */}
             <button
+              ref={hamburgerButtonRef}
+              type="button"
               onClick={() => setMobileOpen(true)}
               aria-label="Open menu"
-              className="md:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+              aria-haspopup="dialog"
+              aria-expanded={mobileOpen}
+              className="md:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3737A4]"
             >
               <Menu className="w-6 h-6" />
             </button>
           </div>
 
           {/* Search bar (drops below header) */}
-          <SearchBar open={searchOpen} onClose={() => setSearchOpen(false)} />
+          <SearchBar
+            open={searchOpen}
+            onClose={() => setSearchOpen(false)}
+            previousFocusRef={searchPreviousFocusRef}
+          />
         </div>
       </header>
 

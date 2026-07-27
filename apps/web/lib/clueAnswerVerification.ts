@@ -11,7 +11,7 @@ export function isSha256Hex(value: string): boolean {
 
 /**
  * Checks whether a candidate answer matches the stored clue answer using the
- * Soroban hashing scheme (see SECURITY- Hunt_answer_hashing.md), with fuzzy
+ * Soroban hashing scheme (see docs/security/answer-hashing.md), with fuzzy
  * matching for plaintext answers (and hashed exact/alternative variants).
  */
 export async function matchesClueAnswer(

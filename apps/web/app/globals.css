@@ -194,10 +194,45 @@
   will-change: opacity, transform;
 }
 
-/* WCAG 2.1 AA focus indicators — visible on all focusable elements */
+/* ─── Focus indicators ─────────────────────────────────────────────────────
+   WCAG 2.1 AA (2.4.7 Focus Visible) — the default `*:focus-visible` rule
+   applies a 2px ring around every focusable element using a theme-aware
+   indigo that meets the 3:1 contrast floor in both light and dark modes.
+
+   We intentionally use the CSS custom property (not `hsl(var(--ring))`)
+   because `--ring` is an oklch() triple and `hsl()` cannot accept that, so
+   the previous selector silently dropped on parse and left many elements
+   without any visible focus ring.
+   -------------------------------------------------------------------------- */
+
+:root {
+  /* Deep brand indigo. Against white surfaces the contrast is ~7.8:1 (AAA). */
+  --focus-ring-color: #3737a4;
+  /* Lighter wash for surfaces that already use the brand color, e.g. buttons. */
+  --focus-ring-on-brand: #ffffff;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+}
+
+.dark {
+  /* Lighter indigo so the ring clears the ~oklch(0.145 0 0) dark surface. */
+  --focus-ring-color: #a5b4fc;
+}
+
 *:focus-visible {
-  outline: 2px solid hsl(var(--ring));
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  /* Don't let the ring collapse to zero on elements with no border-radius. */
+  border-radius: inherit;
+}
+
+/* On gradient / brand-colored buttons the deep brand ring disappears into the
+   gradient. Use a white-with-offset ring instead so the ring stays visible.
+   The selectors match buttons that opt into a gradient via Tailwind classes. */
+button[class*="bg-gradient-to"]:focus-visible,
+button[class*="from-[#"]:focus-visible {
+  outline-color: var(--focus-ring-on-brand);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* Ensure minimum 4.5:1 contrast for text in dark mode */
