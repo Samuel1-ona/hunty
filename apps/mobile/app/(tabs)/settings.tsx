@@ -1,12 +1,15 @@
 import { ThemedButton, ThemedCustomText, ThemedView } from '@components/themed';
+import { SettingsSection } from '@components/settings/SettingsSection';
+import { SettingsRow } from '@components/settings/SettingsRow';
 import { useHaptics } from '@hooks/useHaptics';
-import type { StoredHunt } from '@lib/types';
+import type { StoredHunt } from '@hunty/types';
 import { useTheme } from '@providers/ThemeProvider';
 import { useToast } from '@providers/ToastProvider';
 import { getAllHunts } from '@store/huntStore';
 import { usePlayerStore, useWalletStore } from '@store/useStore';
 import type { StoredHunt } from '@hunty/types';
 import { useRouter } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 

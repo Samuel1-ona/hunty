@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/refs */
 /**
  * NotificationsProvider
  *
@@ -48,6 +49,7 @@ export function useNotificationsContext(): NotificationsContextValue {
 export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const router = useRouter();
   const isListeningRef = useRef(false);
+  const isListening = isListeningRef.current;
 
   useEffect(() => {
     // Configure handler as early as possible so foreground notifications show
@@ -128,7 +130,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [router]);
 
   return (
-    <NotificationsContext.Provider value={{ isListening: isListeningRef.current }}>
+    <NotificationsContext.Provider value={{ isListening }}>
       {children}
     </NotificationsContext.Provider>
   );

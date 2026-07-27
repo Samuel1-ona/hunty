@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useToast } from '@providers/ToastProvider';
 import {
   authenticateBiometric,
@@ -49,7 +50,7 @@ export function WalletSecurityProvider({ children }: { children: React.ReactNode
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authAttempts, setAuthAttempts] = useState(0);
-  const [lastActiveAt, setLastActiveAt] = useState(Date.now());
+  const [lastActiveAt, setLastActiveAt] = useState(() => Date.now());
 
   const refreshSecurityState = async () => {
     try {

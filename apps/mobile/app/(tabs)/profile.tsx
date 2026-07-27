@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { EmptyState } from '@components/EmptyState';
 import { HuntyRefreshControl } from '@components/HuntyRefreshControl';
 import { ThemedButton, ThemedCustomText, ThemedView } from '@components/themed';
@@ -203,6 +204,7 @@ export default function ProfileScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     await loadProfileData();
+
     setRefreshing(false);
   };
 

@@ -1,24 +1,22 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { usePlayerLocation } from '@app/hooks/usePlayerLocation';
 import { ClueMarkdownRenderer } from '@components/ClueMarkdownRenderer';
 import { EmptyState } from '@components/EmptyState';
+import { OfflineBanner } from '@components/OfflineBanner';
 import { QRScanner } from '@components/QRScanner';
 import { ThemedButton, ThemedCustomText, ThemedView } from '@components/themed';
 import { useHaptics } from '@hooks/useHaptics';
 import { matchesClueAnswer } from '@lib/clueAnswerVerification';
 import { verifyQrAgainstClue } from '@lib/qrCodeDecryptor';
-import type { Clue } from '@lib/types';
+import type { Clue } from '@hunty/types';
 import { useTheme } from '@providers/ThemeProvider';
 import { useToast } from '@providers/ToastProvider';
-import { getHuntClues } from '@store/huntStore';
+import { getHuntClues, queueClueAnswer } from '@store/huntStore';
 import { usePlayerStore, useWalletStore } from '@store/useStore';
-import type { Clue } from '@hunty/types';
-import { verifyQrAgainstClue } from '@lib/qrCodeDecryptor';
-import { matchesClueAnswer } from '@lib/clueAnswerVerification';
-import { useToast } from '@providers/ToastProvider';
-import { ClueMarkdownRenderer } from '@components/ClueMarkdownRenderer';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 
 import { verifyClueGeofence } from '@/lib/locationGate';
 
@@ -64,21 +62,8 @@ export default function PlayScreen() {
     void getHuntClues(currentProgress.hunt_id).then(setClues);
   }, [currentProgress?.hunt_id]);
 
-  if (!currentProgress?.hunt_id) {
-    return (
-      <EmptyState
-        icon="🎯"
-        title="Join a hunt first"
-        description="Register for an active hunt from the Hunts tab to unlock clue progress and transaction steps."
-        action={{
-          label: 'Browse Hunts',
-          onPress: () => router.push('/(tabs)/hunts'),
-        }}
-      />
-    );
-  }
-
-  const activeClueIndex = currentProgress.current_clue_index;
+  // All hooks must be called before any early return
+  const activeClueIndex = currentProgress?.current_clue_index ?? 0;
   const activeClue = clues[activeClueIndex];
   const allSolved = activeClueIndex >= clues.length;
 
@@ -93,6 +78,20 @@ export default function PlayScreen() {
 
     return `Clue ${activeClueIndex + 1} of ${clues.length}`;
   }, [activeClueIndex, allSolved, clues.length]);
+
+  if (!currentProgress?.hunt_id) {
+    return (
+      <EmptyState
+        icon="🎯"
+        title="Join a hunt first"
+        description="Register for an active hunt from the Hunts tab to unlock clue progress and transaction steps."
+        action={{
+          label: 'Browse Hunts',
+          onPress: () => router.push('/(tabs)/hunts'),
+        }}
+      />
+    );
+  }
 
   const submitClueAnswer = async (submittedAnswer: string, fromQr = false) => {
     if (!activeClue || !currentProgress?.hunt_id || isSubmitting) {

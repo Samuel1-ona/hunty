@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { ThemedButton, ThemedCustomText, ThemedInput } from '@components/themed';
 import {
   EMPTY_ANSWER_ERROR,
@@ -40,9 +41,10 @@ export function ClueTextAnswerModal({
 
   useEffect(() => {
     if (visible) {
-      resetForm();
+      setAnswer('');
+      setEmptyError('');
     }
-  }, [visible, resetForm]);
+  }, [visible]);
 
   const displayError = emptyError || externalError;
   const canSubmit = isValidClueAnswer(answer) && !isSubmitting;

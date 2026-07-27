@@ -1,3 +1,4 @@
+/* eslint-disable import/namespace */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 import {
@@ -20,21 +21,28 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Mocks
 // ───────────────────────────────────────────────────────────
 
-vi.mock('@sentry/react-native', () => ({
-  init: vi.fn(),
-  close: vi.fn(),
-  captureMessage: vi.fn(),
-  captureException: vi.fn(),
-  addBreadcrumb: vi.fn(),
-  setUser: vi.fn(),
-  setTags: vi.fn(),
-  configureScope: vi.fn((cb) => cb({ setTag: vi.fn() })),
-  startTransaction: vi.fn(() => ({
-    setData: vi.fn(),
-    finish: vi.fn(),
-  })),
-  withScope: vi.fn((cb) => cb({ setExtra: vi.fn() })),
-}));
+vi.mock('@sentry/react-native', () => {
+  const sentryMock = {
+    init: vi.fn(),
+    close: vi.fn(),
+    captureMessage: vi.fn(),
+    captureException: vi.fn(),
+    addBreadcrumb: vi.fn(),
+    setUser: vi.fn(),
+    setTags: vi.fn(),
+    configureScope: vi.fn((cb: (scope: { setTag: ReturnType<typeof vi.fn> }) => void) =>
+      cb({ setTag: vi.fn() }),
+    ),
+    startTransaction: vi.fn(() => ({
+      setData: vi.fn(),
+      finish: vi.fn(),
+    })),
+    withScope: vi.fn((cb: (scope: { setExtra: ReturnType<typeof vi.fn> }) => void) =>
+      cb({ setExtra: vi.fn() }),
+    ),
+  };
+  return { ...sentryMock, default: sentryMock };
+});
 
 vi.mock('@react-native-async-storage/async-storage', () => ({
   default: {

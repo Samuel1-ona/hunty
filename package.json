@@ -22,8 +22,12 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "apps/mobile/**/*.{js,jsx,ts,tsx,json,md}": [
-      "npx prettier --write"
+    "apps/mobile/**/*.{ts,tsx}": [
+      "eslint --config apps/mobile/eslint.config.mjs --fix --max-warnings=0",
+      "prettier --write"
+    ],
+    "apps/mobile/**/*.{js,jsx,json,md}": [
+      "prettier --write"
     ],
     "apps/web/**/*.{ts,tsx}": [
       "eslint --fix --max-warnings=0",

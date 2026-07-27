@@ -1,4 +1,4 @@
-import { type AnalyticsConfig,analyticsConfig } from '@config/analytics';
+import { type AnalyticsConfig, analyticsConfig } from '@config/analytics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 
@@ -215,6 +215,7 @@ export function trackScreenView(screenName: string, previousScreen?: string): vo
   });
 
   // Also set the current route in Sentry scope for crash context
+  // eslint-disable-next-line import/namespace
   Sentry.configureScope((scope) => {
     scope.setTag('current_screen', screenName);
   });
@@ -248,6 +249,7 @@ export function trackAppStart(durationMs: number, coldStart = true): void {
   });
 
   // Also send as a Sentry transaction for performance monitoring
+  // eslint-disable-next-line import/namespace
   const transaction = Sentry.startTransaction({
     name: 'app_start',
     op: 'app.lifecycle',
@@ -266,6 +268,7 @@ export function trackScreenLoad(screenName: string, durationMs: number): void {
     params: { duration_ms: Math.round(durationMs) },
   });
 
+  // eslint-disable-next-line import/namespace
   const transaction = Sentry.startTransaction({
     name: `screen_load:${screenName}`,
     op: 'ui.load',
@@ -281,6 +284,7 @@ export function startPerformanceSpan(
   operation: string,
   description: string,
 ): ReturnType<typeof Sentry.startTransaction> {
+  // eslint-disable-next-line import/namespace
   return Sentry.startTransaction({ name: description, op: operation });
 }
 

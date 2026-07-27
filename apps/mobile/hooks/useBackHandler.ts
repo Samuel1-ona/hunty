@@ -5,6 +5,7 @@ import { registerDiagnostic, unregisterDiagnostic } from '../lib/memoryDiagnosti
 
 export function useBackHandler(handler: () => boolean) {
   const handlerRef = useRef(handler);
+  // eslint-disable-next-line react-hooks/refs
   handlerRef.current = handler;
 
   useEffect(() => {

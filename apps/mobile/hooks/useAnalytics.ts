@@ -1,5 +1,5 @@
 import { useAnalytics as useAnalyticsContext } from '@providers/AnalyticsProvider';
-import { useCallback, useEffect,useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 /**
  * Hook for tracking screen-specific analytics with automatic
@@ -77,11 +77,13 @@ export function useTrackableAction<T extends (...args: unknown[]) => unknown>(
 ): T {
   const { trackAction } = useAnalyticsContext();
 
-  return useCallback(
-    ((...args: unknown[]) => {
+  const trackedHandler = useCallback(
+    (...args: unknown[]) => {
       trackAction(actionName, target);
       return handler(...args);
-    }) as T,
+    },
     [actionName, handler, target, trackAction],
-  );
+  ) as T;
+
+  return trackedHandler;
 }

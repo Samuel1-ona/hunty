@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/immutability */
 import { ThemedCustomText } from '@components/themed';
 import { useTheme } from '@providers/ThemeProvider';
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';

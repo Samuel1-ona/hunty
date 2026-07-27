@@ -2,14 +2,14 @@ import '../global.css';
 
 import { MemoryDiagnosticsOverlay } from '@components/MemoryDiagnosticsOverlay';
 import { StackHeader } from '@components/navigation/StackHeader';
-import { ThemedButton,ThemedCustomText } from '@components/themed';
-import { initializeSentry,Sentry } from '@config/sentry';
+import { ThemedButton, ThemedCustomText } from '@components/themed';
+import { initializeSentry, Sentry } from '@config/sentry';
 import { useBackHandler } from '@hooks/useBackHandler';
 import { useSyncQueue } from '@hooks/useSyncQueue';
 import { ModalProvider } from '@providers/ModalProvider';
 import { NotificationsProvider } from '@providers/NotificationsProvider';
 import ReactQueryProvider from '@providers/ReactQueryProvider';
-import { useTheme } from '@providers/ThemeProvider';
+import { ThemeProvider, useTheme } from '@providers/ThemeProvider';
 import { ToastProvider, useToast } from '@providers/ToastProvider';
 import { WalletSecurityProvider } from '@providers/WalletSecurityProvider';
 import { Web3Provider } from '@providers/Web3Provider';

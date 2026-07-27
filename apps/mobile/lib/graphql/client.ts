@@ -2,7 +2,7 @@ import env from '@config/env';
 
 export interface GraphQLResponse<T> {
   data?: T;
-  errors?: Array<{ message: string }>;
+  errors?: { message: string }[];
 }
 
 export async function graphqlRequest<T>(

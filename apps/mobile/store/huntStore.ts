@@ -5,17 +5,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import type { Clue, HuntStatus, StoredHunt } from '@hunty/types';
-
-import type { HuntStatus, StoredHunt, Clue } from '@lib/types';
-import * as SecureStore from 'expo-secure-store';
 import { scheduleHuntExpiryNotification } from '@utils/huntNotifications';
-import type { HuntStatus, StoredHunt, Clue } from "@hunty/types";
-import * as SecureStore from "expo-secure-store";
-import type { Clue, HuntStatus, StoredHunt } from '@lib/types';
-import type { Clue,HuntStatus, StoredHunt } from "@lib/types";
-import { scheduleHuntExpiryNotification } from "@utils/huntNotifications";
-import * as SecureStore from 'expo-secure-store';
-import * as SecureStore from "expo-secure-store";
 const HUNTS_KEY = 'hunty_hunts';
 const CLUES_KEY = 'hunty_clues';
 
@@ -239,7 +229,7 @@ export async function queueClueAnswer(
   try {
     const existing = await AsyncStorage.getItem('hunty_clue_queue');
     const queue = existing
-      ? (JSON.parse(existing) as Array<{ huntId: number; clueId: number; answer: string }>)
+      ? (JSON.parse(existing) as { huntId: number; clueId: number; answer: string }[])
       : [];
     queue.push({ huntId, clueId, answer });
     await AsyncStorage.setItem('hunty_clue_queue', JSON.stringify(queue));
@@ -250,7 +240,7 @@ export async function queueClueAnswer(
 
 // Retrieve queued answers
 export async function getQueuedAnswers(): Promise<
-  Array<{ huntId: number; clueId: number; answer: string }>
+  { huntId: number; clueId: number; answer: string }[]
 > {
   try {
     const data = await AsyncStorage.getItem('hunty_clue_queue');
