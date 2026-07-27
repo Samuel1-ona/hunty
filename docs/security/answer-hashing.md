@@ -19,8 +19,9 @@ hashed = SHA256( normalized_answer + `${huntId}_${clueId}` )
 Implementation Notes
 --------------------
 - Client-side (creation): when a creator adds a clue, the client persists the clue locally to obtain a stable `clueId`, then computes `hashed` using the scheme above and submits the hashed value to the contract via the existing `add_clue` flow. The local storage record is updated to contain the hashed answer.
-- Client-side (verification): when a player submits an answer, the client sends the plain-text answer to the contract invocation (or the helper `submitAnswer` in the mock). The contract (or the server-side verification mock) normalizes the incoming answer, appends the same salt (`huntId_clueId`) and computes `SHA256(normalized + salt)` to compare with the stored hashed value.
-- Backwards compatibility: the contract verification accepts both legacy plain-text stored answers (pipe-separated list) and the new hashed form. If the stored answer matches the hex-SHA256 pattern, the verifier checks the computed hash; otherwise it falls back to comparing normalized plaintext answers.
+- Client-side (verification): when a player submits an answer, the web client normalizes the candidate, computes the same `SHA256(normalized + `${huntId}_${clueId}`)` and compares it against the stored hash. The end-to-end implementation lives in [`apps/web/lib/clueAnswerVerification.ts`](../../apps/web/lib/clueAnswerVerification.ts) — see `matchesClueAnswer` for the hashed path and the legacy plaintext/fuzzy fallback.
+- Contract / server-side (verification): the contract (or the server-side verification mock) also normalizes the incoming answer, appends the same salt (`${huntId}_${clueId}`) and computes `SHA256(normalized + salt)` to compare with the stored hashed value.
+- Backwards compatibility: the contract verification accepts both legacy plain-text stored answers (pipe-separated list) and the new hashed form. If the stored answer matches the hex-SHA256 pattern, the verifier checks the computed hash; otherwise it falls back to comparing normalized plaintext answers. React-native / mobile parity of this flow is still handled by the legacy helper `submitAnswer` in the mock.
 
 Security Considerations
 -----------------------
@@ -44,6 +45,12 @@ Migration / Testing
 
 References
 ----------
-- Code: `lib/crypto.ts` (cross-env SHA-256 helper)
-- Submission & verification: `lib/contracts/hunt.ts`
-- Local storage helpers: `lib/huntStore.ts`
+- Cross-env SHA-256 helper: [`apps/web/lib/crypto.ts`](../../apps/web/lib/crypto.ts)
+- Client-side verification (hash + fuzzy matching): [`apps/web/lib/clueAnswerVerification.ts`](../../apps/web/lib/clueAnswerVerification.ts)
+- Contract submission helpers: [`apps/web/lib/contracts/hunt.ts`](../../apps/web/lib/contracts/hunt.ts)
+- Local storage helpers: [`apps/web/lib/huntStore.ts`](../../apps/web/lib/huntStore.ts)
+
+Tests
+-----
+- [`apps/web/lib/__tests__/crypto.test.ts`](../../apps/web/lib/__tests__/crypto.test.ts)
+- [`apps/web/lib/__tests__/huntStore.test.ts`](../../apps/web/lib/__tests__/huntStore.test.ts)
