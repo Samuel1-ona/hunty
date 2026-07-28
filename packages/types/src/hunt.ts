@@ -7,7 +7,9 @@ import type { Reward, RewardType } from "./reward";
 export type HuntStatus = "Active" | "Completed" | "Draft" | "Cancelled";
 
 /** Broad hunt category used in discovery filters. */
-export type HuntCategory = "Urban" | "Campus" | "Office" | "Museum" | "General";
+export type HuntCategory = "Urban" | "Campus" | "Office" | "Museum" | "General"
+  | "adventure" | "education" | "city" | "nature" | "history"
+  | "food" | "art" | "sports" | "mystery" | "family";
 
 /** Overall hunt difficulty tag used in discovery filters. */
 export type HuntDifficulty = "Easy" | "Medium" | "Hard";
@@ -30,6 +32,8 @@ export interface StoredHunt {
   cluesCount: number;
   /** Broad hunt category used in discovery filters. */
   category?: HuntCategory;
+  /** Free-form user-defined tags for enhanced discovery. */
+  tags?: string[];
   /** Overall hunt difficulty tag used in discovery filters. */
   difficulty?: HuntDifficulty;
   status: HuntStatus;
