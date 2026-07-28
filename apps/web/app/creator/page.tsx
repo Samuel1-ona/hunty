@@ -1,5 +1,11 @@
 "use client";
 
+import { ArrowLeft, BarChart3, HelpCircle,Pencil } from "lucide-react"
+import dynamic from "next/dynamic"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { ArrowLeft, Pencil, BarChart3, HelpCircle, Archive, Trash2, RefreshCw, CheckCircle, AlertTriangle, Copy } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
 import {
   AlertTriangle,
   Archive,
@@ -31,6 +37,15 @@ import {
 
 const OnboardingTour = dynamic(() => import("@/components/OnboardingTour"), {
   ssr: false,
+})
+import { Header } from "@/components/Header"
+import { RewardHistorySection } from "@/components/RewardHistorySection"
+import { useWallet } from "@/lib/context/WalletContext"
+import type { StoredHunt } from "@/lib/types"
+import { getHuntsByCreator, getArchivedHunts, getSoftDeletedHunts, hideHuntsFromPublic, unhideHuntsFromPublic, softDeleteHunts, restoreHunts, permanentDeleteHunts, duplicateHunt } from "@/lib/huntStore"
+import { fetchCreatorRewardHistory } from "@/lib/rewardHistory"
+import { DraftListPanel } from "@/components/DraftListPanel"
+import { getHuntsByCreator } from "@/lib/huntStore"
 });
 import { Header } from "@/components/Header";
 import { RewardHistorySection } from "@/components/RewardHistorySection";
@@ -446,6 +461,30 @@ export default function CreatorPage() {
                               Live Statistics
                             </span>
                           )}
+                            {activeTab === "active" && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    const newHunt = duplicateHunt(hunt.id)
+                                    if (newHunt) {
+                                      router.push(`/hunty?edit=${newHunt.id}`)
+                                    }
+                                  }}
+                                  className="h-6 w-6 p-0 text-slate-500 hover:text-indigo-600"
+                                  title="Duplicate"
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleAction("archive", [hunt.id])
+                                  }}
                           {/* Individual action buttons */}
                           {activeTab === "active" && (
                             <>

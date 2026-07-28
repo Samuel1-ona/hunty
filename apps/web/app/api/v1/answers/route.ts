@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { z } from "zod"
 
 import {
   calculateScore,
@@ -16,6 +17,15 @@ import { ForbiddenError, NotFoundError, RateLimitError, ValidationError } from "
 import { withErrorHandling } from "@/lib/api/withErrorHandling"
 import { recordHintUsage } from "@/lib/analytics"
 
+const answerSchema = z.object({
+  huntId: z.number().int().positive(),
+  clueId: z.number().int().positive(),
+  wallet: z.string().min(56).max(56),
+  answer: z.string().min(1).max(200).trim(),
+  hintsUsed: z.number().int().min(0).max(3).optional().default(0),
+  clientTimestamp: z.number().optional(),
+})
+
 export const POST = withErrorHandling(async (req: Request) => {
   const ip = getIP(req)
 
@@ -27,38 +37,20 @@ export const POST = withErrorHandling(async (req: Request) => {
     return rateLimitResponse(ipReset)
   }
 
-  let body: {
-    huntId?: number
-    clueId?: number
-    answer?: string
-    wallet?: string
-    clientTimestamp?: number
-    /** Number of progressive hints the player revealed before submitting. */
-    hintsUsed?: number
-  }
+  let body: unknown
   try {
     body = await req.json()
   } catch {
     throw new ValidationError("Invalid request body")
   }
 
-  const { huntId, clueId, answer, wallet, clientTimestamp, hintsUsed } = body
-
-  if (!huntId || typeof huntId !== "number") {
-    throw new ValidationError("huntId is required", { field: "huntId" })
-  }
-  if (!clueId || typeof clueId !== "number") {
-    throw new ValidationError("clueId is required", { field: "clueId" })
-  }
-  if (!answer || typeof answer !== "string" || answer.trim().length === 0) {
-    throw new ValidationError("answer is required", { field: "answer" })
-  }
-  if (!wallet || typeof wallet !== "string" || wallet.trim().length === 0) {
-    throw new ValidationError("wallet is required", { field: "wallet" })
+  const parsed = answerSchema.safeParse(body)
+  if (!parsed.success) {
+    const field = parsed.error.issues[0]?.path?.[0]
+    throw new ValidationError(parsed.error.issues[0]?.message ?? "Validation failed", { field })
   }
 
-  // Clamp hintsUsed to a sane range (0-3) — never trust the client blindly
-  const validatedHintsUsed = Math.min(3, Math.max(0, typeof hintsUsed === "number" ? Math.floor(hintsUsed) : 0))
+  const { huntId, clueId, answer, wallet, clientTimestamp, hintsUsed: validatedHintsUsed } = parsed.data
 
   if (isBanned(wallet, ip)) {
     throw new ForbiddenError("Account is banned due to suspicious activity")
@@ -78,7 +70,7 @@ export const POST = withErrorHandling(async (req: Request) => {
 
   trackClueSubmission(wallet, huntId, clueId)
 
-  const correct = await verifyAnswer(huntId, clueId, answer.trim())
+  const correct = await verifyAnswer(huntId, clueId, answer)
 
   const anomalyFlags = detectAnomalies(wallet, ip, huntId, clueId, correct)
 
@@ -89,7 +81,7 @@ export const POST = withErrorHandling(async (req: Request) => {
     clueId,
     wallet,
     ip,
-    answer.trim(),
+    answer,
     correct,
     clientTimestamp ?? null,
     score,

@@ -5,7 +5,7 @@ import { Star,Trophy } from "lucide-react";
 import Image from "next/image";
 import React, { useMemo, useState } from "react";
 
-import { EmptyState } from "@/components/EmptyState";
+import { EmptyState } from "@/components/QueryState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {

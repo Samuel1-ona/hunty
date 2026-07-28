@@ -6,6 +6,7 @@ import {
   getHuntProgress,
 } from "@/lib/huntStore";
 import { withSorobanRpcRetry } from "@/lib/soroban/rpcRetry";
+import { pollTransactionStatus } from "@/lib/soroban/contractHelpers";
 import { normalizeNetworkError, AnswerIncorrectError, SequentialClueError } from "./errors";
 import { SOROBAN_RPC_URL, NETWORK_PASSPHRASE } from "./config";
 import { getActiveWalletAdapter } from "@/lib/walletAdapter";
@@ -526,58 +527,14 @@ export async function get_clue_info(huntId: number, clueId: number): Promise<Clu
 /**
  * Polls the Soroban RPC for transaction inclusion.
  * Resolves to true if successful, throws if failed or timed out.
+ *
+ * Delegates to the centralised `pollTransactionStatus` helper from
+ * `contractHelpers`, which handles both SDK-native and raw JSON-RPC fallback,
+ * as well as development mock transactions.
  */
 export async function pollTransaction(txHash: string): Promise<boolean> {
   if (typeof window === "undefined") return true;
-  if (txHash.startsWith("mock_tx_")) {
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    return true;
-  }
-
-  const server = new Server(SOROBAN_RPC_URL);
-  const maybeServer = server as typeof server & {
-    getTransaction?: (hash: string) => Promise<{ status: string }>;
-  };
-
-  for (let i = 0; i < 15; i++) {
-    try {
-      // Try using stellar-sdk SorobanRpc method if available
-      if (typeof maybeServer.getTransaction === "function") {
-        const res = await maybeServer.getTransaction(txHash);
-        if (res && res.status !== "NOT_FOUND" && res.status !== "PENDING") {
-          if (res.status === "SUCCESS") return true;
-          throw new Error(`Transaction failed with status: ${res.status}`);
-        }
-      } else {
-        // Fallback to raw JSON-RPC
-        const rpcRes = await fetch(SOROBAN_RPC_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            jsonrpc: "2.0",
-            id: 1,
-            method: "getTransaction",
-            params: { hash: txHash },
-          }),
-        }).then((r) => r.json());
-
-        if (rpcRes?.result) {
-          const status = rpcRes.result.status;
-          if (status !== "NOT_FOUND" && status !== "PENDING") {
-            if (status === "SUCCESS") return true;
-            throw new Error(`Transaction failed with status: ${status}`);
-          }
-        }
-      }
-    } catch (e: unknown) {
-      if (e instanceof Error && e.message.includes("Transaction failed")) {
-        throw e;
-      }
-      logger.warn("Polling error:", e);
-    }
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-  }
-  throw new Error("Transaction polling timed out after 30 seconds");
+  return pollTransactionStatus(txHash, { maxAttempts: 15, pollInterval: 2000 });
 }
 
 async function saveProgressToServer(

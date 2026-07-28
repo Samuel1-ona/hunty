@@ -12,8 +12,15 @@ import {
 } from "@/lib/anti-cheat"
 import { NotFoundError, ValidationError } from "@/lib/api/errors"
 import { withErrorHandling } from "@/lib/api/withErrorHandling"
+import { assertAdminAuth } from "@/lib/api/adminAuth"
 
 export const GET = withErrorHandling(async (req: Request) => {
+  const adminKey = req.headers.get("x-admin-key")
+  if (adminKey !== process.env.ADMIN_API_KEY) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  assertAdminAuth(req)
   const { searchParams } = new URL(req.url)
   const type = searchParams.get("type") || "flagged"
   const wallet = searchParams.get("wallet") || undefined
@@ -35,6 +42,12 @@ export const GET = withErrorHandling(async (req: Request) => {
 })
 
 export const POST = withErrorHandling(async (req: Request) => {
+  const adminKey = req.headers.get("x-admin-key")
+  if (adminKey !== process.env.ADMIN_API_KEY) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  assertAdminAuth(req)
   let body: { action?: string; wallet?: string; ip?: string; reason?: string; bannedBy?: string; config?: Record<string, unknown> }
   try {
     body = await req.json()

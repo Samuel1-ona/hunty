@@ -103,6 +103,12 @@ jobs:
 
       - name: Build Next.js application
         run: npm run build
+        env:
+          # Sentry source-map upload — only runs when SENTRY_AUTH_TOKEN is present.
+          # Add this secret in: Settings → Secrets → Actions → SENTRY_AUTH_TOKEN
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
 
   visual-regression:
     name: Visual Regression Tests

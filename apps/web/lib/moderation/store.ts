@@ -1,6 +1,7 @@
 import * as fs from "fs"
 import * as path from "path"
 import { randomUUID } from "crypto"
+import * as Sentry from "@sentry/nextjs"
 import { logger } from "@/lib/logger"
 import type {
   ContentPolicyViolation,
@@ -36,6 +37,12 @@ function writeJSON<T>(filePath: string, data: T): void {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8")
   } catch (err) {
     logger.error("Failed to write moderation data file:", filePath, err)
+    // Previously swallowed — now forwarded to Sentry so filesystem failures
+    // surface in production dashboards.
+    Sentry.captureException(err instanceof Error ? err : new Error(String(err)), {
+      tags: { source: "moderationStore", operation: "writeJSON" },
+      extra: { filePath },
+    })
   }
 }
 

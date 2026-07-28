@@ -3,7 +3,7 @@
 import { Trophy } from "lucide-react";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 
-import { EmptyState } from "@/components/EmptyState";
+import { EmptyState } from "@/components/QueryState";
 import Medal from "@/components/icons/Medal";
 import { LeaderboardTableSkeleton } from "@/components/LoadingSkeletons";
 import { SeasonInfo } from "@/components/SeasonInfo";

@@ -2,6 +2,15 @@ import { useEffect,useState } from "react"
 
 import { logger } from "@/lib/logger"
 
+/**
+ * Reads and writes a value to localStorage while preserving a React state value.
+ *
+ * @template T
+ * @param key - localStorage key used to persist the value
+ * @param initialValue - value returned before storage has been hydrated
+ * @returns A tuple containing the current stored value and a setter that
+ *   persists updates back to localStorage.
+ */
 export function useLocalStorage<T>(key: string, initialValue: T) {
   // State to store our value
   // Pass initial state function to useState so logic is only executed once

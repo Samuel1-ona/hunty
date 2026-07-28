@@ -1,61 +1,45 @@
-import fs from "fs"
-import { NextResponse } from "next/server"
-import path from "path"
+import { NextResponse } from "next/server";
 
-import { SEED_HUNTS } from "@/lib/huntStore"
-import { NotFoundError } from "@/lib/api/errors"
-import { withErrorHandling } from "@/lib/api/withErrorHandling"
+import { NotFoundError } from "@/lib/api/errors";
+import { withErrorHandling } from "@/lib/api/withErrorHandling";
+import { readFeaturedId, writeFeaturedId } from "@/lib/featuredHuntDb";
+import { SEED_HUNTS } from "@/lib/huntStore";
 
-const FILE_PATH = path.join(process.cwd(), "lib", "featuredHuntServer.json")
-
-function readFeaturedId(): number | null {
-  try {
-    if (!fs.existsSync(FILE_PATH)) {
-      return null
-    }
-    const raw = fs.readFileSync(FILE_PATH, "utf8")
-    const parsed = JSON.parse(raw) as { featuredHuntId: number | null }
-    return parsed.featuredHuntId ?? null
-  } catch {
-    return null
-  }
-}
-
-function writeFeaturedId(id: number | null): void {
-  try {
-    const dir = path.dirname(FILE_PATH)
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true })
-    }
-    fs.writeFileSync(FILE_PATH, JSON.stringify({ featuredHuntId: id }, null, 2), "utf8")
-  } catch {
-    // ignore
-  }
-}
-
+/**
+ * POST /api/admin/featured/rotate
+ *
+ * Advances the featured hunt to the next active seeded hunt (round-robin).
+ * Both the read and the write use the shared database so the rotation is
+ * consistent across all instances and survives deploys.
+ *
+ * Any database failure propagates as an HTTP 500 rather than being silently
+ * ignored.
+ */
 export const POST = withErrorHandling(async () => {
   // Only rotate amongst active seeded hunts
-  const activeSeedHunts = SEED_HUNTS.filter((h) => h.status === "Active")
+  const activeSeedHunts = SEED_HUNTS.filter((h) => h.status === "Active");
   if (activeSeedHunts.length === 0) {
-    throw new NotFoundError("No active seeded hunts available to rotate")
+    throw new NotFoundError("No active seeded hunts available to rotate");
   }
 
-  const currentId = readFeaturedId()
-  let nextIndex = 0
+  const currentId = await readFeaturedId();
+  let nextIndex = 0;
 
   if (currentId !== null) {
-    const currentIndex = activeSeedHunts.findIndex((h) => h.id === currentId)
+    const currentIndex = activeSeedHunts.findIndex((h) => h.id === currentId);
     if (currentIndex !== -1) {
-      nextIndex = (currentIndex + 1) % activeSeedHunts.length
+      nextIndex = (currentIndex + 1) % activeSeedHunts.length;
     }
   }
 
-  const nextHunt = activeSeedHunts[nextIndex]
-  writeFeaturedId(nextHunt.id)
+  const nextHunt = activeSeedHunts[nextIndex];
+  // writeFeaturedId throws on DB failure — the error bubbles to withErrorHandling
+  // which converts it to an HTTP 500 response.
+  await writeFeaturedId(nextHunt.id);
 
   return NextResponse.json({
     success: true,
     rotatedTo: nextHunt.id,
-    hunt: nextHunt
-  })
-})
+    hunt: nextHunt,
+  });
+});

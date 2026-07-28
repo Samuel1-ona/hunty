@@ -1,6 +1,6 @@
 # Soroban / Stellar Integration
 
-This directory provides the frontend layer for interacting with Stellar/Soroban smart contracts. It wraps the `@stellar/stellar-sdk` (previously `soroban-client`) and provides React hooks, RPC helpers, and retry logic used across the web app.
+This directory provides the frontend layer for interacting with Stellar/Soroban smart contracts. It wraps the `@stellar/stellar-sdk` (previously `soroban-client`) and provides React hooks, RPC helpers, retry logic, and type-safe contract interaction helpers used across the web app.
 
 ## Module Overview
 
@@ -9,6 +9,244 @@ This directory provides the frontend layer for interacting with Stellar/Soroban 
 | `client.ts` | Creates and configures the Soroban RPC `Server` instance, reads network settings from environment variables |
 | `SorobanContext.tsx` | React context provider and `useSoroban()` hook for accessing the Server and connection state |
 | `rpcRetry.ts` | Exponential-backoff retry wrapper for Soroban RPC calls with timeout and jitter support |
+| `contractHelpers.ts` | **NEW** Type-safe helpers for contract interactions: write/read wrappers, gas estimation, transaction simulation, retry logic |
+
+---
+
+## Contract Interaction Helpers (`contractHelpers.ts`)
+
+The `contractHelpers.ts` module provides a comprehensive set of utilities for interacting with Soroban smart contracts. All helpers include automatic error handling, retry logic, and type safety.
+
+### Key Features
+
+✅ **Type-safe wrappers** for contract reads and writes
+✅ **Automatic gas estimation** before transaction submission
+✅ **Transaction simulation** to validate before submission
+✅ **Typed return values** from contract reads with custom parsers
+✅ **Built-in retry logic** for transient RPC failures
+✅ **Error normalization** using `parseStellarError`
+
+### `writeContract(config)`
+
+Executes a contract write operation with automatic gas estimation, simulation, and retry logic.
+
+```ts
+import { writeContract } from "@/lib/soroban/contractHelpers"
+import { getActiveWalletAdapter } from "@/lib/walletAdapter"
+
+const result = await writeContract({
+  contractId: "CCONTRACT...",
+  method: "register_player",
+  args: [huntId, playerAddress],
+  wallet: getActiveWalletAdapter(),
+})
+
+console.log(`Transaction submitted: ${result.txHash}`)
+console.log(`Gas cost: ${result.gasEstimate} stroops`)
+```
+
+**Configuration:**
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `contractId` | `string` | ✓ | Contract address on Stellar network |
+| `method` | `string` | ✓ | Method name to invoke |
+| `args` | `unknown[]` | | Method arguments (Soroban-compatible types) |
+| `wallet` | `ActiveWalletAdapter` | ✓ | Wallet adapter for signing |
+| `fee` | `string` | | Custom fee in stroops (auto-estimated if omitted) |
+| `timeout` | `number` | | Transaction timeout in seconds (default: 180) |
+| `memo` | `string` | | Optional transaction memo |
+
+**Returns:**
+
+```ts
+{
+  txHash: string          // Transaction hash
+  gasEstimate: number     // Estimated gas cost in stroops
+  simulationStatus: string // Status from simulation
+  raw?: unknown           // Raw RPC response
+}
+```
+
+### `readContract<T>(config)`
+
+Reads data from a contract with automatic retry logic and type-safe parsing.
+
+```ts
+import { readContract } from "@/lib/soroban/contractHelpers"
+
+type PlayerProgress = {
+  hunt_id: number
+  player: string
+  current_clue_index: number
+  completed: boolean
+}
+
+const result = await readContract<PlayerProgress>({
+  contractId: "CCONTRACT...",
+  method: "get_player_progress",
+  args: [huntId, playerAddress],
+  parser: (raw) => ({
+    hunt_id: raw.hunt_id,
+    player: raw.player,
+    current_clue_index: raw.current_clue_index,
+    completed: raw.completed,
+  }),
+})
+
+console.log(`Player completed: ${result.data.completed}`)
+```
+
+**Configuration:**
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `contractId` | `string` | ✓ | Contract address on Stellar network |
+| `method` | `string` | ✓ | Method name to call |
+| `args` | `unknown[]` | | Method arguments |
+| `parser` | `<T>(raw: unknown) => T` | | Optional parser to transform the raw response |
+
+### `estimateGas(server, transaction)`
+
+Estimates gas cost for a transaction before submission.
+
+```ts
+import { estimateGas } from "@/lib/soroban/contractHelpers"
+
+const estimation = await estimateGas(server, transaction)
+
+console.log(`Estimated fee: ${estimation.fee} stroops`)
+console.log(`CPU instructions: ${estimation.cpuInstructions}`)
+console.log(`Memory bytes: ${estimation.memoryBytes}`)
+```
+
+### `simulateTransaction(server, transaction)`
+
+Simulates a transaction to validate it will succeed before submission.
+
+```ts
+import { simulateTransaction } from "@/lib/soroban/contractHelpers"
+
+const simulation = await simulateTransaction(server, transaction)
+
+if (simulation.success) {
+  console.log("Simulation successful!")
+  console.log(`Cost: ${simulation.cost?.cpuInsns} CPU instructions`)
+} else {
+  console.error(`Simulation failed: ${simulation.error}`)
+}
+```
+
+### `pollTransactionStatus(txHash, options?)`
+
+Polls for transaction confirmation on the network.
+
+```ts
+import { pollTransactionStatus } from "@/lib/soroban/contractHelpers"
+
+const confirmed = await pollTransactionStatus(txHash, {
+  maxAttempts: 15,
+  pollInterval: 2000,
+  onPoll: (attempt) => console.log(`Polling attempt ${attempt}`),
+})
+
+console.log("Transaction confirmed!")
+```
+
+### `writeContractAndWait(config, pollOptions?)`
+
+Convenience function that writes a contract and waits for confirmation in one call.
+
+```ts
+import { writeContractAndWait } from "@/lib/soroban/contractHelpers"
+
+const result = await writeContractAndWait({
+  contractId: "CCONTRACT...",
+  method: "create_hunt",
+  args: [title, description, startTime, endTime],
+  wallet: getActiveWalletAdapter(),
+})
+
+// Transaction is confirmed when this returns
+console.log(`Hunt created! Tx: ${result.txHash}`)
+```
+
+### `batchReadContracts<T>(configs)`
+
+Reads multiple contract values in parallel with individual error handling.
+
+```ts
+import { batchReadContracts } from "@/lib/soroban/contractHelpers"
+
+const results = await batchReadContracts([
+  { contractId: "C1...", method: "get_balance", args: [address] },
+  { contractId: "C2...", method: "get_status", args: [huntId] },
+  { contractId: "C3...", method: "get_rewards", args: [playerId] },
+])
+
+results.forEach((result, i) => {
+  if ("data" in result) {
+    console.log(`Result ${i}:`, result.data)
+  } else {
+    console.error(`Error ${i}:`, result.error.message)
+  }
+})
+```
+
+### Error Handling
+
+All helpers use `normalizeContractError` to wrap errors with:
+- Structured error codes (from `parseStellarError`)
+- User-friendly messages
+- Context information (method name, operation type)
+- Original raw error for debugging
+
+```ts
+import { normalizeContractError } from "@/lib/soroban/contractHelpers"
+
+try {
+  await writeContract({ ... })
+} catch (error) {
+  const stellarError = normalizeContractError(error, "registerPlayer")
+  console.error(`${stellarError.code}: ${stellarError.message}`)
+  // Example: "WALLET_REJECTED: Transaction cancelled in wallet"
+}
+```
+
+### Integration with Existing Code
+
+The contract helpers integrate seamlessly with existing Soroban modules:
+
+```ts
+// Automatic retry logic from rpcRetry.ts
+import { withSorobanRpcRetry } from "@/lib/soroban/rpcRetry"
+// Used internally by all helpers
+
+// Error classification from stellarErrors.ts
+import { parseStellarError } from "@/lib/stellarErrors"
+// Used by normalizeContractError
+
+// Network configuration from client.ts
+import { getSorobanRpcUrl, getSorobanNetworkPassphrase } from "@/lib/soroban/client"
+// Used to construct server instances and transactions
+```
+
+### Testing
+
+Comprehensive tests are available in `__tests__/contractHelpers.test.ts` covering:
+- Type-safe wrappers and error handling
+- Gas estimation with simulation
+- Transaction simulation validation
+- Typed return values with custom parsers
+- Retry logic for transient failures
+- Write/read operations
+- Batch operations with error isolation
+
+Run tests:
+```bash
+cd apps/web
+pnpm test lib/soroban/__tests__/contractHelpers.test.ts
+```
 
 ---
 

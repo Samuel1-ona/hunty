@@ -343,6 +343,38 @@ Just remember to remove these before committing!
 
 We want the codebase to be clean, readable, and consistent. Here's how we do things:
 
+### Data Fetching & State Management
+To ensure a seamless user experience, every query-backed view must explicitly handle loading, error, and empty states. We use a standardized QueryStateWrapper to manage this systematically and prevent layout shifts.
+
+When creating a new view that fetches data via `@tanstack/react-query`, always wrap your component logic like this:
+
+```tsx
+import { useQuery } from '@tanstack/react-query';
+import { QueryStateWrapper } from '@/components/QueryState';
+import { GenericPageSkeleton } from '@/components/LoadingSkeletons';
+import { FileSearch } from 'lucide-react'; // Example icon
+
+export function DataBackedView() {
+  const query = useQuery({ queryKey: ['dataKey'], queryFn: fetchApiData });
+
+  return (
+    <QueryStateWrapper
+      query={query}
+      skeleton={<GenericPageSkeleton />}
+      emptyProps={{
+        icon: <FileSearch className="w-10 h-10" />,
+        title: "No Data Found",
+        description: "There is currently nothing to display here."
+      }}
+    >
+      {(data) => <YourDataComponent data={data} />}
+    </QueryStateWrapper>
+  );
+}
+```
+This guarantees that errors offer a retry affordance, loading states use skeletons, and empty states match the app's design system.
+
+
 ### Formatting
 
 We use **Prettier** for automatic code formatting (it should be set up with the project). Before committing, make sure your code is formatted:

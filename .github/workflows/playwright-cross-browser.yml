@@ -7,6 +7,48 @@ on:
     branches: [ main, master ]
 
 jobs:
+  # ── Axe accessibility audit (runs once on Chromium) ─────────────────────────
+  # Serious and critical violations fail the build.
+  # Known violations are tracked in e2e/a11y-baseline.json and burned down over
+  # time. New violations beyond the baseline are never allowed through.
+  a11y-audit:
+    name: Axe accessibility audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+        working-directory: .
+
+      - name: Install Playwright browsers (Chromium only)
+        run: npx playwright install chromium --with-deps
+
+      - name: Run axe accessibility audit
+        env:
+          CI: true
+        run: npx playwright test e2e/a11y-audit.spec.ts --project=chromium-desktop --reporter=github
+
+      - name: Upload axe reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-audit-reports
+          path: apps/web/test-results/a11y-audit/
+          retention-days: 30
+
+  # ── Cross-browser functional tests ──────────────────────────────────────────
   playwright-tests:
     name: Playwright tests — ${{ matrix.project }}
     runs-on: ubuntu-latest

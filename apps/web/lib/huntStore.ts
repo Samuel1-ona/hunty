@@ -893,17 +893,10 @@ export function duplicateHunt(huntId: number): StoredHunt | undefined {
 
   const originalClues = getHuntClues(huntId);
   for (const clue of originalClues) {
+    const { id, ...clueWithoutId } = clue;
     saveClueLocally({
+      ...clueWithoutId,
       huntId: newId,
-      question: clue.question,
-      answer: clue.answer,
-      points: clue.points,
-      hint: clue.hint,
-      hintCost: clue.hintCost,
-      difficulty: clue.difficulty,
-      latitude: clue.latitude,
-      longitude: clue.longitude,
-      geofenceRadiusMeters: clue.geofenceRadiusMeters,
     });
   }
 

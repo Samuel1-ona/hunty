@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-import { EmptyState } from "@/components/EmptyState";
+import { EmptyState } from "@/components/QueryState";
 import { FilterBar } from "@/components/FilterBar";
+import { GalleryGridSkeleton } from "@/components/LoadingSkeletons";
 import { NftCard } from "@/components/NftCard";
 import { NftDetailModal, type NftRewardDetail } from "@/components/NftDetailModal";
 import { Badge } from "@/components/ui/badge";
@@ -73,7 +74,7 @@ export default function GalleryPage() {
             setSort={setSort}
           />
         </div>
-        {loading && <p>Loading NFTs…</p>}
+        {loading && <GalleryGridSkeleton count={8} />}
         {error && <p className="text-red-600">{error}</p>}
         {filtered.length === 0 && !loading && (
           <EmptyState

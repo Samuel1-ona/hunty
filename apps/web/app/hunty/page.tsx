@@ -37,6 +37,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { readDraftPayload, useHuntDraftAutoSave } from "@/hooks/useHuntDraftAutoSave";
+import { useIsFeatureEnabled } from "@/hooks/useFeatureFlag";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import type { HuntCategoryId } from "@/lib/categories";
 import { ensureOwner } from "@/lib/collaboration";
@@ -841,6 +842,9 @@ function CreateGameContent() {
                           />
                         )}
 
+                        {/* Game modes section (shown when gameModes flag is enabled) */}
+                        <GameModesSection />
+
                         <div className="flex items-center justify-between">
                           <div>
                             <label className="block text-xl font-normal text-[#808080]">
@@ -1084,6 +1088,56 @@ function CreateGameContent() {
         url={typeof window !== "undefined" ? window.location.href : ""}
       />
     </TooltipProvider>
+  );
+}
+
+function GameModesSection() {
+  const gameModesEnabled = useIsFeatureEnabled("gameModes");
+  const collaborativeEnabled = useIsFeatureEnabled("collaborativeHunts");
+
+  if (!gameModesEnabled && !collaborativeEnabled) return null;
+
+  return (
+    <div className="rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30 px-4 py-4 space-y-4">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-semibold text-indigo-800 dark:text-indigo-300">
+          Game Modes
+        </span>
+        <span className="text-[10px] uppercase tracking-wider text-indigo-500 dark:text-indigo-400 font-medium px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/50">
+          Beta
+        </span>
+      </div>
+      <p className="text-xs text-indigo-600 dark:text-indigo-400">
+        Additional game modes are available because the game modes feature flag is enabled.
+      </p>
+      {gameModesEnabled && (
+        <div className="space-y-2">
+          <label className="flex items-center gap-3 p-2 rounded-lg bg-white dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800">
+            <input type="radio" name="gameMode" className="text-indigo-600" />
+            <div>
+              <span className="text-sm font-medium text-slate-800 dark:text-slate-200">Timed Mode</span>
+              <p className="text-xs text-slate-500">Players must complete the hunt within a time limit</p>
+            </div>
+          </label>
+          <label className="flex items-center gap-3 p-2 rounded-lg bg-white dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800">
+            <input type="radio" name="gameMode" className="text-indigo-600" />
+            <div>
+              <span className="text-sm font-medium text-slate-800 dark:text-slate-200">Competitive Mode</span>
+              <p className="text-xs text-slate-500">Head-to-head competition with live rankings</p>
+            </div>
+          </label>
+        </div>
+      )}
+      {collaborativeEnabled && (
+        <label className="flex items-center gap-3 p-2 rounded-lg bg-white dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800">
+          <input type="checkbox" className="rounded text-indigo-600" />
+          <div>
+            <span className="text-sm font-medium text-slate-800 dark:text-slate-200">Collaborative Mode</span>
+            <p className="text-xs text-slate-500">Teams of players work together to solve clues</p>
+          </div>
+        </label>
+      )}
+    </div>
   );
 }
 

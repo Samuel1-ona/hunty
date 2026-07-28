@@ -1,4 +1,6 @@
+import * as Sentry from "@sentry/nextjs";
 import Server from "@stellar/stellar-sdk";
+
 import { createSorobanRpcOptimizer } from "./rpcOptimization";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,17 +36,16 @@ export const DEFAULT_RPC_URL = TESTNET_CONFIG.rpcUrl;
  */
 export const DEFAULT_NETWORK_PASSPHRASE = TESTNET_CONFIG.networkPassphrase;
 
-export const MAINNET_NETWORK_PASSPHRASE = "Public Global Stellar Network ; September 2015";
+export const MAINNET_NETWORK_PASSPHRASE =
+  "Public Global Stellar Network ; September 2015";
 
 /**
  * Retrieves the RPC URL from environment or uses the default.
  */
 function getRpcUrl(): string {
   if (typeof window === "undefined") {
-    // Server-side
     return process.env.NEXT_PUBLIC_SOROBAN_RPC_URL ?? DEFAULT_RPC_URL;
   }
-  // Client-side
   return process.env.NEXT_PUBLIC_SOROBAN_RPC_URL ?? DEFAULT_RPC_URL;
 }
 
@@ -52,25 +53,33 @@ function getRpcUrl(): string {
  * Retrieves the network passphrase from environment or uses the default.
  */
 function getNetworkPassphrase(): string {
-  if (typeof window === "undefined") {
-    // Server-side
-    return process.env.NEXT_PUBLIC_SOROBAN_NETWORK_PASSPHRASE ?? DEFAULT_NETWORK_PASSPHRASE;
+  if (typeof window ==="undefined") {
+    return (
+      process.env.NEXT_PUBLIC_SOROBAN_NETWORK_PASSPHRASE ??
+      DEFAULT_NETWORK_PASSPHRASE
+    );
   }
-  // Client-side
-  return process.env.NEXT_PUBLIC_SOROBAN_NETWORK_PASSPHRASE ?? DEFAULT_NETWORK_PASSPHRASE;
+  return (
+    process.env.NEXT_PUBLIC_SOROBAN_NETWORK_PASSPHRASE ??
+    DEFAULT_NETWORK_PASSPHRASE
+  );
 }
 
 /**
  * Retrieves the network type (testnet or mainnet)
  */
 export function getSorobanNetworkType(): "testnet" | "mainnet" {
-  const networkType = process.env.NEXT_PUBLIC_SOROBAN_NETWORK_TYPE as "testnet" | "mainnet" | undefined;
+  const networkType = process.env
+    .NEXT_PUBLIC_SOROBAN_NETWORK_TYPE as
+    | "testnet"
+    | "mainnet"
+    | undefined;
+
   return networkType ?? "testnet";
 }
 
 /**
  * Creates a Soroban Server instance for the configured RPC URL.
- * Uses the same Server API as soroban-client (stellar-sdk is the maintained package).
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let sharedServer: any | null = null;
@@ -79,17 +88,19 @@ let sharedServerRpcUrl: string | null = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createSorobanServer(): any {
   const rpcUrl = getRpcUrl();
+
   if (sharedServer && sharedServerRpcUrl === rpcUrl) {
     return sharedServer;
   }
 
   sharedServer = new SorobanServer(rpcUrl);
   sharedServerRpcUrl = rpcUrl;
+
   return sharedServer;
 }
 
 /**
- * Returns the configured network passphrase (Futurenet/Testnet).
+ * Returns the configured network passphrase.
  */
 export function getSorobanNetworkPassphrase(): string {
   return getNetworkPassphrase();
@@ -102,26 +113,44 @@ export function getSorobanRpcUrl(): string {
   return getRpcUrl();
 }
 
-let sharedOptimizer: ReturnType<typeof createSorobanRpcOptimizer> | null = null
+let sharedOptimizer: ReturnType<typeof createSorobanRpcOptimizer> | null = null;
 
-export function getSorobanRpcOptimizer(): ReturnType<typeof createSorobanRpcOptimizer> {
+export function getSorobanRpcOptimizer(): ReturnType<
+  typeof createSorobanRpcOptimizer
+> {
   if (!sharedOptimizer) {
     sharedOptimizer = createSorobanRpcOptimizer({
       primaryRpcUrl: getRpcUrl(),
       fallbackRpcUrl: process.env.NEXT_PUBLIC_SOROBAN_FALLBACK_RPC_URL,
-      debounceMs: Number(process.env.NEXT_PUBLIC_SOROBAN_DEBOUNCE_MS ?? 50),
-      ttlMs: Number(process.env.NEXT_PUBLIC_SOROBAN_READ_TTL_MS ?? 30_000),
-    })
+      debounceMs: Number(
+        process.env.NEXT_PUBLIC_SOROBAN_DEBOUNCE_MS ?? 50
+      ),
+      ttlMs: Number(
+        process.env.NEXT_PUBLIC_SOROBAN_READ_TTL_MS ?? 30000
+      ),
+    });
   }
 
-  return sharedOptimizer
+  return sharedOptimizer;
 }
 
 export async function readSorobanContractState<T>(request: {
-  key: string
-  method: string
-  params?: unknown[]
-  parser?: (response: unknown) => unknown
+  key: string;
+  method: string;
+  params?: unknown[];
+  parser?: (response: unknown) => unknown;
 }): Promise<T> {
-  return getSorobanRpcOptimizer().readContractState<T>(request)
+  try {
+    return await getSorobanRpcOptimizer().readContractState<T>(request);
+  } catch (err) {
+    Sentry.captureException(
+      err instanceof Error ? err : new Error(String(err)),
+      {
+        tags: { source: "sorobanRpc", method: request.method },
+        extra: { key: request.key, params: request.params },
+      }
+    );
+
+    throw err;
+  }
 }

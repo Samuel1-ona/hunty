@@ -223,8 +223,7 @@ export function HuntControls({ hunt, connectedPublicKey, onCancelled }: HuntCont
   const [embedModalOpen, setEmbedModalOpen] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   const [isCancelling, setIsCancelling] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
 
   // Gate: only the creator sees this, and only for cancellable statuses
   if (!isCreator(hunt, connectedPublicKey) || !isCancellable(hunt.status)) {

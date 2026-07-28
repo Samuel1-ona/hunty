@@ -8,8 +8,10 @@ import {
 } from "@/lib/moderation/store"
 import { sendModerationActionEmail } from "@/lib/moderation/email"
 import type { ContentPolicyViolation } from "@/lib/moderation/types"
+import { assertAdminAuth } from "@/lib/api/adminAuth"
 
 export async function GET(req: NextRequest) {
+  assertAdminAuth(req)
   const { searchParams } = new URL(req.url)
   const view = searchParams.get("view") || "pending"
 
@@ -21,6 +23,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  assertAdminAuth(req)
   let body: {
     action?: string
     submissionId?: string

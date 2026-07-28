@@ -159,6 +159,58 @@ Then head over to GitHub and create a pull request. In your PR description, tell
 - How to test it
 - Any questions or concerns you have
 
+## Smart contract contribution guide
+
+If you are changing the Soroban smart contracts, use the following workflow in addition to the general guidance above.
+
+### Local Soroban sandbox
+
+1. Install the Stellar CLI and Soroban tools.
+2. Start a local sandbox for contract development:
+   ```bash
+   stellar sandbox start
+   ```
+3. Use the sandbox network for local deployment and testing before touching testnet or mainnet.
+
+### Run contract unit tests
+
+Run tests from the contract workspace before submitting changes:
+
+```bash
+stellar contract test
+```
+
+If you are working inside a specific contract package, run the tests there first and then from the workspace root.
+
+### Deploy to testnet
+
+1. Create or select a funded testnet account.
+2. Deploy the updated contracts to testnet:
+   ```bash
+   stellar contract deploy --network testnet --source-account <account>
+   ```
+3. Record the deployed contract IDs and update the relevant environment variables in the app.
+
+### Update contract addresses in the app
+
+After redeploying contracts, update the environment values used by the web app:
+
+- `NEXT_PUBLIC_HUNTY_CORE_ADDRESS`
+- `NEXT_PUBLIC_REWARD_MANAGER_ADDRESS`
+- `NEXT_PUBLIC_NFT_REWARD_ADDRESS`
+
+Redeploy the app so the frontend uses the new contract addresses.
+
+### PR checklist for contract changes
+
+Before opening a PR for contract work, confirm that you have:
+
+- Reviewed the contract logic for correctness and security
+- Run contract unit tests and captured the result
+- Checked gas usage and reviewed any cost regressions
+- Documented any deployed addresses or migration steps
+- Verified the frontend is updated to the new contract addresses when needed
+
 ## Code Style Guidelines
 
 We're not super strict, but consistency helps everyone. Here's what we prefer:
@@ -201,7 +253,7 @@ You've written the code, written the tests, and everything passes. Awesome! Now 
 
 ### Writing Your PR Description
 
-A good PR description helps reviewers understand your work quickly:
+A good PR description helps reviewers understand your work quickly. Please note: **Completion reports and implementation summaries belong in the PR description.** Do not commit them to the repository as tracked documents.
 
 ```markdown
 ## What This Does

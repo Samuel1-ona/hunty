@@ -79,4 +79,17 @@ describe('useCountdown', () => {
     rerender({ end: secondEnd })
     expect(result.current).toBe('30s')
   })
+
+  it('cleans up interval on unmount', () => {
+    const end = Math.floor(Date.now() / 1000) + 10
+
+    const clearSpy = vi.spyOn(globalThis, 'clearInterval')
+
+    const { unmount } = renderHook(() => useCountdown(end))
+
+    // unmount should call the cleanup which clears the interval
+    unmount()
+
+    expect(clearSpy).toHaveBeenCalled()
+  })
 })

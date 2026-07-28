@@ -20,6 +20,16 @@
     ],
     "paths": {
       "@/*": ["./*"],
+      "@/components": ["./components"],
+      "@/components/*": ["./components/*"],
+      "@/lib": ["./lib"],
+      "@/lib/*": ["./lib/*"],
+      "@/hooks": ["./hooks"],
+      "@/hooks/*": ["./hooks/*"],
+      "@/store": ["./store"],
+      "@/store/*": ["./store/*"],
+      "@/types": ["./types"],
+      "@/types/*": ["./types/*"],
       "@shared/*": ["./shared/*"],
       "@hunty/types": ["../../packages/types/src/index.ts"],
       "@hunty/types/*": ["../../packages/types/src/*"]

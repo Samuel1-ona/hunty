@@ -42,8 +42,6 @@ export type SponsorContribution = {
 }
 
 const ESCROW_KEY = "hunty_reward_escrows"
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const CLAIM_TIMEOUT_MS = 120_000
 const MAX_RETRIES = 2
 
 export class ClaimTimeoutError extends Error {
