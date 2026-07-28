@@ -27,11 +27,6 @@
     "mobile/**/*",
     "stories/**/*",
     "**/*.stories.ts",
-    "**/*.stories.tsx",
-    "**/__tests__/**/*",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/*.spec.ts",
-    "**/*.spec.tsx"
+    "**/*.stories.tsx"
   ]
 }
