@@ -2,6 +2,7 @@
   "name": "hunty",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.32.1",
   "description": "Cross-platform scavenger hunt dApp using Next.js, Expo, IPFS, and Stellar/Soroban.",
   "scripts": {
     "dev": "turbo run dev",
