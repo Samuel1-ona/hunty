@@ -1,0 +1,56 @@
+name: Bundle Size
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+# Allow one concurrent deployment per branch, cancel in-progress runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Bundle Size & Performance Budget
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js application
+        run: npm run build
+
+      - name: Check bundle size
+        run: npm run bundle:check
+
+      - name: Check performance budgets
+        run: npm run perf:budget
+
+      - name: Generate bundle report
+        run: npm run bundle:report
+        working-directory: apps/web
+
+      - name: Find previous comment
+        uses: peter-evans/find-comment@v3
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: "github-actions[bot]"
+          body-includes: "## Bundle Size Report"
+
+      - name: Create or update PR comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: apps/web/bundle-report.md
+          edit-mode: replace
