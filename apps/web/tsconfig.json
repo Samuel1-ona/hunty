@@ -39,7 +39,6 @@
   "exclude": [
     "node_modules",
     "mobile/**/*",
-    "shared/**/*",
     "stories/**/*",
     "**/*.stories.ts",
     "**/*.stories.tsx",
