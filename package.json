@@ -15,6 +15,7 @@
     "e2e": "npm run e2e --workspace @hunty/web",
     "smoke": "npm run smoke --workspace @hunty/web",
     "test:e2e": "npm run test:e2e --workspace @hunty/web",
+    "security:test": "npm run security:test --workspace @hunty/web",
     "analyze": "npm run analyze --workspace @hunty/web",
     "bundle:check": "npm run bundle:check --workspace @hunty/web",
     "perf:budget": "npm run perf:budget --workspace @hunty/web",

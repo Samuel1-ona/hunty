@@ -18,6 +18,7 @@
     "smoke": "playwright test --config=playwright.smoke.config.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "security:test": "playwright test e2e/security.spec.ts --project=chromium-desktop",
     "perf:budget": "node scripts/check-performance-budgets.mjs",
     "clean": "rm -rf .next"
   },

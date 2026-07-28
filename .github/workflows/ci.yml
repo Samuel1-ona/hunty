@@ -62,7 +62,7 @@ jobs:
           files: ./coverage/coverage-final.json
           flags: unittests
           name: codecov-umbrella
-        continue-on-error: true
+        continue-on-error: true # Codecov is an external reporting service; a network failure should not fail the build
 
   mutation:
     name: Mutation Tests
@@ -132,7 +132,6 @@ jobs:
 
       - name: Run Visual Regression Tests
         run: npx playwright test visual-regression --reporter=github
-        continue-on-error: true
 
       - name: Upload Visual Diff Artifacts
         uses: actions/upload-artifact@v4
@@ -166,7 +165,6 @@ jobs:
 
       - name: Run Playwright tests
         run: npm run test:e2e
-        continue-on-error: true
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
