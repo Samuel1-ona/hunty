@@ -28,6 +28,7 @@ import { queryCachePolicy, queryKeys } from "@/lib/queryKeys"
 import { StarRating } from "@/components/StarRating"
 import { FavoriteButton } from "@/components/FavoriteButton"
 import type { PlayerCountResult } from "@/lib/types"
+import { HUNT_CATEGORIES } from "@/lib/categories"
 
 const OnboardingTour = dynamic(() => import("@/components/OnboardingTour"), {
   ssr: false,
@@ -438,9 +439,7 @@ export default function GameArcade() {
   const [difficultyFilter, setDifficultyFilter] = useState<"all" | "Easy" | "Medium" | "Hard">(
     "all"
   );
-  const [categoryFilter, setCategoryFilter] = useState<
-    "all" | "Urban" | "Campus" | "Office" | "Museum" | "General"
-  >("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<
     | "newest"
     | "oldest"
@@ -1093,18 +1092,14 @@ export default function GameArcade() {
                 <select
                   value={categoryFilter}
                   onChange={(e) =>
-                    setCategoryFilter(
-                      e.target.value as "all" | "Urban" | "Campus" | "Office" | "Museum" | "General"
-                    )
+                    setCategoryFilter(e.target.value)
                   }
                   className="h-10 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#3737A4]/50 cursor-pointer"
                 >
                   <option value="all">All Categories</option>
-                  <option value="Urban">Urban</option>
-                  <option value="Campus">Campus</option>
-                  <option value="Office">Office</option>
-                  <option value="Museum">Museum</option>
-                  <option value="General">General</option>
+                  {HUNT_CATEGORIES.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.label}</option>
+                  ))}
                 </select>
 
                 <div className="relative flex-1 sm:w-64">
