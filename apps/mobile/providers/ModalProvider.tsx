@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { ThemedButton, ThemedCustomText, ThemedView } from '@components/themed';
+import { ThemedButton, ThemedCustomText } from '@components/themed';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -8,13 +8,6 @@ import {
 } from '@gorhom/bottom-sheet';
 import { useTheme } from '@providers/ThemeProvider';
 import { type ModalConfig,useModalStore } from '@store/modalStore';
-import React, { useCallback, useMemo, useRef } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  View,
-} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ConfirmationModalProps {
@@ -83,7 +76,7 @@ function BottomSheetWrapper({ config, isVisible, onClose, children }: BottomShee
   const insets = useSafeAreaInsets();
 
   const renderBackdrop = useCallback(
-    (props: any) => (
+    (props: React.ComponentProps<typeof BottomSheetBackdrop>) => (
       <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
     ),
     [],

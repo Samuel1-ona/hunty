@@ -11,7 +11,7 @@ import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
  */
 export const GET = withErrorHandling(async (req: Request) => {
   const ip = getIP(req);
-  const { success, reset } = rateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
+  const { success, reset } = await rateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
 
   if (!success) {
     return rateLimitResponse(reset);

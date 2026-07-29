@@ -1,7 +1,11 @@
 /**
- * Zustand wallet store.
+ * Zustand wallet store — synced from the wallet state machine.
  *
- * Central source of truth for wallet connection state.
+ * This store is the cross-component communication layer. It is updated by
+ * the `WalletContext` whenever the state machine transitions, so any
+ * component that subscribes via `useWalletStore` sees the latest state
+ * without needing to be inside the provider tree.
+ *
  * Persists the last-used provider to localStorage so the app can
  * restore the session on the next visit.
  */
@@ -9,9 +13,12 @@
 import { create } from "zustand"
 import { persist, createJSONStorage } from "zustand/middleware"
 import type { WalletProvider } from "./types"
+import type { WalletStatus } from "@/lib/wallet"
 
 export type WalletState = {
-  /** Whether a wallet is currently connected */
+  /** Machine-readable status from the wallet state machine */
+  status: WalletStatus
+  /** Whether a wallet is currently connected (derived from status) */
   connected: boolean
   /** Full Stellar public key (empty string when disconnected) */
   publicKey: string
@@ -19,21 +26,23 @@ export type WalletState = {
   provider: WalletProvider | null
   /** The last provider the user explicitly connected with */
   lastUsedProvider: WalletProvider | null
-  /** In-progress connection attempt */
+  /** In-progress connection attempt (derived from status === "connecting") */
   connecting: boolean
   /** Last connection error message, if any */
   error: string | null
 }
 
 export type WalletActions = {
-  /** Mark wallet as connected with the given key and provider */
-  setConnected: (publicKey: string, provider: WalletProvider) => void
-  /** Clear connection state */
-  setDisconnected: () => void
-  /** Track connection attempt in progress */
-  setConnecting: (connecting: boolean) => void
-  /** Store an error message */
-  setError: (error: string | null) => void
+  /**
+   * Sync the entire machine state into the store.
+   * Called by the WalletContext after every state machine transition.
+   */
+  syncFromMachine: (params: {
+    status: WalletStatus
+    publicKey: string
+    provider: WalletProvider | null
+    error: string | null
+  }) => void
   /** Override last-used provider (e.g., if session is restored externally) */
   setLastUsedProvider: (provider: WalletProvider) => void
 }
@@ -41,6 +50,7 @@ export type WalletActions = {
 export type WalletStore = WalletState & WalletActions
 
 const initialState: WalletState = {
+  status: "idle",
   connected: false,
   publicKey: "",
   provider: null,
@@ -54,29 +64,18 @@ export const useWalletStore = create<WalletStore>()(
     (set) => ({
       ...initialState,
 
-      setConnected: (publicKey, provider) =>
-        set({
-          connected: true,
+          syncFromMachine: ({ status, publicKey, provider, error }) =>
+        set((prev) => ({
+          status,
+          connected: status === "connected",
           publicKey,
           provider,
-          lastUsedProvider: provider,
-          connecting: false,
-          error: null,
-        }),
-
-      setDisconnected: () =>
-        set({
-          connected: false,
-          publicKey: "",
-          provider: null,
-          connecting: false,
-          error: null,
-          // lastUsedProvider is intentionally preserved for UX continuity
-        }),
-
-      setConnecting: (connecting) => set({ connecting, error: null }),
-
-      setError: (error) => set({ error, connecting: false }),
+          // Only overwrite lastUsedProvider when a non-null provider is given.
+          // This preserves the value across disconnect/error transitions.
+          lastUsedProvider: provider ?? prev.lastUsedProvider,
+          connecting: status === "connecting",
+          error,
+        })),
 
       setLastUsedProvider: (provider) => set({ lastUsedProvider: provider }),
     }),

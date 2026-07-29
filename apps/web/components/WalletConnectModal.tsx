@@ -99,7 +99,10 @@ export function WalletConnectModal({
       try {
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 
-        if (isMobile && wallet.platforms.includes("ios") || wallet.platforms.includes("android")) {
+        if (
+          isMobile &&
+          (wallet.platforms.includes("ios") || wallet.platforms.includes("android"))
+        ) {
           setView("connecting")
           const { uri } = await connectWalletConnect()
           openWalletDeepLink(wallet.name, uri)

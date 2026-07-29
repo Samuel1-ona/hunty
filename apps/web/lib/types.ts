@@ -10,6 +10,7 @@
 import type {
   HuntCategory as DomainHuntCategory,
   HuntInvite,
+  HuntStatus,
   PlayerProgress,
   Reward as DomainReward,
 } from "@hunty/types";
@@ -37,16 +38,6 @@ export interface HuntReview {
   moderated?: boolean;
   flagged?: boolean;
 }
-
-export type HuntStatus =
-  | "Active"
-  | "Completed"
-  | "Draft"
-  | "Cancelled"
-  | "PendingReview"
-  | "scheduled"
-  | "active"
-  | "ended";
 
 /**
  * Hunt-level difficulty rating set by the creator so players can gauge
@@ -109,6 +100,8 @@ export interface StoredHunt {
   coverImageCid?: string;
   /** Active editorial banner showcase at the top of the Arcade. */
   isFeaturedOfWeek?: boolean;
+  /** Unix timestamp in seconds until a paid spotlight placement remains active. */
+  promotedUntil?: number;
   /** Creator's wallet public key. */
   creator?: string;
   /** Average user rating (1-5). */
@@ -191,6 +184,8 @@ export interface Clue {
   alternativeAnswers?: string[];
   /** Fuzzy matching strictness for this clue. Defaults to "normal". */
   answerStrictness?: AnswerStrictness;
+  /** Optional IPFS media reference, optionally tagged with a type query param. */
+  mediaCid?: string;
 }
 
 export type ClueInfo = {
@@ -219,6 +214,8 @@ export interface ClueRow {
   difficulty?: ClueDifficulty;
   alternativeAnswers?: string[];
   answerStrictness?: AnswerStrictness;
+  /** Optional IPFS media reference, optionally tagged with a type query param. */
+  mediaCid?: string;
 }
 export type {
   Achievement,
@@ -227,6 +224,7 @@ export type {
   HuntCategory,
   HuntInvite,
   HuntProgressStatus,
+  HuntStatus,
   PlayerHuntProgress,
   PlayerProgress,
   RewardHistoryEntry,
@@ -441,6 +439,8 @@ export interface HuntCard {
    * (passed in from individual clue views), so both are allowed here.
    */
   difficulty?: HuntDifficulty | ClueDifficulty;
+  /** Optional IPFS media reference, optionally tagged with a type query param. */
+  mediaCid?: string;
 }
 
 // HuntDraft and PlayerStats now live in @hunty/types (re-exported above).
@@ -506,6 +506,33 @@ export type CoverImageUploadState =
   | "uploading"
   | "succeeded"
   | "failed";
+
+export interface PlayerProfile {
+  address: string
+  displayName?: string
+  avatarUrl?: string
+}
+
+export interface ReferralRecord {
+  code: string
+  referrerAddress: string
+  referredAddress: string
+  registeredAt: number
+  firstCompletedAt?: number
+  firstCompletedHuntId?: number
+  bonusAwarded: boolean
+  bonusPoints: number
+}
+
+export interface ReferralStats {
+  code: string
+  totalInvites: number
+  successfulReferrals: number
+  pendingReferrals: number
+  bonusPoints: number
+  referralLink: string
+  referrals: ReferralRecord[]
+}
 
 // ─── Player Count ────────────────────────────────────────────────────────────
 

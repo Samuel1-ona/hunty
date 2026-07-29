@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit"
 import { recordHintUsage, getHintUsageStats } from "@/lib/analytics"
+import { logger } from "@/lib/logger"
 
 /**
  * POST /api/analytics/hint-usage
@@ -11,7 +12,7 @@ import { recordHintUsage, getHintUsageStats } from "@/lib/analytics"
  */
 export async function POST(req: Request) {
   const ip = getIP(req)
-  const { success, reset } = rateLimit(ip, { limit: 60, windowMs: 60_000 })
+  const { success, reset } = await rateLimit(ip, { limit: 60, windowMs: 60_000 })
   if (!success) return rateLimitResponse(reset)
 
   let body: { huntId?: unknown; clueId?: unknown; hintIndex?: unknown; wallet?: unknown }
@@ -41,7 +42,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true }, { status: 200 })
   } catch (error) {
     // Analytics errors must never break gameplay
-    console.error("Failed to record hint usage analytics:", error)
+    logger.error("Failed to record hint usage analytics:", error)
     return NextResponse.json({ ok: true }, { status: 200 })
   }
 }
@@ -65,7 +66,7 @@ export async function GET(req: Request) {
     const stats = await getHintUsageStats(huntId)
     return NextResponse.json({ huntId, stats }, { status: 200 })
   } catch (error) {
-    console.error("Failed to fetch hint usage stats:", error)
+    logger.error("Failed to fetch hint usage stats:", error)
     return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
   }
 }

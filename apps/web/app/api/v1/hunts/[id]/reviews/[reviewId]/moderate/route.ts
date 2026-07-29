@@ -60,7 +60,8 @@ export async function POST(
     await writeReviews(reviews)
 
     return NextResponse.json({ success: true, data: review })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to moderate review" }, { status: 500 })
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to moderate review"
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

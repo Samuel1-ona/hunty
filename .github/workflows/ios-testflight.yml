@@ -1,5 +1,6 @@
 name: iOS TestFlight Distribution
 
+# paths and working-dirs target apps/mobile (post-monorepo-restructure).
 on:
   push:
     branches:
@@ -31,19 +32,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: apps/mobile/package-lock.json
-
-      - name: Install dependencies
-        working-directory: apps/mobile
-        run: npm install
+      - name: Setup Node.js with pnpm
+        uses: ./.github/actions/setup-node-pnpm
 
       - name: Install EAS CLI
-        run: npm install --global eas-cli@latest
+        run: pnpm add -g eas-cli
 
       - name: Authenticate with Expo
         run: eas whoami

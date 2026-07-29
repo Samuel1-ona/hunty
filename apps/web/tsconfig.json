@@ -32,7 +32,10 @@
       "@/types/*": ["./types/*"],
       "@shared/*": ["./shared/*"],
       "@hunty/types": ["../../packages/types/src/index.ts"],
-      "@hunty/types/*": ["../../packages/types/src/*"]
+      "@hunty/types/*": ["../../packages/types/src/*"],
+      "@stellar/stellar-sdk": ["../../node_modules/@stellar/stellar-sdk"],
+      "@stellar/*": ["../../node_modules/@stellar/*"],
+      "@stellar/freighter-api": ["../../node_modules/@stellar/freighter-api"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

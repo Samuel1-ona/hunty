@@ -10,7 +10,7 @@ import { isHuntCategoryId } from "@/lib/categories"
  */
 export async function GET(req: Request) {
   const ip = getIP(req)
-  const { success, reset } = rateLimit(ip, { limit: 120, windowMs: 60_000 })
+  const { success, reset } = await rateLimit(ip, { limit: 120, windowMs: 60_000 })
   if (!success) return rateLimitResponse(reset)
 
   const { searchParams } = new URL(req.url)
@@ -43,7 +43,7 @@ export async function GET(req: Request) {
  */
 export async function POST(req: Request) {
   const ip = getIP(req)
-  const { success, reset } = rateLimit(ip, { limit: 60, windowMs: 60_000 })
+  const { success, reset } = await rateLimit(ip, { limit: 60, windowMs: 60_000 })
   if (!success) return rateLimitResponse(reset)
 
   let body: { category?: string; tags?: string[] }

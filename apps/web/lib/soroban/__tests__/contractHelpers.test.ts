@@ -43,7 +43,9 @@ vi.mock("@stellar/stellar-sdk", () => {
     build: vi.fn().mockReturnValue(mockTransaction),
   }
 
-  const MockTransactionBuilder = vi.fn().mockReturnValue(mockTransactionBuilder)
+  const MockTransactionBuilder = vi.fn().mockImplementation(function MockTransactionBuilder() {
+    return mockTransactionBuilder
+  })
 
   const mockServer = {
     getAccount: vi.fn().mockResolvedValue(mockAccount),
@@ -57,7 +59,13 @@ vi.mock("@stellar/stellar-sdk", () => {
     getTransaction: vi.fn().mockResolvedValue({ status: "SUCCESS" }),
   }
 
-  const Server = vi.fn().mockReturnValue(mockServer)
+  // The source calls `new Server(url)` (createServer) and
+  // `new TransactionBuilder(account, {...})` (buildTx). mockReturnValue is
+  // illegal with `new` so we use mockImplementation to make the mock act as
+  // a constructor that returns our preconfigured stub object.
+  const Server = vi.fn().mockImplementation(function Server() {
+    return mockServer
+  })
 
   return {
     default: Server,
@@ -725,7 +733,13 @@ describe("retry logic integration", () => {
   })
 
   it("withSorobanRpcRetry is invoked for RPC reads in readContract", async () => {
-    const mockFetch = vi.mocked(globalThis.fetch as ReturnType<typeof vi.fn>)
+    // Create the fetch mock as a vi.fn() BEFORE wrapping with vi.mocked so the
+    // spy methods (mockResolvedValueOnce) are present. The previous version
+    // called `vi.mocked(globalThis.fetch as ReturnType<typeof vi.fn>)` on the
+    // real fetch function — that wasn't a spy and threw
+    // "mockFetch.mockResolvedValueOnce is not a function".
+    vi.stubGlobal("fetch", vi.fn())
+    const mockFetch = vi.mocked(globalThis.fetch)
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ result: null }),
@@ -733,8 +747,6 @@ describe("retry logic integration", () => {
 
     const { withSorobanRpcRetry } = await import("../rpcRetry")
     const retryMock = vi.mocked(withSorobanRpcRetry)
-
-    vi.stubGlobal("fetch", mockFetch)
 
     await readContract({ contractId: "C...", method: "test_read" })
 

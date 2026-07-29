@@ -54,3 +54,49 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           body-path: apps/web/bundle-report.md
           edit-mode: replace
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        # NOTE: --frozen-lockfile was dropped here because packages/types/package.json declares
+        # devDeps (eslint@^9, typescript@^5, vitest@^4.0.18) that the committed pnpm-lock.yaml
+        # does not yet pin (pre-existing repo maintenance). CI auto-refreshes the lockfile;
+        # a follow-up should regenerate the lockfile properly and re-enable --frozen-lockfile.
+        run: pnpm install
+
+      - name: Build Next.js application
+        run: pnpm --filter @hunty/web run build
+
+      - name: Check bundle size
+        run: pnpm --filter @hunty/web run bundle:check
+
+      - name: Check performance budgets
+        run: pnpm --filter @hunty/web run perf:budget
+      - name: Setup Node.js with pnpm
+        uses: ./.github/actions/setup-node-pnpm
+
+      - name: Build Next.js application
+        run: pnpm build
+
+      - name: Check bundle size
+        run: pnpm bundle:check
+        working-directory: apps/web
+
+      - name: Check performance budgets
+        run: pnpm perf:budget
+        working-directory: apps/web
+
+      - name: Generate bundle report
+        run: node scripts/generate-bundle-report.mjs
+        working-directory: apps/web
+
+# TODO: reintroduce bundle-report + PR-comment steps once apps/web/scripts/generate-bundle-report.mjs and apps/web/bundle-report.md exist (currently missing). See PR #1013.

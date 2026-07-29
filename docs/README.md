@@ -26,6 +26,8 @@ This directory contains project documentation organized by topic.
 | Leaderboard optimization tests | [testing/TESTING_GUIDE_LEADERBOARD_OPTIMIZATION.md](./testing/TESTING_GUIDE_LEADERBOARD_OPTIMIZATION.md) |
 | CI/CD pipeline | [development/CICD_PIPELINE.md](./development/CICD_PIPELINE.md) |
 | Environment setup | [development/ENVIRONMENT_SETUP.md](./development/ENVIRONMENT_SETUP.md) |
-| EAS build & OTA setup | [development/EAS_SETUP_SUMMARY.md](./development/EAS_SETUP_SUMMARY.md) |
+| EAS Build & Update Guide | [mobile/EAS_GUIDE.md](./mobile/EAS_GUIDE.md) |
+| EAS Quick Reference | [mobile/QUICK_REFERENCE.md](./mobile/QUICK_REFERENCE.md) |
+| Android Keystore Protocol | [mobile/ANDROID_KEYSTORE.md](./mobile/ANDROID_KEYSTORE.md) |
 | Seasonal leaderboard | [development/SEASONAL_LEADERBOARD_IMPLEMENTATION.md](./development/SEASONAL_LEADERBOARD_IMPLEMENTATION.md) |
 | Issue solver notes | [development/issue-solver.md](./development/issue-solver.md) |

@@ -18,7 +18,7 @@ type Context = { params: Promise<{ id: string }> };
  */
 export const GET = withErrorHandling<Context>(async (req, { params }) => {
   const ip = getIP(req);
-  const { success, reset } = rateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
+  const { success, reset } = await rateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
 
   if (!success) {
     return rateLimitResponse(reset);
@@ -53,7 +53,7 @@ export const GET = withErrorHandling<Context>(async (req, { params }) => {
  */
 export const PATCH = withErrorHandling<Context>(async (req, { params }) => {
   const ip = getIP(req);
-  const { success, reset } = rateLimit(ip, { limit: 10, windowMs: 60 * 1000 });
+  const { success, reset } = await rateLimit(ip, { limit: 10, windowMs: 60 * 1000 });
 
   if (!success) {
     return rateLimitResponse(reset);
@@ -99,7 +99,7 @@ export const PATCH = withErrorHandling<Context>(async (req, { params }) => {
  */
 export const POST = withErrorHandling<Context>(async (req, { params }) => {
   const ip = getIP(req);
-  const { success, reset } = rateLimit(ip, { limit: 5, windowMs: 60 * 1000 });
+  const { success, reset } = await rateLimit(ip, { limit: 5, windowMs: 60 * 1000 });
 
   if (!success) {
     return rateLimitResponse(reset);

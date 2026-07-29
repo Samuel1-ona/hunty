@@ -5,7 +5,7 @@ import {
   getAllSubmissions,
   getPendingSubmissions,
   rejectSubmission,
-} from "@/lib/moderation/store"
+} from "@/lib/moderation/dbStore"
 import { sendModerationActionEmail } from "@/lib/moderation/email"
 import type { ContentPolicyViolation } from "@/lib/moderation/types"
 import { assertAdminAuth } from "@/lib/api/adminAuth"
@@ -16,10 +16,10 @@ export async function GET(req: NextRequest) {
   const view = searchParams.get("view") || "pending"
 
   if (view === "all") {
-    return NextResponse.json({ submissions: getAllSubmissions() })
+    return NextResponse.json({ submissions: await getAllSubmissions() })
   }
 
-  return NextResponse.json({ submissions: getPendingSubmissions() })
+  return NextResponse.json({ submissions: await getPendingSubmissions() })
 }
 
 export async function POST(req: NextRequest) {
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === "approve") {
-    const updated = approveSubmission(submissionId, body.reviewedBy || "admin")
+    const updated = await approveSubmission(submissionId, body.reviewedBy || "admin")
     if (!updated) {
       return NextResponse.json({ error: "Submission not found" }, { status: 404 })
     }
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     if (!reason) {
       return NextResponse.json({ error: "reason is required to reject" }, { status: 400 })
     }
-    const updated = rejectSubmission(
+    const updated = await rejectSubmission(
       submissionId,
       reason,
       body.policyViolations ?? [],
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
     if (!violations?.length) {
       return NextResponse.json({ error: "policyViolations is required" }, { status: 400 })
     }
-    const updated = flagContentPolicyViolation(submissionId, violations)
+    const updated = await flagContentPolicyViolation(submissionId, violations)
     if (!updated) {
       return NextResponse.json({ error: "Submission not found" }, { status: 404 })
     }

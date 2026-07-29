@@ -1,62 +1,164 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from "next/server"
+
+import { getDb } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 interface RateLimitConfig {
-  limit: number;
-  windowMs: number;
+  limit: number
+  windowMs: number
 }
 
-// In-memory cache for rate limiting. 
-// Note: In a production environment with multiple server instances, 
-// this should be replaced with Redis or a similar distributed store.
-const cache = new Map<string, { count: number; expires: number }>();
-
 /**
- * Simple in-memory rate limiter for Next.js API routes.
+ * Distributed rate limiter backed by PostgreSQL.
+ *
+ * Replaces the previous process-local `Map` which was wiped on every cold
+ * start and was inconsistent across multiple serverless instances.
+ *
+ * Each call issues a single UPSERT that atomically increments the counter for
+ * the current window, then reads back the new count.  Rows from expired
+ * windows are ignored (they share a different `expires_at` and are excluded by
+ * the WHERE clause).  A periodic cleanup job (or a simple DELETE WHERE
+ * expires_at < NOW()) can prune stale rows.
+ *
+ * Graceful degradation: if the database is unavailable the call is allowed
+ * through rather than silently dropping legitimate traffic.
  */
-export function rateLimit(ip: string, config: RateLimitConfig = { limit: 60, windowMs: 60 * 1000 }) {
+export async function rateLimit(
+  ip: string,
+  config: RateLimitConfig = { limit: 60, windowMs: 60 * 1000 }
+): Promise<{ success: boolean; remaining: number; reset: number }> {
   const now = Date.now();
+  const windowStart = Math.floor(now / config.windowMs) * config.windowMs;
+  const expiresAt = new Date(windowStart + config.windowMs);
   const key = `ratelimit_${ip}`;
-  const record = cache.get(key);
 
-  if (!record || now > record.expires) {
-    cache.set(key, { count: 1, expires: now + config.windowMs });
-    return { 
-      success: true, 
+  try {
+    const sql = getDb();
+
+    // Atomically upsert the counter for this (key, window) pair.
+    const rows = await sql<{ count: number }[]>`
+      INSERT INTO rate_limit (key, count, expires_at)
+      VALUES (${key}, 1, ${expiresAt})
+      ON CONFLICT (key, expires_at) DO UPDATE
+        SET count = rate_limit.count + 1
+      RETURNING count
+    `;
+
+    const count = rows[0]?.count ?? 1;
+    const reset = expiresAt.getTime();
+
+    if (count > config.limit) {
+      return { success: false, remaining: 0, reset };
+    }
+
+    return {
+      success: true,
+      remaining: Math.max(0, config.limit - count),
+      reset,
+    };
+  } catch (err) {
+    // Graceful degradation: allow the request if DB is unavailable.
+    logger.error("[rate-limit] DB error, allowing request:", err);
+    return {
+      success: true,
       remaining: config.limit - 1,
-      reset: now + config.windowMs 
+      reset: now + config.windowMs,
     };
   }
-
-  if (record.count >= config.limit) {
-    return { 
-      success: false, 
-      remaining: 0,
-      reset: record.expires
-    };
-  }
-
-  record.count += 1;
-  return { 
-    success: true, 
-    remaining: config.limit - record.count,
-    reset: record.expires
-  };
+interface RateLimitResult {
+  success: boolean
+  remaining: number
+  reset: number
 }
 
-/**
- * Helper to get client IP from request headers.
- */
+interface Store {
+  increment(key: string, windowMs: number): Promise<{ count: number; expires: number }>
+}
+
+function createInMemoryStore(): Store {
+  const cache = new Map<string, { count: number; expires: number }>()
+  return {
+    async increment(key: string, windowMs: number) {
+      const now = Date.now()
+      const record = cache.get(key)
+      if (!record || now > record.expires) {
+        const entry = { count: 1, expires: now + windowMs }
+        cache.set(key, entry)
+        return entry
+      }
+      record.count += 1
+      return record
+    },
+  }
+}
+
+async function createRedisStore(): Promise<Store> {
+  const { Redis } = await import("@upstash/redis")
+  const redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL!,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  })
+
+  return {
+    async increment(key: string, windowMs: number) {
+      const now = Date.now()
+      const [count, ttl] = await redis.eval(
+        `local c = redis.call("INCR",KEYS[1])
+         if c==1 then redis.call("PEXPIRE",KEYS[1],ARGV[1]) end
+         local t = redis.call("PTTL",KEYS[1])
+         return {c,t}`,
+        [key],
+        [windowMs],
+      ) as [number, number]
+
+      const expires = ttl > 0 ? now + ttl : now + windowMs
+      return { count, expires }
+    },
+  }
+}
+
+let storePromise: Promise<Store> | null = null
+
+function getStore(): Promise<Store> {
+  if (storePromise) return storePromise
+
+  const url = process.env.UPSTASH_REDIS_REST_URL
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN
+
+  if (url && token) {
+    storePromise = createRedisStore()
+  } else {
+    storePromise = Promise.resolve(createInMemoryStore())
+  }
+
+  return storePromise
+}
+
+export async function rateLimit(
+  ip: string,
+  config: RateLimitConfig = { limit: 60, windowMs: 60 * 1000 },
+): Promise<RateLimitResult> {
+  const store = await getStore()
+  const now = Date.now()
+  const key = `ratelimit:${config.windowMs}:${ip}`
+
+  const { count, expires } = await store.increment(key, config.windowMs)
+
+  return {
+    success: count <= config.limit,
+    remaining: Math.max(0, config.limit - count),
+    reset: expires,
+  }
+}
+
 export function getIP(req: Request): string {
-  const forwarded = req.headers.get("x-forwarded-for");
+  const forwarded = req.headers.get("x-forwarded-for")
   if (forwarded) {
-    return forwarded.split(",")[0].trim();
+    return forwarded.split(",")[0].trim()
   }
-  return "127.0.0.1";
+  return "127.0.0.1"
 }
 
-/**
- * Standard error response for rate limited requests.
- */
 export function rateLimitResponse(reset: number) {
   return NextResponse.json(
     { error: "Too many requests. Please try again later.", code: "RATE_LIMITED" },
@@ -64,8 +166,10 @@ export function rateLimitResponse(reset: number) {
       status: 429,
       headers: {
         "X-RateLimit-Reset": Math.ceil(reset / 1000).toString(),
-        "Retry-After": Math.ceil((reset - Date.now()) / 1000).toString()
-      }
+        "Retry-After": Math.ceil((reset - Date.now()) / 1000).toString(),
+      },
     }
   );
+    },
+  )
 }

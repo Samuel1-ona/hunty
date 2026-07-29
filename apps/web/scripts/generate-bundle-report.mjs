@@ -88,6 +88,8 @@ function main() {
   lines.push("");
   lines.push("| Metric | Value | Budget (good / poor) | Status |");
   lines.push("|--------|-------|---------------------|--------|");
+  lines.push(`| Metric | Value | Budget (good / poor) | Status |`);
+  lines.push(`|--------|-------|---------------------|--------|`);
   lines.push(
     `| Initial JS (root) | ${initialJsKb} KB | ${BUDGETS.totalJsKb.good} KB / ${BUDGETS.totalJsKb.poor} KB | ${formatBadge(initialJsKb, BUDGETS.totalJsKb.good, BUDGETS.totalJsKb.poor)} |`
   );

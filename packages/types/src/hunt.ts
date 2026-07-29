@@ -4,7 +4,14 @@
 
 import type { Reward, RewardType } from "./reward";
 
-export type HuntStatus = "Active" | "Completed" | "Draft" | "Cancelled";
+export type HuntStatus =
+  | "Active"
+  | "Completed"
+  | "Draft"
+  | "Cancelled"
+  | "PendingReview"
+  | "Scheduled"
+  | "Ended";
 
 /** Broad hunt category used in discovery filters. */
 export type HuntCategory = "Urban" | "Campus" | "Office" | "Museum" | "General";

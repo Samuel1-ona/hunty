@@ -12,7 +12,7 @@ export const GET = withErrorHandling<{
   params: Promise<{ id: string }>
 }>(async (req, { params }) => {
   const ip = getIP(req)
-  const { success, reset } = rateLimit(ip, {
+  const { success, reset } = await rateLimit(ip, {
     limit: 100,
     windowMs: 60 * 1000,
   })
@@ -44,7 +44,7 @@ export const POST = withErrorHandling<{
   params: Promise<{ id: string }>
 }>(async (req, { params }) => {
   const ip = getIP(req)
-  const { success, reset } = rateLimit(ip, {
+  const { success, reset } = await rateLimit(ip, {
     limit: 60,
     windowMs: 60 * 1000,
   })

@@ -25,7 +25,7 @@ function parseHuntId(id: string): number | null {
  */
 export async function GET(req: Request, context: RouteContext) {
   const ip = getIP(req)
-  const { success, reset } = rateLimit(ip, { limit: 100, windowMs: 60_000 })
+  const { success, reset } = await rateLimit(ip, { limit: 100, windowMs: 60_000 })
   if (!success) return rateLimitResponse(reset)
 
   const { id } = await context.params
@@ -46,7 +46,7 @@ export async function GET(req: Request, context: RouteContext) {
  */
 export async function POST(req: Request, context: RouteContext) {
   const ip = getIP(req)
-  const { success, reset } = rateLimit(ip, { limit: 40, windowMs: 60_000 })
+  const { success, reset } = await rateLimit(ip, { limit: 40, windowMs: 60_000 })
   if (!success) return rateLimitResponse(reset)
 
   const { id } = await context.params

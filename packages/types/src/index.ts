@@ -6,9 +6,10 @@
  * untrusted input live in `@hunty/types/schemas`.
  */
 
-export * from "./hunt"
-export * from "./clue"
-export * from "./player"
-export * from "./reward"
-export * from "./achievement"
-export * from "./guards"
+export * from "./achievement";
+export * from "./clue";
+export * from "./component-types";
+export * from "./guards";
+export * from "./hunt";
+export * from "./player";
+export * from "./reward";

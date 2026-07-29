@@ -18,13 +18,10 @@ import type { PushEventType } from "@/lib/notifications/types"
  * }
  */
 export async function POST(request: NextRequest) {
-  // Rate-limit by IP to prevent abuse
   const ip = getIP(request)
-  const { success, reset } = rateLimit(ip, { limit: 50, windowMs: 60 * 1000 })
+  const { success, reset } = await rateLimit(ip, { limit: 50, windowMs: 60 * 1000 })
   if (!success) return rateLimitResponse(reset)
 
-  // Internal secret check — callers must pass the PUSH_API_SECRET in the
-  // Authorization header as "Bearer <secret>".
   const secret = process.env.PUSH_API_SECRET
   if (secret) {
     const authHeader = request.headers.get("Authorization")
@@ -33,47 +30,47 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  let body: { type?: string; walletAddresses?: string[]; context?: Record<string, string | number> }
   try {
-    const body = await request.json()
-    const { type, walletAddresses, context = {} } = body
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
+  }
 
-    if (!type || typeof type !== "string") {
-      return NextResponse.json({ error: "type is required" }, { status: 400 })
-    }
+  const { type, walletAddresses, context = {} } = body
 
-    if (!Array.isArray(walletAddresses) || walletAddresses.length === 0) {
-      return NextResponse.json(
-        { error: "walletAddresses must be a non-empty array" },
-        { status: 400 }
-      )
-    }
+  if (!type || typeof type !== "string") {
+    return NextResponse.json({ error: "type is required" }, { status: 400 })
+  }
 
-    const validTypes: PushEventType[] = [
-      "hunt_start",
-      "hunt_cancelled",
-      "leaderboard_overtake",
-      "player_registered",
-      "first_completion",
-    ]
+  if (!Array.isArray(walletAddresses) || walletAddresses.length === 0) {
+    return NextResponse.json(
+      { error: "walletAddresses must be a non-empty array" },
+      { status: 400 }
+    )
+  }
 
-    if (!validTypes.includes(type as PushEventType)) {
-      return NextResponse.json(
-        { error: `Invalid type. Must be one of: ${validTypes.join(", ")}` },
-        { status: 400 }
-      )
-    }
+  const validTypes: PushEventType[] = [
+    "hunt_start",
+    "hunt_cancelled",
+    "leaderboard_overtake",
+    "player_registered",
+    "first_completion",
+  ]
 
+  if (!validTypes.includes(type as PushEventType)) {
+    return NextResponse.json(
+      { error: `Invalid type. Must be one of: ${validTypes.join(", ")}` },
+      { status: 400 }
+    )
+  }
+
+  try {
     if (walletAddresses.length === 1) {
       await notifyWallet(walletAddresses[0], type as PushEventType, context)
     } else {
       await notifyWallets(walletAddresses, type as PushEventType, context)
     }
-
-    logger.info(
-      `[push/send] Sent "${type}" to ${walletAddresses.length} wallet(s)`
-    )
-
-    return NextResponse.json({ success: true, sent: walletAddresses.length })
   } catch (error) {
     logger.error("[push/send] Failed to send push notification:", error)
     return NextResponse.json(
@@ -81,4 +78,10 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+
+  logger.info(
+    `[push/send] Sent "${type}" to ${walletAddresses.length} wallet(s)`
+  )
+
+  return NextResponse.json({ success: true, sent: walletAddresses.length })
 }

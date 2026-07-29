@@ -11,25 +11,29 @@ node_modules/
 !.yarn/versions
 
 # testing
-/coverage
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
 
 # Visual regression baselines (tracked)
 !/e2e/screenshots/
 
 # next.js
-/.next/
-/out/
+.next/
+out/
+*.compiled.js
+
+# turborepo
+.turbo/
 
 # mutation testing artifacts
-/mutation-report
-/.stryker-tmp
+mutation-report/
+.stryker-tmp/
 
 # production
-/build
+build/
 
 # misc
 .DS_Store
@@ -51,6 +55,9 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# data dumps
+/issues.json
 
 # typescript
 *.tsbuildinfo
