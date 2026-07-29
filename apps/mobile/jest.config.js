@@ -35,7 +35,7 @@ module.exports = {
     '^@hooks/(.*)$': '<rootDir>/hooks/$1',
     '^@store/(.*)$': '<rootDir>/store/$1',
     '^@providers/(.*)$': '<rootDir>/providers/$1',
-    '^@lib/(.*)$': '<rootDir>/../lib/$1',
+    '^@lib/(.*)$': '<rootDir>/../web/lib/$1',
     '^@utils/(.*)$': '<rootDir>/utils/$1',
     '^@components/(.*)$': '<rootDir>/components/$1',
     '^@/(.*)$': '<rootDir>/$1',

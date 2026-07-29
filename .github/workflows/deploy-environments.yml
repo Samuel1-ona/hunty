@@ -20,7 +20,6 @@ on:
 
 env:
   NODE_VERSION: "20"
-  PNPM_VERSION: "8"
 
 jobs:
   deploy-staging:
@@ -36,9 +35,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v4
 
       - name: Get pnpm store directory
         id: pnpm-cache
@@ -56,6 +53,8 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+      - name: Setup Node.js with pnpm
+        uses: ./.github/actions/setup-node-pnpm
 
       - name: Build for Staging
         run: pnpm build
@@ -93,9 +92,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
+        uses: pnpm/action-setup@v4
 
       - name: Get pnpm store directory
         id: pnpm-cache
@@ -113,6 +110,8 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+      - name: Setup Node.js with pnpm
+        uses: ./.github/actions/setup-node-pnpm
 
       - name: Build for Production
         run: pnpm build

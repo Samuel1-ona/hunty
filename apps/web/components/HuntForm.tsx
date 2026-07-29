@@ -1,4 +1,4 @@
-interface HuntFormProps {
+const clueValues = watch("clues");interface HuntFormProps {
   hunt: HuntDraft;
   onUpdate: (field: string, value: string | number | undefined) => void;
   onRemove: () => void;
@@ -7,7 +7,10 @@ interface HuntFormProps {
   onImageUploadStateChange?: (state: CoverImageUploadState) => void;
   /** Called after a clue reorder so the parent can trigger draft auto-save. */
   onClueReorder?: () => void;
-}onChange={(e: ChangeEvent<HTMLInputElement>) => {
-  const raw = e.target.value.trim();
-  onUpdate("maxParticipants", raw === "" ? undefined : Number(raw));
-}}
+}"use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowUpDown, Eye, EyeOff, Minus, Plus, Trash2 } from "lucide-react";
+import React, { ChangeEvent, useCallback, useMemo, useRef, useState } from "react";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
+...

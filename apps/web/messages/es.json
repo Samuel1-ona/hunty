@@ -133,7 +133,14 @@
     "rights": "Todos los derechos reservados.",
     "privacyPolicy": "Política de Privacidad",
     "termsOfService": "Términos de Servicio",
-    "contact": "Contacto"
+    "contact": "Contacto",
+    "stayInHunt": "Mantente en la cacería",
+    "getUpdates": "Recibe actualizaciones de productos, nuevas cacerías y consejos para creadores.",
+    "subscribe": "Suscribirse",
+    "thanksForSubscribing": "Gracias por suscribirte.",
+    "description": "Crea, descubre y completa cacerías del tesoro Web3 impulsadas por recompensas de Stellar.",
+    "builtOnStellar": "Construido en Stellar",
+    "helpAndTroubleshooting": "Ayuda y Solución de problemas"
   },
   "errors": {
     "notFound": "Página no encontrada",
@@ -144,5 +151,21 @@
   "language": {
     "en": "Inglés",
     "es": "Español"
+  },
+  "playGame": {
+    "lockedClue": "Bloqueado hasta que se resuelva la pista anterior.",
+    "timeExpired": "Se acabó el tiempo — progreso enviado automáticamente",
+    "retry": "Reintentar",
+    "goBack": "Regresar",
+    "noClues": "Aún no hay pistas disponibles para esta cacería.",
+    "huntEnded": "Cacería Finalizada",
+    "finalScore": "Puntuación final",
+    "goHome": "Ir al Inicio",
+    "editGame": "Editar Juego",
+    "onlyYouSeeThis": "(Solo Tú Puedes Ver Esto)",
+    "play": "Jugar",
+    "reset": "Reiniciar",
+    "shareLink": "Compartir Enlace",
+    "moreCards": "más tarjetas"
   }
 }

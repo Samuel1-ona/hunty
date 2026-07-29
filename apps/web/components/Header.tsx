@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { NotificationPanel } from "@/components/NotificationPanel";
@@ -253,6 +254,7 @@ function MobileMenu({
 // ─── Main Header ───────────────────────────────────────────────────────────────
 
 export function Header() {
+  const t = useTranslations("header");
   const mounted = useIsMounted();
   const { connected, displayKey, publicKey, connect, disconnect, walletProvider } = useWallet();
 
@@ -475,7 +477,7 @@ export function Header() {
                         )}
                         <div className="min-w-0">
                           <p className="text-xs text-blue-200 font-medium mb-0.5">
-                            Connected wallet
+                            {t("connectedWallet")}
                           </p>
                           <p className="text-[11px] uppercase tracking-wide text-blue-200/80 mb-1">
                             {walletProvider ?? "freighter"}
@@ -494,7 +496,7 @@ export function Header() {
                           ) : (
                             <Copy className="w-4 h-4 text-slate-400 flex-shrink-0" />
                           )}
-                          {copied ? "Copied!" : "Copy address"}
+                          {copied ? t("copied") : t("copyAddress")}
                         </button>
 
                         {publicKey && (
@@ -535,7 +537,7 @@ export function Header() {
                           className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-left font-medium"
                         >
                           <LogOut className="w-4 h-4 flex-shrink-0" />
-                          Disconnect wallet
+                          {t("disconnectWallet")}
                         </button>
                       </div>
                     </div>
@@ -548,7 +550,7 @@ export function Header() {
                 onClick={() => setModalOpen(true)}
                 className="hidden sm:inline-flex bg-gradient-to-r from-[#3737A4] to-[#0C0C4F] hover:opacity-90 text-white font-bold px-4 py-2 rounded-xl text-sm"
               >
-                Connect Wallet
+                {t("connectWallet")}
               </Button>
             )}
 

@@ -1,5 +1,6 @@
 name: iOS TestFlight Distribution
 
+# paths and working-dirs target apps/mobile (post-monorepo-restructure).
 on:
   push:
     branches:

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
+import { logger } from "@/lib/logger";
 
 export const POST = withErrorHandling(async (req: NextRequest) => {
   const rawBody = await req.text();
@@ -17,7 +18,7 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   const report = data["csp-report"] as Record<string, unknown> | undefined;
 
   if (report) {
-    console.warn("CSP Violation Detected:", {
+    logger.warn("CSP Violation Detected:", {
       documentUri: report["document-uri"],
       referrer: report["referrer"],
       blockedUri: report["blocked-uri"],
@@ -26,7 +27,7 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
       disposition: report["disposition"],
     });
   } else {
-    console.warn("Received report payload without 'csp-report' field:", data);
+    logger.warn("Received report payload without 'csp-report' field:", data);
   }
 
   return new NextResponse(null, { status: 204 });

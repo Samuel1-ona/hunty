@@ -167,19 +167,19 @@ export async function estimateGas(
   transaction: Transaction
 ): Promise<GasEstimation> {
   return withErrorHandling(async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const maybeServer = server as any
+    const maybeServer = server as Server & {
+      simulateTransaction?: (tx: Transaction) => Promise<{
+        minResourceFee?: string
+        cost?: { cpuInsns?: string; memBytes?: string }
+      }>
+    }
 
     if (typeof maybeServer.simulateTransaction !== "function") {
       return { fee: "100100" } // conservative fallback
     }
 
     const simulation = await withSorobanRpcRetry(
-      () =>
-        maybeServer.simulateTransaction(transaction) as Promise<{
-          minResourceFee?: string
-          cost?: { cpuInsns?: string; memBytes?: string }
-        }>,
+      () => maybeServer.simulateTransaction(transaction),
       { timeoutMs: 10000, maxAttempts: 2 }
     )
 
@@ -221,20 +221,20 @@ export async function simulateTransaction(
   transaction: Transaction
 ): Promise<SimulationResult> {
   return withErrorHandling(async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const maybeServer = server as any
+    const maybeServer = server as Server & {
+      simulateTransaction?: (tx: Transaction) => Promise<{
+        status?: string
+        error?: string
+        cost?: { cpuInsns?: string; memBytes?: string }
+      }>
+    }
 
     if (typeof maybeServer.simulateTransaction !== "function") {
       return { success: true, status: "SIMULATION_NOT_AVAILABLE" }
     }
 
     const result = (await withSorobanRpcRetry(
-      () =>
-        maybeServer.simulateTransaction(transaction) as Promise<{
-          status?: string
-          error?: string
-          cost?: { cpuInsns?: string; memBytes?: string }
-        }>,
+      () => maybeServer.simulateTransaction(transaction),
       { timeoutMs: 10000, maxAttempts: 2 }
     ))
 
@@ -322,8 +322,11 @@ export async function writeContract(
           fee,
           networkPassphrase: getSorobanNetworkPassphrase(),
         })
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .addOperation({ type: "manageData", name: opName, value: payload } as any)
+          .addOperation({
+            type: "manageData",
+            name: opName,
+            value: payload,
+          })
           .setTimeout(timeout)
           .build()
       )
@@ -483,8 +486,9 @@ export async function pollTransactionStatus(
     }
 
     const server = createServer()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const maybeServer = server as any
+    const maybeServer = server as Server & {
+      getTransaction?: (hash: string) => Promise<{ status?: string }>
+    }
 
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       onPoll?.(attempt)

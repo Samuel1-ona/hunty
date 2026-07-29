@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main, master ]
 
+concurrency:
+  group: playwright-cross-browser-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # ── Axe accessibility audit (runs once on Chromium) ─────────────────────────
   # Serious and critical violations fail the build.
@@ -14,28 +18,21 @@ jobs:
   a11y-audit:
     name: Axe accessibility audit
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/web
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Use Node.js
-        uses: actions/setup-node@v3
+      - name: Setup Node.js with pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: 18
-
-      - name: Install dependencies
-        run: |
-          corepack enable
-          pnpm install --frozen-lockfile
-        working-directory: .
+          working-directory: apps/web
 
       - name: Install Playwright browsers (Chromium only)
+        working-directory: apps/web
         run: npx playwright install chromium --with-deps
 
       - name: Run axe accessibility audit
+        working-directory: apps/web
         env:
           CI: true
         run: npx playwright test e2e/a11y-audit.spec.ts --project=chromium-desktop --reporter=github
@@ -62,20 +59,26 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Use Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
 
       - name: Install dependencies
-        run: |
-          corepack enable
-          pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
+      - name: Setup Node.js with pnpm
+        uses: ./.github/actions/setup-node-pnpm
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        run: pnpm exec playwright install --with-deps
 
       - name: Run Playwright tests for project
         env:
           CI: true
           WALLET_EXTENSION_PATH: ${{ secrets.WALLET_EXTENSION_PATH }}
+        run: pnpm exec playwright test --project=${{ matrix.project }} --reporter=github
         run: npx playwright test --project=${{ matrix.project }} --reporter=github

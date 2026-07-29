@@ -53,7 +53,7 @@ function getRpcUrl(): string {
  * Retrieves the network passphrase from environment or uses the default.
  */
 function getNetworkPassphrase(): string {
-  if (typeof window ==="undefined") {
+  if (typeof window === "undefined") {
     return (
       process.env.NEXT_PUBLIC_SOROBAN_NETWORK_PASSPHRASE ??
       DEFAULT_NETWORK_PASSPHRASE

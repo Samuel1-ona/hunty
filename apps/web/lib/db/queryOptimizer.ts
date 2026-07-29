@@ -1,4 +1,5 @@
 import { getAllHunts, getHuntById, type StoredHunt } from "@/lib/huntStore";
+import { logger } from "@/lib/logger";
 import { getHuntsWithRatings } from "@/lib/reviews";
 
 type CacheEntry<T> = {
@@ -38,8 +39,7 @@ function writeCache<T>(key: string, value: T, ttlMs = DEFAULT_CACHE_TTL_MS): T {
 
 function logSlowQuery(queryName: string, durationMs: number, meta: Record<string, unknown>) {
   if (durationMs <= SLOW_QUERY_THRESHOLD_MS) return;
-  // eslint-disable-next-line no-console
-  console.warn(`[slow-query] ${queryName} took ${durationMs.toFixed(1)}ms`, meta);
+  logger.warn(`[slow-query] ${queryName} took ${durationMs.toFixed(1)}ms`, meta);
 }
 
 function trackPotentialNPlusOne(queryName: string, requestId?: string) {
@@ -49,8 +49,7 @@ function trackPotentialNPlusOne(queryName: string, requestId?: string) {
   queryCounter.set(key, count);
 
   if (count === 8) {
-    // eslint-disable-next-line no-console
-    console.warn(
+    logger.warn(
       `[n+1-detected] Query ${queryName} was called repeatedly in request ${requestId}.`
     );
   }

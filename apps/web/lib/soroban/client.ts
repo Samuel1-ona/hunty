@@ -3,9 +3,6 @@ import Server from "@stellar/stellar-sdk";
 
 import { createSorobanRpcOptimizer } from "./rpcOptimization";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const SorobanServer = Server as any;
-
 /**
  * Testnet network configuration
  */
@@ -81,19 +78,17 @@ export function getSorobanNetworkType(): "testnet" | "mainnet" {
 /**
  * Creates a Soroban Server instance for the configured RPC URL.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let sharedServer: any | null = null;
+let sharedServer: Server | null = null;
 let sharedServerRpcUrl: string | null = null;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function createSorobanServer(): any {
+export function createSorobanServer(): Server {
   const rpcUrl = getRpcUrl();
 
   if (sharedServer && sharedServerRpcUrl === rpcUrl) {
     return sharedServer;
   }
 
-  sharedServer = new SorobanServer(rpcUrl);
+  sharedServer = new Server(rpcUrl);
   sharedServerRpcUrl = rpcUrl;
 
   return sharedServer;

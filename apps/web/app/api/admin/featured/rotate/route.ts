@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { NotFoundError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
+import { assertAdminAuth } from "@/lib/api/adminAuth";
 import { readFeaturedId, writeFeaturedId } from "@/lib/featuredHuntDb";
 import { SEED_HUNTS } from "@/lib/huntStore";
 
@@ -15,7 +16,8 @@ import { SEED_HUNTS } from "@/lib/huntStore";
  * Any database failure propagates as an HTTP 500 rather than being silently
  * ignored.
  */
-export const POST = withErrorHandling(async () => {
+export const POST = withErrorHandling(async (req: Request) => {
+  assertAdminAuth(req);
   // Only rotate amongst active seeded hunts
   const activeSeedHunts = SEED_HUNTS.filter((h) => h.status === "Active");
   if (activeSeedHunts.length === 0) {

@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import { useFavorites } from "@/hooks/useFavorites"
 import { getAllHunts } from "@/lib/huntStore"
 import { WalletContext } from "@/lib/context/WalletContext"
+import { logger } from "@/lib/logger"
 
 export function FavoriteNotifications() {
   const { favorites, isLoaded } = useFavorites()
@@ -56,7 +57,7 @@ export function FavoriteNotifications() {
           localStorage.setItem(storageKey, JSON.stringify(Array.from(notifiedSet)))
         }
       } catch (e) {
-        console.error("Failed to process favorite notifications", e)
+        logger.error("Failed to process favorite notifications", e)
       }
     }
 

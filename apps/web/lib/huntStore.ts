@@ -41,6 +41,11 @@ const HUNT_PROGRESS_KEY_PREFIX = "hunty_hunt_progress_";
 export const MAX_CLUES_PER_HUNT = 10;
 export const DEFAULT_HUNT_INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
+/** How long a paid spotlight placement stays active. */
+export const SPOTLIGHT_DURATION_SECONDS = 24 * 60 * 60;
+/** Cost in XLM to promote a hunt into the spotlight carousel. */
+export const SPOTLIGHT_FEE_XLM = 1;
+
 // Seed timestamps: active hunts end 7 days from first load, completed hunts in the past.
 const NOW_SECONDS = Math.floor(Date.now() / 1000);
 
@@ -372,6 +377,27 @@ export function updateHuntRewardEscrow(
       : h
   );
   writeHunts(hunts);
+}
+
+/** Set or clear a hunt's spotlight placement window. */
+export function updateHuntPromotion(huntId: number, promotedUntil?: number): void {
+  const hunts = readHunts().map((hunt) =>
+    hunt.id === huntId ? { ...hunt, promotedUntil } : hunt
+  )
+  writeHunts(hunts)
+}
+
+/** Returns true when a hunt is currently in the paid spotlight window. */
+export function isHuntPromoted(hunt: StoredHunt): boolean {
+  return typeof hunt.promotedUntil === "number" && hunt.promotedUntil > Math.floor(Date.now() / 1000)
+}
+
+/** Return active spotlight hunts sorted by the latest promotion expiry first. */
+export function getSpotlightHunts(limit = 6): StoredHunt[] {
+  return readHunts()
+    .filter((hunt) => hunt.status === "Active" && !hunt.is_private && isHuntPromoted(hunt))
+    .sort((left, right) => (right.promotedUntil ?? 0) - (left.promotedUntil ?? 0))
+    .slice(0, limit)
 }
 
 /** Delete multiple hunts by IDs. */

@@ -1,6 +1,5 @@
 "use client";
 
-import { getAddress, isConnected, requestAccess, WatchWalletChanges } from "@stellar/freighter-api";
 import { useRouter } from "next/navigation";
 import {
   createContext,
@@ -9,24 +8,16 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useState,
+  useRef,
 } from "react";
 
-import { useIsMounted } from "@/hooks/useIsMounted";
-import { cancelPendingTransactions } from "@/lib/txToast";
-import {
-  clearStoredWalletSession,
-  connectWalletProvider,
-  getStoredWalletSession,
-  setStoredWalletSession,
-  type WalletProvider,
-} from "@/lib/walletAdapter";
 import { truncateAddress } from "@/lib/walletAddress";
-import { disconnectWalletConnect } from "@/lib/walletConnect";
+import { useWalletMachine } from "@/lib/wallet/walletMachine";
 import { useWalletStore } from "@/lib/wallets/walletStore";
 import { usePlayerStore, useWalletStore as useLegacyWalletStore } from "@/store/useStore";
+import type { WalletProvider } from "@/lib/wallets/types";
 
-const STORAGE_KEY = "freighter_public_key";
+// ─── Address display helper ────────────────────────────────────────────────
 
 /**
  * Shortens a Stellar public key for display.
@@ -40,6 +31,8 @@ export function shortenAddress(address: string, chars = 6): string {
   if (!address) return address;
   return truncateAddress(address, { lead: chars, tail: chars });
 }
+
+// ─── Context value type ────────────────────────────────────────────────────
 
 interface WalletContextValue {
   /** Whether a wallet is currently connected */
@@ -58,196 +51,72 @@ interface WalletContextValue {
 
 export const WalletContext = createContext<WalletContextValue | null>(null);
 
+// ─── Provider ──────────────────────────────────────────────────────────────
+
 export function WalletProvider({ children }: { children: ReactNode }) {
-  const mounted = useIsMounted();
   const router = useRouter();
-  const [publicKey, setPublicKey] = useState<string>("");
-  const [connected, setConnected] = useState(false);
-  const [walletProvider, setWalletProvider] = useState<WalletProvider | null>(null);
+  const serverSafe = useRef(typeof window !== "undefined");
 
-  const { setConnected: storeSetConnected, setDisconnected: storeSetDisconnected } =
-    useWalletStore();
+  // ── State machine (single source of truth) ─────────────────────────
+  const {
+    state,
+    connect: machineConnect,
+    disconnect: machineDisconnect,
+  } = useWalletMachine();
 
-  /**
-   * Clears wallet React state, zustand stores, session keys, WalletConnect,
-   * and any pending transaction toasts — without navigating away.
-   * Used by explicit disconnect and by Freighter lock/disconnect watcher.
-   */
-  const clearWalletState = useCallback(() => {
-    clearStoredWalletSession();
-    localStorage.removeItem(STORAGE_KEY);
-    setPublicKey("");
-    setWalletProvider(null);
-    setConnected(false);
-    storeSetDisconnected();
-    useLegacyWalletStore.getState().clearWallet();
-    usePlayerStore.getState().clearProgress();
-    disconnectWalletConnect();
-    cancelPendingTransactions();
-  }, [storeSetDisconnected]);
+  const { status, publicKey, provider, error } = state;
+  const connected = status === "connected";
 
-  // On client mount: restore persisted session and verify it's still valid
+  // ── Sync machine state into zustand store (cross-component) ────────
+  const { syncFromMachine: storeSync } = useWalletStore();
+
   useEffect(() => {
-    if (!mounted) return;
+    if (!serverSafe.current) return;
+    storeSync({ status, publicKey, provider, error });
 
-    const restoreSession = async () => {
-      const session = getStoredWalletSession();
-      if (session) {
-        try {
-          const address = await connectWalletProvider(session.provider);
-          setStoredWalletSession(session.provider, address);
-          localStorage.setItem(STORAGE_KEY, address);
-          setPublicKey(address);
-          setWalletProvider(session.provider);
-          setConnected(true);
-          return;
-        } catch {
-          clearStoredWalletSession();
-        }
-      }
-
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) return;
-
-      try {
-        // Check extension is present before calling getAddress
-        const connResult = await isConnected();
-        if (!connResult.isConnected) {
-          // Extension removed or disabled — clear stale session
-          localStorage.removeItem(STORAGE_KEY);
-          return;
-        }
-
-        // getAddress() returns the active address without prompting the user.
-        // Returns empty string (not an error) if the app isn't on the allow list.
-        const addrResult = await getAddress();
-        if (addrResult.error || !addrResult.address) {
-          localStorage.removeItem(STORAGE_KEY);
-          return;
-        }
-
-        // Restore session (update if user switched accounts in Freighter)
-        const resolvedKey = addrResult.address;
-        if (resolvedKey !== saved) {
-          localStorage.setItem(STORAGE_KEY, resolvedKey);
-        }
-        setPublicKey(resolvedKey);
-        setWalletProvider("freighter");
-        setConnected(true);
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
-      }
-    };
-
-    restoreSession();
-  }, [mounted]);
-
-  // Watch for live account/network changes (e.g. user switches accounts in Freighter)
-  // Runs once on client mount — watcher polls internally every 3s
-  useEffect(() => {
-    if (!mounted) return;
-
-    let watcher: InstanceType<typeof WatchWalletChanges> | null = null;
-
-    try {
-      watcher = new WatchWalletChanges(3000);
-      watcher.watch(
-        ({ address }: { address: string; network: string; networkPassphrase: string }) => {
-          if (address) {
-            // Account changed or connected
-            setPublicKey(address);
-            setConnected(true);
-            localStorage.setItem(STORAGE_KEY, address);
-            setStoredWalletSession("freighter", address);
-          } else {
-            // Empty address = user locked or disconnected Freighter
-            clearWalletState();
-          }
-        }
-      );
-    } catch {
-      // Freighter not installed — watcher silently skipped
+    // Also sync legacy stores for backwards compat
+    if (status === "connected") {
+      useLegacyWalletStore.getState().setWallet(publicKey);
     }
+    if (status === "disconnected") {
+      useLegacyWalletStore.getState().clearWallet();
+      usePlayerStore.getState().clearProgress();
+    }
+  }, [status, publicKey, provider, error, storeSync]);
 
-    return () => {
-      watcher?.stop();
-    };
-  }, [mounted, clearWalletState]);
-
-  /**
-   * Trigger wallet popup to request wallet access.
-   * requestAccess() prompts if not yet on the allow list,
-   * or returns immediately if the user already approved this app.
-   */
+  // ── Connect wrapper (matches existing interface) ───────────────────
+  // machineConnect handles all errors internally by dispatching CONNECT_ERROR.
   const connect = useCallback(
-    async (provider: WalletProvider = "freighter"): Promise<{ error?: string }> => {
-      try {
-        if (provider === "freighter") {
-          const connResult = await isConnected();
-          if (!connResult.isConnected) {
-            return {
-              error: "Freighter extension not found. Please install it from freighter.app",
-            };
-          }
-
-          // requestAccess() returns { address: string, error?: string }
-          // error is a plain string per the Freighter API docs
-          const accessResult = await requestAccess();
-
-          if (accessResult.error) {
-            return { error: String(accessResult.error) };
-          }
-
-          const address = accessResult.address;
-          if (!address) {
-            return { error: "No public key returned. Please try again." };
-          }
-
-          setStoredWalletSession("freighter", address);
-          localStorage.setItem(STORAGE_KEY, address);
-          setPublicKey(address);
-          setWalletProvider("freighter");
-          setConnected(true);
-          storeSetConnected(address, "freighter");
-          return {};
-        }
-
-        const address = await connectWalletProvider(provider);
-        setStoredWalletSession(provider, address);
-        localStorage.setItem(STORAGE_KEY, address);
-        setPublicKey(address);
-        setWalletProvider(provider);
-        setConnected(true);
-        storeSetConnected(address, provider);
-        return {};
-      } catch (err) {
-        return {
-          error: err instanceof Error ? err.message : "Unexpected error during connection.",
-        };
-      }
+    async (provider?: WalletProvider): Promise<{ error?: string }> => {
+      await machineConnect(provider);
+      return {};
     },
-    [storeSetConnected]
+    [machineConnect]
   );
 
+  // ── Disconnect wrapper ────────────────────────────────────────────
   const disconnect = useCallback(() => {
-    clearWalletState();
+    machineDisconnect();
     router.push("/");
-  }, [clearWalletState, router]);
+  }, [machineDisconnect, router]);
 
+  // ── Memoized context value ─────────────────────────────────────────
   const value = useMemo<WalletContextValue>(
     () => ({
       connected,
       publicKey,
       displayKey: shortenAddress(publicKey),
       connect,
-      walletProvider,
+      walletProvider: provider,
       disconnect,
     }),
-    [connected, publicKey, connect, walletProvider, disconnect]
+    [connected, publicKey, connect, provider, disconnect]
   );
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
 }
+
+// ─── Hook ──────────────────────────────────────────────────────────────────
 
 /**
  * Hook to access wallet connection state and methods.
