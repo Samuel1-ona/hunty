@@ -31,11 +31,11 @@
       "npx prettier --write"
     ],
     "apps/web/**/*.{ts,tsx}": [
-      "eslint --fix --max-warnings=0",
+      "npx eslint --fix --max-warnings=0",
       "prettier --write"
     ],
     "packages/**/*.{ts,tsx}": [
-      "eslint --fix --max-warnings=0",
+      "npx eslint --fix --max-warnings=0",
       "prettier --write"
     ],
     "*.{js,mjs,cjs}": [
