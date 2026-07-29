@@ -1,6 +1,7 @@
+import { FlatCompat } from '@eslint/eslintrc';
+import reactNativeConfig from '@hunty/config/eslint/react-native';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { FlatCompat } from '@eslint/eslintrc';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -10,13 +11,13 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  ...reactNativeConfig,
   ...compat.extends('expo', 'prettier'),
   {
     ignores: ['node_modules/', '.expo/', 'build/', 'dist/', 'coverage/'],
   },
   {
     rules: {
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
       'react-hooks/exhaustive-deps': 'warn',
     },
   },

@@ -5,7 +5,7 @@ import { logger } from '@/lib/logger';
 /**
  * A hook to handle pull-to-refresh state for async actions (e.g., React Query refetch).
  */
-export function useRefreshByUser(refetch: () => Promise<any>) {
+export function useRefreshByUser(refetch: () => Promise<unknown>) {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {

@@ -33,7 +33,8 @@ export async function POST(
     await writeCompletions(completions)
 
     return NextResponse.json({ success: true })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to register completion" }, { status: 500 })
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to register completion"
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

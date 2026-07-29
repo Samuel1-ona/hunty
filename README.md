@@ -20,6 +20,9 @@ Hunty is a cross-platform scavenger-hunt platform and dApp that combines web, mo
 - Create, publish, and manage hunts from a creator dashboard.
 - Schedule hunts with start/end datetimes, timezone-aware display, countdowns for upcoming hunts, and reminder emails before launch.
 - Play hunts with location and clue validation, progress tracking, and completion flows.
+- Share hunt referral links tied to a wallet address and track invite bonuses on the player profile.
+- Attach image, audio, or video media to clue cards through the existing IPFS upload flow.
+- Promote active hunts into a 24-hour spotlight carousel from the creator dashboard.
 - Mint and claim NFT rewards and on-chain token payouts for completed hunts.
 - Community and leaderboard features for social play and competition.
 
@@ -136,6 +139,15 @@ pnpm run e2e          # Playwright E2E (web only)
 ```
 
 The local coverage command writes an HTML report to `coverage/index.html`.
+
+6. Run Storybook for isolated UI documentation:
+
+```bash
+pnpm run storybook
+pnpm run build-storybook
+```
+
+Storybook includes the `components/ui/` primitives plus `Header`, `HuntCards`, `GameCompleteModal`, and `WalletModal` stories for contributor review. If you use Chromatic or GitHub Pages in CI, publish the static `storybook-static/` output from `pnpm run build-storybook`.
 
 ### Hunt scheduling
 

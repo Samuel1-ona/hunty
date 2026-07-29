@@ -133,7 +133,14 @@
     "rights": "All rights reserved.",
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service",
-    "contact": "Contact"
+    "contact": "Contact",
+    "stayInHunt": "Stay in the hunt",
+    "getUpdates": "Get product updates, new hunt drops, and creator tips.",
+    "subscribe": "Subscribe",
+    "thanksForSubscribing": "Thanks for subscribing.",
+    "description": "Create, discover, and complete Web3 scavenger hunts powered by Stellar rewards.",
+    "builtOnStellar": "Built on Stellar",
+    "helpAndTroubleshooting": "Help & Troubleshooting"
   },
   "errors": {
     "notFound": "Page not found",
@@ -144,5 +151,21 @@
   "language": {
     "en": "English",
     "es": "Spanish"
+  },
+  "playGame": {
+    "lockedClue": "Locked until the previous clue is solved.",
+    "timeExpired": "Time's up — progress auto-submitted",
+    "retry": "Retry",
+    "goBack": "Go Back",
+    "noClues": "No clues available for this hunt yet.",
+    "huntEnded": "Hunt Ended",
+    "finalScore": "Final score",
+    "goHome": "Go Home",
+    "editGame": "Edit Game",
+    "onlyYouSeeThis": "(Only You Can See This)",
+    "play": "Play",
+    "reset": "Reset",
+    "shareLink": "Share Link",
+    "moreCards": "more cards"
   }
 }

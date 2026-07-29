@@ -5,9 +5,17 @@ interface RateLimitConfig {
   windowMs: number;
 }
 
-// In-memory cache for rate limiting. 
-// Note: In a production environment with multiple server instances, 
-// this should be replaced with Redis or a similar distributed store.
+// In-memory cache for rate limiting.
+//
+// Intentionally in-memory: rate limits are ephemeral per-request data that do
+// not need to survive deploys.  Each instance independently enforces limits,
+// which is acceptable because a short burst across instances during a deploy
+// is harmless compared to the latency of a database round-trip on every request.
+//
+// If stricter cross-instance coordination is ever required (e.g. for
+// per-wallet global limits), replace with Redis or a similar distributed store.
+// Bans and moderation decisions are already persisted in PostgreSQL — see
+// @/lib/antiCheatDb and @/lib/moderation/dbStore.
 const cache = new Map<string, { count: number; expires: number }>();
 
 /**

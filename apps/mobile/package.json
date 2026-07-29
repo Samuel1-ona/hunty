@@ -48,6 +48,8 @@
   },
   "dependencies": {
     "@expo/metro-runtime": "~55.0.11",
+    "@hunty/types": "workspace:*",
+    "@hunty/ui": "workspace:*",
     "@gorhom/bottom-sheet": "^5.2.14",
     "@react-native-async-storage/async-storage": "^2.0.0",
     "@sentry/react-native": "~6.3.0",
@@ -102,6 +104,7 @@
     "babel-plugin-module-resolver": "^5.0.0",
     "babel-preset-expo": "~55.0.0",
     "eas-cli": "^7.1.0",
+    "@hunty/config": "workspace:*",
     "jest": "^29.7.0",
     "@storybook/react-native": "^10.4.7",
     "jest-expo": "~55.0.5",

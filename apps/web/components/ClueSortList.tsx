@@ -31,9 +31,8 @@ interface ClueSortListProps {
  * - Smooth CSS transition animations during reorder
  * - Screen-reader live region announcements
  */
-export function ClueSortList({ items, onReorder, disabled = false }: ClueSortListProps) {
-  // ─── State ───────────────────────────────────────────────────────────
 export function ClueSortList({ items, onReorder, disabled = false, enableDrag = true }: ClueSortListProps) {
+  // ─── State ───────────────────────────────────────────────────────────
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [overIndex, setOverIndex] = useState<number | null>(null)
 
@@ -242,44 +241,10 @@ export function ClueSortList({ items, onReorder, disabled = false, enableDrag = 
             key={item.id}
             ref={(el) => { itemRefs.current[index] = el }}
             role="listitem"
-            draggable={!disabled}
-            onDragStart={(e) => handleDragStart(e, index)}
-            onDragOver={(e) => handleDragOver(e, index)}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, index)}
-            onDragEnd={handleDragEnd}
             onPointerDown={(e) => handlePointerDown(e, index)}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerCancel}
-            onKeyDown={(e) => handleKeyDown(e, index)}
-            aria-roledescription="sortable clue"
-            aria-label={`Clue ${index + 1}: ${item.label || "Untitled clue"}`}
-            aria-grabbed={isDragged}
-            tabIndex={disabled ? -1 : 0}
-            style={{ touchAction: "none" }}
-            className={[
-              "group flex items-center gap-2 rounded-lg border px-3 py-2 text-sm select-none",
-              "transition-all duration-200 ease-in-out",
-              disabled
-                ? "opacity-50 cursor-not-allowed"
-                : "cursor-grab active:cursor-grabbing",
-              isDragged ? "opacity-40 scale-[0.98] shadow-lg z-10 relative" : "",
-              isOver
-                ? "border-[#3737A4] bg-indigo-50 dark:bg-indigo-950/30 scale-[1.01]"
-                : "border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/50",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3737A4] focus-visible:ring-offset-1",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-          >
-            {/* Drag handle */}
-            <div
-              className="shrink-0 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300"
-              aria-hidden="true"
-            >
-              <GripVertical className="w-4 h-4" />
-            </div>
             draggable={enableDrag && !disabled}
             onDragStart={enableDrag ? (e) => handleDragStart(e, index) : undefined}
             onDragOver={enableDrag ? (e) => handleDragOver(e, index) : undefined}

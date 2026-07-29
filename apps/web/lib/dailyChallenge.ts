@@ -53,7 +53,7 @@ function readJSON<T>(key: string, fallback: T): T {
 }
 
 /** Helper to write JSON to localStorage safely. */
-function writeJSON(key: string, value: any): void {
+function writeJSON<T>(key: string, value: T): void {
   if (typeof window === 'undefined') return
   try {
     localStorage.setItem(key, JSON.stringify(value))

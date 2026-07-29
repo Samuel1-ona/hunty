@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { submitHuntForModeration } from "@/lib/moderation/store"
+import { submitHuntForModeration } from "@/lib/moderation/dbStore"
 import type { StoredHunt } from "@/lib/types"
 
 export async function POST(req: NextRequest) {
@@ -15,6 +15,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "hunt with id and title is required" }, { status: 400 })
   }
 
-  const submission = submitHuntForModeration(hunt)
+  const submission = await submitHuntForModeration(hunt)
   return NextResponse.json({ success: true, submission })
 }

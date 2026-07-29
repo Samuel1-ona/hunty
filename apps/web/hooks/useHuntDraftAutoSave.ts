@@ -243,7 +243,7 @@ export function useHuntDraftAutoSave({
     if (walletPublicKey) {
       debouncedCloudSync.current()
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- debounced save handlers are stored in refs to remain stable across renders while saving updated form state (hunts, rewards, meta, walletPublicKey)
   }, [hunts, rewards, meta, walletPublicKey])
 
   // Clean up debounces on unmount.

@@ -3,7 +3,7 @@ import {
   getCreatorNotifications,
   getModerationStatusForHunts,
   markNotificationRead,
-} from "@/lib/moderation/store"
+} from "@/lib/moderation/dbStore"
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -15,10 +15,10 @@ export async function GET(req: NextRequest) {
       .split(",")
       .map((id) => parseInt(id.trim(), 10))
       .filter((id) => !Number.isNaN(id))
-    return NextResponse.json({ statuses: getModerationStatusForHunts(huntIds) })
+    return NextResponse.json({ statuses: await getModerationStatusForHunts(huntIds) })
   }
 
-  return NextResponse.json({ notifications: getCreatorNotifications(email) })
+  return NextResponse.json({ notifications: await getCreatorNotifications(email) })
 }
 
 export async function POST(req: NextRequest) {
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "notificationId is required" }, { status: 400 })
   }
 
-  const ok = markNotificationRead(body.notificationId)
+  const ok = await markNotificationRead(body.notificationId)
   if (!ok) {
     return NextResponse.json({ error: "Notification not found" }, { status: 404 })
   }

@@ -192,12 +192,15 @@ function CreateGameContent() {
     }
   }, []);
 
+  const appliedDraftIdRef = useRef<string | null>(null);
+
   // Load a previously auto-saved draft when navigating from the draft list.
   useEffect(() => {
     const draftId = searchParams.get("draftId");
-    if (!draftId) return;
+    if (!draftId || appliedDraftIdRef.current === draftId) return;
     const saved = readDraftPayload(draftId);
     if (!saved) return;
+    appliedDraftIdRef.current = draftId;
     setHunts(saved.hunts);
     setRewards(saved.rewards.map((r) => ({ ...r, icon: undefined })));
     setGameName(saved.meta.gameName);
@@ -210,9 +213,7 @@ function CreateGameContent() {
     setCreatorEmail(saved.meta.creatorEmail);
     setEmailNotifications(saved.meta.emailNotifications);
     setActiveDraftId(draftId);
-    // Only run on mount; deps intentionally omitted to avoid re-loading on every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     const templateSlug = searchParams.get("template");
@@ -285,7 +286,7 @@ function CreateGameContent() {
   const rewardItemSchema = z.object({
     place: z.number().int().positive(),
     amount: z.number().positive("Reward amount must be greater than 0."),
-    icon: z.any().optional(),
+    icon: z.unknown().optional(),
   });
 
   const formSchema = z

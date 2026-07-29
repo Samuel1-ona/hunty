@@ -4,36 +4,15 @@ on:
     branches: [main]
     paths:
       - 'package.json'
-      - 'package-lock.json'
       - 'pnpm-lock.yaml'
       - 'apps/mobile/package.json'
-      - 'apps/mobile/package-lock.json'
       - 'apps/mobile/pnpm-lock.yaml'
       - '.github/workflows/lockfile-integrity.yml'
+      - '.github/actions/setup-node-pnpm/action.yml'
 permissions:
   contents: read
 jobs:
-  npm-lockfiles:
-    name: Verify npm lockfiles
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        project:
-          - '.'
-          - 'apps/mobile'
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: npm
-          cache-dependency-path: ${{ matrix.project == '.' && 'package-lock.json' || 'apps/mobile/package-lock.json' }}
-      - name: Verify lockfile can install cleanly
-        working-directory: ${{ matrix.project }}
-        run: npm ci --ignore-scripts
-  pnpm-lockfiles:
+  lockfile-integrity:
     name: Verify pnpm lockfiles
     runs-on: ubuntu-latest
     strategy:
@@ -44,18 +23,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Enable Corepack
-        run: corepack enable
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js with pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
-          version: 10.33.0
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: pnpm
-          cache-dependency-path: ${{ matrix.project == '.' && 'pnpm-lock.yaml' || 'apps/mobile/pnpm-lock.yaml' }}
-      - name: Verify pnpm lockfile is frozen
-        working-directory: ${{ matrix.project }}
-        run: pnpm install --frozen-lockfile --ignore-scripts
+          working-directory: ${{ matrix.project }}
+          install-args: "--frozen-lockfile --ignore-scripts"

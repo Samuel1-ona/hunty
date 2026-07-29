@@ -1,17 +1,12 @@
 "use client";
 
-import { ArrowLeft, BarChart3, HelpCircle,Pencil } from "lucide-react"
-import dynamic from "next/dynamic"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { ArrowLeft, Pencil, BarChart3, HelpCircle, Archive, Trash2, RefreshCw, CheckCircle, AlertTriangle, Copy } from "lucide-react"
-import { useCallback, useEffect, useState } from "react"
 import {
   AlertTriangle,
   Archive,
   ArrowLeft,
   BarChart3,
   CheckCircle,
+  Copy,
   HelpCircle,
   Pencil,
   RefreshCw,
@@ -21,6 +16,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
@@ -38,31 +34,27 @@ import {
 const OnboardingTour = dynamic(() => import("@/components/OnboardingTour"), {
   ssr: false,
 })
-import { Header } from "@/components/Header"
-import { RewardHistorySection } from "@/components/RewardHistorySection"
-import { useWallet } from "@/lib/context/WalletContext"
-import type { StoredHunt } from "@/lib/types"
-import { getHuntsByCreator, getArchivedHunts, getSoftDeletedHunts, hideHuntsFromPublic, unhideHuntsFromPublic, softDeleteHunts, restoreHunts, permanentDeleteHunts, duplicateHunt } from "@/lib/huntStore"
-import { fetchCreatorRewardHistory } from "@/lib/rewardHistory"
-import { DraftListPanel } from "@/components/DraftListPanel"
-import { getHuntsByCreator } from "@/lib/huntStore"
-});
 import { Header } from "@/components/Header";
 import { RewardHistorySection } from "@/components/RewardHistorySection";
+import { DraftListPanel } from "@/components/DraftListPanel";
 import { useWallet } from "@/lib/context/WalletContext";
-import type { StoredHunt } from "@/lib/types";
+import { promoteHunt } from "@/lib/contracts/rewardManager";
 import {
-  getHuntsByCreator,
+  duplicateHunt,
   getArchivedHunts,
+  getHuntsByCreator,
   getSoftDeletedHunts,
   hideHuntsFromPublic,
-  unhideHuntsFromPublic,
-  softDeleteHunts,
-  restoreHunts,
+  isHuntPromoted,
   permanentDeleteHunts,
+  restoreHunts,
+  softDeleteHunts,
+  SPOTLIGHT_FEE_XLM,
+  unhideHuntsFromPublic,
 } from "@/lib/huntStore";
+import { logger } from "@/lib/logger";
 import { fetchCreatorRewardHistory } from "@/lib/rewardHistory";
-import { DraftListPanel } from "@/components/DraftListPanel";
+import type { StoredHunt } from "@/lib/types";
 
 function StatusBadge({ status }: { status: StoredHunt["status"] }) {
   const config: Partial<Record<StoredHunt["status"], string>> = {
@@ -97,6 +89,7 @@ export default function CreatorPage() {
     action: "archive" | "unarchive" | "soft-delete" | "restore" | "permanent-delete";
     huntIds: number[];
   }>({ open: false, action: "archive", huntIds: [] });
+  const [promotingHuntId, setPromotingHuntId] = useState<number | null>(null);
 
   const loadHunts = useCallback(() => {
     if (!publicKey) {
@@ -127,7 +120,7 @@ export default function CreatorPage() {
         const data = await fetchCreatorRewardHistory(publicKey);
         if (!cancelled) setRewardHistory(data);
       } catch (err) {
-        console.error("Failed to load creator reward history:", err);
+        logger.error("Failed to load creator reward history:", err);
       }
     };
 
@@ -145,6 +138,21 @@ export default function CreatorPage() {
       router.push(`/creator/stats/${hunt.id}`);
     }
     // Completed: no navigation or could open a read-only summary
+  };
+
+  const handlePromote = async (huntId: number) => {
+    try {
+      setPromotingHuntId(huntId);
+      const receipt = await promoteHunt(huntId, SPOTLIGHT_FEE_XLM);
+      loadHunts();
+      toast.success(
+        `Spotlight active until ${new Date(receipt.promotedUntil * 1000).toLocaleString()}.`,
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to promote hunt.");
+    } finally {
+      setPromotingHuntId(null);
+    }
   };
 
   const handleAction = (
@@ -417,6 +425,7 @@ export default function CreatorPage() {
                 const isActive = hunt.status === "Active";
                 const isClickable = isDraft || isActive;
                 const isSelected = selectedHunts.includes(hunt.id);
+                const isPromoted = isHuntPromoted(hunt);
 
                 return (
                   <Card
@@ -439,11 +448,38 @@ export default function CreatorPage() {
                           />
                           <CardTitle className="line-clamp-2 text-lg">{hunt.title}</CardTitle>
                         </div>
-                        <StatusBadge status={hunt.status} />
+                        <div className="flex items-center gap-2">
+                          {isPromoted ? (
+                            <span className="rounded-full bg-pink-100 px-2.5 py-0.5 text-xs font-medium text-pink-700">
+                              Promoted
+                            </span>
+                          ) : null}
+                          <StatusBadge status={hunt.status} />
+                        </div>
                       </div>
                       <CardDescription className="mb-4 line-clamp-3 text-sm text-slate-600">
                         {hunt.description}
                       </CardDescription>
+                      {isActive && (
+                        <div className="mb-3">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={isPromoted ? "outline" : "primary"}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void handlePromote(hunt.id);
+                            }}
+                            disabled={promotingHuntId === hunt.id}
+                          >
+                            {promotingHuntId === hunt.id
+                              ? "Promoting..."
+                              : isPromoted
+                                ? "Extend Spotlight"
+                                : `Promote (${SPOTLIGHT_FEE_XLM} XLM)`}
+                          </Button>
+                        </div>
+                      )}
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="text-xs text-slate-500">
                           {hunt.cluesCount} {hunt.cluesCount === 1 ? "clue" : "clues"}
@@ -461,33 +497,24 @@ export default function CreatorPage() {
                               Live Statistics
                             </span>
                           )}
-                            {activeTab === "active" && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    const newHunt = duplicateHunt(hunt.id)
-                                    if (newHunt) {
-                                      router.push(`/hunty?edit=${newHunt.id}`)
-                                    }
-                                  }}
-                                  className="h-6 w-6 p-0 text-slate-500 hover:text-indigo-600"
-                                  title="Duplicate"
-                                >
-                                  <Copy className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleAction("archive", [hunt.id])
-                                  }}
                           {/* Individual action buttons */}
                           {activeTab === "active" && (
                             <>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const newHunt = duplicateHunt(hunt.id);
+                                  if (newHunt) {
+                                    router.push(`/hunty?edit=${newHunt.id}`);
+                                  }
+                                }}
+                                className="h-6 w-6 p-0 text-slate-500 hover:text-indigo-600"
+                                title="Duplicate"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
                               <Button
                                 size="sm"
                                 variant="ghost"

@@ -1,23 +1,21 @@
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "./utils"
-import type { SharedButtonProps } from "@hunty/types"
+import type { SharedButtonProps } from "@hunty/types";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+import * as React from "react";
+
+import { cn } from "./utils";
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring/50 cursor-pointer",
   {
     variants: {
       variant: {
-        primary:
-          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
-        secondary:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+        primary: "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+        secondary: "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         outline:
           "border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground",
-        destructive:
-          "bg-destructive text-white shadow-xs hover:bg-destructive/90",
+        destructive: "bg-destructive text-white shadow-xs hover:bg-destructive/90",
       },
       size: {
         sm: "h-8 rounded-md px-3 text-xs",
@@ -26,17 +24,17 @@ const buttonVariants = cva(
       },
     },
     defaultVariants: { variant: "primary", size: "md" },
-  },
-)
+  }
+);
 
 export interface ButtonProps
   extends Omit<React.ComponentProps<"button">, "onPointerDown">,
     VariantProps<typeof buttonVariants>,
-    Omit<SharedButtonProps, "icon" | "onPress"> {
-  asChild?: boolean
+    Omit<SharedButtonProps, "icon" | "onPress" | "variant" | "size"> {
+  asChild?: boolean;
   /** Icon rendered before label */
-  icon?: React.ReactNode
-  onClick?: React.MouseEventHandler<HTMLButtonElement>
+  icon?: React.ReactNode;
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
 }
 
 export function Button({
@@ -54,7 +52,7 @@ export function Button({
   children,
   ...props
 }: ButtonProps) {
-  const Comp = asChild ? Slot : "button"
+  const Comp = asChild ? Slot : "button";
 
   return (
     <Comp
@@ -75,5 +73,5 @@ export function Button({
       {!loading && icon}
       {children ?? label}
     </Comp>
-  )
+  );
 }

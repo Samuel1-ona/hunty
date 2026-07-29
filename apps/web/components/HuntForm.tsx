@@ -26,6 +26,7 @@ import { ClueSortList } from "./ClueSortList";
 import { HuntCards } from "./HuntCards";
 import ToggleSwitch from "./ToggleButton";
 import { useIsFeatureEnabled } from "@/hooks/useFeatureFlag";
+import { attachMediaTypeToCid } from "@/lib/clueMedia";
 
 interface HuntFormProps {
   hunt: HuntDraft
@@ -45,6 +46,7 @@ const clueSchema = z.object({
   hint: z.string(),
   hintCost: z.number().min(0),
   difficulty: z.enum(["Easy", "Medium", "Hard"]).optional(),
+  mediaCid: z.string().optional(),
 });
 
 const cluesFormSchema = z.object({
@@ -70,16 +72,20 @@ export function HuntForm({
   const [linkEnabled, setLinkEnabled] = useState(false);
   const [imageUploadState, setImageUploadState] = useState<CoverImageUploadState>("idle");
   const dragDropEnabled = useIsFeatureEnabled("dragDropClues");
+  const clueFileInputRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const [uploadingClueIndex, setUploadingClueIndex] = useState<number | null>(null);
 
   const {
     control,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<CluesFormData>({
     resolver: zodResolver(cluesFormSchema),
     defaultValues: {
-      clues: [{ question: "", answer: "", points: 10, hint: "", hintCost: 0 }],
+      clues: [{ question: "", answer: "", points: 10, hint: "", hintCost: 0, mediaCid: "" }],
     },
   });
 
@@ -92,6 +98,8 @@ export function HuntForm({
     setImageUploadState(state);
     onImageUploadStateChange?.(state);
   };
+
+  const clueValues = watch("clues")
 
   const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -130,7 +138,7 @@ export function HuntForm({
   };
 
   const addClueRow = () => {
-    append({ question: "", answer: "", points: 10, hint: "", hintCost: 0 });
+    append({ question: "", answer: "", points: 10, hint: "", hintCost: 0, mediaCid: "" });
   };
 
   const removeClueRow = (index: number) => {
@@ -193,6 +201,7 @@ export function HuntForm({
         hint: row.hint?.trim() || undefined,
         hintCost: row.hintCost,
         difficulty: row.difficulty,
+        mediaCid: row.mediaCid?.trim() || undefined,
       }));
 
       const clueIds = saveCluesLocallyBatch(normalizedClues);
@@ -225,7 +234,7 @@ export function HuntForm({
       }
 
       onCluesSaved?.(valid.length);
-      reset({ clues: [{ question: "", answer: "", points: 10, hint: "", hintCost: 0 }] });
+      reset({ clues: [{ question: "", answer: "", points: 10, hint: "", hintCost: 0, mediaCid: "" }] });
     } catch (error) {
       restoreHuntStoreSnapshot(snapshot);
       throw error;
@@ -233,6 +242,29 @@ export function HuntForm({
       setIsSavingClues(false);
     }
   };
+
+  const handleClueMediaUpload = async (index: number, e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingClueIndex(index)
+    try {
+      const ipfsUri = await uploadToIPFS(file)
+      setValue(`clues.${index}.mediaCid`, attachMediaTypeToCid(ipfsUri, file.type), {
+        shouldDirty: true,
+        shouldTouch: true,
+      })
+      toast.success(`Attached ${file.type.split("/")[0] || "media"} to clue ${index + 1}.`)
+    } catch (error) {
+      logger.error("Error uploading clue media to IPFS:", error)
+      toast.error("Failed to upload clue media. Please try again.")
+    } finally {
+      if (clueFileInputRefs.current[index]) {
+        clueFileInputRefs.current[index]!.value = ""
+      }
+      setUploadingClueIndex(null)
+    }
+  }
 
   return (
     <div className="space-y-4 print:space-y-0">
@@ -567,7 +599,46 @@ export function HuntForm({
                       </select>
                     )}
                   />
+                  <input
+                    ref={(node) => {
+                      clueFileInputRefs.current[index] = node;
+                    }}
+                    type="file"
+                    accept="image/*,audio/*,video/*"
+                    className="hidden"
+                    aria-label={`Upload media for clue ${index + 1}`}
+                    onChange={(e) => void handleClueMediaUpload(index, e)}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => clueFileInputRefs.current[index]?.click()}
+                    disabled={uploadingClueIndex === index}
+                  >
+                    {uploadingClueIndex === index ? "Uploading..." : "Add Media"}
+                  </Button>
+                  {clueValues?.[index]?.mediaCid ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setValue(`clues.${index}.mediaCid`, "", {
+                          shouldDirty: true,
+                          shouldTouch: true,
+                        })
+                      }
+                    >
+                      Remove Media
+                    </Button>
+                  ) : null}
                 </div>
+                {clueValues?.[index]?.mediaCid ? (
+                  <div className="pl-6 text-xs text-slate-500 dark:text-slate-400">
+                    Media attached: {clueValues[index].mediaCid}
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>

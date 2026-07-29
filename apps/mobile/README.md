@@ -58,3 +58,12 @@ for file-based navigation, and connects to the Stellar blockchain via
 - **`zustand`** — lightweight state management
 - **`nativewind`** — Tailwind CSS for React Native
 - **`@sentry/react-native`** — error tracking
+
+## Documentation
+
+For instructions on building, signing, and deploying the mobile app, see the following guides:
+
+- **[EAS Build & Update Guide](../../docs/mobile/EAS_GUIDE.md)** — Comprehensive guide on EAS configuration, credentials, OTA updates, and release workflows.
+- **[EAS Quick Reference](../../docs/mobile/QUICK_REFERENCE.md)** — Fast command lookup for builds, updates, and troubleshooting.
+- **[Android Keystore Protocol](../../docs/mobile/ANDROID_KEYSTORE.md)** — Secure keystore generation, backup, and rotation guide.
+

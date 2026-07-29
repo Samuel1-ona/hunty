@@ -9,10 +9,15 @@
     ".": "./src/index.ts",
     "./schemas": "./src/schemas.ts"
   },
+  "scripts": {
+    "test": "vitest run"
+  },
   "sideEffects": false,
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit",
     "test": "vitest --run"
   },
   "peerDependencies": {
@@ -29,5 +34,6 @@
     "typescript-eslint": "^8",
     "vitest": "^4",
     "zod": "^4"
+    "vitest": "^4.0.18"
   }
 }
