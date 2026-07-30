@@ -101,6 +101,7 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
   reward?: string | null
   search?: string | null
   sortBy?: string | null
+  category?: string | null
   requestId?: string
 }) {
   const {
@@ -110,20 +111,22 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
     reward = "all",
     search = "",
     sortBy = "newest",
+    category = "new",
     requestId,
   } = params
   trackPotentialNPlusOne("listPublicActiveHuntsByCursorOptimized", requestId)
 
   return withTimedQuery(
     "listPublicActiveHuntsByCursorOptimized",
-    { cursor, limit, status, reward, search, sortBy },
+    { cursor, limit, status, reward, search, sortBy, category },
     () => {
-      const cacheKey = `active:${cursor ?? "start"}:${limit}:${status ?? "all"}:${reward ?? "all"}:${search ?? ""}:${sortBy ?? "newest"}`
+      const cacheKey = `active:${cursor ?? "start"}:${limit}:${status ?? "all"}:${reward ?? "all"}:${search ?? ""}:${sortBy ?? "newest"}:${category ?? "new"}`
       const cached = readCache<{ data: StoredHunt[]; nextCursor: number | null; total: number }>(cacheKey)
       if (cached) return cached
 
       // Get all hunts (which already filters out private hunts)
       const allHunts = getAllHunts()
+      const now = Math.floor(Date.now() / 1000)
 
       // Filter hunts based on parameters
       const filteredHunts = allHunts.filter((hunt) => {
@@ -150,16 +153,43 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
           hunt.title.toLowerCase().includes(search.toLowerCase()) ||
           hunt.description.toLowerCase().includes(search.toLowerCase())
 
-        return matchesStatus && matchesReward && matchesSearch
+        // Category filter:
+        let matchesCategory = true
+        if (category === "featured") {
+          matchesCategory = hunt.isFeaturedOfWeek === true && hunt.status === "Active"
+        } else if (category === "active") {
+          matchesCategory = hunt.status === "Active"
+        }
+
+        return matchesStatus && matchesReward && matchesSearch && matchesCategory
       })
 
-      // Sort hunts
+      // Sort hunts based on category
       filteredHunts.sort((a, b) => {
+        if (category === "trending") {
+          // Trending: sort by player count descending, then clues
+          const aCount = a.playerCount ?? 0
+          const bCount = b.playerCount ?? 0
+          if (bCount !== aCount) return bCount - aCount
+          return b.cluesCount - a.cluesCount
+        }
+        if (category === "nearby") {
+          // Nearby: sort by recently active (startTime descending)
+          return (b.startTime ?? 0) - (a.startTime ?? 0)
+        }
+        if (category === "featured") {
+          // Featured: featured hunts first, then by startTime
+          const aFeatured = a.isFeaturedOfWeek ? 1 : 0
+          const bFeatured = b.isFeaturedOfWeek ? 1 : 0
+          if (bFeatured !== aFeatured) return bFeatured - aFeatured
+          return (b.startTime ?? 0) - (a.startTime ?? 0)
+        }
+        // New (default): sort by startTime descending
         if (sortBy === "newest") return (b.startTime ?? 0) - (a.startTime ?? 0)
         if (sortBy === "oldest") return (a.startTime ?? 0) - (b.startTime ?? 0)
         if (sortBy === "clues-high") return b.cluesCount - a.cluesCount
         if (sortBy === "clues-low") return a.cluesCount - b.cluesCount
-        return 0
+        return (b.startTime ?? 0) - (a.startTime ?? 0)
       })
 
       // Apply cursor pagination

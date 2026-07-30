@@ -25,6 +25,7 @@ import { usePlayerCounts } from "@/hooks/usePlayerCounts"
 import { useRecentlyCompleted } from "@/hooks/useRecentlyCompleted"
 import type { PlayerCountResult } from "@/lib/types"
 import { queryCachePolicy, queryKeys } from "@/lib/queryKeys"
+import { Compass } from "lucide-react"
 
 const OnboardingTour = dynamic(() => import("@/components/OnboardingTour"), {
   ssr: false,
@@ -648,6 +649,12 @@ export default function GameArcade() {
             onClick={() => setActiveTab(activeTab === "leaderboard" ? "none" : "leaderboard")}
           >
             Leaderboard
+          </Button>
+          <Button asChild className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] hover:opacity-90 text-white px-6 py-3 rounded-lg text-xl font-black gap-2">
+            <Link href="/feed">
+              <Compass className="w-5 h-5" />
+              Hunt Feed
+            </Link>
           </Button>
           <Button id="play-button" className="bg-[#E87785] hover:bg-[#d4606f] text-white px-6 py-3 rounded-lg text-xl font-black">Play Game</Button>
         </div>

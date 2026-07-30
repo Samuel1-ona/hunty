@@ -5,6 +5,7 @@ import { listPublicActiveHuntsByCursorOptimized } from "@/lib/db/queryOptimizer"
 /**
  * GET /api/v1/hunts
  * List all public active hunts with cursor pagination.
+ * Supports category filtering: trending, new, nearby, featured
  */
 export async function GET(req: Request) {
   const ip = getIP(req);
@@ -22,6 +23,7 @@ export async function GET(req: Request) {
   const reward = searchParams.get("reward") || "all";
   const search = searchParams.get("search") || "";
   const sortBy = searchParams.get("sortBy") || "newest";
+  const category = searchParams.get("category") || "new";
   const requestId = req.headers.get("x-request-id") ?? undefined;
 
   if (cursorParam && cursorParam !== "null" && cursorParam !== "" && (cursor == null || Number.isNaN(cursor))) {
@@ -35,6 +37,7 @@ export async function GET(req: Request) {
     reward,
     search,
     sortBy,
+    category,
     requestId,
   });
 
@@ -46,5 +49,6 @@ export async function GET(req: Request) {
       cursor,
       nextCursor,
     },
+    category,
   });
 }
