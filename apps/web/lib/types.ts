@@ -523,9 +523,6 @@ export interface PlayerStats {
   lastUpdated: number;
 }
 
-export type CoverImageUploadState = "idle" | "uploading" | "succeeded" | "failed";
-}
-
 export type CoverImageUploadState =
   | "idle"
   | "uploading"
