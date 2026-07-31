@@ -118,6 +118,7 @@
     "cssnano": "^8.0.2",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
+    "@next/eslint-plugin-next": "15.3.4",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-simple-import-sort": "^14.0.0",
