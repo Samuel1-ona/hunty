@@ -7,23 +7,13 @@
  * types (display entries, performance, chat, …) remain defined below.
  */
 
-import type {
-  HuntCategory as DomainHuntCategory,
-  HuntInvite,
-  HuntStatus,
-  PlayerProgress,
-  Reward as DomainReward,
-} from "@hunty/types";
+import type { HuntCategory as DomainHuntCategory, HuntInvite, PlayerProgress, Reward as DomainReward } from "@hunty/types";
 import type { ReactNode } from "react";
 
 import type { HuntCategoryId } from "./categories";
 import type { CollaboratorRole, HuntCollaborator } from "./collaboration";
 import type { AnswerStrictness } from "./fuzzyAnswer";
-import type {
-  ClueScoringBreakdown,
-  HuntScoringBreakdown,
-  ScoringWeights,
-} from "./scoring";
+import type { ClueScoringBreakdown, HuntScoringBreakdown, ScoringWeights } from "./scoring";
 
 // ─── Shared domain types (single source of truth: @hunty/types) ──────────────
 
@@ -39,6 +29,16 @@ export interface HuntReview {
   flagged?: boolean;
 }
 
+export type HuntStatus =
+  | "Active"
+  | "Completed"
+  | "Draft"
+  | "Cancelled"
+  | "PendingReview"
+  | "scheduled"
+  | "active"
+  | "ended";
+
 /**
  * Hunt-level difficulty rating set by the creator so players can gauge
  * challenge before joining. Independent of `ClueDifficulty` which rates
@@ -52,7 +52,7 @@ export interface StoredHunt {
   title: string;
   description: string;
   cluesCount: number;
-  /** Broad category used by legacy and current discovery filters. */
+  /** Broad hunt category used in discovery filters. */
   category?: DomainHuntCategory | HuntCategoryId;
   /** Overall hunt difficulty tag used in discovery filters. */
   difficulty?: HuntDifficulty;
@@ -222,9 +222,8 @@ export type {
   AchievementId,
   AchievementRarity,
   HuntCategory,
-  HuntInvite,
   HuntProgressStatus,
-  HuntStatus,
+  HuntInvite,
   PlayerHuntProgress,
   PlayerProgress,
   RewardHistoryEntry,
@@ -398,10 +397,7 @@ export interface RewardPlayerProgress {
 
 // ─── Activity Feed ───────────────────────────────────────────────────────────
 
-export type ActivityEventType =
-  | "HuntCompleted"
-  | "ClueCompleted"
-  | "HuntSponsored";
+export type ActivityEventType = "HuntCompleted" | "ClueCompleted" | "HuntSponsored";
 
 export interface ActivityEvent {
   id: string;
@@ -501,11 +497,7 @@ export interface PlayerStats {
   lastUpdated: number;
 }
 
-export type CoverImageUploadState =
-  | "idle"
-  | "uploading"
-  | "succeeded"
-  | "failed";
+export type CoverImageUploadState = "idle" | "uploading" | "succeeded" | "failed";
 
 export interface PlayerProfile {
   address: string
@@ -633,6 +625,11 @@ export interface SeasonBadge {
   rank?: number;
   earnedAt: number;
 }
+
+// ─── Hunt Feed ───────────────────────────────────────────────────────────────
+
+export type HuntFeedCategory = "trending" | "new" | "nearby" | "featured"
+
 
 // ─── Core Web Vitals ────────────────────────────────────────────────────────────
 

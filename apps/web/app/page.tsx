@@ -8,8 +8,11 @@ import Link from "next/link"
 import dynamic from "next/dynamic"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Card, CardDescription, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { X, ArrowRight, Trophy, Search, HelpCircle, Compass } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 import { X, ArrowRight, Trophy, Search, HelpCircle } from "lucide-react"
 import { getHuntCapacity, getRemainingSpots } from "@/lib/huntStore"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
@@ -17,12 +20,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Header } from "@/components/Header"
 import { HuntCoverImage } from "@/components/HuntCoverImage"
 import { HuntOfTheWeekBanner } from "@/components/HuntOfTheWeekBanner"
-import { LeaderboardTable } from "@/components/LeaderBoardTable"
 import { HuntCardSkeletonGrid } from "@/components/LoadingSkeletons"
-import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { usePlayerCounts } from "@/hooks/usePlayerCounts"
 import { useRecentlyCompleted } from "@/hooks/useRecentlyCompleted"
@@ -31,11 +30,19 @@ import { getAllHunts, getHunt, getSpotlightHunts, isHuntPromoted, type StoredHun
 import { queryCachePolicy, queryKeys } from "@/lib/queryKeys"
 import { StarRating } from "@/components/StarRating"
 import { FavoriteButton } from "@/components/FavoriteButton"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import type { PlayerCountResult } from "@/lib/types"
 
 const OnboardingTour = dynamic(() => import("@/components/OnboardingTour"), {
   ssr: false,
-});
+})
+
+const LeaderboardTable = dynamic(
+  () => import("@/components/LeaderBoardTable").then((mod) => mod.LeaderboardTable),
+  {
+    ssr: false,
+  }
+)
 
 const FeaturedHunts = dynamic(
   () => import("@/components/FeaturedHunts").then((mod) => mod.FeaturedHunts),
@@ -47,6 +54,7 @@ const FeaturedHunts = dynamic(
 const GlobalActivityFeed = dynamic(
   () => import("@/components/GlobalActivityFeed").then((mod) => mod.GlobalActivityFeed),
   {
+    ssr: false,
     loading: () => <Skeleton className="h-40 w-full rounded-2xl" />,
   }
 );
@@ -480,6 +488,9 @@ export default function GameArcade() {
   const [walletAddress, setWalletAddress] = useState("")
 
   const [visibleActiveCount, setVisibleActiveCount] = useState(ACTIVE_PAGE_SIZE)
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isLoadingMoreActive, setIsLoadingMoreActive] = useState(false)
   const [inactiveHunts, setInactiveHunts] = useState<StoredHunt[]>([])
   const [visibleInactiveCount, setVisibleInactiveCount] = useState(INACTIVE_PAGE_SIZE)
@@ -494,112 +505,48 @@ export default function GameArcade() {
 
   const isLoadedRef = useRef(false)
 
-  // Load initial filter states from URL/sessionStorage to persist and share search state
+  // Sync filter state from URL to component state
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
+    const q = searchParams.get("q") ?? "";
+    const reward = searchParams.get("reward") ?? "all";
+    const status = searchParams.get("status") ?? "Active";
+    const difficulty = searchParams.get("difficulty") ?? "all";
+    const category = searchParams.get("category") ?? "all";
+    const sortBy = searchParams.get("sortBy") ?? "newest";
 
-      const urlSearch = params.get("q");
-      if (urlSearch) setSearchQuery(urlSearch);
-
-      const urlReward = params.get("reward");
-      if (urlReward && ["all", "XLM", "NFT", "Both"].includes(urlReward)) {
-        setRewardFilter(urlReward as "all" | "XLM" | "NFT" | "Both");
-      }
-
-      const urlStatus = params.get("status");
-      if (urlStatus && ["all", "Active", "Completed"].includes(urlStatus)) {
-        setStatusFilter(urlStatus as "all" | "Active" | "Completed");
-      }
-
-      const urlDifficulty = params.get("difficulty");
-      if (urlDifficulty && ["all", "Easy", "Medium", "Hard"].includes(urlDifficulty)) {
-        setDifficultyFilter(urlDifficulty as "all" | "Easy" | "Medium" | "Hard");
-      }
-
-      const urlCategory = params.get("category");
-      if (
-        urlCategory &&
-        ["all", "Urban", "Campus", "Office", "Museum", "General"].includes(urlCategory)
-      ) {
-        setCategoryFilter(
-          urlCategory as "all" | "Urban" | "Campus" | "Office" | "Museum" | "General"
-        );
-      }
-
-      const urlSort = params.get("sortBy");
-      if (
-        urlSort &&
-        [
-          "newest",
-          "oldest",
-          "popular",
-          "reward-high",
-          "difficulty",
-          "clues-high",
-          "clues-low",
-          "rating-high",
-        ].includes(urlSort)
-      ) {
-        setSortBy(
-          urlSort as
-            | "newest"
-            | "oldest"
-            | "popular"
-            | "reward-high"
-            | "difficulty"
-            | "clues-high"
-            | "clues-low"
-            | "rating-high"
-        );
-      }
-
-      const savedSearch = sessionStorage.getItem("arcade_searchQuery");
-      if (!urlSearch && savedSearch) setSearchQuery(savedSearch);
-
-      const savedReward = sessionStorage.getItem("arcade_rewardFilter");
-      if (!urlReward && savedReward && ["all", "XLM", "NFT", "Both"].includes(savedReward)) {
-        setRewardFilter(savedReward as "all" | "XLM" | "NFT" | "Both");
-      }
-
-      const savedStatus = sessionStorage.getItem("arcade_statusFilter");
-      if (!urlStatus && savedStatus && ["all", "Active", "Completed"].includes(savedStatus)) {
-        setStatusFilter(savedStatus as "all" | "Active" | "Completed");
-      }
-      isLoadedRef.current = true;
+    setSearchQuery(q);
+    if (["all", "XLM", "NFT", "Both"].includes(reward)) {
+      setRewardFilter(reward as "all" | "XLM" | "NFT" | "Both");
     }
-  }, []);
-
-  // Sync states to sessionStorage on change
-  useEffect(() => {
-    if (isLoadedRef.current && typeof window !== "undefined") {
-      sessionStorage.setItem("arcade_searchQuery", searchQuery);
+    if (["all", "Active", "Completed"].includes(status)) {
+      setStatusFilter(status as "all" | "Active" | "Completed");
     }
-  }, [searchQuery]);
-
-  useEffect(() => {
-    if (isLoadedRef.current && typeof window !== "undefined") {
-      sessionStorage.setItem("arcade_rewardFilter", rewardFilter);
+    if (["all", "Easy", "Medium", "Hard"].includes(difficulty)) {
+      setDifficultyFilter(difficulty as "all" | "Easy" | "Medium" | "Hard");
     }
-  }, [rewardFilter]);
-
-  useEffect(() => {
-    if (isLoadedRef.current && typeof window !== "undefined") {
-      sessionStorage.setItem("arcade_statusFilter", statusFilter);
+    if (["all", "Urban", "Campus", "Office", "Museum", "General"].includes(category)) {
+      setCategoryFilter(category as "all" | "Urban" | "Campus" | "Office" | "Museum" | "General");
     }
-  }, [statusFilter]);
+    if (["newest", "oldest", "popular", "reward-high", "difficulty", "clues-high", "clues-low", "rating-high"].includes(sortBy)) {
+      setSortBy(sortBy as "newest" | "oldest" | "popular" | "reward-high" | "difficulty" | "clues-high" | "clues-low" | "rating-high");
+    }
+  }, [searchParams]);
 
   useEffect(() => {
-    if (!isLoadedRef.current || typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    params.set("q", searchQuery);
-    params.set("reward", rewardFilter);
-    params.set("status", statusFilter);
-    params.set("difficulty", difficultyFilter);
-    params.set("category", categoryFilter);
-    params.set("sortBy", sortBy);
-    const next = `${window.location.pathname}?${params.toString()}`;
-    window.history.replaceState(null, "", next);
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (searchQuery) params.set("q", searchQuery); else params.delete("q");
+    if (rewardFilter !== "all") params.set("reward", rewardFilter); else params.delete("reward");
+    if (statusFilter !== "Active") params.set("status", statusFilter); else params.delete("status");
+    if (difficultyFilter !== "all") params.set("difficulty", difficultyFilter); else params.delete("difficulty");
+    if (categoryFilter !== "all") params.set("category", categoryFilter); else params.delete("category");
+    if (sortBy !== "newest") params.set("sortBy", sortBy); else params.delete("sortBy");
+
+    const queryString = params.toString();
+    const nextUrl = queryString ? `${pathname}?${queryString}` : pathname;
+
+    // Use replace to avoid adding to browser history for every filter change
+    router.replace(nextUrl, { scroll: false });
   }, [searchQuery, rewardFilter, statusFilter, difficultyFilter, categoryFilter, sortBy]);
 
   // Load hunts using Infinite Query with cursor-based pagination
@@ -794,7 +741,12 @@ export default function GameArcade() {
 
   // Clear scroll position and reset pagination when filter state changes
   useEffect(() => {
-    sessionStorage.removeItem("arcade_scroll_y");
+    setSearchQuery("");
+    setRewardFilter("all");
+    setStatusFilter("Active");
+    setDifficultyFilter("all");
+    setCategoryFilter("all");
+    setSortBy("newest");
     setVisibleActiveCount(ACTIVE_PAGE_SIZE);
     setVisibleInactiveCount(INACTIVE_PAGE_SIZE);
   }, [statusFilter, rewardFilter, difficultyFilter, categoryFilter, searchQuery, sortBy]);
@@ -806,7 +758,6 @@ export default function GameArcade() {
     setDifficultyFilter("all");
     setCategoryFilter("all");
     setSortBy("newest");
-    setVisibleActiveCount(ACTIVE_PAGE_SIZE);
     setVisibleInactiveCount(INACTIVE_PAGE_SIZE);
   };
 
@@ -872,6 +823,12 @@ export default function GameArcade() {
             onClick={() => setActiveTab(activeTab === "leaderboard" ? "none" : "leaderboard")}
           >
             {t("leaderboard")}
+          </Button>
+          <Button asChild className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] hover:opacity-90 text-white px-6 py-3 rounded-lg text-xl font-black gap-2">
+            <Link href="/feed">
+              <Compass className="w-5 h-5" />
+              {t("huntFeed")}
+            </Link>
           </Button>
           <Button id="play-button" className="bg-[#E87785] hover:bg-[#d4606f] text-white px-6 py-3 rounded-lg text-xl font-black">{t("playGame")}</Button>
         </div>

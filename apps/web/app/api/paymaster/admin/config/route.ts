@@ -17,8 +17,9 @@
 
 import { NextResponse } from "next/server";
 
-import { AuthError, ValidationError } from "@/lib/api/errors";
+import { AuthError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
+import { withValidation } from "@/lib/api/withValidation";
 import { getPaymasterConfig } from "@/lib/paymaster/config";
 import {
   deleteConfigValue,
@@ -28,10 +29,10 @@ import {
 } from "@/lib/paymaster/db";
 import {
   CONFIG_KEYS,
-  type AdminConfigUpdate,
   type PaymasterConfig,
   type PaymasterUserRecord,
 } from "@/lib/paymaster/types";
+import { paymasterAdminConfigBodySchema } from "@hunty/types/api-schemas";
 
 export const dynamic = "force-dynamic";
 
@@ -59,7 +60,6 @@ export const GET = withErrorHandling(async (request: Request) => {
 
   const baseConfig = getPaymasterConfig();
 
-  // Load any DB overrides
   const maxSponsoredTx = await getConfigValue(CONFIG_KEYS.MAX_SPONSORED_TX);
   const maxBudgetPerUser = await getConfigValue(CONFIG_KEYS.MAX_BUDGET_PER_USER);
   const maxFeePerTx = await getConfigValue(CONFIG_KEYS.MAX_FEE_PER_TX);
@@ -71,7 +71,6 @@ export const GET = withErrorHandling(async (request: Request) => {
     paymasterPublicKey: baseConfig.paymasterPublicKey,
   };
 
-  // Also return user summary stats
   const users: PaymasterUserRecord[] = await listUsers();
 
   const stats = {
@@ -94,64 +93,47 @@ export const GET = withErrorHandling(async (request: Request) => {
 
 // ─── POST ──────────────────────────────────────────────────────────────────
 
-export const POST = withErrorHandling(async (request: Request) => {
-  requireAdmin(request);
+export const POST = withValidation(
+  { body: paymasterAdminConfigBodySchema },
+  async (request, _context, { body }) => {
+    requireAdmin(request);
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    throw new ValidationError("Invalid JSON body");
-  }
+    const updated: string[] = [];
 
-  const update = body as AdminConfigUpdate;
-  const updated: string[] = [];
-
-  // Update max sponsored transactions
-  if (update.maxSponsoredTx !== undefined) {
-    if (update.maxSponsoredTx === null) {
-      await deleteConfigValue(CONFIG_KEYS.MAX_SPONSORED_TX);
-      updated.push("maxSponsoredTx reverted to default");
-    } else if (Number.isFinite(update.maxSponsoredTx) && update.maxSponsoredTx >= 0) {
-      await setConfigValue(CONFIG_KEYS.MAX_SPONSORED_TX, String(update.maxSponsoredTx));
-      updated.push(`maxSponsoredTx → ${update.maxSponsoredTx}`);
-    } else {
-      throw new ValidationError("maxSponsoredTx must be a non-negative integer");
+    if (body.maxSponsoredTx !== undefined) {
+      if (body.maxSponsoredTx === null) {
+        await deleteConfigValue(CONFIG_KEYS.MAX_SPONSORED_TX);
+        updated.push("maxSponsoredTx reverted to default");
+      } else {
+        await setConfigValue(CONFIG_KEYS.MAX_SPONSORED_TX, String(body.maxSponsoredTx));
+        updated.push(`maxSponsoredTx → ${body.maxSponsoredTx}`);
+      }
     }
-  }
 
-  // Update max budget per user (stroops)
-  if (update.maxBudgetPerUserStroops !== undefined) {
-    if (update.maxBudgetPerUserStroops === null) {
-      await deleteConfigValue(CONFIG_KEYS.MAX_BUDGET_PER_USER);
-      updated.push("maxBudgetPerUserStroops reverted to default");
-    } else if (Number.isFinite(update.maxBudgetPerUserStroops) && update.maxBudgetPerUserStroops >= 0) {
-      await setConfigValue(
-        CONFIG_KEYS.MAX_BUDGET_PER_USER,
-        String(update.maxBudgetPerUserStroops),
-      );
-      updated.push(`maxBudgetPerUserStroops → ${update.maxBudgetPerUserStroops}`);
-    } else {
-      throw new ValidationError("maxBudgetPerUserStroops must be a non-negative integer");
+    if (body.maxBudgetPerUserStroops !== undefined) {
+      if (body.maxBudgetPerUserStroops === null) {
+        await deleteConfigValue(CONFIG_KEYS.MAX_BUDGET_PER_USER);
+        updated.push("maxBudgetPerUserStroops reverted to default");
+      } else {
+        await setConfigValue(CONFIG_KEYS.MAX_BUDGET_PER_USER, String(body.maxBudgetPerUserStroops));
+        updated.push(`maxBudgetPerUserStroops → ${body.maxBudgetPerUserStroops}`);
+      }
     }
-  }
 
-  // Update max fee per transaction (stroops)
-  if (update.maxFeePerTxStroops !== undefined) {
-    if (update.maxFeePerTxStroops === null) {
-      await deleteConfigValue(CONFIG_KEYS.MAX_FEE_PER_TX);
-      updated.push("maxFeePerTxStroops reverted to default");
-    } else if (Number.isFinite(update.maxFeePerTxStroops) && update.maxFeePerTxStroops >= 0) {
-      await setConfigValue(CONFIG_KEYS.MAX_FEE_PER_TX, String(update.maxFeePerTxStroops));
-      updated.push(`maxFeePerTxStroops → ${update.maxFeePerTxStroops}`);
-    } else {
-      throw new ValidationError("maxFeePerTxStroops must be a non-negative integer");
+    if (body.maxFeePerTxStroops !== undefined) {
+      if (body.maxFeePerTxStroops === null) {
+        await deleteConfigValue(CONFIG_KEYS.MAX_FEE_PER_TX);
+        updated.push("maxFeePerTxStroops reverted to default");
+      } else {
+        await setConfigValue(CONFIG_KEYS.MAX_FEE_PER_TX, String(body.maxFeePerTxStroops));
+        updated.push(`maxFeePerTxStroops → ${body.maxFeePerTxStroops}`);
+      }
     }
-  }
 
-  return NextResponse.json({
-    success: true,
-    updated,
-    config: getPaymasterConfig(),
-  });
-});
+    return NextResponse.json({
+      success: true,
+      updated,
+      config: getPaymasterConfig(),
+    });
+  }
+);

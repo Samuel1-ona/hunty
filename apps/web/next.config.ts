@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
-import createNextIntlPlugin from "next-intl/plugin";
 import { withSentryConfig } from "@sentry/nextjs";
+import { createWithNextIntl } from "./lib/nextIntlConfig";
 
-const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
+const withNextIntl = createWithNextIntl();
 
 const nextConfig: NextConfig = {
   experimental: {

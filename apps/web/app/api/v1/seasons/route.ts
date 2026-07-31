@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
 import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
-import { NotFoundError, ValidationError } from "@/lib/api/errors";
+import { NotFoundError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
+import { withValidation } from "@/lib/api/withValidation";
 import type { Reward } from "@/lib/types";
 
 import {
-  archiveSeason,
-  checkSeasonReset,
   createSeason,
   getActiveSeason,
   getAllSeasons,
   getCurrentSeasonLeaderboard,
 } from "@/lib/seasonStore";
+import { seasonCreateBodySchema } from "@hunty/types/api-schemas";
 
 /**
  * GET /api/v1/seasons
@@ -20,10 +20,7 @@ import {
 export const GET = withErrorHandling(async (req: Request) => {
   const ip = getIP(req);
   const { success, reset } = await rateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
-
-  if (!success) {
-    return rateLimitResponse(reset);
-  }
+  if (!success) return rateLimitResponse(reset);
 
   const { searchParams } = new URL(req.url);
   const activeOnly = searchParams.get("active") === "true";
@@ -50,36 +47,21 @@ export const GET = withErrorHandling(async (req: Request) => {
  * POST /api/v1/seasons
  * Create a new season (admin only)
  */
-export const POST = withErrorHandling(async (req: Request) => {
-  const ip = getIP(req);
-  const { success, reset } = await rateLimit(ip, { limit: 10, windowMs: 60 * 1000 });
+export const POST = withValidation(
+  { body: seasonCreateBodySchema },
+  async (req, _context, { body }) => {
+    const ip = getIP(req);
+    const { success, reset } = await rateLimit(ip, { limit: 10, windowMs: 60 * 1000 });
+    if (!success) return rateLimitResponse(reset);
 
-  if (!success) {
-    return rateLimitResponse(reset);
-  }
-
-  let body: { name?: string; startTime?: string; endTime?: string; rewards?: Reward[] };
-  try {
-    body = await req.json();
-  } catch {
-    throw new ValidationError("Invalid request body");
-  }
-  const { name, startTime, endTime, rewards } = body;
-
-  if (!name || !startTime || !endTime) {
-    throw new ValidationError("Missing required fields", {
-      required: ["name", "startTime", "endTime"],
+    const season = createSeason({
+      name: body.name,
+      startTime: Math.floor(new Date(body.startTime).getTime() / 1000),
+      endTime: Math.floor(new Date(body.endTime).getTime() / 1000),
+      status: "Upcoming",
+      rewards: body.rewards as Reward[] | undefined,
     });
+
+    return NextResponse.json({ season }, { status: 201 });
   }
-
-  const season = createSeason({
-    name,
-    startTime: Math.floor(new Date(startTime).getTime() / 1000),
-    endTime: Math.floor(new Date(endTime).getTime() / 1000),
-    status: "Upcoming",
-    rewards,
-  });
-
-  return NextResponse.json({ season }, { status: 201 });
-});
- 
+);
