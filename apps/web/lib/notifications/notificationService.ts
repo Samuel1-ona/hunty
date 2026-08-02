@@ -1,13 +1,11 @@
 import { toast } from "sonner";
 import type { LeaderboardRankNotification } from "./types";
-import { shouldNotifyForRankChange, getNotificationPreferences } from "./notificationPreferences";
+import { shouldNotifyForRankChange } from "./notificationPreferences";
 
 import { saveNotifications } from "./rankTracker";
 
 export function handleRankNotifications(
-  notifications: LeaderboardRankNotification[],
-  /** Wallet address of the current user — required to send push for overtake events */
-  currentWalletAddress?: string
+  notifications: LeaderboardRankNotification[]
 ): void {
   if (notifications.length === 0) return;
 
@@ -22,37 +20,17 @@ export function handleRankNotifications(
 
   saveNotifications(notifications);
 
-  // Fire a Web Push for overtake events if the user opted in
-  const prefs = getNotificationPreferences();
-  if (prefs.pushEnabled && prefs.pushOvertake && currentWalletAddress) {
-    const overtakes = filtered.filter((n) => n.type === "overtaken");
-    if (overtakes.length > 0) {
-      // Use the first overtake for context (the player cares about the most recent)
-      const n = overtakes[0];
-      sendOvertakePush(currentWalletAddress, n).catch(() => {
-        // Non-fatal — toast already shown
-      });
-    }
-  }
-}
-
-async function sendOvertakePush(
-  walletAddress: string,
-  notification: LeaderboardRankNotification
-): Promise<void> {
-  await fetch("/api/push/send", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      type: "leaderboard_overtake",
-      walletAddresses: [walletAddress],
-      context: {
-        huntId: notification.huntId,
-        huntName: notification.huntTitle,
-        overtakerName: notification.overtakenBy ?? "another player",
-      },
-    }),
-  });
+  // NOTE: this used to fire a Web Push for overtake events via a direct
+  // browser POST to /api/push/send. That endpoint now requires a
+  // service/admin credential (a browser can't hold a secret without
+  // exposing it — and letting any client trigger a push to an arbitrary
+  // wallet with no ownership check was itself part of the problem), so the
+  // client-side trigger was removed rather than left to silently 401.
+  // The toast above still fires; only the push notification is affected.
+  // Restoring this needs a server-side trigger — e.g. wherever leaderboard
+  // rank changes are computed server-side — that already holds
+  // PUSH_API_SECRET/ADMIN_API_SECRET and can verify the event is real
+  // before calling notifyWallet(...) directly.
 }
 
 function showRankToast(notification: LeaderboardRankNotification): void {

@@ -37,6 +37,7 @@ interface SubmissionRow {
   hunt: string
   status: string
   submitted_at: number
+  submitted_by: string | null
   reviewed_at: number | null
   reviewed_by: string | null
   rejection_reason: string | null
@@ -67,6 +68,7 @@ function rowToSubmission(row: SubmissionRow): ModerationSubmission {
     hunt: JSON.parse(row.hunt) as StoredHunt,
     status: row.status as ModerationDecision,
     submittedAt: row.submitted_at,
+    ...(row.submitted_by !== null ? { submittedBy: row.submitted_by } : {}),
     ...(row.reviewed_at !== null ? { reviewedAt: row.reviewed_at } : {}),
     ...(row.reviewed_by !== null ? { reviewedBy: row.reviewed_by } : {}),
     ...(row.rejection_reason !== null ? { rejectionReason: row.rejection_reason } : {}),
@@ -127,6 +129,7 @@ export async function getSubmissionByHuntId(
 
 export async function submitHuntForModeration(
   hunt: StoredHunt,
+  submittedBy?: string,
 ): Promise<ModerationSubmission> {
   const sql = getDb()
 
@@ -146,10 +149,10 @@ export async function submitHuntForModeration(
 
   await sql`
     INSERT INTO moderation_submissions
-      (id, hunt_id, hunt, status, submitted_at, auto_flags, policy_violations, creator_email)
+      (id, hunt_id, hunt, status, submitted_at, submitted_by, auto_flags, policy_violations, creator_email)
     VALUES
       (${id}, ${hunt.id}, ${JSON.stringify(hunt)}, 'pending', ${submittedAt},
-       ${autoFlags}, ${policyViolations}, ${hunt.creatorEmail ?? null})
+       ${submittedBy ?? null}, ${autoFlags}, ${policyViolations}, ${hunt.creatorEmail ?? null})
   `
 
   return {
@@ -158,6 +161,7 @@ export async function submitHuntForModeration(
     hunt,
     status: "pending",
     submittedAt,
+    ...(submittedBy ? { submittedBy } : {}),
     autoFlags,
     policyViolations,
     ...(hunt.creatorEmail ? { creatorEmail: hunt.creatorEmail } : {}),

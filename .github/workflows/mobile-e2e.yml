@@ -15,16 +15,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Set up Node.js 22
-        uses: actions/setup-node@v4
+      - name: Setup Node.js with pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '22'
-      - name: Install mobile dependencies
-        working-directory: apps/mobile
-        run: npm install --legacy-peer-deps
       - name: Validate Maestro E2E baseline
         working-directory: apps/mobile
-        run: node scripts/validate-maestro-baseline.js
+        run: npm run test:e2e:validate
       - name: Install Maestro CLI
         run: |
           curl -Ls "https://get.maestro.mobile.dev" | bash

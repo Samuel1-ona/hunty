@@ -58,18 +58,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
       - name: Setup Node.js with pnpm
         uses: ./.github/actions/setup-node-pnpm
 
@@ -81,4 +69,3 @@ jobs:
           CI: true
           WALLET_EXTENSION_PATH: ${{ secrets.WALLET_EXTENSION_PATH }}
         run: pnpm exec playwright test --project=${{ matrix.project }} --reporter=github
-        run: npx playwright test --project=${{ matrix.project }} --reporter=github

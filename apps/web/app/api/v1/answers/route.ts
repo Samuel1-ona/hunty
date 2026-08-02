@@ -30,7 +30,7 @@ export const POST = withErrorHandling(async (req: Request) => {
   const ip = getIP(req)
 
   const config = await getConfig()
-  const { success: ipSuccess, reset: ipReset } = rateLimit(ip, {
+  const { success: ipSuccess, reset: ipReset } = await rateLimit(ip, {
     limit: config.maxSubmissionsPerWindow,
     windowMs: config.submissionWindowMs,
   })

@@ -95,6 +95,9 @@ vi.mock("@/lib/moderation/dbStore", () => ({
   rejectSubmission: vi.fn(),
   flagContentPolicyViolation: vi.fn(),
   submitHuntForModeration: vi.fn(),
+  getCreatorNotifications: async () => [],
+  getModerationStatusForHunts: async () => ({}),
+  markNotificationRead: async () => true,
 }))
 
 vi.mock("@/lib/moderation/email", () => ({
@@ -178,7 +181,7 @@ const ROUTE_MANIFEST: RouteEntry[] = [
 
   // ── moderation ───────────────────────────────────────────────────────
   { file: "moderation/submit/route.ts",             path: "/api/moderation/submit",             methods: ["POST"],          auth: "public" },
-  { file: "moderation/sync/route.ts",               path: "/api/moderation/sync",               methods: ["GET", "POST"],   auth: "public" },
+  { file: "moderation/sync/route.ts",               path: "/api/moderation/sync",               methods: ["GET", "POST"],   auth: "admin" },
 
   // ── notifications ────────────────────────────────────────────────────
   { file: "notifications/complete/route.tsx",       path: "/api/notifications/complete",        methods: ["POST"],          auth: "public" },
@@ -188,7 +191,9 @@ const ROUTE_MANIFEST: RouteEntry[] = [
   { file: "og/leaderboard/route.ts",                path: "/api/og/leaderboard",                methods: ["GET"],           auth: "public" },
 
   // ── push ─────────────────────────────────────────────────────────────
-  { file: "push/send/route.ts",                     path: "/api/push/send",                     methods: ["POST"],          auth: "public" },
+  // Requires PUSH_API_SECRET or ADMIN_API_SECRET as a bearer token; see
+  // app/api/push/send/route.ts and its __tests__ for the credential checks.
+  { file: "push/send/route.ts",                     path: "/api/push/send",                     methods: ["POST"],          auth: "admin" },
 
   // ── push-tokens ──────────────────────────────────────────────────────
   { file: "push-tokens/route.ts",                   path: "/api/push-tokens",                   methods: ["GET", "POST", "DELETE"], auth: "public" },
@@ -290,6 +295,25 @@ describe("API route manifest", () => {
   })
 
   // ── Auth classification ───────────────────────────────────────────────
+
+  describe("OG hunt route ownership", () => {
+    it("keeps exactly one handler for /api/og/hunt/[id]", () => {
+      const ogRouteFiles = routeFiles
+        .map((file) => file.replace(/\\/g, "/"))
+        .filter((file) => file.startsWith("og/hunt/[id]/route."))
+
+      expect(ogRouteFiles).toEqual(["og/hunt/[id]/route.ts"])
+      expect(
+        ROUTE_MANIFEST.filter((entry) => entry.path === "/api/og/hunt/[id]"),
+      ).toEqual([
+        expect.objectContaining({
+          file: "og/hunt/[id]/route.ts",
+          methods: ["GET"],
+          auth: "public",
+        }),
+      ])
+    })
+  })
 
   describe("auth classification", () => {
     for (const entry of ROUTE_MANIFEST) {

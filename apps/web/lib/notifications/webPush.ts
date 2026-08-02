@@ -160,6 +160,59 @@ export async function getCurrentSubscription(): Promise<PushSubscription | null>
   }
 }
 
+// ─── Owner Secret Storage ──────────────────────────────────────────────────────
+
+/**
+ * The server mints a per-wallet "owner secret" on first push registration
+ * (see app/api/push-tokens/route.ts) and requires it on every later
+ * update/delete for that wallet, so a third party who only knows the wallet
+ * address can't overwrite or remove someone else's registration. Persist it
+ * alongside the wallet it belongs to so re-syncs and unsubscribes can
+ * present it.
+ */
+const OWNER_SECRET_STORAGE_KEY = "hunty-push-owner-secret"
+
+interface StoredOwnerSecret {
+  walletAddress: string
+  ownerSecret: string
+}
+
+function getStoredOwnerSecret(walletAddress: string): string | undefined {
+  if (typeof window === "undefined") return undefined
+  try {
+    const raw = localStorage.getItem(OWNER_SECRET_STORAGE_KEY)
+    if (!raw) return undefined
+    const parsed = JSON.parse(raw) as StoredOwnerSecret
+    return parsed.walletAddress === walletAddress ? parsed.ownerSecret : undefined
+  } catch {
+    return undefined
+  }
+}
+
+function setStoredOwnerSecret(walletAddress: string, ownerSecret: string): void {
+  if (typeof window === "undefined") return
+  try {
+    const entry: StoredOwnerSecret = { walletAddress, ownerSecret }
+    localStorage.setItem(OWNER_SECRET_STORAGE_KEY, JSON.stringify(entry))
+  } catch (err) {
+    logger.warn("[webPush] Failed to persist push owner secret", err)
+  }
+}
+
+function clearStoredOwnerSecret(walletAddress: string): void {
+  if (typeof window === "undefined") return
+  try {
+    const raw = localStorage.getItem(OWNER_SECRET_STORAGE_KEY)
+    if (!raw) return
+    const parsed = JSON.parse(raw) as StoredOwnerSecret
+    if (parsed.walletAddress === walletAddress) {
+      localStorage.removeItem(OWNER_SECRET_STORAGE_KEY)
+    }
+  } catch {
+    // Silently ignore
+  }
+}
+
 // ─── Server Sync ──────────────────────────────────────────────────────────────
 
 /**
@@ -178,16 +231,24 @@ export async function syncSubscriptionToServer(
   }
 ): Promise<boolean> {
   try {
+    const ownerSecret = getStoredOwnerSecret(walletAddress)
     const res = await fetch("/api/push-tokens", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         subscription: subscription.toJSON(),
         walletAddress,
+        ...(ownerSecret ? { ownerSecret } : {}),
         ...(preferences ? { preferences } : {}),
       }),
     })
-    return res.ok
+    if (!res.ok) return false
+
+    const data = (await res.json().catch(() => null)) as { ownerSecret?: string } | null
+    if (data?.ownerSecret) {
+      setStoredOwnerSecret(walletAddress, data.ownerSecret)
+    }
+    return true
   } catch (error) {
     logger.error("[webPush] Failed to sync subscription to server:", error)
     return false
@@ -201,11 +262,13 @@ export async function removeSubscriptionFromServer(
   walletAddress: string
 ): Promise<boolean> {
   try {
+    const ownerSecret = getStoredOwnerSecret(walletAddress)
     const res = await fetch("/api/push-tokens", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ walletAddress }),
+      body: JSON.stringify({ walletAddress, ownerSecret }),
     })
+    if (res.ok) clearStoredOwnerSecret(walletAddress)
     return res.ok
   } catch (error) {
     logger.error("[webPush] Failed to remove subscription from server:", error)

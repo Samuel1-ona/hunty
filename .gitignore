@@ -23,6 +23,7 @@ playwright/.cache/
 # next.js
 .next/
 out/
+*.compiled.js
 
 # turborepo
 .turbo/
@@ -48,9 +49,6 @@ yarn-error.log*
 .env*
 .env.local
 !.env.example
-!.env.staging
-!.env.production
-!.env.development
 
 # vercel
 .vercel

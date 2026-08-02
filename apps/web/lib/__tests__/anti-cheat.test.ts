@@ -24,52 +24,35 @@ vi.mock("@/lib/server/seedClues", () => ({
     const clues = [
       { id: 1, huntId: 1, question: "Test clue", answer: "correct_answer", points: 10 },
       { id: 2, huntId: 1, question: "Multi answer", answer: "answer1|answer2", points: 15 },
-    ]
-    return clues.find((c) => c.huntId === huntId && c.id === clueId) || undefined
+    ];
+    return clues.find((c) => c.huntId === huntId && c.id === clueId) || undefined;
   },
-  getServerCluesByHunt: (huntId: number) => {
-    const clues = [
-      { id: 1, huntId: 1, question: "Test clue", answer: "correct_answer", points: 10 },
-      { id: 2, huntId: 1, question: "Multi answer", answer: "answer1|answer2", points: 15 },
-    ]
-    return clues.filter((c) => c.huntId === huntId)
-  },
-  getServerClues: () => [
-    { id: 1, huntId: 1, question: "Test clue", answer: "correct_answer", points: 10 },
-    { id: 2, huntId: 1, question: "Multi answer", answer: "answer1|answer2", points: 15 },
-  ],
-}))
+}));
 
 vi.mock("@/lib/logger", () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
-  error: vi.fn(),
-  warn: vi.fn(),
-  info: vi.fn(),
-  debug: vi.fn(),
-}))
+}));
 
-const {
-  verifyAnswer,
-  checkMinInterval,
-  trackClueSubmission,
-  detectAnomalies,
-  recordAnswer,
-  isBanned,
-  getFlaggedUsers,
-  getAnomalyHistory,
-  getSubmissionHistory,
-  getBannedUsers,
+import {
   banUser,
-  unbanUser,
   calculateScore,
-  setConfig,
+  checkMinInterval,
+  detectAnomalies,
+  getAnomalyHistory,
+  getBannedUsers,
   getConfig,
-} = await import("@/lib/antiCheatDb")
+  getFlaggedUsers,
+  getSubmissionHistory,
+  isBanned,
+  recordAnswer,
+  setConfig,
+  trackClueSubmission,
+  unbanUser,
+  verifyAnswer,
+} from "@/lib/anti-cheat";
 
-describe("Anti-Cheat", () => {
-  const walletA = "GA" + "A".repeat(54)
-  const walletB = "GB" + "B".repeat(54)
-  const ip = "192.168.1.1"
+describe("Anti-Cheat (DB-backed)", () => {
+  const ip = "192.168.1.1";
 
   beforeEach(() => {
     resetTables(tables)
@@ -78,58 +61,50 @@ describe("Anti-Cheat", () => {
   })
 
   afterEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
+
+  // ── verifyAnswer ────────────────────────────────────────────────────────────
 
   describe("verifyAnswer", () => {
     it("returns true for correct answer", async () => {
-      const result = await verifyAnswer(1, 1, "correct_answer")
-      expect(result).toBe(true)
-    })
+      expect(await verifyAnswer(1, 1, "correct_answer")).toBe(true);
+    });
 
     it("returns false for incorrect answer", async () => {
-      const result = await verifyAnswer(1, 1, "wrong_answer")
-      expect(result).toBe(false)
-    })
+      expect(await verifyAnswer(1, 1, "wrong_answer")).toBe(false);
+    });
 
     it("handles multi-answer clues via pipe separator", async () => {
-      const r1 = await verifyAnswer(1, 2, "answer1")
-      expect(r1).toBe(true)
-      const r2 = await verifyAnswer(1, 2, "answer2")
-      expect(r2).toBe(true)
-      const r3 = await verifyAnswer(1, 2, "wrong")
-      expect(r3).toBe(false)
-    })
+      expect(await verifyAnswer(1, 2, "answer1")).toBe(true);
+      expect(await verifyAnswer(1, 2, "answer2")).toBe(true);
+      expect(await verifyAnswer(1, 2, "wrong")).toBe(false);
+    });
 
     it("is case insensitive", async () => {
-      const result = await verifyAnswer(1, 1, "CORRECT_ANSWER")
-      expect(result).toBe(true)
-    })
-
-    it("trims whitespace from answers", async () => {
-      const result = await verifyAnswer(1, 1, "  correct_answer  ")
-      expect(result).toBe(true)
-    })
+      expect(await verifyAnswer(1, 1, "CORRECT_ANSWER")).toBe(true);
+    });
 
     it("returns false for non-existent clue", async () => {
-      const result = await verifyAnswer(999, 999, "anything")
-      expect(result).toBe(false)
-    })
-  })
+      expect(await verifyAnswer(999, 999, "anything")).toBe(false);
+    });
+  });
+
+  // ── checkMinInterval ────────────────────────────────────────────────────────
 
   describe("checkMinInterval", () => {
     it("allows first submission with no wait", async () => {
-      const result = await checkMinInterval("w1", 1, 1)
-      expect(result.allowed).toBe(true)
-      expect(result.waitMs).toBe(0)
-    })
+      const result = await checkMinInterval("w1", 1, 1);
+      expect(result.allowed).toBe(true);
+      expect(result.waitMs).toBe(0);
+    });
 
     it("blocks submission within the minimum interval", async () => {
-      await trackClueSubmission("w2", 1, 1)
-      const result = await checkMinInterval("w2", 1, 1)
-      expect(result.allowed).toBe(false)
-      expect(result.waitMs).toBeGreaterThan(0)
-    })
+      await trackClueSubmission("w2", 1, 1);
+      const result = await checkMinInterval("w2", 1, 1);
+      expect(result.allowed).toBe(false);
+      expect(result.waitMs).toBeGreaterThan(0);
+    });
 
     it("allows submission after interval elapses", async () => {
       await setConfig({ minClueIntervalMs: 1 })

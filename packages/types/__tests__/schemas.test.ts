@@ -83,15 +83,21 @@ describe("rewardTypeSchema", () => {
 
 describe("huntStatusSchema", () => {
   it("accepts all valid hunt statuses", () => {
-    expect(huntStatusSchema.safeParse("Active").success).toBe(true)
-    expect(huntStatusSchema.safeParse("Completed").success).toBe(true)
-    expect(huntStatusSchema.safeParse("Draft").success).toBe(true)
-    expect(huntStatusSchema.safeParse("Cancelled").success).toBe(true)
+    for (const status of [
+      "Active", "Completed", "Draft", "Cancelled",
+      "PendingReview", "Scheduled", "Ended",
+    ]) {
+      expect(huntStatusSchema.safeParse(status).success).toBe(true)
+    }
   })
 
   it("rejects invalid hunt statuses", () => {
     expect(huntStatusSchema.safeParse("Paused").success).toBe(false)
+    expect(huntStatusSchema.safeParse("Archived").success).toBe(false)
     expect(huntStatusSchema.safeParse("active").success).toBe(false)
+    expect(huntStatusSchema.safeParse("scheduled").success).toBe(false)
+    expect(huntStatusSchema.safeParse("ended").success).toBe(false)
+    expect(huntStatusSchema.safeParse("pending_review").success).toBe(false)
     expect(huntStatusSchema.safeParse("").success).toBe(false)
     expect(huntStatusSchema.safeParse(null).success).toBe(false)
     expect(huntStatusSchema.safeParse(undefined).success).toBe(false)
@@ -288,7 +294,10 @@ describe("storedHuntSchema", () => {
   })
 
   it("accepts all status values", () => {
-    for (const status of ["Active", "Completed", "Draft", "Cancelled"]) {
+    for (const status of [
+      "Active", "Completed", "Draft", "Cancelled",
+      "PendingReview", "Scheduled", "Ended",
+    ]) {
       expect(storedHuntSchema.safeParse({ ...validHunt, status }).success).toBe(true)
     }
   })

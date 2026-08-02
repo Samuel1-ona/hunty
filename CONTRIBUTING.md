@@ -18,6 +18,7 @@ Before diving in, let's make sure you have everything you need to get started. D
 Let's get your development environment set up. It's pretty straightforward:
 
 1. **Clone the repo:**
+
    ```bash
    git clone https://github.com/Samuel1-ona/Hunty-contract.git
    cd Hunty-contract
@@ -25,6 +26,7 @@ Let's get your development environment set up. It's pretty straightforward:
 
 2. **Build everything:**
    This will compile all three contracts. Grab a coffee ☕ - first builds can take a minute!
+
    ```bash
    cd contracts/hunty-core && make build
    cd ../reward-manager && make build
@@ -89,6 +91,7 @@ Head over to [GitHub Issues](https://github.com/Samuel1-ona/Hunty-contract/issue
 ### Still Not Sure?
 
 If you're feeling overwhelmed, start with:
+
 1. Issues labeled "good first issue" - we specifically set these up for newcomers
 2. Documentation improvements - these are low-stress and help everyone
 3. Test coverage - writing tests is a great way to understand how things work
@@ -141,6 +144,7 @@ as correct answers, making the system more user-friendly."
 ```
 
 **Good commit messages:**
+
 - Explain what changed
 - Explain why (if it's not obvious)
 - Are written in present tense ("Add feature" not "Added feature")
@@ -153,11 +157,40 @@ Once you're happy with your changes:
 git push origin feature/your-feature-name
 ```
 
-Then head over to GitHub and create a pull request. In your PR description, tell us:
+Then open a pull request against `Samuel1-ona/hunty` (usually into `main`). Prefer the GitHub CLI:
+
+```bash
+gh pr create --base main --title "your title" --body "Closes #<issue-number>"
+```
+
+You can also create the PR from the GitHub UI after pushing. In your PR description, tell us:
+
 - What you changed
 - Why you changed it
 - How to test it
 - Any questions or concerns you have
+
+## Maintainer automation scripts
+
+One-off repository administration scripts live under `scripts/maintenance/`. They are **not** part of the app build and are kept only for maintainers who need historical setup tooling.
+
+| Script                    | Purpose                                                         |
+| ------------------------- | --------------------------------------------------------------- |
+| `assign_labels.sh`        | Create common labels and apply them to matching issues by title |
+| `create_issues.sh`        | Batch-create GitHub issues from a predefined list               |
+| `create_issues_100.sh`    | Bulk variant that creates many issues at once                   |
+| `create_issues_safe.sh`   | Safer issue-creation variant with rate-limiting                 |
+| `create_mobile_issues.py` | Create mobile-specific GitHub issues                            |
+
+See [`scripts/maintenance/README.md`](scripts/maintenance/README.md) for details. Contributors fixing application code do not need to run these scripts.
+
+To assign labels with the consolidated helper:
+
+```bash
+./scripts/maintenance/assign_labels.sh
+```
+
+Requires an authenticated `gh` CLI session and `jq`.
 
 ## Smart contract contribution guide
 
@@ -235,7 +268,7 @@ We can't stress this enough: **write tests**. They're not just for catching bugs
 
 ### Our Testing Goals
 
-- Aim for >80% code coverage 
+- Aim for >80% code coverage
 - Test edge cases - these are where bugs hide
 - Include integration tests for cross-contract calls
 - Make tests readable - they should tell a story
@@ -257,27 +290,29 @@ A good PR description helps reviewers understand your work quickly. Please note:
 
 ```markdown
 ## What This Does
+
 Adds support for multiple valid answers per clue, allowing hunt creators
 to accept variations like "Paris", "paris", or "City of Light" as correct.
 
 ## Why
+
 Some clues have multiple valid answers, and we want to be flexible while
 still maintaining security through hash verification.
 
 ## Testing
+
 - Added unit tests for multi-answer verification
 - Tested with various answer formats
 - Verified backward compatibility with single-answer clues
 
 ## Related Issues
+
 Closes #21
 ```
 
 ### The Review Process
 
 Don't take feedback personally! Code reviews are about making the code better, not criticizing you. We're all learning and improving together.
-
-
 
 ## Contract-Specific Tips
 
@@ -312,10 +347,7 @@ NFTs are cool, but they need to be done right:
 
 Stuck on something? We've got your back:
 
-- **Leave a message on the issue** - I will get back to you as quick as possible 
-
-
-
+- **Leave a message on the issue** - I will get back to you as quick as possible
 
 ## License
 

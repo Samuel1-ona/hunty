@@ -8,9 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { EscrowDrawer } from "@/components/EscrowDrawer";
 import { Header } from "@/components/Header";
 import { HuntDashboard } from "@/components/HuntDashboard";
-import { RewardHistoryPanel } from "@/components/RewardHistoryPanel";
 import { Button } from "@/components/ui/button";
-import { activateHunt, addCluesBatch } from "@/lib/contracts/hunt";
 import {
   buildHuntHistoryQuery,
   getHuntHistoryView,
@@ -31,6 +29,11 @@ import {
 import { syncCreatorHuntsWithModeration } from "@/lib/moderation/clientSync";
 import { withTransactionToast } from "@/lib/txToast";
 import type { StoredHunt } from "@/lib/types";
+import dynamic from "next/dynamic";
+
+const RewardHistoryPanel = dynamic(() =>
+  import("@/components/RewardHistoryPanel").then((mod) => mod.RewardHistoryPanel)
+);
 
 type SearchParamValue = string | string[] | undefined;
 
@@ -159,6 +162,7 @@ export function DashboardPageClient({ searchParams = {} }: DashboardPageClientPr
         await withTransactionToast(
           async (setStage) => {
             setStage("approving");
+            const { addCluesBatch } = await import("@/lib/contracts/hunt");
             return addCluesBatch(
               huntId,
               normalizedClues.map(({ huntId: _huntId, ...clue }) => clue)

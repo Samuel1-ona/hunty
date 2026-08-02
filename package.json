@@ -1,6 +1,5 @@
 {
   "name": "hunty",
-  "packageManager": "pnpm@10.32.0",
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@10.32.1",
@@ -140,9 +139,5 @@
     "typescript": "^5",
     "vite": "^8.1.0",
     "vitest": "^4.0.18"
-  },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ]
+  }
 }

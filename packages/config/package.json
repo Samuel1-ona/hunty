@@ -6,12 +6,12 @@
   "scripts": {
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit",
-    "test": "exit 0"
+    "test": "node scripts/validate-exports.mjs"
   },
   "exports": {
-    "./eslint/base": "./eslint/base.mjs",
-    "./eslint/next": "./eslint/next.mjs",
-    "./eslint/react-native": "./eslint/react-native.mjs",
+    "./eslint/base.mjs": "./eslint/base.mjs",
+    "./eslint/next.mjs": "./eslint/next.mjs",
+    "./eslint/react-native.mjs": "./eslint/react-native.mjs",
     "./tsconfig/base.json": "./tsconfig/base.json",
     "./tsconfig/nextjs.json": "./tsconfig/nextjs.json",
     "./tsconfig/react-native.json": "./tsconfig/react-native.json",
@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@next/eslint-plugin-next": "15.3.4",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
     "eslint-plugin-jsx-a11y": "^6.10.2",

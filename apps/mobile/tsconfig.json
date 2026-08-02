@@ -1,12 +1,10 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "@hunty/config/tsconfig/react-native.json",
   "compilerOptions": {
-    "strict": true,
-    "jsx": "react-native",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "@lib/*": ["../lib/*"],
+      "@lib/*": ["./lib/*"],
       "@store/*": ["./store/*"],
       "@providers/*": ["./providers/*"],
       "@components/*": ["./components/*"],
@@ -15,7 +13,7 @@
       "@utils/*": ["./utils/*"],
       "@config/*": ["./config/*"],
       "@app/*": ["./app/*"],
-      "@shared/*": ["../shared/*"],
+      "@shared/*": ["./shared/*"],
       "@hunty/types": ["../../packages/types/src/index.ts"],
       "@hunty/types/*": ["../../packages/types/src/*"],
       "@hunty/ui": ["../../packages/ui/src/index.ts"],

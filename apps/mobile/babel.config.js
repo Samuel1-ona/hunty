@@ -12,7 +12,7 @@ module.exports = function (api) {
               root: ['.'],
               alias: {
                 '@': './',
-                '@lib': '../lib',
+                '@lib': './lib',
                 '@store': './store',
                 '@providers': './providers',
                 '@components': './components',
@@ -21,7 +21,6 @@ module.exports = function (api) {
                 '@services': './services',
                 '@hooks': './hooks',
                 '@app': './app',
-                '@shared': '../shared',
                 '@hunty/types': '../../packages/types/src',
                 '@hunty/ui': '../../packages/ui/src',
               },

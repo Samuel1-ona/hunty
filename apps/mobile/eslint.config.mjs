@@ -1,5 +1,5 @@
 import { FlatCompat } from '@eslint/eslintrc';
-import reactNativeConfig from '@hunty/config/eslint/react-native';
+import reactNativeConfig from '@hunty/config/eslint/react-native.mjs';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 

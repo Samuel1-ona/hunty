@@ -12,19 +12,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          fetch-depth: 0
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
       - name: Setup Node.js with pnpm
         uses: ./.github/actions/setup-node-pnpm
 
@@ -40,13 +36,11 @@ jobs:
         run: pnpm audit --audit-level=moderate || true
 
       - name: Run Playwright security tests
-        run: pnpm run security:test || true
         run: pnpm security:test || true
 
       - name: OWASP ZAP baseline scan
         uses: zaproxy/action-baseline@v0.8.0
         with:
           target: "http://localhost:3000"
-        continue-on-error: true
         continue-on-error: true # prevents workflow failure if ZAP fails
         # NOTE: The ZAP baseline expects a running server; we started it above.

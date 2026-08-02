@@ -11,9 +11,9 @@ import {
   Send,
   ShieldCheck,
   Sparkles,
-} from "lucide-react"
-import { useTranslations } from "next-intl"
 } from "lucide-react";
+import { useTranslations } from "next-intl";
+
 
 const footerSections = [
   {
@@ -209,4 +209,3 @@ export function Footer() {
     </footer>
   );
 }
- 
