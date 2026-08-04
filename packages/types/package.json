@@ -11,10 +11,6 @@
     "./api-schemas": "./src/api-schemas.ts"
   },
   "scripts": {
-    "test": "vitest run"
-  },
-  "sideEffects": false,
-  "scripts": {
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "test": "vitest --run"
