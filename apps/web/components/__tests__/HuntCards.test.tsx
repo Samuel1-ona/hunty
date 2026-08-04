@@ -179,6 +179,22 @@ describe("HuntCards — card rendering", () => {
     expect(answerRow.className).toContain("sticky")
     expect(answerRow.style.bottom).toContain("env(keyboard-inset-height")
   })
+
+  it("renders audio clue media when provided", () => {
+    render(
+      <HuntCards
+        {...defaultProps}
+        hunts={[
+          {
+            ...baseHunt,
+            mediaCid: "ipfs://bafy123?type=audio",
+          },
+        ]}
+      />
+    )
+
+    expect(document.querySelector("audio")).toBeInTheDocument()
+  })
 })
 
 // ── local answer submission ───────────────────────────────────────────────────

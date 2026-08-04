@@ -1,105 +1,107 @@
-import { afterEach,beforeEach, describe, expect, it, vi } from "vitest";
+// @vitest-environment node
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+// ── Mock lib/db so we never need a real Postgres connection ─────────────────
+const mockSql = vi.fn() as ReturnType<typeof vi.fn> & {
+  array: (v: unknown[]) => unknown[];
+  json: (v: unknown) => unknown;
+};
+mockSql.array = (v: unknown[]) => v;
+mockSql.json = (v: unknown) => v;
+
+vi.mock("@/lib/db", () => ({ getDb: () => mockSql }));
 
 import { getIP, rateLimit, rateLimitResponse } from "../rate-limit";
 
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Make the DB UPSERT return a count row */
+function setupCount(count: number) {
+  mockSql.mockImplementation(() => Promise.resolve([{ count }]));
+}
+
+/** Make the DB throw */
+function setupDbError() {
+  mockSql.mockImplementation(() => Promise.reject(new Error("db down")));
+}
+
+// ── rateLimit ────────────────────────────────────────────────────────────────
+
 describe("rateLimit", () => {
   beforeEach(() => {
-    vi.useFakeTimers();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  it("allows the first request and returns remaining count", () => {
-    const result = rateLimit("192.168.1.1");
+  it("allows the first request and returns remaining count", async () => {
+    setupCount(1);
+    const result = await rateLimit("192.168.1.1");
     expect(result.success).toBe(true);
     expect(result.remaining).toBe(59);
     expect(result.reset).toBeGreaterThan(Date.now());
   });
 
-  it("allows requests up to the limit", () => {
-    const ip = "10.0.0.1";
-    for (let i = 0; i < 60; i++) {
-      const result = rateLimit(ip);
-      if (i < 60) {
-        expect(result.success).toBe(true);
-      }
-    }
+  it("allows requests up to the limit", async () => {
+    setupCount(60);
+    const result = await rateLimit("10.0.0.1");
+    expect(result.success).toBe(true);
+    expect(result.remaining).toBe(0);
   });
 
-  it("blocks requests that exceed the limit", () => {
-    const ip = "10.0.0.2";
-    for (let i = 0; i < 60; i++) {
-      rateLimit(ip);
-    }
-    const result = rateLimit(ip);
+  it("blocks requests that exceed the limit", async () => {
+    setupCount(61);
+    const result = await rateLimit("10.0.0.2");
     expect(result.success).toBe(false);
     expect(result.remaining).toBe(0);
   });
 
-  it("rejects with zero remaining when exceeded", () => {
-    const ip = "10.0.0.3";
-    for (let i = 0; i < 61; i++) {
-      rateLimit(ip);
-    }
-    const result = rateLimit(ip);
+  it("rejects with zero remaining when exceeded", async () => {
+    setupCount(100);
+    const result = await rateLimit("10.0.0.3");
     expect(result.remaining).toBe(0);
   });
 
-  it("resets after the time window expires", () => {
-    const ip = "10.0.0.4";
-    const config = { limit: 3, windowMs: 1000 };
-
-    expect(rateLimit(ip, config).success).toBe(true);
-    expect(rateLimit(ip, config).success).toBe(true);
-    expect(rateLimit(ip, config).success).toBe(true);
-    expect(rateLimit(ip, config).success).toBe(false);
-
-    vi.advanceTimersByTime(1001);
-
-    const result = rateLimit(ip, config);
+  it("accepts custom limit and window configurations", async () => {
+    setupCount(5);
+    const result = await rateLimit("10.0.0.5", { limit: 5, windowMs: 2000 });
     expect(result.success).toBe(true);
-    expect(result.remaining).toBe(2);
+    expect(result.remaining).toBe(0);
   });
 
-  it("accepts custom limit and window configurations", () => {
-    const ip = "10.0.0.5";
-    const config = { limit: 5, windowMs: 2000 };
-
-    for (let i = 0; i < 5; i++) {
-      expect(rateLimit(ip, config).success).toBe(true);
-    }
-    expect(rateLimit(ip, config).success).toBe(false);
+  it("accepts custom limit - blocks when over", async () => {
+    setupCount(6);
+    const result = await rateLimit("10.0.0.5", { limit: 5, windowMs: 2000 });
+    expect(result.success).toBe(false);
   });
 
-  it("tracks different IPs independently", () => {
-    const ip1 = "10.0.0.6";
-    const ip2 = "10.0.0.7";
-
-    for (let i = 0; i < 60; i++) {
-      rateLimit(ip1);
-    }
-    expect(rateLimit(ip1).success).toBe(false);
-
-    const result = rateLimit(ip2);
-    expect(result.success).toBe(true);
-    expect(result.remaining).toBe(59);
+  it("returns the correct reset timestamp", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_000_000);
+    setupCount(1);
+    const result = await rateLimit("10.0.0.8", { limit: 10, windowMs: 5000 });
+    // Window aligned: floor(1_000_000 / 5000) * 5000 + 5000 = 1_000_000 + 5000 = 1_005_000
+    expect(result.reset).toBe(1_005_000);
   });
 
-  it("returns the correct reset timestamp", () => {
-    vi.setSystemTime(1000000);
-    const result = rateLimit("10.0.0.8", { limit: 10, windowMs: 5000 });
-    expect(result.reset).toBe(1005000);
-  });
-
-  it("uses default config when none is provided", () => {
-    const result = rateLimit("10.0.0.9");
+  it("uses default config when none is provided", async () => {
+    setupCount(1);
+    const result = await rateLimit("10.0.0.9");
     expect(result.success).toBe(true);
     expect(result.remaining).toBe(59);
     expect(typeof result.reset).toBe("number");
   });
+
+  it("degrades gracefully when the database is unavailable", async () => {
+    setupDbError();
+    const result = await rateLimit("10.0.0.10");
+    expect(result.success).toBe(true); // allow through
+  });
 });
+
+// ── getIP ────────────────────────────────────────────────────────────────────
 
 describe("getIP", () => {
   it("returns the IP from x-forwarded-for header", () => {
@@ -111,9 +113,7 @@ describe("getIP", () => {
 
   it("returns the first IP from a comma-separated x-forwarded-for header", () => {
     const req = new Request("http://localhost", {
-      headers: {
-        "x-forwarded-for": "203.0.113.195, 198.51.100.14, 192.0.2.1",
-      },
+      headers: { "x-forwarded-for": "203.0.113.195, 198.51.100.14, 192.0.2.1" },
     });
     expect(getIP(req)).toBe("203.0.113.195");
   });
@@ -138,33 +138,32 @@ describe("getIP", () => {
   });
 });
 
+// ── rateLimitResponse ────────────────────────────────────────────────────────
+
 describe("rateLimitResponse", () => {
   it("returns a 429 status response", () => {
-    const reset = Date.now() + 60000;
+    const reset = Date.now() + 60_000;
     const response = rateLimitResponse(reset);
     expect(response.status).toBe(429);
   });
 
   it("sets X-RateLimit-Reset header to the reset timestamp in seconds", () => {
-    const reset = 2000000;
+    const reset = 2_000_000;
     const response = rateLimitResponse(reset);
     expect(response.headers.get("X-RateLimit-Reset")).toBe("2000");
   });
 
   it("sets Retry-After header", () => {
     vi.useFakeTimers();
-    vi.setSystemTime(1000000);
-
-    const reset = 1060000;
+    vi.setSystemTime(1_000_000);
+    const reset = 1_060_000;
     const response = rateLimitResponse(reset);
-    const retryAfter = response.headers.get("Retry-After");
-    expect(retryAfter).toBe("60");
-
+    expect(response.headers.get("Retry-After")).toBe("60");
     vi.useRealTimers();
   });
 
   it("returns an error message and code in the JSON body", async () => {
-    const reset = Date.now() + 60000;
+    const reset = Date.now() + 60_000;
     const response = rateLimitResponse(reset);
     const body = await response.json();
     expect(body).toEqual({
@@ -174,7 +173,7 @@ describe("rateLimitResponse", () => {
   });
 
   it("returns a JSON content-type header", () => {
-    const reset = Date.now() + 60000;
+    const reset = Date.now() + 60_000;
     const response = rateLimitResponse(reset);
     expect(response.headers.get("content-type")).toMatch(/application\/json/);
   });

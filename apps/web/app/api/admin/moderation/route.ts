@@ -1,99 +1,83 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import {
   approveSubmission,
   flagContentPolicyViolation,
   getAllSubmissions,
   getPendingSubmissions,
   rejectSubmission,
-} from "@/lib/moderation/store"
+} from "@/lib/moderation/dbStore"
 import { sendModerationActionEmail } from "@/lib/moderation/email"
-import type { ContentPolicyViolation } from "@/lib/moderation/types"
 import { assertAdminAuth } from "@/lib/api/adminAuth"
+import { withValidation } from "@/lib/api/withValidation"
+import { withErrorHandling } from "@/lib/api/withErrorHandling"
+import {
+  adminModerationBodySchema,
+  adminModerationQuerySchema,
+} from "@hunty/types/api-schemas"
 
-export async function GET(req: NextRequest) {
+export const GET = withErrorHandling(async (req: Request) => {
   assertAdminAuth(req)
   const { searchParams } = new URL(req.url)
   const view = searchParams.get("view") || "pending"
 
-  if (view === "all") {
-    return NextResponse.json({ submissions: getAllSubmissions() })
+  const queryResult = adminModerationQuerySchema.safeParse({ view })
+  if (!queryResult.success) {
+    return NextResponse.json({ error: "Invalid view parameter" }, { status: 400 })
   }
 
-  return NextResponse.json({ submissions: getPendingSubmissions() })
-}
-
-export async function POST(req: NextRequest) {
-  assertAdminAuth(req)
-  let body: {
-    action?: string
-    submissionId?: string
-    reason?: string
-    policyViolations?: ContentPolicyViolation[]
-    reviewedBy?: string
+  if (queryResult.data.view === "all") {
+    return NextResponse.json({ submissions: await getAllSubmissions() })
   }
 
-  try {
-    body = await req.json()
-  } catch {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
-  }
+  return NextResponse.json({ submissions: await getPendingSubmissions() })
+})
 
-  const { action, submissionId } = body
-  if (!submissionId) {
-    return NextResponse.json({ error: "submissionId is required" }, { status: 400 })
-  }
+export const POST = withValidation(
+  { body: adminModerationBodySchema },
+  async (req, _context, { body }) => {
+    assertAdminAuth(req)
 
-  if (action === "approve") {
-    const updated = approveSubmission(submissionId, body.reviewedBy || "admin")
-    if (!updated) {
-      return NextResponse.json({ error: "Submission not found" }, { status: 404 })
+    if (body.action === "approve") {
+      const updated = await approveSubmission(body.submissionId, body.reviewedBy ?? "admin")
+      if (!updated) {
+        return NextResponse.json({ error: "Submission not found" }, { status: 404 })
+      }
+      if (updated.creatorEmail) {
+        await sendModerationActionEmail({
+          huntName: updated.hunt.title,
+          creatorEmail: updated.creatorEmail,
+          action: "approved",
+        })
+      }
+      return NextResponse.json({ success: true, submission: updated })
     }
-    if (updated.creatorEmail) {
-      await sendModerationActionEmail({
-        huntName: updated.hunt.title,
-        creatorEmail: updated.creatorEmail,
-        action: "approved",
-      })
-    }
-    return NextResponse.json({ success: true, submission: updated })
-  }
 
-  if (action === "reject") {
-    const reason = body.reason?.trim()
-    if (!reason) {
-      return NextResponse.json({ error: "reason is required to reject" }, { status: 400 })
+    if (body.action === "reject") {
+      const updated = await rejectSubmission(
+        body.submissionId,
+        body.reason,
+        body.policyViolations ?? [],
+        body.reviewedBy ?? "admin"
+      )
+      if (!updated) {
+        return NextResponse.json({ error: "Submission not found" }, { status: 404 })
+      }
+      if (updated.creatorEmail) {
+        await sendModerationActionEmail({
+          huntName: updated.hunt.title,
+          creatorEmail: updated.creatorEmail,
+          action: "rejected",
+          reason: body.reason,
+        })
+      }
+      return NextResponse.json({ success: true, submission: updated })
     }
-    const updated = rejectSubmission(
-      submissionId,
-      reason,
-      body.policyViolations ?? [],
-      body.reviewedBy || "admin"
-    )
-    if (!updated) {
-      return NextResponse.json({ error: "Submission not found" }, { status: 404 })
-    }
-    if (updated.creatorEmail) {
-      await sendModerationActionEmail({
-        huntName: updated.hunt.title,
-        creatorEmail: updated.creatorEmail,
-        action: "rejected",
-        reason,
-      })
-    }
-    return NextResponse.json({ success: true, submission: updated })
-  }
 
-  if (action === "flag") {
-    const violations = body.policyViolations
-    if (!violations?.length) {
-      return NextResponse.json({ error: "policyViolations is required" }, { status: 400 })
-    }
-    const updated = flagContentPolicyViolation(submissionId, violations)
+    // action === "flag"
+    const updated = await flagContentPolicyViolation(body.submissionId, body.policyViolations)
     if (!updated) {
       return NextResponse.json({ error: "Submission not found" }, { status: 404 })
     }
     return NextResponse.json({ success: true, submission: updated })
   }
-
-  return NextResponse.json({ error: "Invalid action" }, { status: 400 })
-}
+)

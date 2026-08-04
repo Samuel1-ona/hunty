@@ -38,8 +38,8 @@ export function HuntReviewsSection({ huntId, creatorAddress }: HuntReviewsSectio
       const data = await res.json()
       setReviews(data.data || [])
       setError(null)
-    } catch (err: any) {
-      setError(err.message || "An error occurred while loading reviews")
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred while loading reviews")
     } finally {
       setLoading(false)
     }
@@ -98,8 +98,8 @@ export function HuntReviewsSection({ huntId, creatorAddress }: HuntReviewsSectio
       setRating(0)
       setText("")
       await fetchReviews()
-    } catch (err: any) {
-      setSubmitError(err.message || "An error occurred while submitting your review")
+    } catch (err: unknown) {
+      setSubmitError(err instanceof Error ? err.message : "An error occurred while submitting your review")
     } finally {
       setSubmitting(false)
     }
@@ -124,9 +124,9 @@ export function HuntReviewsSection({ huntId, creatorAddress }: HuntReviewsSectio
       }
 
       await fetchReviews()
-    } catch (err: any) {
-      alert(err.message || "An error occurred during moderation")
-    }
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "An error occurred during moderation")
+  }
   }
 
   const userHasReviewed = connected && publicKey && reviews.some(

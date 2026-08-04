@@ -37,9 +37,21 @@ describe("tags", () => {
   })
 
   it("autocompletes from corpus", () => {
+    // Prefix matches come first. For query "mur" the corpus "mural" is the
+    // only prefix hit ("museum" is m-u-s-e-u-m so it does not contain
+    // "mur"). "park" matches neither.
     expect(autocompleteTags("mur", ["mural", "museum", "park"])).toEqual(
-      expect.arrayContaining(["mural", "museum"]),
+      expect.arrayContaining(["mural"]),
     )
+  })
+
+  it("falls back to substring-only matches when no prefix hit exists", () => {
+    // "seum" is NOT a prefix of any corpus term but IS a substring of
+    // "museum", exercising the substring path the source uses for fallbacks.
+    expect(autocompleteTags("seum", ["museum", "park"])).toEqual(
+      expect.arrayContaining(["museum"]),
+    )
+    expect(autocompleteTags("seum", ["museum", "park"])).not.toContain("park")
   })
 
   it("suggests tags from hunt content", () => {

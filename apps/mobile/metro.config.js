@@ -3,7 +3,7 @@ const { withNativeWind } = require('nativewind/metro');
 const path = require('path');
 
 const projectRoot = __dirname;
-// True monorepo root — two levels up from apps/mobile/
+// apps/mobile is two levels deep from the monorepo root (hunty/apps/mobile)
 const monorepoRoot = path.resolve(projectRoot, '../..');
 
 const emptyModule = path.resolve(projectRoot, 'shims/empty.js');

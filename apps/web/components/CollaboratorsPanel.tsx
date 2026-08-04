@@ -73,12 +73,11 @@ export function CollaboratorsPanel({
     [collaborators, currentWallet],
   )
   const isOwner = me?.role === "owner"
-  const activeEditors = useMemo(
-    () => getActiveEditors(huntId, currentWallet),
-    // refresh updates collaborators → recompute
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [huntId, currentWallet, collaborators],
-  )
+  const activeEditors = useMemo(() => {
+    // Reference collaborators so re-fetching collaborators triggers recomputing active editors
+    void collaborators
+    return getActiveEditors(huntId, currentWallet)
+  }, [huntId, currentWallet, collaborators])
 
   const handleInvite = () => {
     setError(null)

@@ -21,6 +21,7 @@ import {
   syncSubscriptionToServer,
 } from "@/lib/notifications/webPush"
 import { getNotificationPreferences, setNotificationPreferences } from "@/lib/notifications/notificationPreferences"
+import { logger } from "@/lib/logger"
 
 export type PushState =
   | "unsupported"   // browser does not support Web Push
@@ -114,7 +115,7 @@ export function usePushNotifications(
     } catch (err) {
       setState("unsubscribed")
       setError("An unexpected error occurred. Please try again.")
-      console.error("[usePushNotifications] enable error:", err)
+      logger.error("[usePushNotifications] enable error:", err)
     }
   }, [walletAddress])
 
@@ -135,7 +136,7 @@ export function usePushNotifications(
     } catch (err) {
       setState("subscribed")
       setError("Failed to disable push notifications. Please try again.")
-      console.error("[usePushNotifications] disable error:", err)
+      logger.error("[usePushNotifications] disable error:", err)
     }
   }, [walletAddress])
 

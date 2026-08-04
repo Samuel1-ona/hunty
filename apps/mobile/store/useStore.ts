@@ -8,15 +8,10 @@
  *   const { currentProgress, setProgress } = usePlayerStore()
  */
 
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import * as SecureStore from 'expo-secure-store';
-import type { PlayerProgress } from '@lib/types';
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import * as SecureStore from "expo-secure-store";
-import type { PlayerProgress } from "@hunty/types";
-import type { PlayerProgress } from "@lib/types";
+import { create } from "zustand"
+import { persist, type PersistStorage } from "zustand/middleware"
+import * as SecureStore from "expo-secure-store"
+import type { PlayerProgress } from "@hunty/types"
 
 // ─── Wallet Store ─────────────────────────────────────────────────────────────
 
@@ -80,14 +75,13 @@ export const useWalletStore = create<WalletState>()(
         removeItem: async (key: string) => {
           await SecureStore.deleteItemAsync(key);
         },
-      } as any,
+      } as unknown as PersistStorage<WalletState>,
       // Persist wallet identity + network; balance is fetched on demand.
-      partialize: (state) =>
-        ({
+      partialize: (state) => ({
           walletAddress: state.walletAddress,
           network: state.network,
           watchOnlyAddress: state.watchOnlyAddress,
-        }) as any,
+      }),
     },
   ),
 );
@@ -164,7 +158,10 @@ export const usePlayerStore = create<PlayerState>()(
           const converted = {
             ...parsed,
             completedClues: Object.fromEntries(
-              Object.entries(parsed.completedClues).map(([k, v]: [string, any]) => [k, new Set(v)]),
+              Object.entries(parsed.completedClues as Record<string, unknown[]>).map(([k, v]) => [
+                k,
+                new Set(v),
+              ]),
             ),
           };
           return JSON.stringify(converted);
@@ -186,7 +183,7 @@ export const usePlayerStore = create<PlayerState>()(
         removeItem: async (key: string) => {
           await SecureStore.deleteItemAsync(key);
         },
-      } as any,
+      } as unknown as PersistStorage<PlayerState>,
     },
   ),
 );
@@ -217,7 +214,7 @@ export const useSettingsStore = create<SettingsState>()(
         removeItem: async (key: string) => {
           await SecureStore.deleteItemAsync(key);
         },
-      } as any,
+      } as unknown as PersistStorage<SettingsState>,
     },
   ),
 );

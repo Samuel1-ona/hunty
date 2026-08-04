@@ -3,50 +3,26 @@ import { NextRequest, NextResponse } from "next/server"
 import { logger } from "@/lib/logger"
 import { BadGatewayError, RateLimitError, ServiceUnavailableError, ValidationError } from "@/lib/api/errors"
 import { withErrorHandling } from "@/lib/api/withErrorHandling"
+import { getIP, rateLimit } from "@/lib/rate-limit"
 
 const PINATA_JWT = process.env.PINATA_JWT
-
-// In-memory rate limiter: 10 uploads per IP per hour
-const RATE_LIMIT = 10
-const WINDOW_MS = 60 * 60 * 1000 // 1 hour
-
-const ipStore = new Map<string, { count: number; resetAt: number }>()
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now()
-  const entry = ipStore.get(ip)
-
-  if (!entry || now >= entry.resetAt) {
-    ipStore.set(ip, { count: 1, resetAt: now + WINDOW_MS })
-    return true
-  }
-
-  if (entry.count >= RATE_LIMIT) return false
-
-  entry.count++
-  return true
-}
 
 export const POST = withErrorHandling(async (req: NextRequest) => {
   if (!PINATA_JWT) {
     throw new ServiceUnavailableError(
-      "IPFS uploads are not configured. Add PINATA_JWT to your environment variables."
+      "IPFS uploads are not configured. Add PINATA_JWT to your environment variables.",
     )
   }
 
-  // Wallet address validation
   const wallet = req.headers.get("x-wallet-address")
   if (!wallet) {
     throw new ValidationError("Wallet address required", { header: "x-wallet-address" })
   }
 
-  // Rate limiting by IP
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown"
+  const ip = getIP(req)
 
-  if (!checkRateLimit(ip)) {
+  const { success } = await rateLimit(ip, { limit: 10, windowMs: 60 * 60 * 1000 })
+  if (!success) {
     throw new RateLimitError("Too many requests. Limit is 10 uploads per hour.")
   }
 
@@ -57,7 +33,6 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
     throw new ValidationError("No file provided", { field: "file" })
   }
 
-  // Forward to Pinata's pinFileToIPFS endpoint
   const pinataForm = new FormData()
   pinataForm.append("file", file)
 
