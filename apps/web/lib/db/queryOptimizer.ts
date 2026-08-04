@@ -135,6 +135,10 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
       );
       if (cached) return cached;
 
+      // Feed categories (trending, new, nearby, featured) alter filtering and sorting
+      const FEED_CATEGORIES = ["trending", "new", "nearby", "featured"];
+      const isFeedCategory = FEED_CATEGORIES.includes(category ?? "");
+
       // Get all hunts (which already filters out private hunts)
       const allHunts = getAllHunts();
 
@@ -162,8 +166,9 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
             ? true
             : (hunt.difficulty ?? "Medium").toLowerCase() === difficulty.toLowerCase();
 
+        // Feed categories bypass the hunt's own category filter
         const matchesCategory =
-          category === "all" || !category
+          category === "all" || !category || isFeedCategory
             ? true
             : (hunt.category ?? "General").toLowerCase() === category.toLowerCase();
 
@@ -189,6 +194,25 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
 
       // Sort hunts
       filteredHunts.sort((a, b) => {
+        // Feed category sorting takes priority
+        if (isFeedCategory) {
+          if (category === "trending") {
+            const aCount = a.playerCount ?? 0;
+            const bCount = b.playerCount ?? 0;
+            if (bCount !== aCount) return bCount - aCount;
+            return b.cluesCount - a.cluesCount;
+          }
+          if (category === "nearby") {
+            return (b.startTime ?? 0) - (a.startTime ?? 0);
+          }
+          if (category === "featured") {
+            const aFeatured = a.isFeaturedOfWeek ? 1 : 0;
+            const bFeatured = b.isFeaturedOfWeek ? 1 : 0;
+            if (bFeatured !== aFeatured) return bFeatured - aFeatured;
+            return (b.startTime ?? 0) - (a.startTime ?? 0);
+          }
+        }
+
         if (sortBy === "rating-high") {
           const ratingA = a.averageRating ?? 0;
           const ratingB = b.averageRating ?? 0;

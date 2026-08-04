@@ -16,6 +16,7 @@
  * Set ADMIN_API_SECRET in your environment.  If the variable is absent, the
  * guard rejects all requests in production and logs a warning in development.
  */
+import { getClientIp } from "@/lib/api/ip"
 import * as Sentry from "@sentry/nextjs"
 import { NextResponse } from "next/server"
 
@@ -59,10 +60,7 @@ export function assertAdminAuth(req: Request): void {
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null
 
   if (!token || token !== secret) {
-    const ip =
-      req.headers.get("x-forwarded-for") ??
-      req.headers.get("x-real-ip") ??
-      "unknown"
+    const ip = getClientIp(req)
 
     // Report unauthenticated admin access attempts so you can alert on them.
     Sentry.captureEvent({

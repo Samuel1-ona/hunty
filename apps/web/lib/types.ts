@@ -7,25 +7,13 @@
  * types (display entries, performance, chat, …) remain defined below.
  */
 
-import type { HuntCategory, PlayerProgress, Reward as DomainReward } from "@hunty/types";
-import type {
-  HuntCategory as DomainHuntCategory,
-  HuntInvite,
-  HuntStatus,
-  PlayerProgress,
-  Reward as DomainReward,
-} from "@hunty/types";
+import type { HuntCategory as DomainHuntCategory, HuntInvite, PlayerProgress, Reward as DomainReward } from "@hunty/types";
 import type { ReactNode } from "react";
 
 import type { HuntCategoryId } from "./categories";
 import type { CollaboratorRole, HuntCollaborator } from "./collaboration";
 import type { AnswerStrictness } from "./fuzzyAnswer";
 import type { ClueScoringBreakdown, HuntScoringBreakdown, ScoringWeights } from "./scoring";
-import type {
-  ClueScoringBreakdown,
-  HuntScoringBreakdown,
-  ScoringWeights,
-} from "./scoring";
 
 // ─── Shared domain types (single source of truth: @hunty/types) ──────────────
 
@@ -65,8 +53,6 @@ export interface StoredHunt {
   description: string;
   cluesCount: number;
   /** Broad hunt category used in discovery filters. */
-  category?: HuntCategory | HuntCategoryId;
-  /** Broad category used by legacy and current discovery filters. */
   category?: DomainHuntCategory | HuntCategoryId;
   /** Overall hunt difficulty tag used in discovery filters. */
   difficulty?: HuntDifficulty;
@@ -90,7 +76,6 @@ export interface StoredHunt {
   rewardEscrowBalance?: number;
   /** Creator-side participant count snapshot for dashboard sorting. */
   playerCount?: number;
-  /** Max number of participants for limited spots */
   /** Max number of participants for limited spots. */
   maxParticipants?: number;
   /** @deprecated Use `maxParticipants`. Kept for older stored hunts. */
@@ -115,11 +100,6 @@ export interface StoredHunt {
   coverImageCid?: string;
   /** Active editorial banner showcase at the top of the Arcade. */
   isFeaturedOfWeek?: boolean;
-  /** Creator's wallet public key */
-  creator?: string;
-  /** Average user rating (1-5) */
-  averageRating?: number;
-  /** Number of user reviews */
   /** Unix timestamp in seconds until a paid spotlight placement remains active. */
   promotedUntil?: number;
   /** Creator's wallet public key. */
@@ -244,8 +224,6 @@ export type {
   HuntCategory,
   HuntProgressStatus,
   HuntInvite,
-  HuntProgressStatus,
-  HuntStatus,
   PlayerHuntProgress,
   PlayerProgress,
   RewardHistoryEntry,
@@ -420,10 +398,6 @@ export interface RewardPlayerProgress {
 // ─── Activity Feed ───────────────────────────────────────────────────────────
 
 export type ActivityEventType = "HuntCompleted" | "ClueCompleted" | "HuntSponsored";
-export type ActivityEventType =
-  | "HuntCompleted"
-  | "ClueCompleted"
-  | "HuntSponsored";
 
 export interface ActivityEvent {
   id: string;
@@ -655,6 +629,10 @@ export interface SeasonBadge {
   rank?: number;
   earnedAt: number;
 }
+
+// ─── Hunt Feed ───────────────────────────────────────────────────────────────
+
+export type HuntFeedCategory = "trending" | "new" | "nearby" | "featured"
 
 // ─── Core Web Vitals ────────────────────────────────────────────────────────────
 

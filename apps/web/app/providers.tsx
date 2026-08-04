@@ -6,9 +6,15 @@ import { useState } from "react";
 
 import { FeatureFlagProvider } from "@/components/FeatureFlagProvider";
 import { WebVitalsReporter } from "@/components/WebVitalsReporter";
+import { NetworkMismatchWarning } from "@/components/NetworkMismatchWarning";
 import { SessionProvider } from "@/lib/context/SessionContext";
-import { WalletProvider } from "@/lib/context/WalletContext";
+import { WalletProvider, useWallet } from "@/lib/context/WalletContext";
 import { queryCachePolicy } from "@/lib/queryKeys";
+
+function NetworkWarningWrapper() {
+  const { walletProvider, connected } = useWallet();
+  return <NetworkMismatchWarning walletProvider={walletProvider} isConnected={connected} />;
+}
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -32,6 +38,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         <SessionProvider>
           <QueryClientProvider client={queryClient}>
             <FeatureFlagProvider>
+              <NetworkWarningWrapper />
               <WebVitalsReporter />
               {children}
             </FeatureFlagProvider>

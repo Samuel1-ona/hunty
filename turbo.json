@@ -8,10 +8,12 @@
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": ["^lint"],
+      "inputs": ["$TURBO_DEFAULT$", "**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx", "**/*.json"]
     },
     "typecheck": {
-      "dependsOn": ["^typecheck"]
+      "dependsOn": ["^typecheck"],
+      "inputs": ["$TURBO_DEFAULT$", "**/*.ts", "**/*.tsx"]
     },
     "test": {
       "dependsOn": ["^build"],
@@ -32,6 +34,10 @@
       ],
       "outputs": ["mutation-report/**"]
     },
+    "e2e": { "dependsOn": ["^build"], "inputs": ["$TURBO_DEFAULT$"] },
+    "smoke": { "dependsOn": ["^build"], "inputs": ["$TURBO_DEFAULT$"] },
+    "perf:budget": { "dependsOn": ["^build"], "inputs": ["$TURBO_DEFAULT$"] },
+    "bundle:check": { "dependsOn": ["^build"], "inputs": ["$TURBO_DEFAULT$"] },
     "dev": {
       "cache": false,
       "persistent": true

@@ -4,6 +4,7 @@ export const queryKeys = {
     featured: () => ["hunts", "featured"] as const,
     detail: (huntId: number | string) => ["hunts", "detail", String(huntId)] as const,
     clues: (huntId: number | null | undefined) => ["hunts", "clues", huntId ?? "unknown"] as const,
+    feed: (category: string) => ["hunts", "feed", category] as const,
   },
   registration: {
     status: (huntId: number | undefined, playerAddress: string | undefined) =>

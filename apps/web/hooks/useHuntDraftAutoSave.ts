@@ -128,6 +128,50 @@ async function syncDraftToCloud(draft: HuntDraftSave, walletPublicKey: string): 
   }
 }
 
+/**
+ * Fetches a single draft from the server by ID.
+ * Used to recover a draft on a device where it was never auto-saved locally.
+ *
+ * @returns the draft, or null if it doesn't exist or the request failed.
+ */
+export async function fetchDraftFromServer(draftId: string): Promise<HuntDraftSave | null> {
+  try {
+    const res = await fetch(`/api/v1/drafts/${draftId}`);
+    if (!res.ok) return null;
+    const { draft } = (await res.json()) as { draft: HuntDraftSave };
+    return draft;
+  } catch (err) {
+    logger.warn("[DraftAutoSave] fetch draft failed:", err);
+    return null;
+  }
+}
+
+/**
+ * Fetches all drafts owned by a wallet from the server, newest first.
+ * Used to show a creator's drafts on a device where they weren't auto-saved
+ * locally (i.e. after a browser clear or on a new device).
+ */
+export async function fetchDraftsFromServer(ownerKey: string): Promise<HuntDraftSave[]> {
+  try {
+    const res = await fetch(`/api/v1/drafts?ownerKey=${encodeURIComponent(ownerKey)}`);
+    if (!res.ok) return [];
+    const { drafts } = (await res.json()) as { drafts: HuntDraftSave[] };
+    return drafts;
+  } catch (err) {
+    logger.warn("[DraftAutoSave] fetch drafts failed:", err);
+    return [];
+  }
+}
+
+/** Deletes a draft's server-side copy. Best-effort — errors are swallowed. */
+export async function deleteDraftFromServer(draftId: string): Promise<void> {
+  try {
+    await fetch(`/api/v1/drafts/${draftId}`, { method: "DELETE" });
+  } catch (err) {
+    logger.warn("[DraftAutoSave] server delete failed:", err);
+  }
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -219,13 +263,17 @@ export function useHuntDraftAutoSave({
     setSaveStatus("saving");
     try {
       writeDraftPayload(snapshot);
-      setSaveStatus("saved");
       logger.info(`[DraftAutoSave] saved draft ${draftId} to localStorage`);
 
-      // Cloud sync for logged-in users
+      // Cloud sync for logged-in users — only report "saved" once the
+      // server has actually confirmed the write.
       if (walletRef.current) {
-        await syncDraftToCloud(snapshot, walletRef.current);
+        const synced = await syncDraftToCloud(snapshot, walletRef.current);
+        setSaveStatus(synced ? "saved" : "error");
+        return;
       }
+
+      setSaveStatus("saved");
     } catch (err) {
       logger.error("[DraftAutoSave] failed to write draft:", err);
       setSaveStatus("error");
@@ -257,6 +305,7 @@ export function useHuntDraftAutoSave({
     if (walletPublicKey) {
       debouncedCloudSyncRef.current?.();
     }
+  }, [hunts, rewards, meta, walletPublicKey]);
   }, [hunts, rewards, meta, walletPublicKey]); // eslint-disable-line react-hooks/exhaustive-deps -- debounced save handlers are stored in refs to remain stable across renders while saving updated form state (hunts, rewards, meta, walletPublicKey)
 
   // ── Manual save (exposed via saveNow) ─────────────────────────────────────

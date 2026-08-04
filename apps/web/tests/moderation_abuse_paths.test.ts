@@ -13,6 +13,10 @@ vi.mock("@/lib/moderation/dbStore", () => ({
   submitHuntForModeration: vi.fn(async (hunt: any, submittedBy?: string) => ({
     id: "sub-1",
     huntId: hunt.id,
+    // Ensure a valid hunt object is returned for schema validation
+    title: hunt.title,
+    description: "A test hunt",
+    creatorEmail: "test@example.com",
     hunt,
     status: "pending",
     submittedAt: Date.now(),
@@ -24,6 +28,11 @@ vi.mock("@/lib/moderation/dbStore", () => ({
   getModerationStatusForHunts: vi.fn(async () => ({})),
   markNotificationRead: vi.fn(async () => true),
 }))
+
+// Mock the new IP utility to ensure consistent IP for testing
+vi.mock("@/lib/api/ip", () => ({
+  getClientIp: (req: Request) => req.headers.get("x-forwarded-for")?.split(",")[0] ?? "127.0.0.1",
+}));
 
 vi.mock("@/lib/moderation/email", () => ({
   sendModerationActionEmail: vi.fn(),
@@ -190,6 +199,34 @@ describe("/api/moderation/submit – abuse path protection", () => {
 
     vi.useRealTimers()
   })
+
+  it("does not bypass rate limit with a spoofed x-forwarded-for header", async () => {
+    vi.useFakeTimers();
+    const { POST } = await import("@/app/api/moderation/submit/route");
+    const realIp = "203.0.113.100";
+
+    // Exhaust the limit for the real IP
+    for (let i = 0; i < 10; i++) {
+      const res = await POST(
+        submitRequest({ hunt: { id: i, title: `Hunt ${i}` } }, {
+          "x-wallet-address": `G-SPOOF-WALLET-${i}`,
+          "x-forwarded-for": realIp,
+        }),
+        { params: Promise.resolve({}) }
+      );
+      expect(res.status, `Request ${i + 1} for real IP should succeed`).toBe(200);
+    }
+
+    // Attempt to bypass by prepending a fake IP. The rate limiter should
+    // still see the real IP.
+    const spoofedReq = submitRequest({ hunt: { id: 99, title: "Spoofed" } }, {
+      "x-wallet-address": "G-SPOOFED",
+      "x-forwarded-for": `10.0.0.1, ${realIp}`, // Spoofed, Real
+    });
+    const response = await POST(spoofedReq, { params: Promise.resolve({}) });
+    expect(response.status).toBe(429);
+    vi.useRealTimers();
+  });
 })
 
 describe("/api/moderation/sync – abuse path protection", () => {
