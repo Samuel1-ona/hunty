@@ -16,11 +16,15 @@ const buttonVariants = cva(
         outline:
           "border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground",
         destructive: "bg-destructive text-white shadow-xs hover:bg-destructive/90",
+        default: "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+        link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
         sm: "h-8 rounded-md px-3 text-xs",
         md: "h-9 px-4 py-2",
         lg: "h-10 rounded-md px-6",
+        default: "h-9 px-4 py-2",
+        icon: "size-9",
       },
     },
     defaultVariants: { variant: "primary", size: "md" },
@@ -75,3 +79,5 @@ export function Button({
     </Comp>
   );
 }
+
+export { buttonVariants };

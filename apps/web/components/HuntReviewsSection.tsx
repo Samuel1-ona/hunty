@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback } from "react"
 import { useWallet } from "@/lib/context/WalletContext"
 import type { HuntReview } from "@/lib/types"
 import { Star, Trash2, Flag, Loader2, MessageSquare, AlertCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import { cn } from "@/lib/utils"
 
 interface HuntReviewsSectionProps {

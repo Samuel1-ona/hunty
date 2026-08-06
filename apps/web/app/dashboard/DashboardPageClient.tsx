@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { EscrowDrawer } from "@/components/EscrowDrawer";
 import { Header } from "@/components/Header";
 import { HuntDashboard } from "@/components/HuntDashboard";
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 import {
   buildHuntHistoryQuery,
   getHuntHistoryView,

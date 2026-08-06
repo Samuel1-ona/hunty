@@ -7,8 +7,8 @@ import { FilterBar } from "@/components/FilterBar";
 import { GalleryGridSkeleton } from "@/components/LoadingSkeletons";
 import { NftCard } from "@/components/NftCard";
 import { NftDetailModal, type NftRewardDetail } from "@/components/NftDetailModal";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
+import { Badge } from "@hunty/ui";
+import { Card } from "@hunty/ui";
 import { ViewToggle } from "@/components/ViewToggle";
 import { usePlayerNfts } from "@/hooks/usePlayerNfts";
 

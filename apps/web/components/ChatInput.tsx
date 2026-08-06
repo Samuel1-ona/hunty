@@ -1,7 +1,7 @@
 import { Send, Smile } from "lucide-react";
 import React, { useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 import { Input } from "@/components/ui/input";
 
 const commonEmojis = [

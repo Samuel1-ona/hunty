@@ -3,7 +3,7 @@
 import { Search, Filter, ArrowUpDown, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 import { Input } from "@/components/ui/input";
 import { getAllRewardEscrows } from "@/lib/contracts/rewardManager";
 import { getHuntById } from "@/lib/huntStore";

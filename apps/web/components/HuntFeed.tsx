@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils"
 import { queryCachePolicy, queryKeys } from "@/lib/queryKeys"
 import { useRefreshByUser } from "@/useRefreshByUser"
 import { HuntFeedCard, HuntFeedCardGridSkeleton } from "@/components/HuntFeedCard"
-import { EmptyState } from "@/components/EmptyState"
+import { EmptyState } from "@hunty/ui"
 import type { StoredHunt, HuntFeedCategory } from "@/lib/types"
 
 // ─── Constants ───────────────────────────────────────────────────────────
@@ -478,7 +478,7 @@ export function HuntFeed({
             description={emptyState.description}
             action={{
               label: "Browse all hunts",
-              href: "/",
+              onPress: () => window.location.href = "/",
             }}
           />
         ) : (

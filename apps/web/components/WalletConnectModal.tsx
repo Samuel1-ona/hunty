@@ -5,7 +5,7 @@ import { QRCodeSVG } from "qrcode.react"
 import { useCallback,useEffect, useState } from "react"
 import { toast } from "sonner"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import {
   Dialog,
   DialogContent,

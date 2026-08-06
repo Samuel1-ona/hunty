@@ -7,8 +7,8 @@ import Image from "next/image"
 import Link from "next/link"
 import dynamic from "next/dynamic"
 import { useTranslations } from "next-intl"
-import { Button } from "@/components/ui/button"
-import { Card, CardDescription, CardTitle } from "@/components/ui/card"
+import { Button } from "@hunty/ui"
+import { Card, CardDescription, CardTitle } from "@hunty/ui"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { X, ArrowRight, Trophy, Search, HelpCircle, Compass } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -21,7 +21,7 @@ import { Header } from "@/components/Header"
 import { HuntCoverImage } from "@/components/HuntCoverImage"
 import { HuntOfTheWeekBanner } from "@/components/HuntOfTheWeekBanner"
 import { HuntCardSkeletonGrid } from "@/components/LoadingSkeletons"
-import { Card, CardDescription, CardTitle } from "@/components/ui/card"
+import { Card, CardDescription, CardTitle } from "@hunty/ui"
 import { Skeleton } from "@/components/ui/skeleton"
 import { usePlayerCounts } from "@/hooks/usePlayerCounts"
 import { useRecentlyCompleted } from "@/hooks/useRecentlyCompleted"
@@ -1173,7 +1173,7 @@ export default function GameArcade() {
                 }
                 action={{
                   label: searchQuery ? "Clear search" : "Create your first hunt",
-                  href: searchQuery ? "/" : "/hunty",
+                  onPress: () => window.location.href = searchQuery ? "/" : "/hunty",
                 }}
               />
             </div>

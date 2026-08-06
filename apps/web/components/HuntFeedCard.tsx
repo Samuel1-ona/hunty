@@ -2,8 +2,8 @@
 
 import { Trophy, MapPin, Clock, Users } from "lucide-react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardDescription, CardTitle } from "@/components/ui/card"
+import { Button } from "@hunty/ui"
+import { Card, CardDescription, CardTitle } from "@hunty/ui"
 import { HuntCoverImage } from "@/components/HuntCoverImage"
 import type { StoredHunt } from "@/lib/types"
 import { cn } from "@/lib/utils"

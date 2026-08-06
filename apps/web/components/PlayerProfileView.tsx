@@ -5,8 +5,8 @@ import Link from "next/link";
 
 import { HuntCompletionTimeline } from "@/components/HuntCompletionTimeline";
 import { ProfileHighlightBadge, ProfileStatsDashboard } from "@/components/ProfileStatsDashboard";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Button } from "@hunty/ui";
+import { Card } from "@hunty/ui";
 import { WalletAddress } from "@/components/WalletAddress";
 import { WalletIdenticon } from "@/components/WalletIdenticon";
 import { usePlayerProfileStats } from "@/hooks/usePlayerProfileStats";

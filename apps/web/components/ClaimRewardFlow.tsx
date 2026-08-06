@@ -2,7 +2,7 @@
 
 import { useContext, useState, useCallback, useRef } from "react";
 import { CheckCircle2, Loader2, ExternalLink, AlertCircle, RefreshCw, Wallet } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 
 import { AnimatedCheckmark } from "@/components/AnimatedCheckmark";
 import Coin from "@/components/icons/Coin";

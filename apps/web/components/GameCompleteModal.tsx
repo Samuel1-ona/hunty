@@ -6,7 +6,7 @@ import Image from "next/image"
 import confetti from "canvas-confetti"
 import { AlertCircle, Clock3, Download, Lightbulb, Loader2, Medal, MessageCircle, Share2, Star, Twitter } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   DropdownMenu,

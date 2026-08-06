@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import confetti from "canvas-confetti";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 import { ArrowRight, CheckCircle2, Loader2, Printer } from "lucide-react";
 import picture from "@/public/static-images/image1.png";
 import { HuntCardSkeleton } from "@/components/LoadingSkeletons";

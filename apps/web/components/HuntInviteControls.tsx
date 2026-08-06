@@ -4,7 +4,7 @@ import { Copy, Link2, RefreshCw, ShieldOff } from "lucide-react";
 import { type MouseEvent as ReactMouseEvent, useState } from "react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 import { buildHuntInviteUrl, generateHuntInvite, revokeHuntInvite } from "@/lib/huntStore";
 import type { HuntInvite, StoredHunt } from "@/lib/types";
 

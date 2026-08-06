@@ -30,7 +30,7 @@ import {
   Trophy,
 } from "lucide-react"
 import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import { PreviewClueCard } from "@/components/PreviewClueCard"
 import { formatTimestamp } from "@/lib/dateUtils"
 import {

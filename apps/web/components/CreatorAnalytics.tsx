@@ -15,7 +15,7 @@ import {
   YAxis,
 } from "recharts"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@hunty/ui"
 import { StarRating } from "@/components/StarRating"
 import type { StoredHunt } from "@/lib/types"
 import { cn } from "@/lib/utils"

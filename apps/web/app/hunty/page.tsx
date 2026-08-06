@@ -33,7 +33,7 @@ import { QrCodeModal } from "@/components/QrCodeModal";
 import { RewardsPanel } from "@/components/RewardsPanel";
 import { TagInput } from "@/components/TagInput";
 import ToggleButton from "@/components/ToggleButton";
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {

@@ -18,8 +18,8 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { Button } from "@hunty/ui";
+import { Card, CardDescription, CardTitle } from "@hunty/ui";
 import {
   AlertDialog,
   AlertDialogAction,

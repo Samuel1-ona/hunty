@@ -3,7 +3,7 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import * as React from "react";
 
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@hunty/ui";
 import { cn } from "@/lib/utils";
 
 /**
