@@ -10,6 +10,9 @@ import {
   Sparkles,
   Shield,
   ShieldAlert,
+  Users,
+  Activity,
+  ClipboardList,
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -21,6 +24,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { getAllHuntsIncludingPrivate, setLocalFeaturedHunt } from "@/lib/huntStore";
 import type { StoredHunt } from "@/lib/types";
+
+type DashboardHealth = {
+  hunts: { total: number; active: number; pendingReview: number };
+  players: { registrations: number };
+  moderation: { pending: number };
+  api: { errorRate: number; sampledRequests: number };
+  generatedAt: string;
+};
 
 function StatusBadge({ status }: { status: StoredHunt["status"] }) {
   const config: Partial<Record<StoredHunt["status"], string>> = {
@@ -45,9 +56,51 @@ function StatusBadge({ status }: { status: StoredHunt["status"] }) {
   );
 }
 
+function HealthCard({
+  icon: Icon,
+  label,
+  value,
+  detail,
+  href,
+}: {
+  icon: typeof Trophy;
+  label: string;
+  value: string | number;
+  detail: string;
+  href?: string;
+}) {
+  const content = (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-bold text-slate-600 dark:text-slate-300">{label}</span>
+        <Icon className="h-5 w-5 text-indigo-500" />
+      </div>
+      <p className="mt-4 text-3xl font-black text-slate-900 dark:text-white">{value}</p>
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{detail}</p>
+    </div>
+  );
+  return href ? (
+    <Link href={href} className="block hover:shadow-md rounded-2xl">
+      {content}
+    </Link>
+  ) : (
+    content
+  );
+}
+
 export default function AdminPage() {
   const [hunts, setHunts] = useState<StoredHunt[]>([]);
   const [filter, setFilter] = useState<"all" | "Active" | "Completed" | "Draft">("all");
+
+  const { data: health, isLoading: isHealthLoading } = useQuery({
+    queryKey: ["adminDashboardHealth"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/dashboard");
+      if (!res.ok) throw new Error("Failed to load platform health");
+      return res.json() as Promise<DashboardHealth>;
+    },
+    refetchInterval: 60_000,
+  });
 
   // Fetch featured hunt ID from server API
   const { data: featuredData, refetch: refetchFeatured } = useQuery({
@@ -226,6 +279,65 @@ export default function AdminPage() {
           </div>
         </div>
 
+        <section className="mb-12" aria-labelledby="platform-health-heading">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2
+                id="platform-health-heading"
+                className="text-sm font-black uppercase tracking-wider text-slate-500 dark:text-slate-400"
+              >
+                Platform health
+              </h2>
+              <p className="mt-1 text-sm text-slate-650 dark:text-slate-400">
+                Live operational overview across the platform.
+              </p>
+            </div>
+            {health && (
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Updated {new Date(health.generatedAt).toLocaleTimeString()}
+              </p>
+            )}
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <HealthCard
+              icon={Trophy}
+              label="Hunts"
+              value={health ? health.hunts.total : "—"}
+              detail={
+                health
+                  ? `${health.hunts.active} active · ${health.hunts.pendingReview} awaiting review`
+                  : isHealthLoading
+                    ? "Loading overview…"
+                    : "Overview unavailable"
+              }
+            />
+            <HealthCard
+              icon={Users}
+              label="Player registrations"
+              value={health ? health.players.registrations : "—"}
+              detail="Across all platform hunts"
+            />
+            <HealthCard
+              icon={ClipboardList}
+              label="Moderation backlog"
+              value={health ? health.moderation.pending : "—"}
+              detail="Pending submissions"
+              href="/admin/moderation"
+            />
+            <HealthCard
+              icon={Activity}
+              label="API error rate"
+              value={health ? `${(health.api.errorRate * 100).toFixed(1)}%` : "—"}
+              detail={
+                health
+                  ? `${health.api.sampledRequests} sampled requests`
+                  : "In-memory API monitoring"
+              }
+              href="/admin/performance"
+            />
+          </div>
+        </section>
+
         {/* Active curation overview */}
         {featuredHunt ? (
           <section className="mb-12">
@@ -393,4 +505,3 @@ export default function AdminPage() {
     </div>
   );
 }
- 
