@@ -495,7 +495,7 @@ importers:
         version: 10.2.9(@types/babel__core@7.20.5)(next@15.3.4(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.62.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(webpack@5.109.0(cssnano@8.0.2(postcss@8.5.23))(esbuild@0.28.1)(postcss@8.5.23))
       '@hookform/resolvers':
         specifier: ^5.2.2
-        version: 5.5.7(@sinclair/typebox@0.27.12)(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1(ajv@8.20.0))(ajv@8.20.0)(joi@17.11.0)(react-hook-form@7.83.0(react@19.2.8))(valibot@1.2.0(typescript@5.9.3))(zod@4.4.3)
+        version: 5.5.7(@sinclair/typebox@0.27.12)(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1(ajv@8.20.0))(ajv@8.20.0)(joi@17.11.0)(react-hook-form@7.83.0(react@19.2.8))(valibot@1.4.2(typescript@5.9.3))(zod@4.4.3)
       '@hunty/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -764,6 +764,9 @@ importers:
       '@eslint/eslintrc':
         specifier: ^3
         version: 3.3.6
+      '@next/eslint-plugin-next':
+        specifier: 15.3.4
+        version: 15.3.4
       eslint:
         specifier: ^9
         version: 9.39.5(jiti@2.7.0)
@@ -781,10 +784,6 @@ importers:
         version: 5.9.3
 
   packages/types:
-    dependencies:
-      zod:
-        specifier: ^4.0.0
-        version: 4.4.3
     devDependencies:
       eslint:
         specifier: ^9
@@ -795,6 +794,9 @@ importers:
       vitest:
         specifier: ^4.0.18
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@20.19.43)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.10)(jsdom@28.1.0(@noble/hashes@1.8.0))(vite@8.1.5(@types/node@20.19.43)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(yaml@2.9.0))
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
 
   packages/ui:
     dependencies:
@@ -2026,7 +2028,7 @@ packages:
 
   '@expo/bunyan@4.0.1':
     resolution: {integrity: sha512-+Lla7nYSiHZirgK+U/uYzsLv/X+HaJienbD5AKX1UQZHYfWaP+9uuQluRB4GrEVWF0GZ7vEVp/jzaOT9k/SQlg==}
-    engines: {'0': node >=0.10.0}
+    engines: {node: '>=0.10.0'}
 
   '@expo/cli@55.0.34':
     resolution: {integrity: sha512-b+PnIWiIUxXmSi09hmbzeBNlygP/W1uuRQU6cm6ke9P5sBEknbZ4cpBY0Xz4L1L3Pr6u/BUbIW0KXJBOppzAww==}
@@ -5919,10 +5921,12 @@ packages:
   '@xmldom/xmldom@0.8.13':
     resolution: {integrity: sha512-KRYzxepc14G/CEpEGc3Yn+JKaAeT63smlDr+vjB8jRfgTBBI9wRj/nkQEO+ucV8p8I9bfKLWp37uHgFrbntPvw==}
     engines: {node: '>=10.0.0'}
+    deprecated: this version has critical issues, please update to the latest version
 
   '@xmldom/xmldom@0.9.10':
     resolution: {integrity: sha512-A9gOqLdi6cV4ibazAjcQufGj0B1y/vDqYrcuP6d/6x8P27gRS8643Dj9o1dEKtB6O7fwxb2FgBmJS2mX7gpvdw==}
     engines: {node: '>=14.6'}
+    deprecated: this version has critical issues, please update to the latest version
 
   '@xtuc/ieee754@1.2.0':
     resolution: {integrity: sha512-DX8nKgqcGwsc0eJSqYt5lwP4DH5FlHnmuWWBRy7X0NcaGR0ZtuyeESgMwTYVEtxmsNGY+qit4QYT/MIYTOTPeA==}
@@ -7492,6 +7496,7 @@ packages:
   eslint@9.39.5:
     resolution: {integrity: sha512-DgZS62aPLXKlnxILS/AYCoRvHaZeXceIzlXPkkGGzJWSow1aEk0lbTlxUSlyjC8jcaKxAdOnTDz+o1JFSBsyjw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -15086,7 +15091,7 @@ snapshots:
       valibot: 1.4.2(typescript@5.9.3)
       zod: 4.4.3
 
-  '@hookform/resolvers@5.5.7(@sinclair/typebox@0.27.12)(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1(ajv@8.20.0))(ajv@8.20.0)(joi@17.11.0)(react-hook-form@7.83.0(react@19.2.8))(valibot@1.2.0(typescript@5.9.3))(zod@4.4.3)':
+  '@hookform/resolvers@5.5.7(@sinclair/typebox@0.27.12)(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1(ajv@8.20.0))(ajv@8.20.0)(joi@17.11.0)(react-hook-form@7.83.0(react@19.2.8))(valibot@1.4.2(typescript@5.9.3))(zod@4.4.3)':
     dependencies:
       '@standard-schema/utils': 0.3.0
       react-hook-form: 7.83.0(react@19.2.8)
@@ -15096,7 +15101,7 @@ snapshots:
       ajv: 8.20.0
       ajv-formats: 2.1.1(ajv@8.20.0)
       joi: 17.11.0
-      valibot: 1.2.0(typescript@5.9.3)
+      valibot: 1.4.2(typescript@5.9.3)
       zod: 4.4.3
 
   '@humanfs/core@0.19.2':
@@ -22694,7 +22699,7 @@ snapshots:
     dependencies:
       array-union: 2.1.0
       dir-glob: 3.0.1
-      fast-glob: 3.3.2
+      fast-glob: 3.3.3
       ignore: 5.3.2
       merge2: 1.4.1
       slash: 3.0.0

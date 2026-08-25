@@ -3,8 +3,7 @@ import { logger } from "@/lib/logger"
 import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit"
 import { notifyWallet, notifyWallets } from "@/lib/notifications/pushService"
 import type { PushEventType } from "@/lib/notifications/types"
-import { AuthError, InternalError, ValidationError } from "@/lib/api/errors"
-import { withErrorHandling } from "@/lib/api/withErrorHandling"
+import { AuthError, InternalError } from "@/lib/api/errors"
 import { withValidation } from "@/lib/api/withValidation"
 import { pushSendBodySchema } from "@hunty/types/api-schemas"
 
@@ -47,29 +46,6 @@ function assertServiceOrAdminAuth(request: Request): void {
   }
 }
 
-export const POST = withErrorHandling(async (request: NextRequest) => {
-  const ip = getIP(request)
-  const { success, reset } = rateLimit(ip, { limit: 50, windowMs: 60 * 1000 })
-  if (!success) return rateLimitResponse(reset)
-
-  assertServiceOrAdminAuth(request)
-
-  let body: { type?: string; walletAddresses?: string[]; context?: Record<string, string | number> }
-  try {
-    body = await request.json()
-  } catch {
-    throw new ValidationError("Invalid request body")
-  }
-
-  const { type, walletAddresses, context = {} } = body
-
-  if (!type || typeof type !== "string") {
-    throw new ValidationError("type is required", { field: "type" })
-  }
-
-  if (!Array.isArray(walletAddresses) || walletAddresses.length === 0) {
-    throw new ValidationError("walletAddresses must be a non-empty array", { field: "walletAddresses" })
-  }
 export const POST = withValidation(
   { body: pushSendBodySchema },
   async (request: NextRequest, _context, { body }) => {
@@ -77,13 +53,7 @@ export const POST = withValidation(
     const { success, reset } = await rateLimit(ip, { limit: 50, windowMs: 60 * 1000 })
     if (!success) return rateLimitResponse(reset)
 
-    const secret = process.env.PUSH_API_SECRET
-    if (secret) {
-      const authHeader = request.headers.get("Authorization")
-      if (!authHeader || authHeader !== `Bearer ${secret}`) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-      }
-    }
+    assertServiceOrAdminAuth(request)
 
     try {
       if (body.walletAddresses.length === 1) {
@@ -93,31 +63,9 @@ export const POST = withValidation(
       }
     } catch (error) {
       logger.error("[push/send] Failed to send push notification:", error)
-      return NextResponse.json(
-        { error: "Failed to send push notification" },
-        { status: 500 }
-      )
+      throw new InternalError("Failed to send push notification")
     }
 
-  if (!validTypes.includes(type as PushEventType)) {
-    throw new ValidationError(`Invalid type. Must be one of: ${validTypes.join(", ")}`, { field: "type" })
-  }
-
-  try {
-    if (walletAddresses.length === 1) {
-      await notifyWallet(walletAddresses[0], type as PushEventType, context)
-    } else {
-      await notifyWallets(walletAddresses, type as PushEventType, context)
-    }
-  } catch (error) {
-    logger.error("[push/send] Failed to send push notification:", error)
-    throw new InternalError("Failed to send push notification")
-  }
-
-  logger.info(`[push/send] Sent "${type}" to ${walletAddresses.length} wallet(s)`)
-
-  return NextResponse.json({ success: true, sent: walletAddresses.length })
-})
     logger.info(
       `[push/send] Sent "${body.type}" to ${body.walletAddresses.length} wallet(s)`
     )
