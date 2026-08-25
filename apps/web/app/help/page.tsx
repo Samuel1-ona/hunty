@@ -1,23 +1,30 @@
-"use client"
+"use client";
 
-import { ArrowLeft,ChevronDown, ChevronUp, Gamepad2, ShieldQuestion, Trophy, Wallet } from "lucide-react"
-import Link from "next/link"
-import { Header } from "@/components/Header"
-import { ChevronDown, ChevronUp, Wallet, Gamepad2, Trophy, ShieldQuestion, ArrowLeft } from "lucide-react"
-import { useState } from "react"
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronUp,
+  Gamepad2,
+  ShieldQuestion,
+  Trophy,
+  Wallet,
+} from "lucide-react";
+import Link from "next/link";
+import { Header } from "@/components/Header";
+import { useState } from "react";
 
-import { Footer } from "@/components/Footer"
+import { Footer } from "@/components/Footer";
 
 interface FAQItem {
-  question: string
-  answer: string
+  question: string;
+  answer: string;
 }
 
 const walletIssues: FAQItem[] = [
   {
     question: "How do I connect my wallet?",
     answer:
-      "Click the \"Connect Wallet\" button in the top-right corner of the page. Select your preferred wallet provider (e.g. Freighter) from the modal that appears. Make sure your wallet extension is installed and unlocked before attempting to connect.",
+      'Click the "Connect Wallet" button in the top-right corner of the page. Select your preferred wallet provider (e.g. Freighter) from the modal that appears. Make sure your wallet extension is installed and unlocked before attempting to connect.',
   },
   {
     question: "My wallet won't connect. What should I do?",
@@ -34,7 +41,7 @@ const walletIssues: FAQItem[] = [
     answer:
       "Stellar transactions typically confirm within 5 seconds. Try refreshing the page. If your balance still hasn't updated, check the transaction on a Stellar block explorer using your wallet address to verify it went through.",
   },
-]
+];
 
 const gameIssues: FAQItem[] = [
   {
@@ -62,7 +69,7 @@ const gameIssues: FAQItem[] = [
     answer:
       'Yes, you can edit hunts that are still in "Draft" status from your Dashboard. Once a hunt is activated, certain fields may be locked to ensure fairness for players who have already started.',
   },
-]
+];
 
 const leaderboardIssues: FAQItem[] = [
   {
@@ -75,7 +82,7 @@ const leaderboardIssues: FAQItem[] = [
     answer:
       "You need to have completed at least one hunt for your score to appear. Make sure your wallet is connected — scores are tied to your wallet address. It may also take a moment for scores to update after completing a hunt.",
   },
-]
+];
 
 const generalIssues: FAQItem[] = [
   {
@@ -93,18 +100,18 @@ const generalIssues: FAQItem[] = [
     answer:
       "You can report issues on our GitHub repository at github.com/Samuel1-ona/hunty. For urgent help, reach out to the team through the channels listed on the repo.",
   },
-]
+];
 
 function FAQSection({
   title,
   icon,
   items,
 }: {
-  title: string
-  icon: React.ReactNode
-  items: FAQItem[]
+  title: string;
+  icon: React.ReactNode;
+  items: FAQItem[];
 }) {
-  const [openIndex, setOpenIndex] = useState<number | null>(null)
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
     <div className="mb-10">
@@ -140,7 +147,7 @@ function FAQSection({
         ))}
       </div>
     </div>
-  )
+  );
 }
 
 export default function HelpPage() {
@@ -164,8 +171,8 @@ export default function HelpPage() {
             Troubleshooting Guide
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-base md:text-lg max-w-2xl mx-auto">
-            Find answers to common questions about wallets, gameplay, and more.
-            Can&apos;t find what you&apos;re looking for? Report an issue on our GitHub.
+            Find answers to common questions about wallets, gameplay, and more. Can&apos;t find what
+            you&apos;re looking for? Report an issue on our GitHub.
           </p>
         </div>
 
@@ -193,8 +200,7 @@ export default function HelpPage() {
           />
         </div>
       </div>
-
     </div>
-  )
+  );
 }
-
+ 

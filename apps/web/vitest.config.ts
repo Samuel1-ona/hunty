@@ -5,6 +5,13 @@ import { defineConfig } from "vitest/config";
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
   plugins: [react()],
+  // Vite 8 defaults to oxc, which skips the React plugin's esbuild JSX transform.
+  // Force automatic JSX runtime so .tsx sources parse under import analysis.
+  oxc: {
+    jsx: {
+      runtime: "automatic",
+    },
+  },
   test: {
     environment: "jsdom",
     globals: true,
@@ -35,6 +42,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      "@hunty/types/schemas": path.resolve(__dirname, "./packages/types/src/schemas.ts"),
+      "@hunty/types": path.resolve(__dirname, "./packages/types/src/index.ts"),
       "@hunty/types/schemas": path.resolve(__dirname, "../../packages/types/src/schemas.ts"),
       "@hunty/types": path.resolve(__dirname, "../../packages/types/src/index.ts"),
       "@": path.resolve(__dirname, "./"),

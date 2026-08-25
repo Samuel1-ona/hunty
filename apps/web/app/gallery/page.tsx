@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 
-import { EmptyState } from "@/components/EmptyState";
+import { EmptyState } from "@/components/QueryState";
 import { FilterBar } from "@/components/FilterBar";
+import { GalleryGridSkeleton } from "@/components/LoadingSkeletons";
 import { NftCard } from "@/components/NftCard";
-import { NftDetailModal } from "@/components/NftDetailModal";
+import { NftDetailModal, type NftRewardDetail } from "@/components/NftDetailModal";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { ViewToggle } from "@/components/ViewToggle";
@@ -13,11 +14,11 @@ import { usePlayerNfts } from "@/hooks/usePlayerNfts";
 
 export default function GalleryPage() {
   const { address, nfts, loading, error } = usePlayerNfts();
-  const [selectedNft, setSelectedNft] = useState<null | typeof nfts[0]>(null);
+  const [selectedNft, setSelectedNft] = useState<NftRewardDetail | null>(null);
   const [view, setView] = useState<"grid" | "list">("grid");
   const [huntFilter, setHuntFilter] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<{ start?: string; end?: string }>({});
-  const [sort, setSort] = useState<"newest" | "rarest">("newest");
+  const [sort, setSort] = useState<"newest" | "rarest" | "alphabetical">("newest");
 
   const filtered = nfts
     .filter((n) => (huntFilter && huntFilter !== "All" ? n.huntName === huntFilter : true))
@@ -32,12 +33,28 @@ export default function GalleryPage() {
       if (sort === "newest") {
         return new Date(b.earnedAt).getTime() - new Date(a.earnedAt).getTime();
       } else {
-        const rarityOrder: Record<string, number> = { Legendary: 5, Epic: 4, Rare: 3, Uncommon: 2, Common: 1 };
+        const rarityOrder: Record<string, number> = {
+          Legendary: 5,
+          Epic: 4,
+          Rare: 3,
+          Uncommon: 2,
+          Common: 1,
+        };
         const aRarity = a.attributes.find((t) => t.trait_type === "Rarity")?.value ?? "Common";
         const bRarity = b.attributes.find((t) => t.trait_type === "Rarity")?.value ?? "Common";
         return (rarityOrder[bRarity] ?? 0) - (rarityOrder[aRarity] ?? 0);
       }
     });
+
+  // `usePlayerNfts` returns NftItem (string id, `image`), while NftCard and
+  // NftDetailModal consume NftReward/NftRewardDetail (numeric id, `imageUri`,
+  // `claimed`). Adapt once here so both consumers get the shape they expect.
+  const displayNfts = filtered.map((nft, index) => ({
+    ...nft,
+    id: Number.isNaN(Number(nft.id)) ? index + 1 : Number(nft.id),
+    imageUri: nft.image,
+    claimed: true,
+  }));
 
   const huntOptions = Array.from(new Set(nfts.map((n) => n.huntName)));
 
@@ -57,7 +74,7 @@ export default function GalleryPage() {
             setSort={setSort}
           />
         </div>
-        {loading && <p>Loading NFTs…</p>}
+        {loading && <GalleryGridSkeleton count={8} />}
         {error && <p className="text-red-600">{error}</p>}
         {filtered.length === 0 && !loading && (
           <EmptyState
@@ -68,28 +85,41 @@ export default function GalleryPage() {
         )}
         {view === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filtered.map((nft) => (
+            {displayNfts.map((nft) => (
               <NftCard key={nft.id} nft={nft} onClick={setSelectedNft} />
             ))}
           </div>
         ) : (
           <div className="space-y-4">
-            {filtered.map((nft) => (
+            {displayNfts.map((nft) => (
               <Card key={nft.id} className="p-4 cursor-pointer" onClick={() => setSelectedNft(nft)}>
                 <div className="flex items-center gap-4">
-                  <img src={nft.imageUri.startsWith("ipfs://") ? `/api/ipfs/${nft.imageUri.split("ipfs://")[1]}` : nft.imageUri} alt={nft.name} className="w-20 h-20 object-cover rounded" />
+                  <img
+                    src={
+                      nft.imageUri.startsWith("ipfs://")
+                        ? `/api/ipfs/${nft.imageUri.split("ipfs://")[1]}`
+                        : nft.imageUri
+                    }
+                    alt={nft.name}
+                    className="w-20 h-20 object-cover rounded"
+                  />
                   <div>
                     <h2 className="font-semibold text-lg line-clamp-1">{nft.name}</h2>
                     <p className="text-sm text-slate-600 line-clamp-2">{nft.description}</p>
-                    <p className="text-xs text-slate-500">Earned {new Date(nft.earnedAt).toLocaleDateString()}</p>
+                    <p className="text-xs text-slate-500">
+                      Earned {new Date(nft.earnedAt).toLocaleDateString()}
+                    </p>
                   </div>
                 </div>
               </Card>
             ))}
           </div>
         )}
-        {selectedNft && <NftDetailModal nft={selectedNft} onClose={() => setSelectedNft(null)} />}
+        {selectedNft && (
+          <NftDetailModal nft={selectedNft} isOpen onClose={() => setSelectedNft(null)} />
+        )}
       </div>
     </div>
   );
 }
+ 

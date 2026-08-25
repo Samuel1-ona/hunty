@@ -1,64 +1,70 @@
-"use client"
+"use client";
 
-import { zodResolver } from "@hookform/resolvers/zod"
-import { AnimatePresence, type Easing,motion, useReducedMotion } from "framer-motion"
-import { ArrowLeft, ArrowRight, Download, PlayCircle, Plus, Printer, QrCode, Share } from "lucide-react"
-import Image from "next/image"
-import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Suspense, useEffect, useRef,useState } from "react"
-import { useForm } from "react-hook-form"
-import { toast } from "sonner"
-import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AnimatePresence, type Easing, motion, useReducedMotion } from "framer-motion";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Download,
+  PlayCircle,
+  Plus,
+  Printer,
+  QrCode,
+  Share,
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
 
-import { CreateGameTabs } from "@/components/CreateGameTabs"
-import { GamePreview } from "@/components/GamePreview"
-import { Header } from "@/components/Header"
-import { HuntForm } from "@/components/HuntForm"
-import { PublishModal } from "@/components/PublishModal"
-import { QrCodeModal } from "@/components/QrCodeModal"
-import { RewardsPanel } from "@/components/RewardsPanel"
-import ToggleButton from "@/components/ToggleButton"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ArrowLeft, ArrowRight, Plus, QrCode, Download, Printer, PlayCircle, Share } from "lucide-react"
-import { QrCodeModal } from "@/components/QrCodeModal"
-import { Header } from "@/components/Header"
-import { CreateGameTabs } from "@/components/CreateGameTabs"
-import { HuntForm } from "@/components/HuntForm"
-import { CategoryPicker } from "@/components/CategoryPicker"
-import { TagInput } from "@/components/TagInput"
-import { CollaboratorsPanel } from "@/components/CollaboratorsPanel"
-import { RewardsPanel } from "@/components/RewardsPanel"
-import { GamePreview } from "@/components/GamePreview"
-import { PublishModal } from "@/components/PublishModal"
-import ToggleButton from "@/components/ToggleButton"
-import { COVER_IMAGE_UPLOAD_ERROR_MESSAGE } from "@/lib/ipfs"
-import type { CoverImageUploadState, HuntDraft, Reward } from "@/lib/types"
-import type { HuntCategoryId } from "@/lib/categories"
-import { ensureOwner } from "@/lib/collaboration"
-import type { CoverImageUploadState, HuntDifficulty, HuntDraft, Reward } from "@/lib/types"
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
-import { toast } from "sonner"
-import { Tooltip, TooltipContent,TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { useLocalStorage } from "@/hooks/useLocalStorage"
-import { createHunt } from "@/lib/contracts/hunt"
-import { createRewardEscrow } from "@/lib/contracts/rewardManager"
-import { downloadElementAsImage } from "@/lib/downloadAsImage"
-import { dynapuff } from "@/lib/font"
-import { addHunt as addStoredHunt, getAllHuntsIncludingPrivate } from "@/lib/huntStore"
-import { buildDraftHuntsFromTemplate, getStarterTemplateBySlug } from "@/lib/huntTemplates"
-import { getCommunityTemplateBySlug } from "@/lib/communityTemplates"
+import { CategoryPicker } from "@/components/CategoryPicker";
+import { CollaboratorsPanel } from "@/components/CollaboratorsPanel";
+import { CreateGameTabs } from "@/components/CreateGameTabs";
+import { DraftRecoveryPrompt } from "@/components/DraftRecoveryPrompt";
+import { GamePreview } from "@/components/GamePreview";
+import { Header } from "@/components/Header";
+import { HuntForm } from "@/components/HuntForm";
+import { ManualSaveButton } from "@/components/ManualSaveButton";
+import { PublishModal } from "@/components/PublishModal";
+import { QrCodeModal } from "@/components/QrCodeModal";
+import { RewardsPanel } from "@/components/RewardsPanel";
+import { TagInput } from "@/components/TagInput";
+import ToggleButton from "@/components/ToggleButton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  fetchDraftFromServer,
+  readDraftPayload,
+  useHuntDraftAutoSave,
+} from "@/hooks/useHuntDraftAutoSave";
+import { useIsFeatureEnabled } from "@/hooks/useFeatureFlag";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import type { HuntCategoryId } from "@/lib/categories";
+import { ensureOwner } from "@/lib/collaboration";
+import { getCommunityTemplateBySlug } from "@/lib/communityTemplates";
+import { useWallet } from "@/lib/context/WalletContext";
+import { createHunt } from "@/lib/contracts/hunt";
+import { createRewardEscrow } from "@/lib/contracts/rewardManager";
+import { downloadElementAsImage } from "@/lib/downloadAsImage";
+import { dynapuff } from "@/lib/font";
+import { addHunt as addStoredHunt, getAllHuntsIncludingPrivate } from "@/lib/huntStore";
+import { buildDraftHuntsFromTemplate, getStarterTemplateBySlug } from "@/lib/huntTemplates";
+import { COVER_IMAGE_UPLOAD_ERROR_MESSAGE } from "@/lib/ipfs";
+import { logger } from "@/lib/logger";
+import { withTransactionToast } from "@/lib/txToast";
+import type {
+  CoverImageUploadState,
+  HuntDifficulty,
+  HuntDraft,
+  HuntDraftSave,
+  Reward,
+} from "@/lib/types";
 
-const HUNT_DIFFICULTY_OPTIONS: HuntDifficulty[] = ["Easy", "Medium", "Hard", "Expert"] as const
-import { useHuntDraftAutoSave, readDraftPayload } from "@/hooks/useHuntDraftAutoSave"
-import { DraftRecoveryPrompt } from "@/components/DraftRecoveryPrompt"
-import { ManualSaveButton } from "@/components/ManualSaveButton"
-import type { HuntDraftSave } from "@/lib/types"
-import { COVER_IMAGE_UPLOAD_ERROR_MESSAGE } from "@/lib/ipfs"
-import { logger } from "@/lib/logger"
-import { withTransactionToast } from "@/lib/txToast"
-import type { CoverImageUploadState, HuntDraft, Reward } from "@/lib/types"
+const HUNT_DIFFICULTY_OPTIONS: HuntDifficulty[] = ["Easy", "Medium", "Hard", "Expert"] as const;
 
 const EMPTY_HUNT_DRAFT: HuntDraft = {
   id: 1,
@@ -66,51 +72,59 @@ const EMPTY_HUNT_DRAFT: HuntDraft = {
   description: "",
   link: "",
   code: "",
-}
+};
 
-function CreateGameContent() {  
-  const searchParams = useSearchParams()
-  const editHuntId = searchParams.get("edit") ? parseInt(searchParams.get("edit")!, 10) : undefined
-  const [activeTab, setActiveTab] = useState<"create" | "rewards" | "publish" | "leaderboard">("create")
-  const [hunts, setHunts] = useLocalStorage<HuntDraft[]>("draft-hunts", [EMPTY_HUNT_DRAFT])
+function CreateGameContent() {
+  const searchParams = useSearchParams();
+  const editHuntId = searchParams.get("edit") ? parseInt(searchParams.get("edit")!, 10) : undefined;
+  const [activeTab, setActiveTab] = useState<"create" | "rewards" | "publish" | "leaderboard">(
+    "create"
+  );
+  const [hunts, setHunts] = useLocalStorage<HuntDraft[]>("draft-hunts", [EMPTY_HUNT_DRAFT]);
   const [rewards, setRewards] = useLocalStorage<Reward[]>("draft-rewards", []);
-  const [rewardType, setRewardType] = useLocalStorage<"XLM" | "NFT" | "Both">("draft-rewardType", "XLM");
-  const [gameName, setGameName] = useLocalStorage("draft-gameName", "Hunty")
-  const [startDate, setStartDate] = useLocalStorage("draft-startDate", "")
-  const [endDate, setEndDate] = useLocalStorage("draft-endDate", "")
+  const [rewardType, setRewardType] = useLocalStorage<"XLM" | "NFT" | "Both">(
+    "draft-rewardType",
+    "XLM"
+  );
+  const [gameName, setGameName] = useLocalStorage("draft-gameName", "Hunty");
+  const [startDate, setStartDate] = useLocalStorage("draft-startDate", "");
+  const [endDate, setEndDate] = useLocalStorage("draft-endDate", "");
   // Hunt-level difficulty rating. Persisted in localStorage so the creator's
   // last choice is restored on refresh, and surfaced once at the publish step
   // (one rating applied to the whole hunt rather than per clue).
   const [huntDifficulty, setHuntDifficulty] = useLocalStorage<HuntDifficulty | "">(
     "draft-huntDifficulty",
     ""
-  )
-  const [showPublishModal, setShowPublishModal] = useState(false)
-  const [qrOpen, setQrOpen] = useState(false)
-  const [direction, setDirection] = useState(0)
-  const [creatorEmail, setCreatorEmail] = useState("")
-  const [emailNotifications, setEmailNotifications] = useState(true)
-  const [timerEnabled, setTimerEnabled] = useState(false)
-  const [isPrivate, setIsPrivate] = useState(false)
-  const [sequential, setSequential] = useState(false)
+  );
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
+  const [direction, setDirection] = useState(0);
+  const [creatorEmail, setCreatorEmail] = useState("");
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [timerEnabled, setTimerEnabled] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [sequential, setSequential] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
-  const [coverImageUploadStates, setCoverImageUploadStates] = useState<Record<number, CoverImageUploadState>>({})
-  const [selectedTemplateTitle, setSelectedTemplateTitle] = useState<string | null>(null)
-  const [category, setCategory] = useState<HuntCategoryId | undefined>("adventure")
-  const [tags, setTags] = useState<string[]>([])
-  const [lastPublishedHuntId, setLastPublishedHuntId] = useState<number | null>(null)
-  const [ownerWallet, setOwnerWallet] = useState("")
-  const previewContainerRef = useRef<HTMLDivElement | null>(null)
-  const appliedTemplateRef = useRef<string | null>(null)
-  const router = useRouter()
+  const [coverImageUploadStates, setCoverImageUploadStates] = useState<
+    Record<number, CoverImageUploadState>
+  >({});
+  const [selectedTemplateTitle, setSelectedTemplateTitle] = useState<string | null>(null);
+  const [category, setCategory] = useState<HuntCategoryId | undefined>("adventure");
+  const [tags, setTags] = useState<string[]>([]);
+  const [lastPublishedHuntId, setLastPublishedHuntId] = useState<number | null>(null);
+  const [ownerWallet, setOwnerWallet] = useState("");
+  const previewContainerRef = useRef<HTMLDivElement | null>(null);
+  const appliedTemplateRef = useRef<string | null>(null);
+  const router = useRouter();
+  const { publicKey: walletPublicKey } = useWallet();
 
-  const prefersReducedMotion = useReducedMotion()
+  const prefersReducedMotion = useReducedMotion();
 
   // ── Draft auto-save ──────────────────────────────────────────────────────────
   // Keep track of which saved draft is loaded (so recovery prompt excludes it).
-  const [activeDraftId, setActiveDraftId] = useState<string | null>(
-    () => searchParams.get("draftId")
-  )
+  const [activeDraftId, setActiveDraftId] = useState<string | null>(() =>
+    searchParams.get("draftId")
+  );
 
   const autoSaveMeta: HuntDraftSave["meta"] = {
     gameName,
@@ -122,51 +136,58 @@ function CreateGameContent() {
     timerEnabled,
     creatorEmail,
     emailNotifications,
-  }
+  };
 
-  const { saveStatus, activeDraftId: hookDraftId, saveNow } = useHuntDraftAutoSave({
+  const {
+    saveStatus,
+    activeDraftId: hookDraftId,
+    saveNow,
+  } = useHuntDraftAutoSave({
     hunts,
     rewards,
     meta: autoSaveMeta,
     draftId: activeDraftId ?? undefined,
-  })
+    walletPublicKey: walletPublicKey || undefined,
+  });
 
   // Sync the hook-generated draftId back to state on first mount.
   useEffect(() => {
-    if (!activeDraftId) setActiveDraftId(hookDraftId)
-  }, [activeDraftId, hookDraftId])
+    if (!activeDraftId) setActiveDraftId(hookDraftId);
+  }, [activeDraftId, hookDraftId]);
 
   /** Restore a draft chosen from the recovery prompt. */
   const handleRestoreDraft = (draft: HuntDraftSave) => {
-    setHunts(draft.hunts)
-    setRewards(draft.rewards.map((r) => ({ ...r, icon: undefined })))
-    setGameName(draft.meta.gameName)
-    setStartDate(draft.meta.startDate)
-    setEndDate(draft.meta.endDate)
-    setRewardType(draft.meta.rewardType)
-    setSequential(draft.meta.sequential)
-    setIsPrivate(draft.meta.isPrivate)
-    setTimerEnabled(draft.meta.timerEnabled)
-    setCreatorEmail(draft.meta.creatorEmail)
-    setEmailNotifications(draft.meta.emailNotifications)
-    setActiveDraftId(draft.draftId)
-  }
+    setHunts(draft.hunts);
+    setRewards(draft.rewards.map((r) => ({ ...r, icon: undefined })));
+    setGameName(draft.meta.gameName);
+    setStartDate(draft.meta.startDate);
+    setEndDate(draft.meta.endDate);
+    setRewardType(draft.meta.rewardType);
+    setSequential(draft.meta.sequential);
+    setIsPrivate(draft.meta.isPrivate);
+    setTimerEnabled(draft.meta.timerEnabled);
+    setCreatorEmail(draft.meta.creatorEmail);
+    setEmailNotifications(draft.meta.emailNotifications);
+    setActiveDraftId(draft.draftId);
+  };
 
   const tabMotion = {
     initial: prefersReducedMotion ? false : { x: direction > 0 ? 50 : -50, opacity: 0 },
     animate: prefersReducedMotion ? {} : { x: 0, opacity: 1 },
     exit: prefersReducedMotion ? {} : { x: direction > 0 ? -50 : 50, opacity: 0 },
-    transition: prefersReducedMotion ? { duration: 0 } : { duration: 0.3, ease: "easeInOut" as Easing },
-  }
+    transition: prefersReducedMotion
+      ? { duration: 0 }
+      : { duration: 0.3, ease: "easeInOut" as Easing },
+  };
 
-  const tabToIndex = { create: 0, rewards: 1, publish: 2, leaderboard: 3 }
+  const tabToIndex = { create: 0, rewards: 1, publish: 2, leaderboard: 3 };
 
   const handleTabChange = (newTab: "create" | "rewards" | "publish" | "leaderboard") => {
-    const newIdx = tabToIndex[newTab]
-    const oldIdx = tabToIndex[activeTab]
-    setDirection(newIdx > oldIdx ? 1 : -1)
-    setActiveTab(newTab)
-  }
+    const newIdx = tabToIndex[newTab];
+    const oldIdx = tabToIndex[activeTab];
+    setDirection(newIdx > oldIdx ? 1 : -1);
+    setActiveTab(newTab);
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -178,102 +199,119 @@ function CreateGameContent() {
     }
   }, []);
 
+  const appliedDraftIdRef = useRef<string | null>(null);
+
   // Load a previously auto-saved draft when navigating from the draft list.
+  // Falls back to the server copy when this device has no local copy (e.g.
+  // the draft was auto-saved from a different browser/device).
   useEffect(() => {
-    const draftId = searchParams.get("draftId")
-    if (!draftId) return
-    const saved = readDraftPayload(draftId)
-    if (!saved) return
-    setHunts(saved.hunts)
-    setRewards(saved.rewards.map((r) => ({ ...r, icon: undefined })))
-    setGameName(saved.meta.gameName)
-    setStartDate(saved.meta.startDate)
-    setEndDate(saved.meta.endDate)
-    setRewardType(saved.meta.rewardType)
-    setSequential(saved.meta.sequential)
-    setIsPrivate(saved.meta.isPrivate)
-    setTimerEnabled(saved.meta.timerEnabled)
-    setCreatorEmail(saved.meta.creatorEmail)
-    setEmailNotifications(saved.meta.emailNotifications)
-    setActiveDraftId(draftId)
-  // Only run on mount; deps intentionally omitted to avoid re-loading on every render.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const draftId = searchParams.get("draftId");
+    if (!draftId || appliedDraftIdRef.current === draftId) return;
+
+    const applyDraft = (saved: HuntDraftSave) => {
+      appliedDraftIdRef.current = draftId;
+      setHunts(saved.hunts);
+      setRewards(saved.rewards.map((r) => ({ ...r, icon: undefined })));
+      setGameName(saved.meta.gameName);
+      setStartDate(saved.meta.startDate);
+      setEndDate(saved.meta.endDate);
+      setRewardType(saved.meta.rewardType);
+      setSequential(saved.meta.sequential);
+      setIsPrivate(saved.meta.isPrivate);
+      setTimerEnabled(saved.meta.timerEnabled);
+      setCreatorEmail(saved.meta.creatorEmail);
+      setEmailNotifications(saved.meta.emailNotifications);
+      setActiveDraftId(draftId);
+    };
+
+    const local = readDraftPayload(draftId);
+    if (local) {
+      applyDraft(local);
+      return;
+    }
+
+    let cancelled = false;
+    void fetchDraftFromServer(draftId).then((remote) => {
+      if (!cancelled && remote) applyDraft(remote);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams]);
 
   useEffect(() => {
-    const templateSlug = searchParams.get("template")
-    if (!templateSlug || appliedTemplateRef.current === templateSlug) return
+    const templateSlug = searchParams.get("template");
+    if (!templateSlug || appliedTemplateRef.current === templateSlug) return;
 
     const template =
-      getStarterTemplateBySlug(templateSlug) ??
-      getCommunityTemplateBySlug(templateSlug)
-    if (!template) return
+      getStarterTemplateBySlug(templateSlug) ?? getCommunityTemplateBySlug(templateSlug);
+    if (!template) return;
 
-    appliedTemplateRef.current = templateSlug
-    setGameName(template.title)
-    setHunts(buildDraftHuntsFromTemplate(template))
+    appliedTemplateRef.current = templateSlug;
+    setGameName(template.title);
+    setHunts(buildDraftHuntsFromTemplate(template));
 
     // Apply any pre-filled builder settings that shipped with the template.
     if (template.settings) {
       if (typeof template.settings.sequential === "boolean") {
-        setSequential(template.settings.sequential)
+        setSequential(template.settings.sequential);
       }
       if (typeof template.settings.timerEnabled === "boolean") {
-        setTimerEnabled(template.settings.timerEnabled)
+        setTimerEnabled(template.settings.timerEnabled);
       }
       if (template.settings.rewardType) {
-        setRewardType(template.settings.rewardType)
+        setRewardType(template.settings.rewardType);
       }
     }
 
-    setActiveTab("create")
-    setSelectedTemplateTitle(template.title)
-    toast.success(`Loaded ${template.title}. You can edit every field before publishing.`)
-    router.replace("/hunty")
-  }, [router, searchParams, setGameName, setHunts, setRewardType])
+    setActiveTab("create");
+    setSelectedTemplateTitle(template.title);
+    toast.success(`Loaded ${template.title}. You can edit every field before publishing.`);
+    router.replace("/hunty");
+  }, [router, searchParams, setGameName, setHunts, setRewardType]);
 
-  const rewardPool = rewards.reduce((sum, r) => sum + r.amount, 0)
+  const rewardPool = rewards.reduce((sum, r) => sum + r.amount, 0);
 
   const setCoverImageUploadState = (huntId: number, state: CoverImageUploadState) => {
     setCoverImageUploadStates((current) => {
       if (state === "idle" || state === "succeeded") {
-        const next = { ...current }
-        delete next[huntId]
-        return next
+        const next = { ...current };
+        delete next[huntId];
+        return next;
       }
 
-      return { ...current, [huntId]: state }
-    })
-  }
+      return { ...current, [huntId]: state };
+    });
+  };
 
   const getCoverImageUploadBlockMessage = () => {
-    const states = Object.values(coverImageUploadStates)
+    const states = Object.values(coverImageUploadStates);
 
     if (states.includes("uploading")) {
-      return "Please wait for the cover image upload to finish before publishing."
+      return "Please wait for the cover image upload to finish before publishing.";
     }
 
     if (states.includes("failed")) {
-      return COVER_IMAGE_UPLOAD_ERROR_MESSAGE
+      return COVER_IMAGE_UPLOAD_ERROR_MESSAGE;
     }
 
-    return null
-  }
+    return null;
+  };
 
-const huntItemSchema = z.object({
-  id: z.number(),
-  title: z.string().min(4, "Clue title must be at least 4 characters."),
-  description: z.string().min(8, "Clue description must be at least 8 characters."),
-  link: z.string().optional().or(z.literal("")),
-  code: z.string().optional().or(z.literal("")),
-  image: z.string().optional().or(z.literal("")),
-})
+  const huntItemSchema = z.object({
+    id: z.number(),
+    title: z.string().min(4, "Clue title must be at least 4 characters."),
+    description: z.string().min(8, "Clue description must be at least 8 characters."),
+    link: z.string().optional().or(z.literal("")),
+    code: z.string().optional().or(z.literal("")),
+    image: z.string().optional().or(z.literal("")),
+  });
 
   const rewardItemSchema = z.object({
     place: z.number().int().positive(),
     amount: z.number().positive("Reward amount must be greater than 0."),
-    icon: z.any().optional(),
-  })
+    icon: z.unknown().optional(),
+  });
 
   const formSchema = z
     .object({
@@ -291,36 +329,33 @@ const huntItemSchema = z.object({
     })
     .refine(
       (data) => {
-        const s = new Date(data.startDate)
-        const e = new Date(data.endDate)
-        if (!isNaN(s.getTime()) && !isNaN(e.getTime())) return s < e
-        return false
+        const s = new Date(data.startDate);
+        const e = new Date(data.endDate);
+        if (!isNaN(s.getTime()) && !isNaN(e.getTime())) return s < e;
+        return false;
       },
       {
         message: "Start Date must be before End Date.",
         path: ["startDate"],
-      },
+      }
     )
     .refine(
       (data) => {
-        const e = new Date(data.endDate)
-        if (!isNaN(e.getTime())) return e.getTime() > Date.now()
-        return false
+        const e = new Date(data.endDate);
+        if (!isNaN(e.getTime())) return e.getTime() > Date.now();
+        return false;
       },
       {
         message: "End Date must be in the future.",
         path: ["endDate"],
-      },
+      }
     )
-    .refine(
-      (data) => data.rewards.reduce((sum, reward) => sum + reward.amount, 0) > 0,
-      {
-        message: "Reward pool must be greater than 0 and based on reward buckets.",
-        path: ["rewards"],
-      },
-    )
+    .refine((data) => data.rewards.reduce((sum, reward) => sum + reward.amount, 0) > 0, {
+      message: "Reward pool must be greater than 0 and based on reward buckets.",
+      path: ["rewards"],
+    });
 
-  type HuntCreationFormValues = z.infer<typeof formSchema>
+  type HuntCreationFormValues = z.infer<typeof formSchema>;
 
   const {
     handleSubmit,
@@ -343,21 +378,21 @@ const huntItemSchema = z.object({
       hunts,
       rewards,
     },
-  })
+  });
 
   useEffect(() => {
-    setValue("gameName", gameName)
-    setValue("startDate", startDate)
-    setValue("endDate", endDate)
-    setValue("creatorEmail", creatorEmail)
-    setValue("emailNotifications", emailNotifications)
-    setValue("timerEnabled", timerEnabled)
-    setValue("isPrivate", isPrivate)
-    setValue("sequential", sequential)
-    setValue("rewardType", rewardType)
-    setValue("hunts", hunts)
-    setValue("rewards", rewards)
-    void trigger()
+    setValue("gameName", gameName);
+    setValue("startDate", startDate);
+    setValue("endDate", endDate);
+    setValue("creatorEmail", creatorEmail);
+    setValue("emailNotifications", emailNotifications);
+    setValue("timerEnabled", timerEnabled);
+    setValue("isPrivate", isPrivate);
+    setValue("sequential", sequential);
+    setValue("rewardType", rewardType);
+    setValue("hunts", hunts);
+    setValue("rewards", rewards);
+    void trigger();
   }, [
     gameName,
     startDate,
@@ -373,9 +408,9 @@ const huntItemSchema = z.object({
     rewardPool,
     setValue,
     trigger,
-  ])
+  ]);
 
-  const isFormValidated = isValid
+  const isFormValidated = isValid;
 
   const addReward = () => {
     setRewards([
@@ -392,7 +427,7 @@ const huntItemSchema = z.object({
     setRewards(rewards.filter((reward) => reward.place !== place));
   };
 
-  const updateHunt = (id: number, field: string, value: string) => {
+  const updateHunt = (id: number, field: string, value: string | number | undefined) => {
     setHunts(
       hunts.map((hunt) =>
         hunt.id === id ? { ...hunt, [field]: value } : hunt,
@@ -412,48 +447,47 @@ const huntItemSchema = z.object({
     if (hunts.length > 1) {
       setHunts(hunts.filter((hunt) => hunt.id !== id));
       setCoverImageUploadStates((current) => {
-        const next = { ...current }
-        delete next[id]
-        return next
-      })
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
     }
   };
 
   const updateReward = (place: number, amount: number) => {
     setRewards(
       rewards.map((reward) =>
-        reward.place === place ? { ...reward, amount, icon: undefined } : reward,
-      ),
+        reward.place === place ? { ...reward, amount, icon: undefined } : reward
+      )
     );
   };
 
   const handlePublish = async (formValues: z.infer<typeof formSchema>) => {
-    const coverImageUploadBlockMessage = getCoverImageUploadBlockMessage()
+    const coverImageUploadBlockMessage = getCoverImageUploadBlockMessage();
     if (coverImageUploadBlockMessage) {
-      toast.error(coverImageUploadBlockMessage)
-      return
+      toast.error(coverImageUploadBlockMessage);
+      return;
     }
 
     if (!isFormValidated) {
-      toast.error("Please fix validation issues before publishing the hunt.")
-      return
+      toast.error("Please fix validation issues before publishing the hunt.");
+      return;
     }
 
-    setIsPublishing(true)
+    setIsPublishing(true);
     try {
-      const start_time = Math.floor(new Date(formValues.startDate).getTime() / 1000)
-      const end_time = Math.floor(new Date(formValues.endDate).getTime() / 1000)
-      const description = formValues.hunts.map((h) => `${h.title}: ${h.description}`).join("\n")
-      const coverImageCid = formValues.hunts[0]?.image?.trim() || undefined
-      const existing = getAllHuntsIncludingPrivate()
-      const localId =
-        existing.length > 0 ? Math.max(...existing.map((h) => h.id)) + 1 : 1
+      const start_time = Math.floor(new Date(formValues.startDate).getTime() / 1000);
+      const end_time = Math.floor(new Date(formValues.endDate).getTime() / 1000);
+      const description = formValues.hunts.map((h) => `${h.title}: ${h.description}`).join("\n");
+      const coverImageCid = formValues.hunts[0]?.image?.trim() || undefined;
+      const existing = getAllHuntsIncludingPrivate();
+      const localId = existing.length > 0 ? Math.max(...existing.map((h) => h.id)) + 1 : 1;
 
-      let rewardEscrowTxHash: string | undefined
+      let rewardEscrowTxHash: string | undefined;
 
       await withTransactionToast(
         async (setStage) => {
-          setStage("approving")
+          setStage("approving");
           const created = await createHunt(
             "",
             formValues.gameName,
@@ -467,29 +501,29 @@ const huntItemSchema = z.object({
             formValues.sequential,
             // Normalize empty-string sentinel ("") from the publish-tab select back
             // to undefined so the on-chain metadata stays clean.
-            huntDifficulty ? huntDifficulty : undefined,
-          )
+            huntDifficulty ? huntDifficulty : undefined
+          );
           const escrow = await createRewardEscrow({
             huntId: localId,
             rewardType: formValues.rewardType,
             rewards: formValues.rewards,
             expiresAt: end_time,
-          })
-          rewardEscrowTxHash = escrow?.depositTxHash
+          });
+          rewardEscrowTxHash = escrow?.depositTxHash;
 
           return {
             txHash: escrow?.depositTxHash ?? created.txHash,
-          }
+          };
         },
         {
-          pending:   "Pending — preparing your hunt…",
+          pending: "Pending — preparing your hunt…",
           approving: "Approving — sign in your wallet…",
           confirmed: "Hunt created successfully!",
-        },
+        }
       );
 
       // Same value as the contract payload above — keep these in sync.
-      const createdDifficulty = huntDifficulty ? huntDifficulty : undefined
+      const createdDifficulty = huntDifficulty ? huntDifficulty : undefined;
 
       addStoredHunt({
         id: localId,
@@ -510,20 +544,21 @@ const huntItemSchema = z.object({
         emailNotifications: formValues.emailNotifications,
         is_private: formValues.isPrivate,
         sequential: formValues.sequential,
+        maxParticipants: formValues.hunts[0]?.maxParticipants,
         coverImageCid,
         category,
         tags,
         ...(createdDifficulty ? { difficulty: createdDifficulty } : {}),
-      })
+      });
       if (ownerWallet) {
-        ensureOwner(localId, ownerWallet)
+        ensureOwner(localId, ownerWallet);
       }
-      setLastPublishedHuntId(localId)
+      setLastPublishedHuntId(localId);
 
       setShowPublishModal(false);
       router.push("/hunts");
     } catch (error) {
-       logger.error("Publish failed:", error);
+      logger.error("Publish failed:", error);
     } finally {
       setIsPublishing(false);
     }
@@ -538,20 +573,20 @@ const huntItemSchema = z.object({
 
   const handleDownloadImage = async () => {
     if (!previewContainerRef.current) {
-      toast.error("Preview not available yet. Try again in a second.")
-      return
+      toast.error("Preview not available yet. Try again in a second.");
+      return;
     }
 
     try {
       await downloadElementAsImage(previewContainerRef.current, {
         filename: `${gameName || "hunty"}.png`,
-      })
-      toast.success("Preview downloaded.")
+      });
+      toast.success("Preview downloaded.");
     } catch (error) {
-      logger.error("Failed to download image:", error)
-      toast.error("Could not download image.")
+      logger.error("Failed to download image:", error);
+      toast.error("Could not download image.");
     }
-  }
+  };
 
   return (
     <TooltipProvider>
@@ -573,10 +608,7 @@ const huntItemSchema = z.object({
             </div>
 
             {/* Draft recovery banner */}
-            <DraftRecoveryPrompt
-              onRestore={handleRestoreDraft}
-              activeDraftId={activeDraftId}
-            />
+            <DraftRecoveryPrompt onRestore={handleRestoreDraft} activeDraftId={activeDraftId} />
             {/* Title */}
             <div className="text-center mb-12 relative">
               <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-[#0C0C4F] shadow-lg absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">
@@ -592,206 +624,204 @@ const huntItemSchema = z.object({
             <div className="grid lg:grid-cols-2 gap-7">
               {/* Left Panel */}
               <div className="">
-                <CreateGameTabs
-                  activeTab={activeTab}
-                  onTabChange={handleTabChange}
-                />
+                <CreateGameTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
                 <div className="relative overflow-hidden min-h-[400px]">
-                <AnimatePresence mode="wait" custom={direction}>
-                  {activeTab === "create" && (
-                    <motion.div
-                      key="create"
-                      custom={direction}
-                      {...tabMotion}
-                      className="space-y-6"
-                    >
-                      <div className="rounded-3xl border border-sky-100 bg-gradient-to-r from-white to-sky-50 p-5 shadow-sm">
-                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                          <div>
-                            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-sky-700">
-                              Quick start
-                            </p>
-                            <h2 className="mt-1 text-xl font-bold text-slate-900">
-                              {selectedTemplateTitle
-                                ? `${selectedTemplateTitle} is loaded`
-                                : "Need inspiration before you build?"}
-                            </h2>
-                            <p className="mt-2 text-sm leading-6 text-slate-600">
-                              {selectedTemplateTitle
-                                ? "Tweak the clue titles, descriptions, answers, and anything else until it feels like yours."
-                                : "Browse starter hunts with sample clue cards, then bring one back here fully editable."}
-                            </p>
+                  <AnimatePresence mode="wait" custom={direction}>
+                    {activeTab === "create" && (
+                      <motion.div
+                        key="create"
+                        custom={direction}
+                        {...tabMotion}
+                        className="space-y-6"
+                      >
+                        <div className="rounded-3xl border border-sky-100 bg-gradient-to-r from-white to-sky-50 p-5 shadow-sm">
+                          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                            <div>
+                              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-sky-700">
+                                Quick start
+                              </p>
+                              <h2 className="mt-1 text-xl font-bold text-slate-900">
+                                {selectedTemplateTitle
+                                  ? `${selectedTemplateTitle} is loaded`
+                                  : "Need inspiration before you build?"}
+                              </h2>
+                              <p className="mt-2 text-sm leading-6 text-slate-600">
+                                {selectedTemplateTitle
+                                  ? "Tweak the clue titles, descriptions, answers, and anything else until it feels like yours."
+                                  : "Browse starter hunts with sample clue cards, then bring one back here fully editable."}
+                              </p>
+                            </div>
+                            <Button
+                              asChild
+                              variant="outline"
+                              className="rounded-2xl border-[#0C0C4F] px-5 py-6 text-sm font-semibold text-[#0C0C4F] hover:bg-[#0C0C4F] hover:text-white"
+                            >
+                              <Link href="/hunty/templates">Start from Template</Link>
+                            </Button>
                           </div>
+                        </div>
+
+                        {hunts.map((hunt) => (
+                          <HuntForm
+                            key={hunt.id}
+                            hunt={hunt}
+                            onUpdate={(field, value) => updateHunt(hunt.id, field, value)}
+                            onRemove={() => removeHunt(hunt.id)}
+                            onImageUploadStateChange={(state) =>
+                              setCoverImageUploadState(hunt.id, state)
+                            }
+                          />
+                        ))}
+
+                        <div className="inline-block p-[1px] rounded-2xl bg-gradient-to-b from-[#4A4AFF] to-[#0C0C4F]">
                           <Button
-                            asChild
-                            variant="outline"
-                            className="rounded-2xl border-[#0C0C4F] px-5 py-6 text-sm font-semibold text-[#0C0C4F] hover:bg-[#0C0C4F] hover:text-white"
+                            onClick={addHunt}
+                            className="flex items-center gap-2 bg-white text-[#0C0C4F] font-bold text-xl px-5 py-3 rounded-2xl "
                           >
-                            <Link href="/hunty/templates">Start from Template</Link>
+                            <Plus className="w-6 h-6 text-[#0C0C4F]" />
+                            Add
                           </Button>
                         </div>
-                      </div>
 
-                      {hunts.map((hunt) => (
-                        <HuntForm
-                          key={hunt.id}
-                          hunt={hunt}
-                          onUpdate={(field, value) =>
-                            updateHunt(hunt.id, field, value)
-                          }
-                          onRemove={() => removeHunt(hunt.id)}
-                          onImageUploadStateChange={(state) => setCoverImageUploadState(hunt.id, state)}
-                        />
-                      ))}
-
-                      <div className="inline-block p-[1px] rounded-2xl bg-gradient-to-b from-[#4A4AFF] to-[#0C0C4F]">
-                        <Button
-                          onClick={addHunt}
-                          className="flex items-center gap-2 bg-white text-[#0C0C4F] font-bold text-xl px-5 py-3 rounded-2xl "
-                        >
-                          <Plus className="w-6 h-6 text-[#0C0C4F]" />
-                          Add
-                        </Button>
-                      </div>
-
-                      <div className="flex justify-end">
-                        <Button
-                          onClick={() => handleTabChange("rewards")}
-                          className="bg-slate-800 hover:bg-slate-700 text-white text-xl font-extrabold
+                        <div className="flex justify-end">
+                          <Button
+                            onClick={() => handleTabChange("rewards")}
+                            className="bg-slate-800 hover:bg-slate-700 text-white text-xl font-extrabold
                          px-6 py-4 rounded-xl flex items-center gap-2 cursor-pointer"
-                        >
-                          Next
-                          <ArrowRight className="w-6 h-6" />
-                        </Button>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {activeTab === "rewards" && (
-                    <motion.div
-                      key="rewards"
-                      custom={direction}
-                      {...tabMotion}
-                      className="space-y-6"
-                    >
-                      <div className="space-y-3">
-                        <label className="block text-lg font-semibold text-slate-900 dark:text-slate-100">
-                          Reward Type
-                        </label>
-                        <div className="grid grid-cols-3 gap-3">
-                          {(["XLM", "NFT", "Both"] as const).map((type) => (
-                            <button
-                              key={type}
-                              onClick={() => setRewardType(type)}
-                              className={`px-4 py-3 rounded-lg font-semibold transition-all ${
-                                rewardType === type
-                                  ? type === "XLM"
-                                    ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-2 border-green-500"
-                                    : type === "NFT"
-                                    ? "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-2 border-purple-500"
-                                    : "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-2 border-amber-500"
-                                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-2 border-transparent"
-                              }`}
-                            >
-                              {type}
-                            </button>
-                          ))}
+                          >
+                            Next
+                            <ArrowRight className="w-6 h-6" />
+                          </Button>
                         </div>
-                      </div>
+                      </motion.div>
+                    )}
 
-                      <RewardsPanel
-                        rewards={rewards}
-                        rewardType={rewardType}
-                        onUpdateReward={updateReward}
-                        onAddReward={addReward}
-                        onDeleteReward={deleteReward}
-                        error={errors.rewards?.message}
-                      />
-
-                      <div className="flex justify-between">
-                        <Button 
-                          onClick={() => handleTabChange("create")}
-                          className="bg-gradient-to-b from-[#576065] to-[#787884] hover:bg-gray-500 text-white px-8 py-2 rounded-xl flex items-center gap-2 text-xl font-black"
-                        >
-                          <ArrowLeft className="w-6 h-6" />
-                          Previous
-                        </Button>
-                        <Button 
-                          onClick={() => handleTabChange("publish")}
-                          className="bg-gradient-to-b from-[#576065] to-[#787884] hover:bg-gray-500 text-white px-8 py-2 rounded-xl flex items-center gap-2 text-xl font-black"
-                        >
-                          Next
-                          <ArrowRight className="w-6 h-6" />
-                        </Button>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {activeTab === "publish" && (
-                    <motion.div
-                      key="publish"
-                      custom={direction}
-                      {...tabMotion}
-                      className="space-y-6"
-                    >
-                      <div className="flex items-center justify-between">
-                        <label className="block text-xl font-normal text-[#808080]">
-                          Give It A Name
-                        </label>
-                        <div className="flex flex-col gap-1 items-end">
-                          <Input
-                            value={gameName}
-                            placeholder="Hunty"
-                            onChange={(e) => setGameName(e.target.value)}
-                            className="w-[230px] [&::placeholder]:bg-gradient-to-r [&::placeholder]:from-[#3737A4] [&::placeholder]:to-[#0C0C4F] [&::placeholder]:bg-clip-text [&::placeholder]:text-transparent text-[16px]"
-                          />
-                          {errors.gameName && (
-                            <span className="text-red-500 text-sm">
-                              {errors.gameName.message}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <label className="block text-xl font-normal text-[#808080]">
-                          Set Timeframe
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <div className="relative">
-                            <div className="p-0.5 bg-gradient-to-b from-[#2D4FEB] to-[#0C0C4F] rounded-lg">
-                              <Input
-                                type="number"
-                                min="0"
-                                max="59"
-                                placeholder="00"
-                                className="w-full text-center text-lg font-medium bg-white rounded-lg px-3 py-2 focus-visible:ring-0 focus-visible:ring-offset-0 border-0"
-                              />
-                            </div>
-                          </div>
-                          <span className="text-2xl bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] font-medium bg-clip-text text-transparent">
-                            :
-                          </span>
-                          <div className="relative">
-                            <div className="p-0.5 bg-gradient-to-b from-[#2D4FEB] to-[#0C0C4F] rounded-lg">
-                              <Input
-                                type="number"
-                                min="0"
-                                max="59"
-                                placeholder="00"
-                                className="w-full text-center text-lg font-medium bg-white rounded-lg px-3 py-2 focus-visible:ring-0 focus-visible:ring-offset-0 border-0"
-                              />
-                            </div>
+                    {activeTab === "rewards" && (
+                      <motion.div
+                        key="rewards"
+                        custom={direction}
+                        {...tabMotion}
+                        className="space-y-6"
+                      >
+                        <div className="space-y-3">
+                          <label className="block text-lg font-semibold text-slate-900 dark:text-slate-100">
+                            Reward Type
+                          </label>
+                          <div className="grid grid-cols-3 gap-3">
+                            {(["XLM", "NFT", "Both"] as const).map((type) => (
+                              <button
+                                key={type}
+                                onClick={() => setRewardType(type)}
+                                className={`px-4 py-3 rounded-lg font-semibold transition-all ${
+                                  rewardType === type
+                                    ? type === "XLM"
+                                      ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-2 border-green-500"
+                                      : type === "NFT"
+                                        ? "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-2 border-purple-500"
+                                        : "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-2 border-amber-500"
+                                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-2 border-transparent"
+                                }`}
+                              >
+                                {type}
+                              </button>
+                            ))}
                           </div>
                         </div>
-                      </div>
+
+                        <RewardsPanel
+                          rewards={rewards}
+                          rewardType={rewardType}
+                          onUpdateReward={updateReward}
+                          onAddReward={addReward}
+                          onDeleteReward={deleteReward}
+                          error={errors.rewards?.message}
+                        />
+
+                        <div className="flex justify-between">
+                          <Button
+                            onClick={() => handleTabChange("create")}
+                            className="bg-gradient-to-b from-[#576065] to-[#787884] hover:bg-gray-500 text-white px-8 py-2 rounded-xl flex items-center gap-2 text-xl font-black"
+                          >
+                            <ArrowLeft className="w-6 h-6" />
+                            Previous
+                          </Button>
+                          <Button
+                            onClick={() => handleTabChange("publish")}
+                            className="bg-gradient-to-b from-[#576065] to-[#787884] hover:bg-gray-500 text-white px-8 py-2 rounded-xl flex items-center gap-2 text-xl font-black"
+                          >
+                            Next
+                            <ArrowRight className="w-6 h-6" />
+                          </Button>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {activeTab === "publish" && (
+                      <motion.div
+                        key="publish"
+                        custom={direction}
+                        {...tabMotion}
+                        className="space-y-6"
+                      >
+                        <div className="flex items-center justify-between">
+                          <label className="block text-xl font-normal text-[#808080]">
+                            Give It A Name
+                          </label>
+                          <div className="flex flex-col gap-1 items-end">
+                            <Input
+                              value={gameName}
+                              placeholder="Hunty"
+                              onChange={(e) => setGameName(e.target.value)}
+                              className="w-[230px] [&::placeholder]:bg-gradient-to-r [&::placeholder]:from-[#3737A4] [&::placeholder]:to-[#0C0C4F] [&::placeholder]:bg-clip-text [&::placeholder]:text-transparent text-[16px]"
+                            />
+                            {errors.gameName && (
+                              <span className="text-red-500 text-sm">
+                                {errors.gameName.message}
+                              </span>
+                            )}
+                          </div>
+                        </div>
 
                         <div className="flex items-center justify-between">
                           <label className="block text-xl font-normal text-[#808080]">
-                            Timer
+                            Set Timeframe
                           </label>
-                          <ToggleButton isActive={timerEnabled} onClick={() => setTimerEnabled(!timerEnabled)} />
+                          <div className="flex items-center gap-2">
+                            <div className="relative">
+                              <div className="p-0.5 bg-gradient-to-b from-[#2D4FEB] to-[#0C0C4F] rounded-lg">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max="59"
+                                  placeholder="00"
+                                  className="w-full text-center text-lg font-medium bg-white rounded-lg px-3 py-2 focus-visible:ring-0 focus-visible:ring-offset-0 border-0"
+                                />
+                              </div>
+                            </div>
+                            <span className="text-2xl bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] font-medium bg-clip-text text-transparent">
+                              :
+                            </span>
+                            <div className="relative">
+                              <div className="p-0.5 bg-gradient-to-b from-[#2D4FEB] to-[#0C0C4F] rounded-lg">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max="59"
+                                  placeholder="00"
+                                  className="w-full text-center text-lg font-medium bg-white rounded-lg px-3 py-2 focus-visible:ring-0 focus-visible:ring-offset-0 border-0"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <label className="block text-xl font-normal text-[#808080]">Timer</label>
+                          <ToggleButton
+                            isActive={timerEnabled}
+                            onClick={() => setTimerEnabled(!timerEnabled)}
+                          />
                         </div>
 
                         <div className="flex items-center justify-between">
@@ -799,20 +829,30 @@ const huntItemSchema = z.object({
                             <label className="block text-xl font-normal text-[#808080]">
                               Private Hunt
                             </label>
-                            <p className="text-xs text-slate-400 mt-0.5">Hidden from the public arcade</p>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              Hidden from the public arcade
+                            </p>
                           </div>
-                          <ToggleButton isActive={isPrivate} onClick={() => setIsPrivate(!isPrivate)} />
+                          <ToggleButton
+                            isActive={isPrivate}
+                            onClick={() => setIsPrivate(!isPrivate)}
+                          />
                         </div>
 
                         <CategoryPicker value={category} onChange={setCategory} className="pt-2" />
                         <TagInput
                           tags={tags}
                           onChange={setTags}
-                          suggestFrom={{ title: gameName, description: hunts.map((h) => h.description).join(" ") }}
+                          suggestFrom={{
+                            title: gameName,
+                            description: hunts.map((h) => h.description).join(" "),
+                          }}
                           className="pt-2"
                         />
                         <div className="flex flex-col gap-1">
-                          <label className="text-sm text-[#808080]">Your wallet (for collaboration)</label>
+                          <label className="text-sm text-[#808080]">
+                            Your wallet (for collaboration)
+                          </label>
                           <Input
                             value={ownerWallet}
                             onChange={(e) => setOwnerWallet(e.target.value)}
@@ -821,17 +861,28 @@ const huntItemSchema = z.object({
                           />
                         </div>
                         {lastPublishedHuntId != null && ownerWallet && (
-                          <CollaboratorsPanel huntId={lastPublishedHuntId} currentWallet={ownerWallet} />
+                          <CollaboratorsPanel
+                            huntId={lastPublishedHuntId}
+                            currentWallet={ownerWallet}
+                          />
                         )}
+
+                        {/* Game modes section (shown when gameModes flag is enabled) */}
+                        <GameModesSection />
 
                         <div className="flex items-center justify-between">
                           <div>
                             <label className="block text-xl font-normal text-[#808080]">
                               Sequential Clues
                             </label>
-                            <p className="text-xs text-slate-400 mt-0.5">Players must solve clues in order</p>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              Players must solve clues in order
+                            </p>
                           </div>
-                          <ToggleButton isActive={sequential} onClick={() => setSequential(!sequential)} />
+                          <ToggleButton
+                            isActive={sequential}
+                            onClick={() => setSequential(!sequential)}
+                          />
                         </div>
 
                         <div className="flex items-center justify-between">
@@ -889,9 +940,7 @@ const huntItemSchema = z.object({
                               className="h-11 w-[140px] text-center"
                             />
                             {errors.endDate && (
-                              <span className="text-red-500 text-sm">
-                                {errors.endDate.message}
-                              </span>
+                              <span className="text-red-500 text-sm">{errors.endDate.message}</span>
                             )}
                           </div>
                         </div>
@@ -907,7 +956,9 @@ const huntItemSchema = z.object({
                         )}
 
                         <div className="flex items-center justify-between">
-                          <label className="block text-xl font-normal text-[#808080]">Email Notifications</label>
+                          <label className="block text-xl font-normal text-[#808080]">
+                            Email Notifications
+                          </label>
                           <div className="flex items-center gap-4">
                             <Input
                               type="email"
@@ -916,119 +967,132 @@ const huntItemSchema = z.object({
                               onChange={(e) => setCreatorEmail(e.target.value)}
                               className="w-[230px] text-[16px]"
                             />
-                            <ToggleButton isActive={emailNotifications} onClick={() => setEmailNotifications(!emailNotifications)} />
+                            <ToggleButton
+                              isActive={emailNotifications}
+                              onClick={() => setEmailNotifications(!emailNotifications)}
+                            />
                           </div>
                         </div>
 
-                      <div className="flex items-center justify-between">
-                        <label className="block text-xl font-normal text-[#808080]">
-                          Share Link/Generate QR Code
-                        </label>
-                        <div className="flex gap-2">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                onClick={handleShare}
-                                className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F]  hover:bg-slate-700 text-white px-4 py-2 rounded-full flex items-center gap-2"
-                              >
-                                <Share />
-                                Share Now
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Copy Share Link</p>
-                            </TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                size="icon"
-                                variant="outline"
-                                className="rounded-lg border-1 border-transparent bg-white bg-clip-padding shadow-sm hover:bg-slate-50 [background:linear-gradient(white,white)_padding-box,linear-gradient(to_bottom,#3737A4,#0C0C4F)_border-box]"
-                                onClick={() => setQrOpen(true)}
-                                title="Show QR Code"
-                              >
-                                <QrCode className="w-4 h-4 text-[#0C0C4F]" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Generate QR Code</p>
-                            </TooltipContent>
-                          </Tooltip>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-xl font-normal text-[#808080]">
+                            Share Link/Generate QR Code
+                          </label>
+                          <div className="flex gap-2">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  onClick={handleShare}
+                                  className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F]  hover:bg-slate-700 text-white px-4 py-2 rounded-full flex items-center gap-2"
+                                >
+                                  <Share />
+                                  Share Now
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Copy Share Link</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="icon"
+                                  variant="outline"
+                                  className="rounded-lg border-1 border-transparent bg-white bg-clip-padding shadow-sm hover:bg-slate-50 [background:linear-gradient(white,white)_padding-box,linear-gradient(to_bottom,#3737A4,#0C0C4F)_border-box]"
+                                  onClick={() => setQrOpen(true)}
+                                  title="Show QR Code"
+                                >
+                                  <QrCode className="w-4 h-4 text-[#0C0C4F]" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Generate QR Code</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
                         </div>
-                      </div>
-                      <QrCodeModal open={qrOpen} onClose={() => setQrOpen(false)} url={typeof window !== "undefined" ? window.location.href : ""} />
+                        <QrCodeModal
+                          open={qrOpen}
+                          onClose={() => setQrOpen(false)}
+                          url={typeof window !== "undefined" ? window.location.href : ""}
+                        />
 
-                      <div className="flex items-center justify-between mb-16">
-                        <label className="block text-xl font-normal text-[#808080]">
-                          Save As Image
-                        </label>
-                        <div className="flex gap-2">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button onClick={handleDownloadImage} className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] hover:bg-slate-700 text-white px-4 py-2 rounded-full flex items-center gap-2">
-                                <Download className="w-4 h-4 " />
-                                Download
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Download Scavenge Image</p>
-                            </TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                size="icon"
-                                variant="outline"
-                                className="rounded-lg border-1 border-transparent bg-white bg-clip-padding shadow-sm hover:bg-slate-50 [background:linear-gradient(white,white)_padding-box,linear-gradient(to_bottom,#3737A4,#0C0C4F)_border-box]"
-                              >
-                                <Printer className="w-4 h-4 text-[#0C0C4F]" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Print Page</p>
-                            </TooltipContent>
-                          </Tooltip>
+                        <div className="flex items-center justify-between mb-16">
+                          <label className="block text-xl font-normal text-[#808080]">
+                            Save As Image
+                          </label>
+                          <div className="flex gap-2">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  onClick={handleDownloadImage}
+                                  className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] hover:bg-slate-700 text-white px-4 py-2 rounded-full flex items-center gap-2"
+                                >
+                                  <Download className="w-4 h-4 " />
+                                  Download
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Download Scavenge Image</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="icon"
+                                  variant="outline"
+                                  className="rounded-lg border-1 border-transparent bg-white bg-clip-padding shadow-sm hover:bg-slate-50 [background:linear-gradient(white,white)_padding-box,linear-gradient(to_bottom,#3737A4,#0C0C4F)_border-box]"
+                                >
+                                  <Printer className="w-4 h-4 text-[#0C0C4F]" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Print Page</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="flex justify-between pb-12">
-                        <Button 
-                          onClick={() => handleTabChange("rewards")}
-                          className="bg-gradient-to-b from-[#576065] to-[#787884] hover:bg-gray-500 text-white text-xl px-8 py-2 rounded-lg flex items-center gap-2"
-                        >
-                          <ArrowLeft className="w-4 h-4 " />
-                          Previous
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            const coverImageUploadBlockMessage = getCoverImageUploadBlockMessage()
-                            if (coverImageUploadBlockMessage) {
-                              toast.error(coverImageUploadBlockMessage)
-                              return
-                            }
+                        <div className="flex justify-between pb-12">
+                          <Button
+                            onClick={() => handleTabChange("rewards")}
+                            className="bg-gradient-to-b from-[#576065] to-[#787884] hover:bg-gray-500 text-white text-xl px-8 py-2 rounded-lg flex items-center gap-2"
+                          >
+                            <ArrowLeft className="w-4 h-4 " />
+                            Previous
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              const coverImageUploadBlockMessage =
+                                getCoverImageUploadBlockMessage();
+                              if (coverImageUploadBlockMessage) {
+                                toast.error(coverImageUploadBlockMessage);
+                                return;
+                              }
 
-                            if (!isFormValidated) {
-                              toast.error("Please fill all required hunt details before publishing.")
-                              return
-                            }
-                            setShowPublishModal(true)
-                          }}
-                          disabled={!isFormValidated || isPublishing}
-                          className="bg-gradient-to-b from-[#39A437] to-[#194F0C] hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xl px-6 py-3 rounded-lg flex items-center gap-2"
-                        >
-                          <span>
-                            <PlayCircle />
-                          </span>
-                          Publish Game
-                        </Button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                              if (!isFormValidated) {
+                                toast.error(
+                                  "Please fill all required hunt details before publishing."
+                                );
+                                return;
+                              }
+                              setShowPublishModal(true);
+                            }}
+                            disabled={!isFormValidated || isPublishing}
+                            className="bg-gradient-to-b from-[#39A437] to-[#194F0C] hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xl px-6 py-3 rounded-lg flex items-center gap-2"
+                          >
+                            <span>
+                              <PlayCircle />
+                            </span>
+                            Publish Game
+                          </Button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
-            </div>
-            {/* Right Panel - Live Preview */}
+              {/* Right Panel - Live Preview */}
               <div ref={previewContainerRef} className="hidden lg:block">
                 <GamePreview hunts={hunts} huntId={editHuntId} />
               </div>
@@ -1043,15 +1107,74 @@ const huntItemSchema = z.object({
         onPublish={handleSubmit(handlePublish)}
         gameName={gameName}
       />
-      <QrCodeModal open={qrOpen} onClose={() => setQrOpen(false)} url={typeof window !== "undefined" ? window.location.href : ""} />
+      <QrCodeModal
+        open={qrOpen}
+        onClose={() => setQrOpen(false)}
+        url={typeof window !== "undefined" ? window.location.href : ""}
+      />
     </TooltipProvider>
+  );
+}
+
+function GameModesSection() {
+  const gameModesEnabled = useIsFeatureEnabled("gameModes");
+  const collaborativeEnabled = useIsFeatureEnabled("collaborativeHunts");
+
+  if (!gameModesEnabled && !collaborativeEnabled) return null;
+
+  return (
+    <div className="rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30 px-4 py-4 space-y-4">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-semibold text-indigo-800 dark:text-indigo-300">
+          Game Modes
+        </span>
+        <span className="text-[10px] uppercase tracking-wider text-indigo-500 dark:text-indigo-400 font-medium px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/50">
+          Beta
+        </span>
+      </div>
+      <p className="text-xs text-indigo-600 dark:text-indigo-400">
+        Additional game modes are available because the game modes feature flag is enabled.
+      </p>
+      {gameModesEnabled && (
+        <div className="space-y-2">
+          <label className="flex items-center gap-3 p-2 rounded-lg bg-white dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800">
+            <input type="radio" name="gameMode" className="text-indigo-600" />
+            <div>
+              <span className="text-sm font-medium text-slate-800 dark:text-slate-200">Timed Mode</span>
+              <p className="text-xs text-slate-500">Players must complete the hunt within a time limit</p>
+            </div>
+          </label>
+          <label className="flex items-center gap-3 p-2 rounded-lg bg-white dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800">
+            <input type="radio" name="gameMode" className="text-indigo-600" />
+            <div>
+              <span className="text-sm font-medium text-slate-800 dark:text-slate-200">Competitive Mode</span>
+              <p className="text-xs text-slate-500">Head-to-head competition with live rankings</p>
+            </div>
+          </label>
+        </div>
+      )}
+      {collaborativeEnabled && (
+        <label className="flex items-center gap-3 p-2 rounded-lg bg-white dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800">
+          <input type="checkbox" className="rounded text-indigo-600" />
+          <div>
+            <span className="text-sm font-medium text-slate-800 dark:text-slate-200">Collaborative Mode</span>
+            <p className="text-xs text-slate-500">Teams of players work together to solve clues</p>
+          </div>
+        </label>
+      )}
+    </div>
   );
 }
 
 export default function CreateGame() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gradient-to-tr from-blue-100 bg-purple-100 to-[#f9f9ff]" />}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-tr from-blue-100 bg-purple-100 to-[#f9f9ff]" />
+      }
+    >
       <CreateGameContent />
     </Suspense>
-  )
+  );
 }
+ 

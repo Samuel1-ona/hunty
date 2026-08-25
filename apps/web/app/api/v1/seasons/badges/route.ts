@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
 import { getPlayerSeasonBadges, getAllSeasonBadges, awardSeasonBadge } from "@/lib/seasonStore";
 import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
-import { ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
-
-import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
-import { awardSeasonBadge,getAllSeasonBadges, getPlayerSeasonBadges } from "@/lib/seasonStore";
+import { withValidation } from "@/lib/api/withValidation";
+import { seasonBadgeBodySchema } from "@hunty/types/api-schemas";
 
 /**
  * GET /api/v1/seasons/badges
@@ -13,11 +11,8 @@ import { awardSeasonBadge,getAllSeasonBadges, getPlayerSeasonBadges } from "@/li
  */
 export const GET = withErrorHandling(async (req: Request) => {
   const ip = getIP(req);
-  const { success, reset } = rateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
-
-  if (!success) {
-    return rateLimitResponse(reset);
-  }
+  const { success, reset } = await rateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
+  if (!success) return rateLimitResponse(reset);
 
   const { searchParams } = new URL(req.url);
   const address = searchParams.get("address");
@@ -35,26 +30,14 @@ export const GET = withErrorHandling(async (req: Request) => {
  * POST /api/v1/seasons/badges
  * Award a season badge to a player (admin only)
  */
-export const POST = withErrorHandling(async (req: Request) => {
-  const ip = getIP(req);
-  const { success, reset } = rateLimit(ip, { limit: 10, windowMs: 60 * 1000 });
+export const POST = withValidation(
+  { body: seasonBadgeBodySchema },
+  async (req, _context, { body }) => {
+    const ip = getIP(req);
+    const { success, reset } = await rateLimit(ip, { limit: 10, windowMs: 60 * 1000 });
+    if (!success) return rateLimitResponse(reset);
 
-  if (!success) {
-    return rateLimitResponse(reset);
+    const badge = awardSeasonBadge(body.seasonId, body.address, body.name, body.rank);
+    return NextResponse.json({ badge }, { status: 201 });
   }
-
-  let body: { seasonId?: number; address?: string; name?: string; rank?: number };
-  try {
-    body = await req.json();
-  } catch {
-    throw new ValidationError("Invalid request body");
-  }
-  const { seasonId, address, name, rank } = body;
-
-  if (!seasonId || !address) {
-    throw new ValidationError("Missing required fields", { required: ["seasonId", "address"] });
-  }
-
-  const badge = awardSeasonBadge(seasonId, address, name, rank);
-  return NextResponse.json({ badge }, { status: 201 });
-});
+);

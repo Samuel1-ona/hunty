@@ -16,6 +16,9 @@ export const huntStatusSchema = z.enum([
   "Completed",
   "Draft",
   "Cancelled",
+  "PendingReview",
+  "Scheduled",
+  "Ended",
 ])
 
 export const clueDifficultySchema = z.enum(["Easy", "Medium", "Hard"])
@@ -56,6 +59,7 @@ export const storedHuntSchema = z.object({
   rewardEscrowTxHash: z.string().optional(),
   rewardEscrowBalance: z.number().optional(),
   playerCount: z.number().optional(),
+  maxParticipants: z.number().optional(),
   maxCapacity: z.number().optional(),
   createdAt: z.number().optional(),
   startTime: z.number().optional(),

@@ -11,7 +11,7 @@ import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
  */
 export const GET = withErrorHandling(async (req: Request) => {
   const ip = getIP(req);
-  const { success, reset } = rateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
+  const { success, reset } = await rateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
 
   if (!success) {
     return rateLimitResponse(reset);
@@ -19,7 +19,8 @@ export const GET = withErrorHandling(async (req: Request) => {
 
   const { searchParams } = new URL(req.url);
   const cursorParam = searchParams.get("cursor");
-  const cursor = cursorParam && cursorParam !== "null" && cursorParam !== "" ? parseInt(cursorParam, 10) : null;
+  const cursor =
+    cursorParam && cursorParam !== "null" && cursorParam !== "" ? parseInt(cursorParam, 10) : null;
   const limit = Math.max(1, Math.min(100, parseInt(searchParams.get("limit") || "10", 10)));
   const status = searchParams.get("status") || "Active";
   const reward = searchParams.get("reward") || "all";
@@ -27,12 +28,15 @@ export const GET = withErrorHandling(async (req: Request) => {
   const category = searchParams.get("category") || "all";
   const search = searchParams.get("search") || "";
   const sortBy = searchParams.get("sortBy") || "newest";
-  const category = searchParams.get("category") || "all";
   const tag = searchParams.get("tag") || "";
-  const difficulty = searchParams.get("difficulty") || "all";
   const requestId = req.headers.get("x-request-id") ?? undefined;
 
-  if (cursorParam && cursorParam !== "null" && cursorParam !== "" && (cursor == null || Number.isNaN(cursor))) {
+  if (
+    cursorParam &&
+    cursorParam !== "null" &&
+    cursorParam !== "" &&
+    (cursor == null || Number.isNaN(cursor))
+  ) {
     throw new ValidationError("Invalid cursor", { cursor: cursorParam });
   }
 
@@ -45,9 +49,7 @@ export const GET = withErrorHandling(async (req: Request) => {
     category,
     search,
     sortBy,
-    category,
     tag,
-    difficulty,
     requestId,
   });
 
@@ -61,3 +63,4 @@ export const GET = withErrorHandling(async (req: Request) => {
     },
   });
 });
+ 

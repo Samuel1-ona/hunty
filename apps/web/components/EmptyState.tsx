@@ -1,40 +1,49 @@
 import Link from "next/link"
-import type { ReactNode } from "react"
-
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import type { ReactNode } from "react"
 
 interface EmptyStateAction {
   label: string
-  href?: string
-  onClick?: () => void
+  href: string
 }
 
 interface EmptyStateProps {
   icon: ReactNode
   title: string
   description: string
-  action: EmptyStateAction
+  action?: EmptyStateAction
+  className?: string
 }
 
-export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
+export function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+  className,
+}: EmptyStateProps) {
   return (
-    <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50/90 p-8 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900/60">
-      <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white text-slate-700 shadow-sm dark:bg-slate-800 dark:text-slate-200">
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center gap-4 px-8 py-16 text-center",
+        className,
+      )}
+    >
+      <div className="flex size-24 items-center justify-center rounded-full border-2 border-dashed border-slate-300 dark:border-slate-600">
         {icon}
       </div>
-      <h2 className="mt-6 text-xl font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600 dark:text-slate-400">{description}</p>
-      <div className="mt-6">
-        {action.href ? (
-          <Button asChild className="rounded-full px-6 py-3 text-sm font-semibold">
-            <Link href={action.href}>{action.label}</Link>
-          </Button>
-        ) : (
-          <Button onClick={action.onClick} className="rounded-full px-6 py-3 text-sm font-semibold">
-            {action.label}
-          </Button>
-        )}
-      </div>
+      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+        {title}
+      </h3>
+      <p className="max-w-sm text-sm text-slate-500 dark:text-slate-400">
+        {description}
+      </p>
+      {action && (
+        <Button asChild variant="default" size="sm">
+          <Link href={action.href}>{action.label}</Link>
+        </Button>
+      )}
     </div>
   )
 }

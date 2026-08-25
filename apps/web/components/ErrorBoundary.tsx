@@ -1,5 +1,6 @@
 "use client"
 
+import * as Sentry from "@sentry/nextjs"
 import { Component, type ErrorInfo, type ReactNode } from "react"
 
 import { logger } from "@/lib/logger"
@@ -43,6 +44,11 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     const label = this.props.boundaryName ?? "ErrorBoundary"
     logger.error(`[${label}] Caught error:`, error, errorInfo)
+    // Report to Sentry with the boundary name as a tag for easy filtering.
+    Sentry.captureException(error, {
+      tags: { boundary: label },
+      extra: { componentStack: errorInfo.componentStack },
+    })
     this.props.onError?.(error, errorInfo)
   }
 

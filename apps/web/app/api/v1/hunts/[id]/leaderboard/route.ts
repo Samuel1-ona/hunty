@@ -1,18 +1,15 @@
 import { NextResponse } from "next/server";
 
-import { get_hunt_leaderboard } from "@/lib/contracts/hunt";
-import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
 import { ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
 import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { getAllProgressForHunt } from "@/lib/progressData";
 
-/**
- * GET /api/v1/hunts/[id]/leaderboard
- * Get hunt leaderboard with cursor pagination.
- */
-export const GET = withErrorHandling<{ params: Promise<{ id: string }> }>(async (req, { params }) => {
+export const GET = withErrorHandling<{
+  params: Promise<{ id: string }>
+}>(async (req, { params }) => {
   const ip = getIP(req);
-  const { success, reset } = rateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
+  const { success, reset } = await rateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
 
   if (!success) {
     return rateLimitResponse(reset);
@@ -34,15 +31,21 @@ export const GET = withErrorHandling<{ params: Promise<{ id: string }> }>(async 
     throw new ValidationError("Invalid cursor", { cursor: cursorParam });
   }
 
-  const leaderboard = await get_hunt_leaderboard(huntId);
+  const entries = getAllProgressForHunt(huntId);
 
-  // get_hunt_leaderboard might return unsorted or current-player augmented data.
-  // We sort by points descending to ensure a consistent leaderboard order.
-  const sorted = [...leaderboard].sort((a, b) => b.points - a.points);
+  const leaderboard = entries
+    .filter((e) => e.totalPoints > 0)
+    .map((e) => ({
+      address: e.wallet,
+      points: e.totalPoints,
+      completionCount: e.completed ? 1 : 0,
+      completedAt: e.completedAt ?? undefined,
+    }))
+    .sort((a, b) => b.points - a.points);
 
-  const total = sorted.length;
+  const total = leaderboard.length;
   const pageStart = cursor == null ? 0 : Math.max(0, cursor);
-  const paginated = sorted.slice(pageStart, pageStart + limit);
+  const paginated = leaderboard.slice(pageStart, pageStart + limit);
   const nextCursor = paginated.length === limit ? pageStart + paginated.length : null;
 
   return NextResponse.json({

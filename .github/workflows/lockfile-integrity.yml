@@ -1,71 +1,75 @@
 name: Lockfile Integrity
-
 on:
   pull_request:
     branches: [main]
     paths:
       - 'package.json'
-      - 'package-lock.json'
       - 'pnpm-lock.yaml'
-      - 'mobile/package.json'
-      - 'mobile/package-lock.json'
-      - 'mobile/pnpm-lock.yaml'
+      - 'apps/mobile/package.json'
+      - 'apps/mobile/pnpm-lock.yaml'
       - '.github/workflows/lockfile-integrity.yml'
-
+      - '.github/actions/setup-node-pnpm/action.yml'
 permissions:
   contents: read
-
 jobs:
-  npm-lockfiles:
-    name: Verify npm lockfiles
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        project:
-          - '.'
-          - 'mobile'
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: npm
-          cache-dependency-path: ${{ matrix.project == '.' && 'package-lock.json' || 'mobile/package-lock.json' }}
-
-      - name: Verify lockfile can install cleanly
-        working-directory: ${{ matrix.project }}
-        run: npm ci --ignore-scripts
-
-  pnpm-lockfiles:
+  lockfile-integrity:
     name: Verify pnpm lockfiles
     runs-on: ubuntu-latest
     strategy:
       matrix:
         project:
           - '.'
-          - 'mobile'
+          - 'apps/mobile'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Enable Corepack
-        run: corepack enable
+      - name: Setup Node.js with pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          working-directory: ${{ matrix.project }}
+          install-args: "--frozen-lockfile --ignore-scripts"
 
-      - name: Set up pnpm
+  self-check-mismatch-detection:
+    name: Verify a lockfile mismatch fails the check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project:
+          - '.'
+          - 'apps/mobile'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10.33.0
+          version: "10.33.0"
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
           cache: pnpm
-          cache-dependency-path: ${{ matrix.project == '.' && 'pnpm-lock.yaml' || 'mobile/pnpm-lock.yaml' }}
+          cache-dependency-path: ${{ matrix.project }}/pnpm-lock.yaml
 
-      - name: Verify pnpm lockfile is frozen
+      - name: Introduce a deliberate lockfile mismatch
         working-directory: ${{ matrix.project }}
-        run: pnpm install --frozen-lockfile --ignore-scripts
+        run: |
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.dependencies = pkg.dependencies || {};
+            pkg.dependencies['lockfile-integrity-self-check'] = '1.0.0';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+      - name: Confirm frozen-lockfile install fails on mismatch
+        working-directory: ${{ matrix.project }}
+        run: |
+          if pnpm install --frozen-lockfile --ignore-scripts; then
+            echo "::error::pnpm install --frozen-lockfile succeeded despite a deliberate lockfile mismatch. The lockfile-integrity check is not catching drift."
+            exit 1
+          fi
+          echo "Confirmed: frozen-lockfile install correctly failed on lockfile mismatch."

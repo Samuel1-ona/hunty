@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
-import createNextIntlPlugin from "next-intl/plugin";
+import { withSentryConfig } from "@sentry/nextjs";
+import { createWithNextIntl } from "./lib/nextIntlConfig";
 
-const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
+const withNextIntl = createWithNextIntl();
 
 const nextConfig: NextConfig = {
   experimental: {
@@ -160,5 +161,40 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+const nextIntlConfig = withNextIntl(nextConfig);
+
+// ---------------------------------------------------------------------------
+// Sentry source-map upload + auto-instrumentation
+// ---------------------------------------------------------------------------
+// SENTRY_AUTH_TOKEN must be set in CI/CD and local .env.local (never committed).
+// Source maps are deleted from the deployed bundle after upload by default,
+// so they are never served to the public.
+export default withSentryConfig(nextIntlConfig, {
+  org: process.env.SENTRY_ORG ?? "hunty",
+  project: process.env.SENTRY_PROJECT ?? "hunty-web",
+
+  // Auth token is read from SENTRY_AUTH_TOKEN env var automatically.
+  // Set it in CI secrets and in .env.local for local uploads.
+
+  // Upload source maps during production builds only to keep dev builds fast.
+  sourcemaps: {
+    // Delete the local .map files after upload so they're not served publicly.
+    deleteSourcemapsAfterUpload: true,
+  },
+
+  // Automatically instrument Next.js server components, API routes, and the
+  // edge runtime for distributed tracing.
+  autoInstrumentServerFunctions: true,
+  autoInstrumentMiddleware: true,
+  autoInstrumentAppDirectory: true,
+
+  // Suppress the CLI upload banner in CI logs.
+  silent: !process.env.CI,
+
+  // Remove source maps from the public bundle after Sentry has ingested them.
+  hideSourceMaps: true,
+
+  // Disable noisy build-time SDK logger.
+  disableLogger: true,
+});
 

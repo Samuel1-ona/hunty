@@ -1,16 +1,18 @@
-import type { ClueDifficulty } from "./types"
+import type { ClueDifficulty, HuntDifficulty } from "./types";
 
 // Scoring configuration types
 export interface ScoringWeights {
-  timeBonus: number // Weight for time-based bonus (0-1)
-  hintPenalty: number // Penalty multiplier for using hints (0-1)
+  timeBonus: number; // Weight for time-based bonus (0-1)
+  hintPenalty: number; // Penalty multiplier for using hints (0-1)
   difficultyMultiplier: {
-    Easy: number
-    Medium: number
-    Hard: number
-  }
-  streakBonus: number // Bonus points per consecutive clue solved
-  firstToCompleteBonus: number // Bonus points for being first to complete the hunt
+    Easy: number;
+    Medium: number;
+    Hard: number;
+    /** Hunt-level difficulty tier; clue-level scoring falls back to Hard. */
+    Expert: number;
+  };
+  streakBonus: number; // Bonus points per consecutive clue solved
+  firstToCompleteBonus: number; // Bonus points for being first to complete the hunt
 }
 
 // Default scoring weights
@@ -21,30 +23,31 @@ export const DEFAULT_SCORING_WEIGHTS: ScoringWeights = {
     Easy: 1,
     Medium: 1.5,
     Hard: 2,
+    Expert: 2.5,
   },
   streakBonus: 5,
   firstToCompleteBonus: 100,
-}
+};
 
 // Detailed scoring breakdown for a single clue
 export interface ClueScoringBreakdown {
-  basePoints: number
-  difficultyMultiplier: number
-  timeBonus: number
-  hintPenalty: number
-  streakBonus: number
-  totalPoints: number
+  basePoints: number;
+  difficultyMultiplier: number;
+  timeBonus: number;
+  hintPenalty: number;
+  streakBonus: number;
+  totalPoints: number;
 }
 
 // Detailed scoring breakdown for an entire hunt attempt
 export interface HuntScoringBreakdown {
-  clues: { [clueId: number]: ClueScoringBreakdown }
-  totalBasePoints: number
-  totalTimeBonus: number
-  totalHintPenalty: number
-  totalStreakBonus: number
-  firstToCompleteBonus: number
-  totalPoints: number
+  clues: { [clueId: number]: ClueScoringBreakdown };
+  totalBasePoints: number;
+  totalTimeBonus: number;
+  totalHintPenalty: number;
+  totalStreakBonus: number;
+  firstToCompleteBonus: number;
+  totalPoints: number;
 }
 
 /**
@@ -60,9 +63,9 @@ export function calculateTimeBonus(
   maxTimeSeconds: number = 60,
   weight: number = DEFAULT_SCORING_WEIGHTS.timeBonus
 ): number {
-  const cappedTime = Math.min(timeTakenSeconds, maxTimeSeconds)
-  const normalizedTime = 1 - cappedTime / maxTimeSeconds
-  return Math.round(basePoints * normalizedTime * weight)
+  const cappedTime = Math.min(timeTakenSeconds, maxTimeSeconds);
+  const normalizedTime = 1 - cappedTime / maxTimeSeconds;
+  return Math.round(basePoints * normalizedTime * weight);
 }
 
 /**
@@ -77,7 +80,7 @@ export function calculateHintPenalty(
   hintsUsed: number,
   weight: number = DEFAULT_SCORING_WEIGHTS.hintPenalty
 ): number {
-  return Math.round(basePoints * weight * hintsUsed)
+  return Math.round(basePoints * weight * hintsUsed);
 }
 
 /**
@@ -88,7 +91,7 @@ export function calculateHintPenalty(
  * @param revealedHintPenalties Array of `penalty` values for every hint the player revealed.
  */
 export function calculateProgressiveHintPenalty(revealedHintPenalties: number[]): number {
-  return revealedHintPenalties.reduce((sum, p) => sum + p, 0)
+  return revealedHintPenalties.reduce((sum, p) => sum + p, 0);
 }
 
 /**
@@ -100,7 +103,7 @@ export function calculateStreakBonus(
   currentStreak: number,
   baseBonus: number = DEFAULT_SCORING_WEIGHTS.streakBonus
 ): number {
-  return currentStreak * baseBonus
+  return currentStreak * baseBonus;
 }
 
 /**
@@ -109,10 +112,10 @@ export function calculateStreakBonus(
  * @param multipliers Difficulty multipliers from config
  */
 export function calculateDifficultyMultiplier(
-  difficulty: ClueDifficulty = "Medium",
+  difficulty: ClueDifficulty | HuntDifficulty = "Medium",
   multipliers: ScoringWeights["difficultyMultiplier"] = DEFAULT_SCORING_WEIGHTS.difficultyMultiplier
 ): number {
-  return multipliers[difficulty] || 1
+  return multipliers[difficulty] || 1;
 }
 
 /**
@@ -124,27 +127,29 @@ export function calculateDifficultyMultiplier(
  */
 export function calculateCluePoints(
   basePoints: number,
-  difficulty: ClueDifficulty,
+  difficulty: ClueDifficulty | HuntDifficulty,
   timeTakenSeconds: number,
   hintsUsed: number,
   currentStreak: number,
   weights: ScoringWeights = DEFAULT_SCORING_WEIGHTS,
-  exactHintPenalty?: number,
+  exactHintPenalty?: number
 ): { breakdown: ClueScoringBreakdown; newStreak: number } {
-  const difficultyMultiplier = calculateDifficultyMultiplier(difficulty, weights.difficultyMultiplier)
-  const timeBonus = calculateTimeBonus(basePoints, timeTakenSeconds, 60, weights.timeBonus)
+  const difficultyMultiplier = calculateDifficultyMultiplier(
+    difficulty,
+    weights.difficultyMultiplier
+  );
+  const timeBonus = calculateTimeBonus(basePoints, timeTakenSeconds, 60, weights.timeBonus);
   // Prefer exact per-hint penalty sum when available; fall back to weight-based calc.
-  const hintPenalty = exactHintPenalty !== undefined
-    ? exactHintPenalty
-    : calculateHintPenalty(basePoints, hintsUsed, weights.hintPenalty)
-  const streakBonus = calculateStreakBonus(currentStreak, weights.streakBonus)
+  const hintPenalty =
+    exactHintPenalty !== undefined
+      ? exactHintPenalty
+      : calculateHintPenalty(basePoints, hintsUsed, weights.hintPenalty);
+  const streakBonus = calculateStreakBonus(currentStreak, weights.streakBonus);
 
-  const totalPoints = Math.max(0, Math.round(
-    (basePoints * difficultyMultiplier) +
-    timeBonus -
-    hintPenalty +
-    streakBonus
-  ))
+  const totalPoints = Math.max(
+    0,
+    Math.round(basePoints * difficultyMultiplier + timeBonus - hintPenalty + streakBonus)
+  );
 
   return {
     breakdown: {
@@ -156,5 +161,6 @@ export function calculateCluePoints(
       totalPoints,
     },
     newStreak: currentStreak + 1,
-  }
+  };
 }
+ 

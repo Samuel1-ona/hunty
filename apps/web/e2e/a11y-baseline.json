@@ -1,0 +1,8 @@
+{
+  "__instructions__": "This file records the known axe violations at the time of the last baseline capture. To regenerate: UPDATE_A11Y_BASELINE=true pnpm test:e2e -- e2e/a11y-audit.spec.ts. Delete violation entries as they are fixed. Never add new serious/critical entries — fix the root cause instead.",
+  "__burn_down_plan__": {
+    "week1": "Fix all critical (impact=critical) violations",
+    "week2_3": "Fix all serious (impact=serious) violations",
+    "week4_plus": "Address moderate and minor violations opportunistically"
+  }
+}

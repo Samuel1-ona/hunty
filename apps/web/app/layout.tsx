@@ -1,31 +1,28 @@
-import "./globals.css"
+import "./globals.css";
 
-import type { Metadata, Viewport } from "next"
-import { Suspense } from "react"
+import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 
-import "./globals.css"
-import { hankenGrotesk } from "@/lib/font"
-import { TxToaster } from "@/components/TxToaster"
-import { EnvironmentIndicator } from "@/components/EnvironmentIndicator"
-import { Footer } from "@/components/Footer"
-import { FavoriteNotifications } from "@/components/FavoriteNotifications"
-import { PageSkeleton } from "@/components/PageSkeleton"
-import { PageSkeleton } from "@/components/PageSkeleton"
-import { PageTransitionWrapper } from "@/components/PageTransitionWrapper"
-import { PageTransitionWrapper } from "@/components/PageTransitionWrapper"
-import PWAInstallPrompt from "@/components/PWAInstallPrompt"
-import { TxToaster } from "@/components/TxToaster"
-import { hankenGrotesk } from "@/lib/font"
+import { hankenGrotesk } from "@/lib/font";
+import { TxToaster } from "@/components/TxToaster";
+import { EnvironmentIndicator } from "@/components/EnvironmentIndicator";
+import { Footer } from "@/components/Footer";
+import { FavoriteNotifications } from "@/components/FavoriteNotifications";
+import { PageSkeleton } from "@/components/PageSkeleton";
+import { PageTransitionWrapper } from "@/components/PageTransitionWrapper";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import { TestnetWarning } from "@/components/NetworkIndicator";
 
-import Providers from "./providers"
+import Providers from "./providers";
 
 export const viewport: Viewport = {
   themeColor: "#7c3aed",
-}
+};
 
 export const metadata: Metadata = {
   title: "Hunty - Decentralized Scavenger Hunt Game",
-  description: "Create thrilling scavenger hunts with multiple clues and challenges. Engage players in immersive treasure hunts and reward them with XLM tokens or exclusive NFTs on the Stellar blockchain.",
+  description:
+    "Create thrilling scavenger hunts with multiple clues and challenges. Engage players in immersive treasure hunts and reward them with XLM tokens or exclusive NFTs on the Stellar blockchain.",
   keywords: ["scavenger hunt", "game", "blockchain", "Stellar", "XLM", "NFT", "Web3"],
   authors: [{ name: "Hunty Team" }],
   manifest: "/manifest.json",
@@ -40,7 +37,8 @@ export const metadata: Metadata = {
     url: "https://hunty.app",
     siteName: "Hunty",
     title: "Hunty - Decentralized Scavenger Hunt Game",
-    description: "Create thrilling scavenger hunts with multiple clues and challenges. Engage players in immersive treasure hunts and reward them with XLM tokens or exclusive NFTs on the Stellar blockchain.",
+    description:
+      "Create thrilling scavenger hunts with multiple clues and challenges. Engage players in immersive treasure hunts and reward them with XLM tokens or exclusive NFTs on the Stellar blockchain.",
     images: [
       {
         url: "https://hunty.app/og-image.png",
@@ -54,7 +52,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Hunty - Decentralized Scavenger Hunt Game",
-    description: "Create thrilling scavenger hunts with multiple clues and challenges. Engage players in immersive treasure hunts and reward them with XLM tokens or exclusive NFTs on the Stellar blockchain.",
+    description:
+      "Create thrilling scavenger hunts with multiple clues and challenges. Engage players in immersive treasure hunts and reward them with XLM tokens or exclusive NFTs on the Stellar blockchain.",
     images: ["https://hunty.app/og-image.png"],
     creator: "@huntyapp",
   },
@@ -72,12 +71,12 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://hunty.app",
   },
-}
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -104,6 +103,7 @@ export default function RootLayout({
       </head>
       <body className={`${hankenGrotesk.variable} antialiased`} suppressHydrationWarning>
         <Providers>
+          <TestnetWarning />
           <a href="#main-content" className="skip-to-content">
             Skip to content
           </a>
@@ -113,14 +113,12 @@ export default function RootLayout({
           <EnvironmentIndicator />
           <main id="main-content">
             <Suspense fallback={<PageSkeleton />}>
-              <PageTransitionWrapper>
-                {children}
-              </PageTransitionWrapper>
+              <PageTransitionWrapper>{children}</PageTransitionWrapper>
             </Suspense>
           </main>
           <Footer />
         </Providers>
       </body>
     </html>
-  )
+  );
 }

@@ -6,7 +6,7 @@
 import { migrateHuntScheduleFieldsInCollection } from "@/lib/huntScheduleMigration";
 import { applyHuntScheduleTransitions } from "@/lib/huntScheduling";
 import { normalizeHuntStatus } from "@/lib/huntStatus";
-import { getHuntsWithRatings } from "@/lib/reviews";
+import { getHuntsWithClientRatings } from "@/lib/reviewRatings";
 import type { Clue, HuntInvite, HuntStatus, StoredHunt } from "@/lib/types";
 
 export type { Clue, HuntInvite, HuntStatus, StoredHunt };
@@ -40,6 +40,11 @@ const HUNT_PROGRESS_KEY_PREFIX = "hunty_hunt_progress_";
 
 export const MAX_CLUES_PER_HUNT = 10;
 export const DEFAULT_HUNT_INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** How long a paid spotlight placement stays active. */
+export const SPOTLIGHT_DURATION_SECONDS = 24 * 60 * 60;
+/** Cost in XLM to promote a hunt into the spotlight carousel. */
+export const SPOTLIGHT_FEE_XLM = 1;
 
 // Seed timestamps: active hunts end 7 days from first load, completed hunts in the past.
 const NOW_SECONDS = Math.floor(Date.now() / 1000);
@@ -184,9 +189,7 @@ function createInviteUuid(): string {
   }
 
   if (typeof cryptoApi?.getRandomValues !== "function") {
-    throw new Error(
-      "Secure random token generation is not available in this browser.",
-    );
+    throw new Error("Secure random token generation is not available in this browser.");
   }
 
   const bytes = cryptoApi.getRandomValues(new Uint8Array(16));
@@ -293,6 +296,7 @@ function writeProgressEntry(
       resolveProgressStorageKey(progress.huntId, walletAddress),
       JSON.stringify(progress),
     );
+    localStorage.setItem(getProgressKey(progress.huntId), JSON.stringify(progress));
   } catch {
     // ignore
   }
@@ -431,10 +435,7 @@ function removeStorageKeysByPrefix(prefix: string): {
   return { reclaimedBytes, removedKeys };
 }
 
-function validateClueDraft(
-  clue: Omit<Clue, "id">,
-  index: number,
-): Omit<Clue, "id"> {
+function validateClueDraft(clue: Omit<Clue, "id">, index: number): Omit<Clue, "id"> {
   const question = clue.question.trim();
   const answer = clue.answer.trim();
 
@@ -460,13 +461,27 @@ function getExistingClueCount(huntId: number): number {
   return getHuntClues(huntId).length;
 }
 
+export function getHuntCapacity(
+  hunt: Pick<StoredHunt, "maxParticipants" | "maxCapacity"> | undefined,
+): number | undefined {
+  if (!hunt) return undefined;
+  return hunt.maxParticipants ?? hunt.maxCapacity;
+}
+
+export function getRemainingSpots(
+  hunt: Pick<StoredHunt, "playerCount" | "maxParticipants" | "maxCapacity"> | undefined,
+): number | undefined {
+  const capacity = getHuntCapacity(hunt);
+  if (capacity === undefined) return undefined;
+  return Math.max(0, capacity - (hunt?.playerCount ?? 0));
+}
+
 /** All hunts (for Game Arcade: filter by status === "Active"). Private, archived, and soft-deleted hunts are excluded. */
 export function getAllHunts(): StoredHunt[] {
-  return getHuntsWithRatings(readHunts().filter((h) => !h.is_private));
-  return readHunts().filter(
-    (h) => !h.is_private && !h.isArchived && !h.deletedAt,
+  const visible = applyHuntScheduleTransitions(readHunts()).filter(
+    (h) => !h.is_private && !h.isArchived && !h.deletedAt
   );
-  return applyHuntScheduleTransitions(readHunts()).filter((h) => !h.is_private);
+  return getHuntsWithClientRatings(visible);
 }
 
 /** All hunts including private ones (for creator dashboard). */
@@ -492,9 +507,7 @@ export function getHuntsByCreator(creator?: string): StoredHunt[] {
 
 /** Update a hunt's status (e.g. Draft → Active after activate_hunt). */
 export function updateHuntStatus(huntId: number, status: HuntStatus): void {
-  const hunts = readHunts().map((h) =>
-    h.id === huntId ? { ...h, status } : h,
-  );
+  const hunts = readHunts().map((h) => (h.id === huntId ? { ...h, status } : h));
   writeHunts(hunts);
 }
 
@@ -517,9 +530,7 @@ export function getRegisteredWallets(huntId: number): string[] {
 
 /** Update a hunt's end time (e.g. after extend_end_time). */
 export function updateHuntEndTime(huntId: number, newEndTime: number): void {
-  const hunts = readHunts().map((h) =>
-    h.id === huntId ? { ...h, endTime: newEndTime } : h,
-  );
+  const hunts = readHunts().map((h) => (h.id === huntId ? { ...h, endTime: newEndTime } : h));
   writeHunts(hunts);
 }
 
@@ -527,7 +538,7 @@ export function updateHuntEndTime(huntId: number, newEndTime: number): void {
 export function updateHuntRewardEscrow(
   huntId: number,
   rewardEscrowBalance: number,
-  rewardEscrowTxHash?: string,
+  rewardEscrowTxHash?: string
 ): void {
   const hunts = readHunts().map((h) =>
     h.id === huntId
@@ -536,9 +547,30 @@ export function updateHuntRewardEscrow(
           rewardEscrowBalance,
           ...(rewardEscrowTxHash ? { rewardEscrowTxHash } : {}),
         }
-      : h,
+      : h
   );
   writeHunts(hunts);
+}
+
+/** Set or clear a hunt's spotlight placement window. */
+export function updateHuntPromotion(huntId: number, promotedUntil?: number): void {
+  const hunts = readHunts().map((hunt) =>
+    hunt.id === huntId ? { ...hunt, promotedUntil } : hunt
+  )
+  writeHunts(hunts)
+}
+
+/** Returns true when a hunt is currently in the paid spotlight window. */
+export function isHuntPromoted(hunt: StoredHunt): boolean {
+  return typeof hunt.promotedUntil === "number" && hunt.promotedUntil > Math.floor(Date.now() / 1000)
+}
+
+/** Return active spotlight hunts sorted by the latest promotion expiry first. */
+export function getSpotlightHunts(limit = 6): StoredHunt[] {
+  return readHunts()
+    .filter((hunt) => hunt.status === "Active" && !hunt.is_private && isHuntPromoted(hunt))
+    .sort((left, right) => (right.promotedUntil ?? 0) - (left.promotedUntil ?? 0))
+    .slice(0, limit)
 }
 
 /** Delete multiple hunts by IDs. */
@@ -555,7 +587,7 @@ export function deleteHunts(ids: number[]): void {
 /** Archive (Cancel) multiple hunts by IDs. */
 export function archiveHunts(ids: number[]): void {
   const hunts = readHunts().map((h) =>
-    ids.includes(h.id) ? { ...h, status: "Cancelled" as HuntStatus } : h,
+    ids.includes(h.id) ? { ...h, status: "Cancelled" as HuntStatus } : h
   );
   writeHunts(hunts);
   ids.forEach((huntId) => {
@@ -565,17 +597,13 @@ export function archiveHunts(ids: number[]): void {
 
 /** Hide hunts from public view (data preserved) — used by creator archive/unarchive flow. */
 export function hideHuntsFromPublic(ids: number[]): void {
-  const hunts = readHunts().map((h) =>
-    ids.includes(h.id) ? { ...h, isArchived: true } : h,
-  );
+  const hunts = readHunts().map((h) => (ids.includes(h.id) ? { ...h, isArchived: true } : h));
   writeHunts(hunts);
 }
 
 /** Restore hidden hunts to public view. */
 export function unhideHuntsFromPublic(ids: number[]): void {
-  const hunts = readHunts().map((h) =>
-    ids.includes(h.id) ? { ...h, isArchived: false } : h,
-  );
+  const hunts = readHunts().map((h) => (ids.includes(h.id) ? { ...h, isArchived: false } : h));
   writeHunts(hunts);
 }
 
@@ -584,7 +612,7 @@ export function softDeleteHunts(ids: number[]): void {
   const now = Math.floor(Date.now() / 1000);
   const recoveryWindow = 30 * 86400; // 30 days in seconds
   const hunts = readHunts().map((h) =>
-    ids.includes(h.id) ? { ...h, deletedAt: now, recoveryWindow } : h,
+    ids.includes(h.id) ? { ...h, deletedAt: now, recoveryWindow } : h
   );
   writeHunts(hunts);
 }
@@ -592,9 +620,7 @@ export function softDeleteHunts(ids: number[]): void {
 /** Restore soft-deleted hunts by IDs. */
 export function restoreHunts(ids: number[]): void {
   const hunts = readHunts().map((h) =>
-    ids.includes(h.id)
-      ? { ...h, deletedAt: undefined, recoveryWindow: undefined }
-      : h,
+    ids.includes(h.id) ? { ...h, deletedAt: undefined, recoveryWindow: undefined } : h
   );
   writeHunts(hunts);
 }
@@ -637,20 +663,15 @@ export function getExpiredSoftDeletedHunts(): StoredHunt[] {
 
 /** Get a single hunt by ID */
 export function getHuntById(id: number): StoredHunt | undefined {
-  const hunt = applyHuntScheduleTransitions(readHunts()).find(
-    (candidate) => candidate.id === id,
-  );
-  return hunt ? getHuntsWithRatings([hunt])[0] : undefined;
+  const hunt = applyHuntScheduleTransitions(readHunts()).find((candidate) => candidate.id === id);
+  return hunt ? getHuntsWithClientRatings([hunt])[0] : undefined;
 }
 
 /**
  * Generate and persist a new invite for a private hunt.
  * Generating a new invite immediately invalidates any previously issued link.
  */
-export function generateHuntInvite(
-  huntId: number,
-  ttlMs = DEFAULT_HUNT_INVITE_TTL_MS,
-): HuntInvite {
+export function generateHuntInvite(huntId: number, ttlMs = DEFAULT_HUNT_INVITE_TTL_MS): HuntInvite {
   if (!Number.isFinite(ttlMs) || ttlMs <= 0) {
     throw new Error("Invite expiration must be greater than 0.");
   }
@@ -673,9 +694,7 @@ export function generateHuntInvite(
   };
 
   writeHunts(
-    hunts.map((candidate) =>
-      candidate.id === huntId ? { ...candidate, invite } : candidate,
-    ),
+    hunts.map((candidate) => (candidate.id === huntId ? { ...candidate, invite } : candidate))
   );
 
   return invite;
@@ -694,7 +713,7 @@ export function revokeHuntInvite(huntId: number): boolean {
       const withoutInvite = { ...candidate };
       delete withoutInvite.invite;
       return withoutInvite;
-    }),
+    })
   );
 
   return true;
@@ -704,7 +723,7 @@ export function revokeHuntInvite(huntId: number): boolean {
 export function validateHuntInvite(
   hunt: StoredHunt | undefined,
   suppliedToken: string | null | undefined,
-  now = Date.now(),
+  now = Date.now()
 ): HuntInviteValidation {
   if (!hunt) return { isValid: false, reason: "invalid" };
   if (!hunt.is_private) return { isValid: true, reason: "public" };
@@ -723,17 +742,13 @@ export function validateHuntInvite(
 export function validateHuntInviteToken(
   huntId: number,
   suppliedToken: string | null | undefined,
-  now = Date.now(),
+  now = Date.now()
 ): HuntInviteValidation {
   return validateHuntInvite(getHuntById(huntId), suppliedToken, now);
 }
 
 /** Build the canonical URL creators copy from the dashboard. */
-export function buildHuntInviteUrl(
-  huntId: number,
-  token: string,
-  baseUrl?: string,
-): string {
+export function buildHuntInviteUrl(huntId: number, token: string, baseUrl?: string): string {
   const origin =
     baseUrl ??
     (typeof window !== "undefined" ? window.location.origin : undefined) ??
@@ -752,8 +767,7 @@ export function getHuntPool(huntId: number) {
     rewardPool: hunt.rewardPool ?? 0,
     poolBalance: hunt.poolBalance ?? hunt.rewardPool ?? 0,
     distribution: hunt.rewardDistribution ?? [],
-    lowThreshold:
-      hunt.poolLowBalanceThreshold ?? Math.max(1, (hunt.rewardPool ?? 0) * 0.2),
+    lowThreshold: hunt.poolLowBalanceThreshold ?? Math.max(1, (hunt.rewardPool ?? 0) * 0.2),
   };
 }
 
@@ -780,10 +794,7 @@ export function topUpPool(huntId: number, amount: number): boolean {
 }
 
 /** Withdraw unclaimed rewards after a hunt ends or is not active anymore. */
-export function withdrawUnclaimedRewards(
-  huntId: number,
-  amount: number,
-): boolean {
+export function withdrawUnclaimedRewards(huntId: number, amount: number): boolean {
   const hunt = getHuntById(huntId);
   if (!hunt) return false;
   if (hunt.status === "Active") return false;
@@ -796,7 +807,7 @@ export function withdrawUnclaimedRewards(
           poolBalance: prevBalance - withdrawAmount,
           rewardPool: Math.max(0, (h.rewardPool ?? 0) - withdrawAmount),
         }
-      : h,
+      : h
   );
   writeHunts(hunts);
   return true;
@@ -805,7 +816,7 @@ export function withdrawUnclaimedRewards(
 /** Set a distribution plan for a hunt's reward pool. */
 export function setDistributionPlan(
   huntId: number,
-  distribution: { place: number; amount: number }[],
+  distribution: { place: number; amount: number }[]
 ) {
   const hunts = readHunts().map((h) =>
     h.id === huntId
@@ -815,7 +826,7 @@ export function setDistributionPlan(
           rewardPool: distribution.reduce((s, d) => s + d.amount, 0),
           poolBalance: distribution.reduce((s, d) => s + d.amount, 0),
         }
-      : h,
+      : h
   );
   writeHunts(hunts);
 }
@@ -825,8 +836,7 @@ export function isPoolLow(huntId: number): boolean {
   const hunt = getHuntById(huntId);
   if (!hunt) return false;
   const balance = hunt.poolBalance ?? hunt.rewardPool ?? 0;
-  const threshold =
-    hunt.poolLowBalanceThreshold ?? Math.max(1, (hunt.rewardPool ?? 0) * 0.2);
+  const threshold = hunt.poolLowBalanceThreshold ?? Math.max(1, (hunt.rewardPool ?? 0) * 0.2);
   return balance < threshold;
 }
 
@@ -836,6 +846,7 @@ export function addHunt(hunt: StoredHunt): void {
   if (hunts.some((h) => h.id === hunt.id)) return;
   const normalized = {
     ...hunt,
+    maxParticipants: hunt.maxParticipants ?? hunt.maxCapacity,
     status: normalizeHuntStatus(hunt.status) as StoredHunt["status"],
   };
   writeHunts([...hunts, normalized]);
@@ -878,9 +889,7 @@ export function saveCluesLocallyBatch(clues: Omit<Clue, "id">[]): number[] {
   writeClues([...all, ...withIds]);
 
   const hunts = readHunts().map((hunt) =>
-    hunt.id === huntId
-      ? { ...hunt, cluesCount: hunt.cluesCount + withIds.length }
-      : hunt,
+    hunt.id === huntId ? { ...hunt, cluesCount: hunt.cluesCount + withIds.length } : hunt
   );
   writeHunts(hunts);
 
@@ -888,11 +897,7 @@ export function saveCluesLocallyBatch(clues: Omit<Clue, "id">[]): number[] {
 }
 
 /** Update an existing clue's answer or other fields. Returns true if updated. */
-export function updateClueAnswer(
-  huntId: number,
-  clueId: number,
-  answer: string,
-): boolean {
+export function updateClueAnswer(huntId: number, clueId: number, answer: string): boolean {
   const all = readClues();
   const idx = all.findIndex((c) => c.huntId === huntId && c.id === clueId);
   if (idx === -1) return false;
@@ -942,6 +947,7 @@ export function advanceHuntProgress(
   nextClueIndex: number,
   totalClues: number,
   walletAddress?: string | null,
+  totalClues: number
 ): HuntProgressSnapshot {
   const current = getHuntProgress(huntId, walletAddress);
   const completed = nextClueIndex >= totalClues;
@@ -1030,9 +1036,7 @@ export const getHunt = (id: string) => {
  */
 export function getFeaturedHunts(limit = 3): StoredHunt[] {
   const now = Math.floor(Date.now() / 1000);
-  const active = readHunts().filter(
-    (h) => h.status === "Active" && !h.is_private,
-  );
+  const active = readHunts().filter((h) => h.status === "Active" && !h.is_private);
 
   const scored = active.map((hunt) => {
     let score = 0;
@@ -1081,7 +1085,7 @@ export function duplicateHunt(huntId: number): StoredHunt | undefined {
     rewardEscrowTxHash: undefined,
     rewardEscrowBalance: undefined,
     playerCount: 0,
-    maxCapacity: original.maxCapacity,
+    maxParticipants: original.maxParticipants ?? original.maxCapacity,
     createdAt: nowSeconds,
     startTime: undefined,
     endTime: undefined,
@@ -1096,17 +1100,10 @@ export function duplicateHunt(huntId: number): StoredHunt | undefined {
 
   const originalClues = getHuntClues(huntId);
   for (const clue of originalClues) {
+    const { id, ...clueWithoutId } = clue;
     saveClueLocally({
+      ...clueWithoutId,
       huntId: newId,
-      question: clue.question,
-      answer: clue.answer,
-      points: clue.points,
-      hint: clue.hint,
-      hintCost: clue.hintCost,
-      difficulty: clue.difficulty,
-      latitude: clue.latitude,
-      longitude: clue.longitude,
-      geofenceRadiusMeters: clue.geofenceRadiusMeters,
     });
   }
 
@@ -1121,3 +1118,4 @@ export function setLocalFeaturedHunt(huntId: number | null): void {
   }));
   writeHunts(hunts);
 }
+ 

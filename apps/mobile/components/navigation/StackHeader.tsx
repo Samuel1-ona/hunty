@@ -16,7 +16,7 @@ interface StackHeaderProps {
   };
   options: {
     title?: string;
-    headerTitle?: string | ((props: any) => React.ReactNode);
+    headerTitle?: string | ((props: HeaderRenderArgs) => React.ReactNode);
     headerTintColor?: string;
     headerRight?: (props: HeaderRenderArgs) => React.ReactNode;
   };

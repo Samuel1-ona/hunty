@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { z } from "zod"
 
 import {
   calculateScore,
@@ -9,58 +10,50 @@ import {
   recordAnswer,
   trackClueSubmission,
   verifyAnswer,
-} from "@/lib/anti-cheat"
+} from "@/lib/antiCheatDb"
 import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit"
 import { getServerClue } from "@/lib/server/seedClues"
 import { ForbiddenError, NotFoundError, RateLimitError, ValidationError } from "@/lib/api/errors"
 import { withErrorHandling } from "@/lib/api/withErrorHandling"
 import { recordHintUsage } from "@/lib/analytics"
 
+const answerSchema = z.object({
+  huntId: z.number().int().positive(),
+  clueId: z.number().int().positive(),
+  wallet: z.string().min(56).max(56),
+  answer: z.string().min(1).max(200).trim(),
+  hintsUsed: z.number().int().min(0).max(3).optional().default(0),
+  clientTimestamp: z.number().optional(),
+})
+
 export const POST = withErrorHandling(async (req: Request) => {
   const ip = getIP(req)
 
-  const { success: ipSuccess, reset: ipReset } = rateLimit(ip, {
-    limit: getConfig().maxSubmissionsPerWindow,
-    windowMs: getConfig().submissionWindowMs,
+  const config = await getConfig()
+  const { success: ipSuccess, reset: ipReset } = await rateLimit(ip, {
+    limit: config.maxSubmissionsPerWindow,
+    windowMs: config.submissionWindowMs,
   })
   if (!ipSuccess) {
     return rateLimitResponse(ipReset)
   }
 
-  let body: {
-    huntId?: number
-    clueId?: number
-    answer?: string
-    wallet?: string
-    clientTimestamp?: number
-    /** Number of progressive hints the player revealed before submitting. */
-    hintsUsed?: number
-  }
+  let body: unknown
   try {
     body = await req.json()
   } catch {
     throw new ValidationError("Invalid request body")
   }
 
-  const { huntId, clueId, answer, wallet, clientTimestamp, hintsUsed } = body
-
-  if (!huntId || typeof huntId !== "number") {
-    throw new ValidationError("huntId is required", { field: "huntId" })
-  }
-  if (!clueId || typeof clueId !== "number") {
-    throw new ValidationError("clueId is required", { field: "clueId" })
-  }
-  if (!answer || typeof answer !== "string" || answer.trim().length === 0) {
-    throw new ValidationError("answer is required", { field: "answer" })
-  }
-  if (!wallet || typeof wallet !== "string" || wallet.trim().length === 0) {
-    throw new ValidationError("wallet is required", { field: "wallet" })
+  const parsed = answerSchema.safeParse(body)
+  if (!parsed.success) {
+    const field = parsed.error.issues[0]?.path?.[0]
+    throw new ValidationError(parsed.error.issues[0]?.message ?? "Validation failed", { field })
   }
 
-  // Clamp hintsUsed to a sane range (0-3) — never trust the client blindly
-  const validatedHintsUsed = Math.min(3, Math.max(0, typeof hintsUsed === "number" ? Math.floor(hintsUsed) : 0))
+  const { huntId, clueId, answer, wallet, clientTimestamp, hintsUsed: validatedHintsUsed } = parsed.data
 
-  if (isBanned(wallet, ip)) {
+  if (await isBanned(wallet, ip)) {
     throw new ForbiddenError("Account is banned due to suspicious activity")
   }
 
@@ -69,27 +62,27 @@ export const POST = withErrorHandling(async (req: Request) => {
     throw new NotFoundError("Clue not found", { huntId, clueId })
   }
 
-  const { allowed: intervalAllowed, waitMs } = checkMinInterval(wallet, huntId, clueId)
+  const { allowed: intervalAllowed, waitMs } = await checkMinInterval(wallet, huntId, clueId)
   if (!intervalAllowed) {
     throw new RateLimitError(`Please wait ${Math.ceil(waitMs / 1000)} seconds before submitting again`, {
       waitMs,
     })
   }
 
-  trackClueSubmission(wallet, huntId, clueId)
+  await trackClueSubmission(wallet, huntId, clueId)
 
-  const correct = await verifyAnswer(huntId, clueId, answer.trim())
+  const correct = await verifyAnswer(huntId, clueId, answer)
 
-  const anomalyFlags = detectAnomalies(wallet, ip, huntId, clueId, correct)
+  const anomalyFlags = await detectAnomalies(wallet, ip, huntId, clueId, correct)
 
-  const { score, bonusPoints } = calculateScore(huntId, clueId, correct)
+  const { score, bonusPoints } = await calculateScore(huntId, clueId, correct)
 
-  recordAnswer(
+  await recordAnswer(
     huntId,
     clueId,
     wallet,
     ip,
-    answer.trim(),
+    answer,
     correct,
     clientTimestamp ?? null,
     score,

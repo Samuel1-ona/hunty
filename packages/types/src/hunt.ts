@@ -4,7 +4,14 @@
 
 import type { Reward, RewardType } from "./reward";
 
-export type HuntStatus = "Active" | "Completed" | "Draft" | "Cancelled";
+export type HuntStatus =
+  | "Active"
+  | "Completed"
+  | "Draft"
+  | "Cancelled"
+  | "PendingReview"
+  | "Scheduled"
+  | "Ended";
 
 /** Broad hunt category used in discovery filters. */
 export type HuntCategory = "Urban" | "Campus" | "Office" | "Museum" | "General";
@@ -46,7 +53,9 @@ export interface StoredHunt {
   rewardEscrowBalance?: number;
   /** Creator-side participant count snapshot for dashboard sorting. */
   playerCount?: number;
-  /** Max number of participants for limited spots */
+  /** Max number of participants for limited spots. */
+  maxParticipants?: number;
+  /** @deprecated Use `maxParticipants`. */
   maxCapacity?: number;
   /** Unix timestamp in seconds when the hunt draft was created locally. */
   createdAt?: number;
@@ -89,4 +98,5 @@ export interface HuntDraft {
   code: string;
   image?: string;
   sequential?: boolean;
+  maxParticipants?: number;
 }

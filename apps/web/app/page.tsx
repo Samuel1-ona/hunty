@@ -1,120 +1,118 @@
-"use client"
+"use client";
 
+import { EmptyState } from "@/components/QueryState";
 import { useInfiniteQuery,useQueryClient } from "@tanstack/react-query"
 import { useWindowVirtualizer } from "@tanstack/react-virtual"
-import { ArrowRight, HelpCircle,Search, Trophy, X } from "lucide-react"
-import dynamic from "next/dynamic"
 import Image from "next/image"
 import Link from "next/link"
 import dynamic from "next/dynamic"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { X, ArrowRight, Trophy, Search, HelpCircle } from "lucide-react"
 import { Card, CardDescription, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { X, ArrowRight, Trophy, Search, HelpCircle, Compass } from "lucide-react"
+import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
-import { HuntCardSkeletonGrid } from "@/components/LoadingSkeletons"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Header } from "@/components/Header"
-import { getAllHunts, getHunt, type StoredHunt } from "@/lib/huntStore"
-import { LeaderboardTable } from "@/components/LeaderBoardTable"
-import { EmptyState } from "@/components/EmptyState"
-import { HuntOfTheWeekBanner } from "@/components/HuntOfTheWeekBanner"
-import { hankenGrotesk } from "@/lib/font"
-import { HuntCoverImage } from "@/components/HuntCoverImage"
+import { X, ArrowRight, Trophy, Search, HelpCircle } from "lucide-react"
+import { getHuntCapacity, getRemainingSpots } from "@/lib/huntStore"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-
-import { Footer } from "@/components/Footer"
 import { Header } from "@/components/Header"
 import { HuntCoverImage } from "@/components/HuntCoverImage"
 import { HuntOfTheWeekBanner } from "@/components/HuntOfTheWeekBanner"
-import { LeaderboardTable } from "@/components/LeaderBoardTable"
 import { HuntCardSkeletonGrid } from "@/components/LoadingSkeletons"
-import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { usePlayerCounts } from "@/hooks/usePlayerCounts"
 import { useRecentlyCompleted } from "@/hooks/useRecentlyCompleted"
 import { hankenGrotesk } from "@/lib/font"
-import { getAllHunts, getHunt, type StoredHunt } from "@/lib/huntStore"
+import { getAllHunts, getHunt, getSpotlightHunts, isHuntPromoted, type StoredHunt } from "@/lib/huntStore"
 import { queryCachePolicy, queryKeys } from "@/lib/queryKeys"
 import { StarRating } from "@/components/StarRating"
 import { FavoriteButton } from "@/components/FavoriteButton"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import type { PlayerCountResult } from "@/lib/types"
 
 const OnboardingTour = dynamic(() => import("@/components/OnboardingTour"), {
   ssr: false,
 })
 
+const LeaderboardTable = dynamic(
+  () => import("@/components/LeaderBoardTable").then((mod) => mod.LeaderboardTable),
+  {
+    ssr: false,
+  }
+)
+
 const FeaturedHunts = dynamic(
   () => import("@/components/FeaturedHunts").then((mod) => mod.FeaturedHunts),
   {
     loading: () => <Skeleton className="h-44 w-full rounded-2xl" />,
   }
-)
+);
 
 const GlobalActivityFeed = dynamic(
   () => import("@/components/GlobalActivityFeed").then((mod) => mod.GlobalActivityFeed),
   {
+    ssr: false,
     loading: () => <Skeleton className="h-40 w-full rounded-2xl" />,
   }
-)
+);
 
 const RecentlyCompletedSection = dynamic(
   () => import("@/components/RecentlyCompletedSection").then((mod) => mod.RecentlyCompletedSection),
   {
     loading: () => <Skeleton className="h-40 w-full rounded-2xl" />,
   }
-)
+);
 
 interface WalletOption {
-  id: string
-  name: string
-  icon: string
-  description?: string
+  id: string;
+  name: string;
+  icon: string;
+  description?: string;
 }
 
-const walletOptions: WalletOption[] = []
+const walletOptions: WalletOption[] = [];
 
-const ACTIVE_PAGE_SIZE = 12
-const INACTIVE_PAGE_SIZE = 6
-const ACTIVE_GRID_GAP = 24
-const ACTIVE_CARD_ESTIMATED_HEIGHT = 360
+const ACTIVE_PAGE_SIZE = 12;
+const INACTIVE_PAGE_SIZE = 6;
+const ACTIVE_GRID_GAP = 24;
+const ACTIVE_CARD_ESTIMATED_HEIGHT = 360;
 
 function sortByRecentFirst(a: StoredHunt, b: StoredHunt): number {
-  const aSortTime = a.endTime ?? a.startTime ?? 0
-  const bSortTime = b.endTime ?? b.startTime ?? 0
-  return bSortTime - aSortTime
+  const aSortTime = a.endTime ?? a.startTime ?? 0;
+  const bSortTime = b.endTime ?? b.startTime ?? 0;
+  return bSortTime - aSortTime;
 }
 
 function fetchInactiveHunts() {
   return getAllHunts()
     .filter((hunt) => hunt.status !== "Active" && !hunt.is_private)
-    .sort(sortByRecentFirst)
+    .sort(sortByRecentFirst);
 }
 
 // Active and Completed hunts for the public Game Arcade.
 // Private hunts (is_private=true) are excluded from the public arcade.
 function fetchAllHunts() {
-  return getAllHunts().filter((h) => (h.status === "Active" || h.status === "Completed") && !h.is_private)
+  return getAllHunts().filter(
+    (h) => (h.status === "Active" || h.status === "Completed") && !h.is_private
+  );
 }
 
 function getActiveGridColumnCount(width: number): number {
-  if (width >= 1280) return 4
-  if (width >= 1024) return 3
-  if (width >= 640) return 2
-  return 1
+  if (width >= 1280) return 4;
+  if (width >= 1024) return 3;
+  if (width >= 640) return 2;
+  return 1;
 }
 
 function ActiveHuntCard({
   hunt,
   playerCount,
 }: {
-  hunt: StoredHunt
-  playerCount?: PlayerCountResult
+  hunt: StoredHunt;
+  playerCount?: PlayerCountResult;
 }) {
   return (
     <Card className="h-full overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow relative">
@@ -131,6 +129,23 @@ function ActiveHuntCard({
           <CardTitle className="text-lg font-semibold line-clamp-2 dark:text-slate-100 flex-1">
             {hunt.title}
           </CardTitle>
+          {hunt.difficulty && (
+             <span
+              className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
+                hunt.difficulty === "Easy" ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-500/20 dark:text-green-300 dark:border-green-500/30" :
+                hunt.difficulty === "Medium" ? "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-300 dark:border-yellow-500/30" :
+                hunt.difficulty === "Hard" ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/30" :
+                "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/20 dark:text-purple-300 dark:border-purple-500/30"
+              }`}
+            >
+              {hunt.difficulty}
+            </span>
+          )}
+          {isHuntPromoted(hunt) && (
+            <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-semibold text-pink-700">
+              Promoted
+            </span>
+          )}
           {playerCount?.isTrending && (
             <span
               className="shrink-0 inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold text-orange-700"
@@ -140,7 +155,14 @@ function ActiveHuntCard({
             </span>
           )}
         </div>
-        <StarRating rating={hunt.averageRating} count={hunt.reviewCount} className="mb-2" />
+        <div className="flex items-center justify-between mb-2">
+          <StarRating rating={hunt.averageRating} count={hunt.reviewCount} />
+          {hunt.averageDifficulty != null && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600" title="Average Player Difficulty Rating">
+              Difficulty: {hunt.averageDifficulty}/4
+            </span>
+          )}
+        </div>
         <CardDescription className="text-sm text-slate-600 dark:text-slate-400 mb-4 line-clamp-3">
           {hunt.description}
         </CardDescription>
@@ -149,11 +171,15 @@ function ActiveHuntCard({
             <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-[11px] font-medium text-[#3737A4]">
               {hunt.cluesCount} {hunt.cluesCount === 1 ? "Clue" : "Clues"}
             </span>
-            <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-medium ${
-              hunt.rewardType === "XLM" ? "bg-green-50 text-green-700" :
-              hunt.rewardType === "NFT" ? "bg-purple-50 text-purple-700" :
-              "bg-amber-50 text-amber-700"
-            }`}>
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-medium ${
+                hunt.rewardType === "XLM"
+                  ? "bg-green-50 text-green-700"
+                  : hunt.rewardType === "NFT"
+                    ? "bg-purple-50 text-purple-700"
+                    : "bg-amber-50 text-amber-700"
+              }`}
+            >
               {hunt.rewardType} Reward
             </span>
             {playerCount && !playerCount.isLoading && !playerCount.error && (
@@ -164,13 +190,18 @@ function ActiveHuntCard({
                 {playerCount.count} player{playerCount.count !== 1 ? "s" : ""}
               </span>
             )}
+            {getHuntCapacity(hunt) !== undefined && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-medium text-indigo-700">
+                {getRemainingSpots(hunt)} of {getHuntCapacity(hunt)} spots left
+              </span>
+            )}
           </div>
           <div className="flex gap-2 mt-2 w-full justify-between">
             <Button
               size="sm"
               className="bg-gradient-to-r from-[#3737A4] to-[#0C0C4F] hover:opacity-90 text-white rounded-xl font-semibold h-8 text-[11px] px-3"
               onClick={() => {
-                window.location.href = `/hunt/${hunt.id}`
+                window.location.href = `/hunt/${hunt.id}`;
               }}
             >
               Play
@@ -180,7 +211,7 @@ function ActiveHuntCard({
               variant="ghost"
               className="text-[#3737A4] hover:bg-slate-100 dark:hover:bg-slate-700/50 flex items-center gap-1 h-8 text-[11px] font-semibold dark:text-blue-400"
               onClick={() => {
-                window.location.href = `/hunt/${hunt.id}/leaderboard`
+                window.location.href = `/hunt/${hunt.id}/leaderboard`;
               }}
             >
               <Trophy className="w-3.5 h-3.5" />
@@ -190,40 +221,40 @@ function ActiveHuntCard({
         </div>
       </div>
     </Card>
-  )
+  );
 }
 
 function VirtualizedActiveHuntsGrid({
   hunts,
   playerCounts,
 }: {
-  hunts: StoredHunt[]
-  playerCounts: ReturnType<typeof usePlayerCounts>["counts"]
+  hunts: StoredHunt[];
+  playerCounts: ReturnType<typeof usePlayerCounts>["counts"];
 }) {
-  const parentRef = useRef<HTMLDivElement | null>(null)
-  const [columnCount, setColumnCount] = useState(1)
-  const [scrollMargin, setScrollMargin] = useState(0)
-  const rowCount = Math.ceil(hunts.length / columnCount)
+  const parentRef = useRef<HTMLDivElement | null>(null);
+  const [columnCount, setColumnCount] = useState(1);
+  const [scrollMargin, setScrollMargin] = useState(0);
+  const rowCount = Math.ceil(hunts.length / columnCount);
 
   useEffect(() => {
-    const parent = parentRef.current
-    if (!parent) return
+    const parent = parentRef.current;
+    if (!parent) return;
 
     const updateGridMetrics = () => {
-      setColumnCount(getActiveGridColumnCount(parent.getBoundingClientRect().width))
-      setScrollMargin(window.scrollY + parent.getBoundingClientRect().top)
-    }
+      setColumnCount(getActiveGridColumnCount(parent.getBoundingClientRect().width));
+      setScrollMargin(window.scrollY + parent.getBoundingClientRect().top);
+    };
 
-    updateGridMetrics()
-    const resizeObserver = new ResizeObserver(updateGridMetrics)
-    resizeObserver.observe(parent)
-    window.addEventListener("resize", updateGridMetrics)
+    updateGridMetrics();
+    const resizeObserver = new ResizeObserver(updateGridMetrics);
+    resizeObserver.observe(parent);
+    window.addEventListener("resize", updateGridMetrics);
 
     return () => {
-      resizeObserver.disconnect()
-      window.removeEventListener("resize", updateGridMetrics)
-    }
-  }, [])
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", updateGridMetrics);
+    };
+  }, []);
 
   const rowVirtualizer = useWindowVirtualizer({
     count: rowCount,
@@ -231,17 +262,14 @@ function VirtualizedActiveHuntsGrid({
     gap: ACTIVE_GRID_GAP,
     overscan: 3,
     scrollMargin,
-  })
+  });
 
   return (
     <div ref={parentRef} className="relative w-full">
-      <div
-        className="relative w-full"
-        style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
-      >
+      <div className="relative w-full" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
         {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-          const startIndex = virtualRow.index * columnCount
-          const rowHunts = hunts.slice(startIndex, startIndex + columnCount)
+          const startIndex = virtualRow.index * columnCount;
+          const rowHunts = hunts.slice(startIndex, startIndex + columnCount);
 
           return (
             <div
@@ -262,23 +290,69 @@ function VirtualizedActiveHuntsGrid({
                   fallback={
                     <div className="h-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center min-h-[200px]">
                       <div className="flex flex-col items-center gap-2 text-slate-400 dark:text-slate-500 p-4 text-center">
-                        <Image src="/icons/logo.png" alt="Hunty logo" width={40} height={40} className="opacity-40" />
+                        <Image
+                          src="/icons/logo.png"
+                          alt="Hunty logo"
+                          width={40}
+                          height={40}
+                          className="opacity-40"
+                        />
                         <span className="text-xs font-medium">Unable to load hunt card</span>
                       </div>
                     </div>
                   }
                 >
-                  <ActiveHuntCard
-                    hunt={hunt}
-                    playerCount={playerCounts.get(String(hunt.id))}
-                  />
+                  <ActiveHuntCard hunt={hunt} playerCount={playerCounts.get(String(hunt.id))} />
                 </ErrorBoundary>
               ))}
             </div>
-          )
+          );
         })}
       </div>
     </div>
+  );
+}
+
+function SpotlightCarousel({ hunts }: { hunts: StoredHunt[] }) {
+  if (hunts.length === 0) return null
+
+  return (
+    <section className="mt-10 rounded-3xl border border-pink-100 bg-linear-to-r from-pink-50 via-white to-amber-50 p-6 shadow-sm">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Spotlight Hunts</h2>
+          <p className="text-sm text-slate-600">Featured creator placements for the next 24 hours.</p>
+        </div>
+        <span className="rounded-full bg-pink-100 px-3 py-1 text-xs font-semibold text-pink-700">
+          Paid placement
+        </span>
+      </div>
+      <div className="flex gap-4 overflow-x-auto pb-2">
+        {hunts.map((hunt) => (
+          <Link
+            key={hunt.id}
+            href={`/hunt/${hunt.id}`}
+            className="min-w-[280px] max-w-[320px] rounded-2xl border border-white/80 bg-white/90 p-5 shadow-sm transition-transform hover:-translate-y-0.5"
+          >
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <span className="rounded-full bg-pink-100 px-2.5 py-1 text-[11px] font-semibold text-pink-700">
+                Promoted
+              </span>
+              <span className="text-xs text-slate-500">
+                Ends {hunt.promotedUntil ? new Date(hunt.promotedUntil * 1000).toLocaleString() : "soon"}
+              </span>
+            </div>
+            <h3 className="text-lg font-semibold text-slate-900">{hunt.title}</h3>
+            <p className="mt-2 line-clamp-3 text-sm text-slate-600">{hunt.description}</p>
+            <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">
+              <span>{hunt.cluesCount} clues</span>
+              <span>•</span>
+              <span>{hunt.rewardType} rewards</span>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -286,41 +360,37 @@ const INACTIVE_CARD_ESTIMATED_HEIGHT = 200
 const INACTIVE_GRID_GAP = 24
 
 function getInactiveGridColumnCount(width: number): number {
-  if (width >= 1280) return 4
-  if (width >= 1024) return 3
-  if (width >= 640) return 2
-  return 1
+  if (width >= 1280) return 4;
+  if (width >= 1024) return 3;
+  if (width >= 640) return 2;
+  return 1;
 }
 
-function VirtualizedInactiveHuntsGrid({
-  hunts,
-}: {
-  hunts: StoredHunt[]
-}) {
-  const parentRef = useRef<HTMLDivElement | null>(null)
-  const [columnCount, setColumnCount] = useState(1)
-  const [scrollMargin, setScrollMargin] = useState(0)
-  const rowCount = Math.ceil(hunts.length / columnCount)
+function VirtualizedInactiveHuntsGrid({ hunts }: { hunts: StoredHunt[] }) {
+  const parentRef = useRef<HTMLDivElement | null>(null);
+  const [columnCount, setColumnCount] = useState(1);
+  const [scrollMargin, setScrollMargin] = useState(0);
+  const rowCount = Math.ceil(hunts.length / columnCount);
 
   useEffect(() => {
-    const parent = parentRef.current
-    if (!parent) return
+    const parent = parentRef.current;
+    if (!parent) return;
 
     const updateGridMetrics = () => {
-      setColumnCount(getInactiveGridColumnCount(parent.getBoundingClientRect().width))
-      setScrollMargin(window.scrollY + parent.getBoundingClientRect().top)
-    }
+      setColumnCount(getInactiveGridColumnCount(parent.getBoundingClientRect().width));
+      setScrollMargin(window.scrollY + parent.getBoundingClientRect().top);
+    };
 
-    updateGridMetrics()
-    const resizeObserver = new ResizeObserver(updateGridMetrics)
-    resizeObserver.observe(parent)
-    window.addEventListener("resize", updateGridMetrics)
+    updateGridMetrics();
+    const resizeObserver = new ResizeObserver(updateGridMetrics);
+    resizeObserver.observe(parent);
+    window.addEventListener("resize", updateGridMetrics);
 
     return () => {
-      resizeObserver.disconnect()
-      window.removeEventListener("resize", updateGridMetrics)
-    }
-  }, [])
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", updateGridMetrics);
+    };
+  }, []);
 
   const rowVirtualizer = useWindowVirtualizer({
     count: rowCount,
@@ -328,17 +398,14 @@ function VirtualizedInactiveHuntsGrid({
     gap: INACTIVE_GRID_GAP,
     overscan: 5,
     scrollMargin,
-  })
+  });
 
   return (
     <div ref={parentRef} className="relative w-full">
-      <div
-        className="relative w-full"
-        style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
-      >
+      <div className="relative w-full" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
         {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-          const startIndex = virtualRow.index * columnCount
-          const rowHunts = hunts.slice(startIndex, startIndex + columnCount)
+          const startIndex = virtualRow.index * columnCount;
+          const rowHunts = hunts.slice(startIndex, startIndex + columnCount);
 
           return (
             <div
@@ -363,7 +430,31 @@ function VirtualizedInactiveHuntsGrid({
                       <CardTitle className="text-lg font-semibold mb-2 line-clamp-2">
                         {hunt.title}
                       </CardTitle>
-                      <StarRating rating={hunt.averageRating} count={hunt.reviewCount} className="mb-2" />
+                      <StarRating
+                        rating={hunt.averageRating}
+                        count={hunt.reviewCount}
+                        className="mb-2"
+                      />
+                      {hunt.difficulty && (
+                        <div className="mb-2">
+                           <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
+                            hunt.difficulty === "Easy" ? "bg-green-50 text-green-700 border-green-200" :
+                            hunt.difficulty === "Medium" ? "bg-yellow-50 text-yellow-700 border-yellow-200" :
+                            hunt.difficulty === "Hard" ? "bg-red-50 text-red-700 border-red-200" :
+                            "bg-purple-50 text-purple-700 border-purple-200"
+                           }`}>
+                            {hunt.difficulty}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between mb-2">
+                        <StarRating rating={hunt.averageRating} count={hunt.reviewCount} />
+                        {hunt.averageDifficulty != null && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700 border border-slate-200" title="Average Player Difficulty Rating">
+                            Difficulty: {hunt.averageDifficulty}/4
+                          </span>
+                        )}
+                      </div>
                       <CardDescription className="text-sm text-slate-600 mb-4 line-clamp-3">
                         {hunt.description}
                       </CardDescription>
@@ -380,14 +471,15 @@ function VirtualizedInactiveHuntsGrid({
                 </Card>
               ))}
             </div>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }
 
 export default function GameArcade() {
+  const t = useTranslations("home")
   const queryClient = useQueryClient()
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false)
   const [isConnectingWallet, setIsConnectingWallet] = useState(false)
@@ -396,6 +488,9 @@ export default function GameArcade() {
   const [walletAddress, setWalletAddress] = useState("")
 
   const [visibleActiveCount, setVisibleActiveCount] = useState(ACTIVE_PAGE_SIZE)
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isLoadingMoreActive, setIsLoadingMoreActive] = useState(false)
   const [inactiveHunts, setInactiveHunts] = useState<StoredHunt[]>([])
   const [visibleInactiveCount, setVisibleInactiveCount] = useState(INACTIVE_PAGE_SIZE)
@@ -410,86 +505,49 @@ export default function GameArcade() {
 
   const isLoadedRef = useRef(false)
 
-  // Load initial filter states from URL/sessionStorage to persist and share search state
+  // Sync filter state from URL to component state
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search)
+    const q = searchParams.get("q") ?? "";
+    const reward = searchParams.get("reward") ?? "all";
+    const status = searchParams.get("status") ?? "Active";
+    const difficulty = searchParams.get("difficulty") ?? "all";
+    const category = searchParams.get("category") ?? "all";
+    const sortBy = searchParams.get("sortBy") ?? "newest";
 
-      const urlSearch = params.get("q")
-      if (urlSearch) setSearchQuery(urlSearch)
-
-      const urlReward = params.get("reward")
-      if (urlReward && ["all", "XLM", "NFT", "Both"].includes(urlReward)) {
-        setRewardFilter(urlReward as "all" | "XLM" | "NFT" | "Both")
-      }
-
-      const urlStatus = params.get("status")
-      if (urlStatus && ["all", "Active", "Completed"].includes(urlStatus)) {
-        setStatusFilter(urlStatus as "all" | "Active" | "Completed")
-      }
-
-      const urlDifficulty = params.get("difficulty")
-      if (urlDifficulty && ["all", "Easy", "Medium", "Hard"].includes(urlDifficulty)) {
-        setDifficultyFilter(urlDifficulty as "all" | "Easy" | "Medium" | "Hard")
-      }
-
-      const urlCategory = params.get("category")
-      if (urlCategory && ["all", "Urban", "Campus", "Office", "Museum", "General"].includes(urlCategory)) {
-        setCategoryFilter(urlCategory as "all" | "Urban" | "Campus" | "Office" | "Museum" | "General")
-      }
-
-      const urlSort = params.get("sortBy")
-      if (urlSort && ["newest", "oldest", "popular", "reward-high", "difficulty", "clues-high", "clues-low", "rating-high"].includes(urlSort)) {
-        setSortBy(urlSort as "newest" | "oldest" | "popular" | "reward-high" | "difficulty" | "clues-high" | "clues-low" | "rating-high")
-      }
-
-      const savedSearch = sessionStorage.getItem("arcade_searchQuery")
-      if (!urlSearch && savedSearch) setSearchQuery(savedSearch)
-
-      const savedReward = sessionStorage.getItem("arcade_rewardFilter")
-      if (!urlReward && savedReward && ["all", "XLM", "NFT", "Both"].includes(savedReward)) {
-        setRewardFilter(savedReward as "all" | "XLM" | "NFT" | "Both")
-      }
-
-      const savedStatus = sessionStorage.getItem("arcade_statusFilter")
-      if (!urlStatus && savedStatus && ["all", "Active", "Completed"].includes(savedStatus)) {
-        setStatusFilter(savedStatus as "all" | "Active" | "Completed")
-      }
-      isLoadedRef.current = true
+    setSearchQuery(q);
+    if (["all", "XLM", "NFT", "Both"].includes(reward)) {
+      setRewardFilter(reward as "all" | "XLM" | "NFT" | "Both");
     }
-  }, [])
-
-  // Sync states to sessionStorage on change
-  useEffect(() => {
-    if (isLoadedRef.current && typeof window !== "undefined") {
-      sessionStorage.setItem("arcade_searchQuery", searchQuery)
+    if (["all", "Active", "Completed"].includes(status)) {
+      setStatusFilter(status as "all" | "Active" | "Completed");
     }
-  }, [searchQuery])
-
-  useEffect(() => {
-    if (isLoadedRef.current && typeof window !== "undefined") {
-      sessionStorage.setItem("arcade_rewardFilter", rewardFilter)
+    if (["all", "Easy", "Medium", "Hard"].includes(difficulty)) {
+      setDifficultyFilter(difficulty as "all" | "Easy" | "Medium" | "Hard");
     }
-  }, [rewardFilter])
-
-  useEffect(() => {
-    if (isLoadedRef.current && typeof window !== "undefined") {
-      sessionStorage.setItem("arcade_statusFilter", statusFilter)
+    if (["all", "Urban", "Campus", "Office", "Museum", "General"].includes(category)) {
+      setCategoryFilter(category as "all" | "Urban" | "Campus" | "Office" | "Museum" | "General");
     }
-  }, [statusFilter])
+    if (["newest", "oldest", "popular", "reward-high", "difficulty", "clues-high", "clues-low", "rating-high"].includes(sortBy)) {
+      setSortBy(sortBy as "newest" | "oldest" | "popular" | "reward-high" | "difficulty" | "clues-high" | "clues-low" | "rating-high");
+    }
+  }, [searchParams]);
 
   useEffect(() => {
-    if (!isLoadedRef.current || typeof window === "undefined") return
-    const params = new URLSearchParams(window.location.search)
-    params.set("q", searchQuery)
-    params.set("reward", rewardFilter)
-    params.set("status", statusFilter)
-    params.set("difficulty", difficultyFilter)
-    params.set("category", categoryFilter)
-    params.set("sortBy", sortBy)
-    const next = `${window.location.pathname}?${params.toString()}`
-    window.history.replaceState(null, "", next)
-  }, [searchQuery, rewardFilter, statusFilter, difficultyFilter, categoryFilter, sortBy])
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (searchQuery) params.set("q", searchQuery); else params.delete("q");
+    if (rewardFilter !== "all") params.set("reward", rewardFilter); else params.delete("reward");
+    if (statusFilter !== "Active") params.set("status", statusFilter); else params.delete("status");
+    if (difficultyFilter !== "all") params.set("difficulty", difficultyFilter); else params.delete("difficulty");
+    if (categoryFilter !== "all") params.set("category", categoryFilter); else params.delete("category");
+    if (sortBy !== "newest") params.set("sortBy", sortBy); else params.delete("sortBy");
+
+    const queryString = params.toString();
+    const nextUrl = queryString ? `${pathname}?${queryString}` : pathname;
+
+    // Use replace to avoid adding to browser history for every filter change
+    router.replace(nextUrl, { scroll: false });
+  }, [searchQuery, rewardFilter, statusFilter, difficultyFilter, categoryFilter, sortBy]);
 
   // Load hunts using Infinite Query with cursor-based pagination
   const {
@@ -499,7 +557,16 @@ export default function GameArcade() {
     isFetchingNextPage,
     isLoading: isLoadingHunts,
   } = useInfiniteQuery({
-    queryKey: ["hunts", "infinite", statusFilter, rewardFilter, difficultyFilter, categoryFilter, searchQuery, sortBy],
+    queryKey: [
+      "hunts",
+      "infinite",
+      statusFilter,
+      rewardFilter,
+      difficultyFilter,
+      categoryFilter,
+      searchQuery,
+      sortBy,
+    ],
     queryFn: async ({ pageParam }) => {
       const cursorVal = pageParam !== null ? pageParam : "";
       const res = await fetch(
@@ -536,8 +603,8 @@ export default function GameArcade() {
   const displayedActiveHunts = useMemo(
     () => filteredHunts.slice(0, visibleActiveCount),
     [filteredHunts, visibleActiveCount]
-  )
-  const hasMoreActiveLoaded = visibleActiveCount < filteredHunts.length
+  );
+  const hasMoreActiveLoaded = visibleActiveCount < filteredHunts.length;
 
   // Retrieve total results count matching current filters
   const totalResults = useMemo(() => {
@@ -551,163 +618,164 @@ export default function GameArcade() {
         queryKey: queryKeys.hunts.detail(hunt.id),
         queryFn: () => getHunt(String(hunt.id)),
         staleTime: queryCachePolicy.hunts.staleTime,
-      })
-    })
-  }, [filteredHunts, queryClient])
+      });
+    });
+  }, [filteredHunts, queryClient]);
 
   // Get player counts for all active/visible hunts
   const allHuntIds = useMemo(() => filteredHunts.map((h) => String(h.id)), [filteredHunts]);
-  const { counts: playerCounts, refetch: refetchPlayerCounts } = usePlayerCounts(allHuntIds)
+  const { counts: playerCounts, refetch: refetchPlayerCounts } = usePlayerCounts(allHuntIds);
 
   // Refresh player counts whenever the hunt list loads/changes.
   useEffect(() => {
-    if (filteredHunts.length > 0) refetchPlayerCounts()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredHunts.length])
+    if (filteredHunts.length > 0) refetchPlayerCounts();
+  }, [filteredHunts.length, refetchPlayerCounts]);
 
   // Derive recently completed hunts from the local store (not limited by pagination)
   const allHuntsList = useMemo(() => {
     return fetchAllHunts();
-  }, [infiniteData]);
+  }, []);
 
   const searchSuggestions = useMemo(() => {
-    const uniqueTitles = Array.from(new Set(allHuntsList.map((hunt) => hunt.title)))
-    const normalized = searchQuery.trim().toLowerCase()
-    if (!normalized) return uniqueTitles.slice(0, 8)
-    return uniqueTitles
-      .filter((title) => title.toLowerCase().includes(normalized))
-      .slice(0, 8)
-  }, [allHuntsList, searchQuery])
+    const uniqueTitles = Array.from(new Set(allHuntsList.map((hunt) => hunt.title)));
+    const normalized = searchQuery.trim().toLowerCase();
+    if (!normalized) return uniqueTitles.slice(0, 8);
+    return uniqueTitles.filter((title) => title.toLowerCase().includes(normalized)).slice(0, 8);
+  }, [allHuntsList, searchQuery]);
 
   const recentlyCompleted = useRecentlyCompleted(allHuntsList);
+  const spotlightHunts = useMemo(() => getSpotlightHunts(), []);
 
   const visibleInactiveHunts = useMemo(
     () => inactiveHunts.slice(0, visibleInactiveCount),
     [inactiveHunts, visibleInactiveCount]
-  )
-  const hasMoreInactiveHunts = visibleInactiveCount < inactiveHunts.length
+  );
+  const hasMoreInactiveHunts = visibleInactiveCount < inactiveHunts.length;
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search)
+      const params = new URLSearchParams(window.location.search);
       if (params.get("tab") === "leaderboard") {
-        setActiveTab("leaderboard")
+        setActiveTab("leaderboard");
       }
     }
-  }, [])
+  }, []);
 
   // Sync/update inactive hunts when infiniteData changes (indicating new hunt modifications or state refresh)
   useEffect(() => {
-    setInactiveHunts(fetchInactiveHunts())
-    setVisibleInactiveCount(INACTIVE_PAGE_SIZE)
-  }, [infiniteData])
+    setInactiveHunts(fetchInactiveHunts());
+    setVisibleInactiveCount(INACTIVE_PAGE_SIZE);
+  }, [infiniteData]);
 
   const loadMoreInactiveHunts = useCallback(() => {
-    if (!hasMoreInactiveHunts || isLoadingMoreInactive) return
-    setIsLoadingMoreInactive(true)
+    if (!hasMoreInactiveHunts || isLoadingMoreInactive) return;
+    setIsLoadingMoreInactive(true);
     setTimeout(() => {
-      setVisibleInactiveCount((prev) => Math.min(prev + INACTIVE_PAGE_SIZE, inactiveHunts.length))
-      setIsLoadingMoreInactive(false)
-    }, 250)
-  }, [hasMoreInactiveHunts, inactiveHunts.length, isLoadingMoreInactive])
+      setVisibleInactiveCount((prev) => Math.min(prev + INACTIVE_PAGE_SIZE, inactiveHunts.length));
+      setIsLoadingMoreInactive(false);
+    }, 250);
+  }, [hasMoreInactiveHunts, inactiveHunts.length, isLoadingMoreInactive]);
 
   const showPreviousInactiveHunts = useCallback(() => {
-    setVisibleInactiveCount((prev) => Math.max(prev - INACTIVE_PAGE_SIZE, INACTIVE_PAGE_SIZE))
-  }, [])
+    setVisibleInactiveCount((prev) => Math.max(prev - INACTIVE_PAGE_SIZE, INACTIVE_PAGE_SIZE));
+  }, []);
 
-  const hasPreviousInactiveHunts = visibleInactiveCount > INACTIVE_PAGE_SIZE
+  const hasPreviousInactiveHunts = visibleInactiveCount > INACTIVE_PAGE_SIZE;
 
   // Active hunts: Load More fetches next API page then expands visible slice
   const loadMoreActiveHunts = useCallback(() => {
     if (hasMoreActiveLoaded) {
-      setIsLoadingMoreActive(true)
+      setIsLoadingMoreActive(true);
       setTimeout(() => {
-        setVisibleActiveCount((prev) => Math.min(prev + ACTIVE_PAGE_SIZE, filteredHunts.length))
-        setIsLoadingMoreActive(false)
-      }, 150)
+        setVisibleActiveCount((prev) => Math.min(prev + ACTIVE_PAGE_SIZE, filteredHunts.length));
+        setIsLoadingMoreActive(false);
+      }, 150);
     } else if (hasNextPage && !isFetchingNextPage) {
-      setIsLoadingMoreActive(true)
+      setIsLoadingMoreActive(true);
       fetchNextPage().then(() => {
-        setVisibleActiveCount((prev) => prev + ACTIVE_PAGE_SIZE)
-        setIsLoadingMoreActive(false)
-      })
+        setVisibleActiveCount((prev) => prev + ACTIVE_PAGE_SIZE);
+        setIsLoadingMoreActive(false);
+      });
     }
-  }, [hasMoreActiveLoaded, hasNextPage, isFetchingNextPage, fetchNextPage, filteredHunts.length])
+  }, [hasMoreActiveLoaded, hasNextPage, isFetchingNextPage, fetchNextPage, filteredHunts.length]);
 
   const showPreviousActiveHunts = useCallback(() => {
-    setVisibleActiveCount((prev) => Math.max(prev - ACTIVE_PAGE_SIZE, ACTIVE_PAGE_SIZE))
-  }, [])
+    setVisibleActiveCount((prev) => Math.max(prev - ACTIVE_PAGE_SIZE, ACTIVE_PAGE_SIZE));
+  }, []);
 
-  const hasPreviousActiveHunts = visibleActiveCount > ACTIVE_PAGE_SIZE
-  const canLoadMoreActive = hasMoreActiveLoaded || hasNextPage
+  const hasPreviousActiveHunts = visibleActiveCount > ACTIVE_PAGE_SIZE;
+  const canLoadMoreActive = hasMoreActiveLoaded || hasNextPage;
 
   // Save scroll position on scroll
   useEffect(() => {
-    let timeoutId: number
+    let timeoutId: number;
     const handleScroll = () => {
-      if (timeoutId) window.clearTimeout(timeoutId)
+      if (timeoutId) window.clearTimeout(timeoutId);
       timeoutId = window.setTimeout(() => {
-        sessionStorage.setItem("arcade_scroll_y", String(window.scrollY))
-      }, 100)
-    }
+        sessionStorage.setItem("arcade_scroll_y", String(window.scrollY));
+      }, 100);
+    };
 
-    window.addEventListener("scroll", handleScroll)
+    window.addEventListener("scroll", handleScroll);
     return () => {
-      window.removeEventListener("scroll", handleScroll)
-      if (timeoutId) window.clearTimeout(timeoutId)
-    }
-  }, [])
+      window.removeEventListener("scroll", handleScroll);
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, []);
 
   // Restore scroll position
   useEffect(() => {
     if (!isLoadingHunts && filteredHunts.length > 0) {
-      const savedScrollY = sessionStorage.getItem("arcade_scroll_y")
+      const savedScrollY = sessionStorage.getItem("arcade_scroll_y");
       if (savedScrollY) {
-        const targetY = parseInt(savedScrollY, 10)
+        const targetY = parseInt(savedScrollY, 10);
         if (!isNaN(targetY) && targetY > 0) {
           const timeoutId = setTimeout(() => {
-            window.scrollTo({ top: targetY, behavior: "instant" })
-          }, 150)
-          return () => clearTimeout(timeoutId)
+            window.scrollTo({ top: targetY, behavior: "instant" });
+          }, 150);
+          return () => clearTimeout(timeoutId);
         }
       }
     }
-  }, [isLoadingHunts, filteredHunts.length])
+  }, [isLoadingHunts, filteredHunts.length]);
 
   // Clear scroll position and reset pagination when filter state changes
   useEffect(() => {
-    sessionStorage.removeItem("arcade_scroll_y")
-    setVisibleActiveCount(ACTIVE_PAGE_SIZE)
-    setVisibleInactiveCount(INACTIVE_PAGE_SIZE)
-  }, [statusFilter, rewardFilter, difficultyFilter, categoryFilter, searchQuery, sortBy])
+    setSearchQuery("");
+    setRewardFilter("all");
+    setStatusFilter("Active");
+    setDifficultyFilter("all");
+    setCategoryFilter("all");
+    setSortBy("newest");
+    setVisibleActiveCount(ACTIVE_PAGE_SIZE);
+    setVisibleInactiveCount(INACTIVE_PAGE_SIZE);
+  }, [statusFilter, rewardFilter, difficultyFilter, categoryFilter, searchQuery, sortBy]);
 
   const clearAllFilters = () => {
-    setSearchQuery("")
-    setRewardFilter("all")
-    setStatusFilter("Active")
-    setDifficultyFilter("all")
-    setCategoryFilter("all")
-    setSortBy("newest")
-    setVisibleActiveCount(ACTIVE_PAGE_SIZE)
-    setVisibleInactiveCount(INACTIVE_PAGE_SIZE)
-  }
+    setSearchQuery("");
+    setRewardFilter("all");
+    setStatusFilter("Active");
+    setDifficultyFilter("all");
+    setCategoryFilter("all");
+    setSortBy("newest");
+    setVisibleInactiveCount(INACTIVE_PAGE_SIZE);
+  };
 
   const handleWalletSelect = () => {
-    setIsConnectingWallet(true)
+    setIsConnectingWallet(true);
     // Simulate wallet address generation
-    setWalletAddress("0xe5f...E5")
-  }
+    setWalletAddress("0xe5f...E5");
+  };
 
   const handleContinue = () => {
-    setIsWalletModalOpen(false)
-    setIsConnectingWallet(false)
-    setDisplayName("")
-  }
+    setIsWalletModalOpen(false);
+    setIsConnectingWallet(false);
+    setDisplayName("");
+  };
 
   const handleCreateGame = () => {
-    window.location.href = "/hunty"
-  }
-
+    window.location.href = "/hunty";
+  };
 
   return (
     <div
@@ -730,27 +798,39 @@ export default function GameArcade() {
             {/* logo */}
             <Image src="/icons/logo.png" alt="Logo" width={96} height={96} />
           </div>
-          <h1 className={`text-4xl md:text-5xl bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] bg-clip-text text-transparent font-bold mb-12 ${hankenGrotesk.variable} antialiased bg-gradient-to-br from-#3737A4 to-#0C0C4F mt-12`}>The Ultimate Web3 Game Arcade</h1>
+          <h1 className={`text-4xl md:text-5xl bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] bg-clip-text text-transparent font-bold mb-12 ${hankenGrotesk.variable} antialiased bg-gradient-to-br from-#3737A4 to-#0C0C4F mt-12`}>{t("title")}</h1>
+          <h1
+            className={`text-4xl md:text-5xl bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] bg-clip-text text-transparent font-bold mb-12 ${hankenGrotesk.variable} antialiased bg-gradient-to-br from-#3737A4 to-#0C0C4F mt-12`}
+          >
+            The Ultimate Web3 Game Arcade
+          </h1>
         </div>
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
           <Button className="bg-[#0C0C4F] hover:bg-slate-700 text-white px-6 py-3 rounded-lg text-xl font-black" onClick={handleCreateGame}>
-            Create Game
+            {t("createGame")}
           </Button>
           <Button asChild variant="outline" className="border-2 border-[#0C0C4F] text-[#0C0C4F] hover:bg-[#0C0C4F]/10 px-6 py-3 rounded-lg text-xl font-black">
-            <Link href="/dashboard">My Hunts</Link>
+            <Link href="/dashboard">{t("myHunts")}</Link>
           </Button>
           <Button
-            className={`px-6 py-3 rounded-lg text-xl font-black ${activeTab === "leaderboard"
-              ? "bg-[#3737A4] text-white"
-              : "bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-white hover:opacity-90"
-              }`}
+            className={`px-6 py-3 rounded-lg text-xl font-black ${
+              activeTab === "leaderboard"
+                ? "bg-[#3737A4] text-white"
+                : "bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-white hover:opacity-90"
+            }`}
             onClick={() => setActiveTab(activeTab === "leaderboard" ? "none" : "leaderboard")}
           >
-            Leaderboard
+            {t("leaderboard")}
           </Button>
-          <Button id="play-button" className="bg-[#E87785] hover:bg-[#d4606f] text-white px-6 py-3 rounded-lg text-xl font-black">Play Game</Button>
+          <Button asChild className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] hover:opacity-90 text-white px-6 py-3 rounded-lg text-xl font-black gap-2">
+            <Link href="/feed">
+              <Compass className="w-5 h-5" />
+              {t("huntFeed")}
+            </Link>
+          </Button>
+          <Button id="play-button" className="bg-[#E87785] hover:bg-[#d4606f] text-white px-6 py-3 rounded-lg text-xl font-black">{t("playGame")}</Button>
         </div>
 
         {/* Leaderboard Section */}
@@ -759,7 +839,7 @@ export default function GameArcade() {
             <div className="max-w-4xl mx-auto bg-[#f9f9ff] rounded-3xl p-8 border border-slate-100 shadow-inner">
               <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <h2 className="text-3xl font-bold bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-transparent bg-clip-text">
-                  Global Leaderboard
+                  {t("globalLeaderboard")}
                 </h2>
                 <div className="flex items-center gap-2">
                   <Button
@@ -787,26 +867,34 @@ export default function GameArcade() {
 
         {/* Game Link Input */}
         <div className="text-center mb-12">
-          <p className="text-slate-700 mb-4 font-medium">Enter Game Link</p>
+          <p className="text-slate-700 mb-4 font-medium">{t("enterGameLink")}</p>
           <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
             <Input
               type="url"
-              placeholder="https://www.galagorch.com/g/***"
+              placeholder={t("gameLinkPlaceholder")}
               value={gameLink}
               onChange={(e) => setGameLink(e.target.value)}
               className="flex-1 px-4 py-2 rounded-lg border-2 border-gray-300 focus:border-pink-400"
             />
-            <Button className="bg-[#E87785] hover:bg-[#d4606f] text-white px-6 py-3 rounded-lg text-xl font-black">Play Game</Button>
+            <Button className="bg-[#E87785] hover:bg-[#d4606f] text-white px-6 py-3 rounded-lg text-xl font-black">{t("playGame")}</Button>
+            <Button className="bg-[#E87785] hover:bg-[#d4606f] text-white px-6 py-3 rounded-lg text-xl font-black">
+              Play Game
+            </Button>
           </div>
         </div>
 
         {/* Game Cards */}
-        <div className={`flex flex-col sm:flex-row md:justify-between  bg-[#ececfa] backdrop-blur-md rounded-2xl border border-white/20 pl-6 pt-6 pb-16`}
+        <div
+          className={`flex flex-col sm:flex-row md:justify-between  bg-[#ececfa] backdrop-blur-md rounded-2xl border border-white/20 pl-6 pt-6 pb-16`}
           style={{
-            boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.1), inset 0 0 20px rgba(0, 0, 0, 0.15), 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-          }}>
+            boxShadow:
+              "inset 0 1px 0 0 rgba(255, 255, 255, 0.1), inset 0 0 20px rgba(0, 0, 0, 0.15), 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+          }}
+        >
           <div>
-            <div className="bg-gradient-to-br from-[#2F2FFF] to-[#E87785] bg-clip-text text-transparent font-normal text-4xl text-center mb-4 md:mb-0 md:text-start">How To Play Hunty</div>
+            <div className="bg-gradient-to-br from-[#2F2FFF] to-[#E87785] bg-clip-text text-transparent font-normal text-4xl text-center mb-4 md:mb-0 md:text-start">
+              How To Play Hunty
+            </div>
           </div>
 
           {/* Hunty Game */}
@@ -815,18 +903,45 @@ export default function GameArcade() {
               <Card className="flex-1 text-white justify-center max-w-56">
                 <div className="bg-gradient-to-br from-[#3737A4] to-[#0C0C4F] flex-1 rounded-t-lg p-3">
                   <CardTitle className="text-[13px] font-bold">What is the fastest bird?</CardTitle>
-                  <CardDescription className="text-[8px] mt-2 text-white">The Description appears here...Yorem ipsum dolor sit amet, consectetur adipiscing elit.</CardDescription>
+                  <CardDescription className="text-[8px] mt-2 text-white">
+                    The Description appears here...Yorem ipsum dolor sit amet, consectetur
+                    adipiscing elit.
+                  </CardDescription>
                   <div className="mt-2">
                     <Image src="/static-images/image1.png" alt="bird" width={132} height={132} />
                   </div>
                   <div className="mt-2">
-                    <Button className="bg-gradient-to-b from-[#2F2FFF]  to-[#E87785] sh-6 text-[7.76px] p-[3px]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-link-icon lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg><span>Hint To Unlock</span></Button>
+                    <Button className="bg-gradient-to-b from-[#2F2FFF]  to-[#E87785] sh-6 text-[7.76px] p-[3px]">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="lucide lucide-link-icon lucide-link"
+                      >
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                      </svg>
+                      <span>Hint To Unlock</span>
+                    </Button>
                   </div>
                 </div>
-                <div className="flex gap-1 bg-white items-center align-center p-3 rounded-b-lg
-                  ">
-                  <Input placeholder="Enter code to unlock" className="px-3.5 py-1 text-[8px] rounded-full" />
-                  <div className="bg-gradient-to-b from-[#3737A4]  to-[#0C0C4F] rounded-lg flex items-center justify-center p-2"><ArrowRight className="w-4 h-4" /></div>
+                <div
+                  className="flex gap-1 bg-white items-center align-center p-3 rounded-b-lg
+                  "
+                >
+                  <Input
+                    placeholder="Enter code to unlock"
+                    className="px-3.5 py-1 text-[8px] rounded-full"
+                  />
+                  <div className="bg-gradient-to-b from-[#3737A4]  to-[#0C0C4F] rounded-lg flex items-center justify-center p-2">
+                    <ArrowRight className="w-4 h-4" />
+                  </div>
                 </div>
               </Card>
 
@@ -834,24 +949,44 @@ export default function GameArcade() {
               <Card className="mr-[-80px] [clip-path:polygon(0_0,68%_0,68%_100%,0_100%)] hidden md:block">
                 <div className="bg-gradient-to-br from-[#3737A4] to-[#0C0C4F] text-white p-3 rounded-t-lg">
                   <CardTitle className="text-[13px] font-bold">What is the biggest bird?</CardTitle>
-                  <CardDescription className="text-[8px] mt-2 text-white">long legs, tiny brain </CardDescription>
+                  <CardDescription className="text-[8px] mt-2 text-white">
+                    long legs, tiny brain{" "}
+                  </CardDescription>
                   <div className="mt-2">
-                    <Button className="bg-gradient-to-b from-[#2F2FFF]  to-[#E87785] text-[8px]"> <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-link-icon lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg> <span className="text-[8px]">Hint To Unlock</span></Button>
+                    <Button className="bg-gradient-to-b from-[#2F2FFF]  to-[#E87785] text-[8px]">
+                      {" "}
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="lucide lucide-link-icon lucide-link"
+                      >
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                      </svg>{" "}
+                      <span className="text-[8px]">Hint To Unlock</span>
+                    </Button>
                   </div>
-
                 </div>
 
-                <div className="flex gap-1 bg-white items-center align-center p-3 rounded-b-lg
-                  ">
+                <div
+                  className="flex gap-1 bg-white items-center align-center p-3 rounded-b-lg
+                  "
+                >
                   <Input placeholder="Enter code to unlock" className="h-[19px] text-[8px]" />
-                  <div className="bg-gradient-to-b from-[#3737A4]  to-[#0C0C4F] rounded-md flex items-center justify-center p-0.5"><ArrowRight color="white" className="w-4 h-4" /></div>
+                  <div className="bg-gradient-to-b from-[#3737A4]  to-[#0C0C4F] rounded-md flex items-center justify-center p-0.5">
+                    <ArrowRight color="white" className="w-4 h-4" />
+                  </div>
                 </div>
               </Card>
-
             </div>
-
           </div>
-
         </div>
 
         {/* Global Activity Feed */}
@@ -867,6 +1002,8 @@ export default function GameArcade() {
         {/* Recently Completed — derived from the same hunt list, no extra fetch */}
         <RecentlyCompletedSection hunts={recentlyCompleted} />
 
+        <SpotlightCarousel hunts={spotlightHunts} />
+
         {/* Active Hunts Grid */}
         <div id="discovery-arcade" className="mt-10">
           <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-6 border-b border-slate-100 dark:border-white/5 pb-8">
@@ -877,15 +1014,21 @@ export default function GameArcade() {
                   variant="ghost"
                   size="sm"
                   className="text-xs font-semibold text-[#3737A4] dark:text-indigo-400 hover:underline gap-1.5 flex items-center p-1 h-auto"
-                  onClick={() => window.dispatchEvent(new CustomEvent("start-onboarding-tour", { detail: { tourType: "player" } }))}
+                  onClick={() =>
+                    window.dispatchEvent(
+                      new CustomEvent("start-onboarding-tour", { detail: { tourType: "player" } })
+                    )
+                  }
                 >
                   <HelpCircle className="w-3.5 h-3.5" />
                   Take Tour
                 </Button>
               </h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Find the perfect challenge for you</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Find the perfect challenge for you
+              </p>
             </div>
-            
+
             <div className="flex flex-col xl:flex-row items-center gap-4 w-full md:w-auto">
               {/* Status Filter */}
               <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full sm:w-auto">
@@ -925,7 +1068,9 @@ export default function GameArcade() {
               <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
                 <select
                   value={difficultyFilter}
-                  onChange={(e) => setDifficultyFilter(e.target.value as "all" | "Easy" | "Medium" | "Hard")}
+                  onChange={(e) =>
+                    setDifficultyFilter(e.target.value as "all" | "Easy" | "Medium" | "Hard")
+                  }
                   className="h-10 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#3737A4]/50 cursor-pointer"
                 >
                   <option value="all">All Difficulty</option>
@@ -936,7 +1081,11 @@ export default function GameArcade() {
 
                 <select
                   value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value as "all" | "Urban" | "Campus" | "Office" | "Museum" | "General")}
+                  onChange={(e) =>
+                    setCategoryFilter(
+                      e.target.value as "all" | "Urban" | "Campus" | "Office" | "Museum" | "General"
+                    )
+                  }
                   className="h-10 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#3737A4]/50 cursor-pointer"
                 >
                   <option value="all">All Categories</option>
@@ -961,11 +1110,21 @@ export default function GameArcade() {
                     ))}
                   </datalist>
                 </div>
-                
+
                 <select
                   value={sortBy}
                   onChange={(e) =>
-                    setSortBy(e.target.value as "newest" | "oldest" | "popular" | "reward-high" | "difficulty" | "clues-high" | "clues-low" | "rating-high")
+                    setSortBy(
+                      e.target.value as
+                        | "newest"
+                        | "oldest"
+                        | "popular"
+                        | "reward-high"
+                        | "difficulty"
+                        | "clues-high"
+                        | "clues-low"
+                        | "rating-high"
+                    )
                   }
                   className="h-10 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#3737A4]/50 cursor-pointer"
                 >
@@ -1004,7 +1163,9 @@ export default function GameArcade() {
             <div className="py-10">
               <EmptyState
                 icon={<Search className="w-10 h-10 text-slate-500 dark:text-slate-400" />}
-                title={searchQuery ? "No hunts match your search" : "No hunts yet, create your first!"}
+                title={
+                  searchQuery ? "No hunts match your search" : "No hunts yet, create your first!"
+                }
                 description={
                   searchQuery
                     ? "Try a different keyword or clear the search to see more hunts."
@@ -1018,7 +1179,10 @@ export default function GameArcade() {
             </div>
           ) : (
             <>
-              <VirtualizedActiveHuntsGrid hunts={displayedActiveHunts} playerCounts={playerCounts} />
+              <VirtualizedActiveHuntsGrid
+                hunts={displayedActiveHunts}
+                playerCounts={playerCounts}
+              />
 
               {(canLoadMoreActive || hasPreviousActiveHunts || isLoadingMoreActive) && (
                 <div className="flex items-center justify-center gap-3 mt-6">
@@ -1110,7 +1274,9 @@ export default function GameArcade() {
       <Dialog open={isWalletModalOpen} onOpenChange={setIsWalletModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader className="flex flex-row items-center justify-between">
-            <DialogTitle className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] bg-clip-text text-transparent font-semibold text-2xl">Connect a wallet</DialogTitle>
+            <DialogTitle className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] bg-clip-text text-transparent font-semibold text-2xl">
+              Connect a wallet
+            </DialogTitle>
             <Button
               variant="ghost"
               size="icon"
@@ -1134,7 +1300,9 @@ export default function GameArcade() {
                     <div className="text-left">
                       <div className="flex">
                         <div className="font-medium">{_wallet.name}</div>
-                        {_wallet.description && <div className="text-sm opacity-80">{_wallet.description}</div>}
+                        {_wallet.description && (
+                          <div className="text-sm opacity-80">{_wallet.description}</div>
+                        )}
                       </div>
                     </div>
                   </Button>
@@ -1148,12 +1316,18 @@ export default function GameArcade() {
           ) : (
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-slate-700 block mb-2">Wallet Address</label>
-                <div className="bg-[#e4e4e4] p-3 rounded-lg text-sm text-slate-600">{walletAddress}</div>
+                <label className="text-sm font-medium text-slate-700 block mb-2">
+                  Wallet Address
+                </label>
+                <div className="bg-[#e4e4e4] p-3 rounded-lg text-sm text-slate-600">
+                  {walletAddress}
+                </div>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-slate-700 block mb-2">Set a Display Name (optional)</label>
+                <label className="text-sm font-medium text-slate-700 block mb-2">
+                  Set a Display Name (optional)
+                </label>
                 <Input
                   placeholder="DisplayName"
                   value={displayName}
@@ -1173,15 +1347,12 @@ export default function GameArcade() {
           )}
         </DialogContent>
       </Dialog>
-
     </div>
-  )
+  );
 }
 
-
-
-
-{/* <Card>
+{
+  /* <Card>
 <div className={`p-8 flex-1 bg-[#ececfa] backdrop-blur-md rounded-2xl border border-white/20" style={{boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.1), inset 0 0 20px rgba(0, 0, 0, 0.15), 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)`}>
 <div className="grid grid-cols-5 gap-1.5 max-w-80 mx-auto">
          
@@ -1239,4 +1410,6 @@ export default function GameArcade() {
           CROSSBITES
         </Link>
         </Card>   
-   */}
+   */
+}
+ 

@@ -121,6 +121,7 @@ const ERROR_MESSAGE_MAP: Record<string, string> = {
     "This clue is locked. Solve the previous clue first.",
   CONTRACT_HUNT_NOT_ACTIVE: "This hunt is not currently active.",
   CONTRACT_HUNT_EXPIRED: "This hunt has expired.",
+  CONTRACT_HUNT_FULL: "This hunt has reached its participant cap.",
 
   // Registration-specific errors
   INVALID_HUNT_ID: "Invalid hunt ID. Please check the hunt and try again.",

@@ -1,35 +1,24 @@
 "use client"
 
-import Link from "next/link"
 import { useContext, useEffect, useMemo, useState } from "react"
+import Link from "next/link"
+import { formatISOString } from "@/lib/dateUtils"
+import { logger } from "@/lib/logger"
 
 import { Header } from "@/components/Header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { WalletContext, shortenAddress } from "@/lib/context/WalletContext"
-import { WalletAddress } from "@/components/WalletAddress"
-import { WalletIdenticon } from "@/components/WalletIdenticon"
 import { NftGallery } from "@/components/NftGallery"
 import { BadgeWall } from "@/components/BadgeWall"
-import { Header } from "@/components/Header"
 import { LevelBadge, LevelProgress } from "@/components/LevelBadge"
 import { ProfilePageSkeleton } from "@/components/LoadingSkeletons"
 import type { NftRewardDetail } from "@/components/NftDetailModal"
-import { NftGallery } from "@/components/NftGallery"
 import { RewardHistorySection } from "@/components/RewardHistorySection"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { shortenAddress,WalletContext } from "@/lib/context/WalletContext"
-import { formatISOString } from "@/lib/dateUtils"
-import { getPlayerAttempts } from "@/lib/huntAttemptHistory"
-import { logger } from "@/lib/logger"
 import { fetchPlayerRewardHistory } from "@/lib/rewardHistory"
-import type { HuntAttemptRecord } from "@/lib/types"
-import { get_player_stats } from "@/lib/contracts/player-stats"
-import type { PlayerStats } from "@/lib/types"
-import { useFavorites } from "@/hooks/useFavorites"
-import { getAllHunts, type StoredHunt } from "@/lib/huntStore"
-import { FavoriteButton } from "@/components/FavoriteButton"
+import { getPlayerAttempts } from "@/lib/huntAttemptHistory"
+import type { HuntAttemptRecord, ReferralStats } from "@/lib/types"
+import { getReferralStats } from "@/lib/referrals"
 
 // ---------------------------------------------------------------------------
 // #355 — Registered Hunts types and fetcher
@@ -194,13 +183,9 @@ export default function UserProfilePage() {
   const [rewardHistory, setRewardHistory] = useState<ReturnType<typeof fetchPlayerRewardHistory> extends Promise<infer U> ? U : never>([])
   const [registrations, setRegistrations] = useState<RegisteredHunt[]>([])
   const [attemptHistory, setAttemptHistory] = useState<HuntAttemptRecord[]>([])
-  const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null)
+  const [referralStats, setReferralStats] = useState<ReferralStats | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  
-  const { favorites } = useFavorites()
-  const allHunts = useMemo(() => getAllHunts(), [])
-  const favoriteHunts = useMemo(() => allHunts.filter((h) => favorites.includes(h.id)), [allHunts, favorites])
 
   useEffect(() => {
     if (!connected || !publicKey) {
@@ -208,7 +193,7 @@ export default function UserProfilePage() {
       setNftRewards([])
       setRegistrations([])
       setAttemptHistory([])
-      setPlayerStats(null)
+      setReferralStats(null)
       return
     }
 
@@ -262,21 +247,12 @@ export default function UserProfilePage() {
       }
     }
 
-    const loadPlayerStats = async () => {
-      try {
-        const stats = get_player_stats(publicKey!)
-        if (!cancelled) setPlayerStats(stats)
-      } catch (err) {
-        logger.error("Failed to load player stats:", err)
-      }
-    }
-
     load()
     loadRewards()
     loadRegistrations()
     loadRewardHistory()
     setAttemptHistory(getPlayerAttempts(publicKey))
-    loadPlayerStats()
+    setReferralStats(getReferralStats(publicKey, typeof window !== "undefined" ? window.location.origin : undefined))
 
     return () => {
       cancelled = true
@@ -313,13 +289,8 @@ export default function UserProfilePage() {
 
   const completedHunts = hunts.filter((h) => h.status === "Completed")
   const inProgressHunts = hunts.filter((h) => h.status === "In-Progress")
-  const totalXlmEarned = rewardHistory.reduce(
-    (sum, entry) => sum + (entry.type === "XLM" ? (entry.amount ?? 0) : 0),
-    0,
-  )
 
   const displayAddress = publicKey ? shortenAddress(publicKey) : "Not connected"
-  const avatarLabel = publicKey ? publicKey.slice(1, 3).toUpperCase() : "HP"
 
   return (
     <div className="min-h-screen bg-linear-to-tr from-blue-100 bg-purple-100 to-[#f9f9ff] pb-20">
@@ -336,22 +307,9 @@ export default function UserProfilePage() {
             </p>
           </div>
 
-          <Card className="border border-slate-200 bg-white/70 shadow-sm px-4 py-3 flex items-center gap-3 max-w-sm">
-            {publicKey ? (
-              <WalletIdenticon address={publicKey} size={44} className="flex-shrink-0" />
-            ) : (
-              <div className="h-11 w-11 rounded-full bg-gradient-to-br from-[#3737A4] to-[#0C0C4F] text-white grid place-items-center font-semibold text-sm">
-                {avatarLabel}
-              </div>
-            )}
-            <div className="flex flex-col gap-1 min-w-0">
-              <div className="text-xs uppercase tracking-wide text-slate-500">Connected Wallet</div>
-              {publicKey ? (
-                <WalletAddress address={publicKey} showIdenticon={false} addressClassName="text-slate-800" />
-              ) : (
-                <div className="font-mono text-sm text-slate-800 break-all">{displayAddress}</div>
-              )}
-            </div>
+          <Card className="border border-slate-200 bg-white/70 shadow-sm px-4 py-3 flex flex-col gap-1 max-w-sm">
+            <div className="text-xs uppercase tracking-wide text-slate-500">Connected Wallet</div>
+            <div className="font-mono text-sm text-slate-800 break-all">{displayAddress}</div>
           </Card>
         </div>
 
@@ -419,19 +377,53 @@ export default function UserProfilePage() {
                     <StatPill label="NFTs Claimed" value={summary.claimedNftRewards ?? 0} />
                     <StatPill label="NFTs Unclaimed" value={summary.unclaimedNftRewards ?? 0} />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-                    <StatPill label="Tracked Completions" value={playerStats?.completedHuntsTracked ?? 0} />
-                    <StatPill label="Total Hunt Wins" value={playerStats?.totalHuntsCompleted ?? 0} />
-                    <StatPill label="NFTs Received" value={playerStats?.totalNftsReceived ?? 0} />
-                    <StatPill
-                      label="Avg. Completion (s)"
-                      value={Math.round(playerStats?.averageCompletionTimeSeconds ?? 0)}
-                    />
-                  </div>
                   <div className="mt-4 text-sm text-slate-600">
                     Completion rate:{" "}
                     <span className="font-semibold text-slate-800">{summary.completionRate}%</span>
                   </div>
+                </CardContent>
+              </Card>
+            </section>
+
+            <section aria-label="Referral program" className="mt-6">
+              <Card className="bg-[#ececfa] border border-white/40 shadow-md">
+                <CardHeader>
+                  <CardTitle className="text-lg md:text-xl font-semibold text-slate-900">
+                    Referral Program
+                  </CardTitle>
+                  <CardDescription>
+                    Invite new players with your wallet-bound link and earn bonus points after their first completed hunt.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                    <StatPill label="Invites" value={referralStats?.totalInvites ?? 0} />
+                    <StatPill label="Successful" value={referralStats?.successfulReferrals ?? 0} />
+                    <StatPill label="Pending" value={referralStats?.pendingReferrals ?? 0} />
+                    <StatPill label="Bonus Points" value={referralStats?.bonusPoints ?? 0} valueClassName="text-emerald-600" />
+                  </div>
+                  {referralStats ? (
+                    <>
+                      <div className="rounded-xl border border-slate-200 bg-white/70 px-4 py-3">
+                        <div className="text-xs uppercase tracking-wide text-slate-500">Referral Link</div>
+                        <div className="mt-1 break-all font-mono text-sm text-slate-800">{referralStats.referralLink}</div>
+                      </div>
+                      <div className="space-y-2">
+                        {referralStats.referrals.length === 0 ? (
+                          <p className="text-sm text-slate-500">No referrals yet.</p>
+                        ) : (
+                          referralStats.referrals.slice(0, 5).map((referral) => (
+                            <div key={`${referral.referredAddress}-${referral.registeredAt}`} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white/70 px-4 py-3 text-sm">
+                              <span className="font-mono text-slate-700">{shortenAddress(referral.referredAddress)}</span>
+                              <span className={referral.bonusAwarded ? "text-emerald-600" : "text-amber-600"}>
+                                {referral.bonusAwarded ? `+${referral.bonusPoints} pts` : "Waiting for first completion"}
+                              </span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </>
+                  ) : null}
                 </CardContent>
               </Card>
             </section>
@@ -460,43 +452,6 @@ export default function UserProfilePage() {
 
             <section aria-label="Achievements" className="mt-8">
               <BadgeWall playerAddress={publicKey} />
-            </section>
-
-            {/* Favorites Section */}
-            <section aria-label="Favorite hunts" className="mt-10">
-              <div className="flex items-center justify-between gap-2 mb-4">
-                <div>
-                  <h2 className="text-xl md:text-2xl font-bold bg-linear-to-b from-[#3737A4] to-[#0C0C4F] bg-clip-text text-transparent">
-                    Favorite Hunts
-                  </h2>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Hunts you've bookmarked for later
-                  </p>
-                </div>
-                <span className="bg-pink-50 text-pink-600 px-3 py-1 rounded-full text-xs font-bold">
-                  {favoriteHunts.length} saved
-                </span>
-              </div>
-
-              {favoriteHunts.length === 0 ? (
-                <div
-                  className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/80 py-10 text-center text-slate-600"
-                >
-                  You haven't favorited any hunts yet.{" "}
-                  <Link href="/" className="text-pink-600 underline underline-offset-2">
-                    Browse the arcade
-                  </Link>{" "}
-                  to find your next challenge.
-                </div>
-              ) : (
-                <ul className="space-y-3">
-                  {favoriteHunts.map((hunt) => (
-                    <li key={hunt.id}>
-                      <FavoriteHuntCard hunt={hunt} />
-                    </li>
-                  ))}
-                </ul>
-              )}
             </section>
 
             {/* #355 — Registered Hunts */}
@@ -785,50 +740,6 @@ function HuntCard({
           >
             <Link href={detailsHref}>View details</Link>
           </Button>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function FavoriteHuntCard({ hunt }: { hunt: StoredHunt }) {
-  return (
-    <Card className="border border-slate-200 bg-white/80 shadow-sm relative pr-12">
-      <div className="absolute top-4 right-4 z-10">
-        <FavoriteButton huntId={hunt.id} />
-      </div>
-      <CardContent className="py-4 px-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <span
-            className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full bg-pink-400`}
-            aria-hidden="true"
-          />
-          <div>
-            <p className="font-semibold text-slate-900 text-sm md:text-base">
-              {hunt.title}
-            </p>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Reward:{" "}
-              <span className="font-medium text-slate-700">
-                {hunt.rewardType}
-              </span>
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3 self-end sm:self-center">
-          <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-700`}>
-            {hunt.status}
-          </span>
-
-          <Link href={`/hunt/${hunt.id}`}>
-            <Button
-              size="sm"
-              className="text-xs rounded-full bg-gradient-to-r from-[#3737A4] to-[#0C0C4F] hover:opacity-90 text-white"
-            >
-              View Hunt
-            </Button>
-          </Link>
         </div>
       </CardContent>
     </Card>

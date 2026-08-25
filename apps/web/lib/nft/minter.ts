@@ -14,6 +14,7 @@
 import {
   type Account,
   Operation,
+  type Server,
   type Transaction,
   TransactionBuilder,
 } from "@stellar/stellar-sdk"
@@ -30,6 +31,11 @@ import { uploadNftMetadata } from "@/lib/nft/metadataUploader"
 import type { NftMetadata } from "@/lib/nft/types"
 import { createSorobanServer } from "@/lib/soroban/client"
 import { getActiveWalletAdapter } from "@/lib/walletAdapter"
+
+type SorobanServerLike = Server & {
+  simulateTransaction?: (tx: Transaction) => Promise<{ cost?: { cpuInsns?: number } }>
+  prepareTransaction?: (tx: Transaction, sim: unknown) => Promise<Transaction | undefined>
+}
 
 export type MintStage =
   | "idle"
@@ -102,10 +108,8 @@ export async function estimateMintFee(
   const wallet = getActiveWalletAdapter()
   const publicKey = await wallet.getPublicKey()
   const recipient = recipientAddress || publicKey
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const server = createSorobanServer() as any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const account = (await server.getAccount(publicKey)) as any
+  const server = createSorobanServer() as SorobanServerLike
+  const account = (await server.getAccount(publicKey)) as Account
 
   const tx = buildMintTransaction({
     account,
@@ -211,10 +215,8 @@ async function mintHuntRewardNftInternal(input: NftMintInput): Promise<MintResul
 
   // Stage 4: Build + sign the mint transaction
   onStage?.("signing")
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const server = createSorobanServer() as any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const account = (await server.getAccount(publicKey)) as any
+  const server = createSorobanServer() as SorobanServerLike
+  const account = (await server.getAccount(publicKey)) as Account
 
   let tx = buildMintTransaction({
     account,

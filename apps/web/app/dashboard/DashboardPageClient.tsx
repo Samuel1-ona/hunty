@@ -1,29 +1,14 @@
-"use client"
+"use client";
 
-import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Header } from "@/components/Header"
-import { HuntDashboard } from "@/components/HuntDashboard"
-import { RewardHistoryPanel } from "@/components/RewardHistoryPanel"
-import { EscrowDrawer } from "@/components/EscrowDrawer"
-import type { StoredHunt } from "@/lib/types"
-import {
-  getCreatorHunts,
-  updateHuntStatus,
-  saveCluesLocallyBatch,
-  takeHuntStoreSnapshot,
-  restoreHuntStoreSnapshot,
-  getHuntById,
-} from "@/lib/huntStore"
-import { activateHunt, addCluesBatch } from "@/lib/contracts/hunt"
-import { addClue } from "@/lib/contracts/hunt"
-import { withTransactionToast } from "@/lib/txToast"
-import { syncCreatorHuntsWithModeration } from "@/lib/moderation/clientSync"
-import { Button } from "@/components/ui/button"
-import { activateHunt, addClue } from "@/lib/contracts/hunt"
+import { EscrowDrawer } from "@/components/EscrowDrawer";
+import { Header } from "@/components/Header";
+import { HuntDashboard } from "@/components/HuntDashboard";
+import { Button } from "@/components/ui/button";
 import {
   buildHuntHistoryQuery,
   getHuntHistoryView,
@@ -32,52 +17,55 @@ import {
   parseHuntHistoryPage,
   parseHuntHistorySortOption,
   parseHuntHistoryStatusFilter,
-} from "@/lib/huntHistory"
+} from "@/lib/huntHistory";
 import {
   getCreatorHunts,
+  getHuntById,
   restoreHuntStoreSnapshot,
-  saveClueLocally,
+  saveCluesLocallyBatch,
   takeHuntStoreSnapshot,
   updateHuntStatus,
-} from "@/lib/huntStore"
-import { withTransactionToast } from "@/lib/txToast"
-import type { StoredHunt } from "@/lib/types"
+} from "@/lib/huntStore";
+import { syncCreatorHuntsWithModeration } from "@/lib/moderation/clientSync";
+import { withTransactionToast } from "@/lib/txToast";
+import type { StoredHunt } from "@/lib/types";
+import dynamic from "next/dynamic";
 
-type SearchParamValue = string | string[] | undefined
+const RewardHistoryPanel = dynamic(() =>
+  import("@/components/RewardHistoryPanel").then((mod) => mod.RewardHistoryPanel)
+);
+
+type SearchParamValue = string | string[] | undefined;
 
 type DashboardPageClientProps = {
-  searchParams?: Record<string, SearchParamValue>
-}
+  searchParams?: Record<string, SearchParamValue>;
+};
 
 function readSearchParam(value?: SearchParamValue): string | null {
-  if (typeof value === "string") return value
-  if (Array.isArray(value)) return value[0] ?? null
-  return null
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) return value[0] ?? null;
+  return null;
 }
 
-export function DashboardPageClient({
-  searchParams = {},
-}: DashboardPageClientProps) {
-  const router = useRouter()
-  const pathname = usePathname()
-  const [hunts, setHunts] = useState<StoredHunt[]>([])
-  const [escrowDrawerOpen, setEscrowDrawerOpen] = useState(false)
+export function DashboardPageClient({ searchParams = {} }: DashboardPageClientProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [hunts, setHunts] = useState<StoredHunt[]>([]);
+  const [escrowDrawerOpen, setEscrowDrawerOpen] = useState(false);
 
   const refresh = useCallback(() => {
-    setHunts(getCreatorHunts())
-  }, [])
+    setHunts(getCreatorHunts());
+  }, []);
 
   useEffect(() => {
-    refresh()
-    const huntsList = getCreatorHunts()
-    void syncCreatorHuntsWithModeration(huntsList).then(() => refresh())
-  }, [refresh])
+    refresh();
+    const huntsList = getCreatorHunts();
+    void syncCreatorHuntsWithModeration(huntsList).then(() => refresh());
+  }, [refresh]);
 
-  const statusFilter = parseHuntHistoryStatusFilter(
-    readSearchParam(searchParams.status)
-  )
-  const sortOption = parseHuntHistorySortOption(readSearchParam(searchParams.sort))
-  const requestedPage = parseHuntHistoryPage(readSearchParam(searchParams.page))
+  const statusFilter = parseHuntHistoryStatusFilter(readSearchParam(searchParams.status));
+  const sortOption = parseHuntHistorySortOption(readSearchParam(searchParams.sort));
+  const requestedPage = parseHuntHistoryPage(readSearchParam(searchParams.page));
 
   const historyView = useMemo(
     () =>
@@ -87,113 +75,113 @@ export function DashboardPageClient({
         page: requestedPage,
       }),
     [hunts, requestedPage, sortOption, statusFilter]
-  )
+  );
 
   const replaceHistoryQuery = useCallback(
     (nextState: {
-      page?: number
-      sort?: HuntHistorySortOption
-      status?: HuntHistoryStatusFilter
+      page?: number;
+      sort?: HuntHistorySortOption;
+      status?: HuntHistoryStatusFilter;
     }) => {
       const query = buildHuntHistoryQuery({
         status: nextState.status ?? statusFilter,
         sort: nextState.sort ?? sortOption,
         page: nextState.page ?? historyView.currentPage,
-      })
+      });
 
-      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
     },
     [historyView.currentPage, pathname, router, sortOption, statusFilter]
-  )
+  );
 
   useEffect(() => {
     const currentQuery = buildHuntHistoryQuery({
       status: statusFilter,
       sort: sortOption,
       page: requestedPage,
-    })
+    });
     const normalizedQuery = buildHuntHistoryQuery({
       status: statusFilter,
       sort: sortOption,
       page: historyView.currentPage,
-    })
+    });
 
     if (currentQuery !== normalizedQuery) {
-      router.replace(
-        normalizedQuery ? `${pathname}?${normalizedQuery}` : pathname,
-        { scroll: false }
-      )
+      router.replace(normalizedQuery ? `${pathname}?${normalizedQuery}` : pathname, {
+        scroll: false,
+      });
     }
-  }, [historyView.currentPage, pathname, requestedPage, router, sortOption, statusFilter])
+  }, [historyView.currentPage, pathname, requestedPage, router, sortOption, statusFilter]);
 
   const handleActivate = useCallback(
     async (huntId: number) => {
-      const hunt = getHuntById(huntId)
-      if (!hunt) return
+      const hunt = getHuntById(huntId);
+      if (!hunt) return;
 
-      const snapshot = takeHuntStoreSnapshot()
-      updateHuntStatus(huntId, "PendingReview")
-      refresh()
+      const snapshot = takeHuntStoreSnapshot();
+      updateHuntStatus(huntId, "PendingReview");
+      refresh();
 
       try {
         const res = await fetch("/api/moderation/submit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ hunt }),
-        })
+        });
         if (!res.ok) {
-          throw new Error("Moderation submit failed")
+          throw new Error("Moderation submit failed");
         }
         await withTransactionToast(async () => ({}), {
           pending: "Submitting hunt for admin review…",
           approving: "Submitting hunt for admin review…",
           confirmed: "Submitted! You will be notified when moderation completes.",
-        })
+        });
       } catch (error) {
-        restoreHuntStoreSnapshot(snapshot)
-        refresh()
-        throw error
+        restoreHuntStoreSnapshot(snapshot);
+        refresh();
+        throw error;
       }
     },
     [refresh]
-  )
+  );
 
   const handleSaveClues = useCallback(
     async (huntId: number, clues: { question: string; answer: string; points: number }[]) => {
-      const snapshot = takeHuntStoreSnapshot()
+      const snapshot = takeHuntStoreSnapshot();
       const normalizedClues = clues.map((clue) => ({
         huntId,
         question: clue.question.trim(),
         answer: clue.answer.trim().toLowerCase(),
         points: clue.points,
-      }))
+      }));
 
       try {
-        saveCluesLocallyBatch(normalizedClues)
-        refresh()
+        saveCluesLocallyBatch(normalizedClues);
+        refresh();
 
         await withTransactionToast(
           async (setStage) => {
-            setStage("approving")
+            setStage("approving");
+            const { addCluesBatch } = await import("@/lib/contracts/hunt");
             return addCluesBatch(
               huntId,
               normalizedClues.map(({ huntId: _huntId, ...clue }) => clue)
-            )
+            );
           },
           {
             pending: `Pending â€” preparing ${normalizedClues.length} clue${normalizedClues.length === 1 ? "" : "s"}â€¦`,
             approving: "Approving â€” sign in your walletâ€¦",
             confirmed: "Clues confirmed!",
           }
-        )
+        );
       } catch (error) {
-        restoreHuntStoreSnapshot(snapshot)
-        refresh()
-        throw error
+        restoreHuntStoreSnapshot(snapshot);
+        refresh();
+        throw error;
       }
     },
     [refresh]
-  )
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-tr from-blue-100 via-purple-100 to-[#f9f9ff] pb-12">
@@ -217,7 +205,8 @@ export function DashboardPageClient({
           My Hunts
         </h1>
         <p className="mb-8 text-slate-600">
-          Activate a draft hunt so players can see it in the Game Arcade. Active hunts cannot be edited.
+          Activate a draft hunt so players can see it in the Game Arcade. Active hunts cannot be
+          edited.
         </p>
 
         <RewardHistoryPanel hunts={hunts} onRefresh={refresh} />
@@ -247,19 +236,15 @@ export function DashboardPageClient({
           onStatusFilterChange={(nextStatus) =>
             replaceHistoryQuery({ status: nextStatus, page: 1 })
           }
-          onSortChange={(nextSort) =>
-            replaceHistoryQuery({ sort: nextSort, page: 1 })
-          }
+          onSortChange={(nextSort) => replaceHistoryQuery({ sort: nextSort, page: 1 })}
           onPageChange={(nextPage) => replaceHistoryQuery({ page: nextPage })}
           onActivate={handleActivate}
           onRefresh={refresh}
           onSaveClues={handleSaveClues}
         />
-        <EscrowDrawer
-          open={escrowDrawerOpen}
-          onClose={() => setEscrowDrawerOpen(false)}
-        />
+        <EscrowDrawer open={escrowDrawerOpen} onClose={() => setEscrowDrawerOpen(false)} />
       </div>
     </div>
-  )
+  );
 }
+ 

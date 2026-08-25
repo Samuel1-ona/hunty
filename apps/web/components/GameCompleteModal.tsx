@@ -92,6 +92,7 @@ export function GameCompleteModal({
   // ─── Review form state ────────────────────────────────────────────────────
   const [selectedRating, setSelectedRating] = useState<number>(0)
   const [hoverRating, setHoverRating] = useState<number>(0)
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>("")
   const [reviewText, setReviewText] = useState("")
   const [reviewSubmitting, setReviewSubmitting] = useState(false)
   const [reviewSubmitted, setReviewSubmitted] = useState(false)
@@ -199,6 +200,7 @@ export function GameCompleteModal({
     if (isOpen) {
       setSelectedRating(0)
       setHoverRating(0)
+      setSelectedDifficulty("")
       setReviewText("")
       setReviewSubmitting(false)
       setReviewSubmitted(false)
@@ -240,6 +242,7 @@ export function GameCompleteModal({
           playerAddress,
           rating: selectedRating,
           text: reviewText.trim() || undefined,
+          difficultyRating: selectedDifficulty || undefined,
         }),
       })
 
@@ -549,6 +552,28 @@ export function GameCompleteModal({
                         {selectedRating}/5
                       </span>
                     )}
+                  </div>
+                  
+                  {/* Difficulty picker */}
+                  <div className="mt-3">
+                    <p className="text-xs font-semibold text-slate-700 mb-1.5">How difficult was it?</p>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {["Easy", "Medium", "Hard", "Expert"].map((diff) => (
+                        <button
+                          key={diff}
+                          type="button"
+                          onClick={() => setSelectedDifficulty(diff)}
+                          className={cn(
+                            "px-3 py-1 text-xs font-semibold rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500",
+                            selectedDifficulty === diff
+                              ? "bg-indigo-100 text-indigo-700 border-indigo-300"
+                              : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                          )}
+                        >
+                          {diff}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Optional text review */}

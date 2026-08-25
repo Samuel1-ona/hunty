@@ -1,20 +1,23 @@
-import Server, { TransactionBuilder, Operation, Account } from "@stellar/stellar-sdk"
+import Server, { TransactionBuilder, Operation, Account } from "@stellar/stellar-sdk";
 import {
   advanceHuntProgress,
   getHunt as getStoredHunt,
   getHuntClues,
   getHuntProgress,
-} from "@/lib/huntStore"
-import { withSorobanRpcRetry } from "@/lib/soroban/rpcRetry"
-import { normalizeNetworkError, AnswerIncorrectError, SequentialClueError } from "./errors"
-import { SOROBAN_RPC_URL, NETWORK_PASSPHRASE } from "./config"
-import { getActiveWalletAdapter } from "@/lib/walletAdapter"
-import { sha256Hex } from "@/lib/crypto"
-import { logger } from "@/lib/logger"
+} from "@/lib/huntStore";
+import { withSorobanRpcRetry } from "@/lib/soroban/rpcRetry";
+import { pollTransactionStatus } from "@/lib/soroban/contractHelpers";
+import { normalizeNetworkError, AnswerIncorrectError, SequentialClueError } from "./errors";
+import { SOROBAN_RPC_URL, NETWORK_PASSPHRASE } from "./config";
+import { getActiveWalletAdapter } from "@/lib/walletAdapter";
+import { sha256Hex } from "@/lib/crypto";
+import { logger } from "@/lib/logger";
+import { isOnline, queueProgressUpdate } from "@/lib/offlineSync";
 
 import type {
   ClueDifficulty,
   ClueInfo,
+  HuntDifficulty,
   HuntInfo,
   CreateHuntResult,
   SubmitAnswerResult,
@@ -23,7 +26,7 @@ import type {
   ExtendHuntResult,
   LeaderboardEntry,
   FastestPlayerEntry,
-} from "@/lib/types"
+} from "@/lib/types";
 
 export type {
   ClueInfo,
@@ -38,18 +41,18 @@ export type {
 };
 
 export type ClueInput = {
-  question: string
-  answer: string
-  points: number
-  hint?: string
-  hintCost?: number
-  difficulty?: ClueDifficulty
-}
+  question: string;
+  answer: string;
+  points: number;
+  hint?: string;
+  hintCost?: number;
+  difficulty?: ClueDifficulty;
+};
 
 export type AddCluesBatchResult = {
-  txHash: string
-  clueCount: number
-}
+  txHash: string;
+  clueCount: number;
+};
 
 // AnswerIncorrectError is re-exported from the central errors module for
 // backwards-compatible imports (e.g. `import { AnswerIncorrectError } from "@/lib/contracts/hunt"`).
@@ -72,10 +75,12 @@ export async function createHunt(
   emailNotifications?: boolean,
   /** When true, the hunt is hidden from the public arcade. */
   is_private?: boolean,
-  sequential?: boolean
+  sequential?: boolean,
+  /** Overall difficulty tag persisted with the on-chain hunt metadata. */
+  difficulty?: HuntDifficulty,
+  maxParticipants?: number,
 ): Promise<CreateHuntResult> {
-  if (typeof window === "undefined")
-    throw new Error("Browser environment required");
+  if (typeof window === "undefined") throw new Error("Browser environment required");
 
   const server = new Server(SOROBAN_RPC_URL);
   const wallet = getActiveWalletAdapter();
@@ -90,19 +95,17 @@ export async function createHunt(
     end_time,
     ...(imageCid ? { image_cid: imageCid } : {}),
     ...(creatorEmail ? { creator_email: creatorEmail } : {}),
-    ...(emailNotifications !== undefined
-      ? { email_notifications: emailNotifications }
-      : {}),
+    ...(emailNotifications !== undefined ? { email_notifications: emailNotifications } : {}),
     ...(is_private ? { is_private: true } : {}),
     ...(sequential ? { sequential: true } : {}),
-  })
+    ...(difficulty ? { difficulty } : {}),
+    ...(maxParticipants !== undefined ? { max_participants: maxParticipants } : {}),
+  });
 
   const publicKey = await wallet.getPublicKey();
 
   // Load account state
-  const account = (await withSorobanRpcRetry(() =>
-    server.getAccount(publicKey),
-  )) as Account;
+  const account = (await withSorobanRpcRetry(() => server.getAccount(publicKey))) as Account;
 
   // Use manageData to carry the payload. In production you'd call the
   // Soroban contract (invoke host function) — this is a minimal signing flow
@@ -123,9 +126,7 @@ export async function createHunt(
   const signedXdr = await wallet.signTransaction(tx.toXDR());
 
   // Submit signed transaction XDR to RPC
-  const res = (await withSorobanRpcRetry(() =>
-    server.submitTransaction(signedXdr),
-  )) as {
+  const res = (await withSorobanRpcRetry(() => server.submitTransaction(signedXdr))) as {
     hash?: string;
   };
   if (!res || !res.hash) throw new Error("Transaction submission failed");
@@ -137,19 +138,14 @@ export async function createHunt(
  * Calls the smart contract's activate_hunt(hunt_id: u64) to transition a hunt
  * from Draft to Active. Requires wallet and Soroban RPC.
  */
-export async function activateHunt(
-  huntId: number,
-): Promise<ActivateHuntResult> {
-  if (typeof window === "undefined")
-    throw new Error("Browser environment required");
+export async function activateHunt(huntId: number): Promise<ActivateHuntResult> {
+  if (typeof window === "undefined") throw new Error("Browser environment required");
 
   const server = new Server(SOROBAN_RPC_URL);
   const wallet = getActiveWalletAdapter();
   const publicKey = await wallet.getPublicKey();
 
-  const account = (await withSorobanRpcRetry(() =>
-    server.getAccount(publicKey),
-  )) as Account;
+  const account = (await withSorobanRpcRetry(() => server.getAccount(publicKey))) as Account;
   const payload = JSON.stringify({ action: "activate_hunt", hunt_id: huntId });
   const key = `activate_hunt:${Date.now()}`;
   const op = Operation.manageData({ name: key, value: payload });
@@ -164,9 +160,7 @@ export async function activateHunt(
 
   const signedXdr = await wallet.signTransaction(tx.toXDR());
 
-  const res = (await withSorobanRpcRetry(() =>
-    server.submitTransaction(signedXdr),
-  )) as {
+  const res = (await withSorobanRpcRetry(() => server.submitTransaction(signedXdr))) as {
     hash?: string;
   };
   if (!res?.hash) throw new Error("Transaction submission failed");
@@ -183,10 +177,9 @@ export async function addClue(
   answer: string,
   points: number,
   hints?: import("@/lib/types").ClueHint[],
-  difficulty?: import("@/lib/types").ClueDifficulty,
+  difficulty?: import("@/lib/types").ClueDifficulty
 ): Promise<AddClueResult> {
-  if (typeof window === "undefined")
-    throw new Error("Browser environment required");
+  if (typeof window === "undefined") throw new Error("Browser environment required");
 
   const server = new Server(SOROBAN_RPC_URL);
   const wallet = getActiveWalletAdapter();
@@ -194,9 +187,7 @@ export async function addClue(
 
   const normalizedAnswer = answer;
 
-  const account = (await withSorobanRpcRetry(() =>
-    server.getAccount(publicKey),
-  )) as Account;
+  const account = (await withSorobanRpcRetry(() => server.getAccount(publicKey))) as Account;
   const payload = JSON.stringify({
     action: "add_clue",
     hunt_id: huntId,
@@ -219,9 +210,7 @@ export async function addClue(
 
   const signedXdr = await wallet.signTransaction(tx.toXDR());
 
-  const res2 = (await withSorobanRpcRetry(() =>
-    server.submitTransaction(signedXdr),
-  )) as {
+  const res2 = (await withSorobanRpcRetry(() => server.submitTransaction(signedXdr))) as {
     hash?: string;
   };
   if (!res2?.hash) throw new Error("Transaction submission failed");
@@ -234,17 +223,17 @@ export async function addClue(
  */
 export async function addCluesBatch(
   huntId: number,
-  clues: ClueInput[],
+  clues: ClueInput[]
 ): Promise<AddCluesBatchResult> {
-  if (typeof window === "undefined") throw new Error("Browser environment required")
+  if (typeof window === "undefined") throw new Error("Browser environment required");
   if (!Array.isArray(clues) || clues.length === 0) {
-    throw new Error("At least one clue is required")
+    throw new Error("At least one clue is required");
   }
 
-  const server = new Server(SOROBAN_RPC_URL)
-  const wallet = getActiveWalletAdapter()
-  const publicKey = await wallet.getPublicKey()
-  const account = (await withSorobanRpcRetry(() => server.getAccount(publicKey))) as Account
+  const server = new Server(SOROBAN_RPC_URL);
+  const wallet = getActiveWalletAdapter();
+  const publicKey = await wallet.getPublicKey();
+  const account = (await withSorobanRpcRetry(() => server.getAccount(publicKey))) as Account;
 
   const normalizedClues = clues.map((clue) => ({
     question: clue.question.trim(),
@@ -253,15 +242,15 @@ export async function addCluesBatch(
     ...(clue.hint?.trim() ? { hint: clue.hint.trim() } : {}),
     ...(clue.hintCost !== undefined ? { hint_cost: clue.hintCost } : {}),
     ...(clue.difficulty ? { difficulty: clue.difficulty } : {}),
-  }))
+  }));
 
   const payload = JSON.stringify({
     action: "add_clues_batch",
     hunt_id: huntId,
     clues: normalizedClues,
-  })
-  const key = `add_clues_batch:${Date.now()}`
-  const op = Operation.manageData({ name: key, value: payload })
+  });
+  const key = `add_clues_batch:${Date.now()}`;
+  const op = Operation.manageData({ name: key, value: payload });
 
   const tx = new TransactionBuilder(account, {
     fee: "100",
@@ -269,36 +258,30 @@ export async function addCluesBatch(
   })
     .addOperation(op)
     .setTimeout(180)
-    .build()
+    .build();
 
-  const signedXdr = await wallet.signTransaction(tx.toXDR())
+  const signedXdr = await wallet.signTransaction(tx.toXDR());
 
   const result = (await withSorobanRpcRetry(() => server.submitTransaction(signedXdr))) as {
-    hash?: string
-  }
-  if (!result?.hash) throw new Error("Transaction submission failed")
+    hash?: string;
+  };
+  if (!result?.hash) throw new Error("Transaction submission failed");
 
-  return { txHash: result.hash, clueCount: normalizedClues.length }
+  return { txHash: result.hash, clueCount: normalizedClues.length };
 }
 
 /**
  * Calls the smart contract's extend_end_time(hunt_id: u64, new_end_time: u64) to extend a hunt's duration.
  * Requires wallet and Soroban RPC.
  */
-export async function extendEndTime(
-  huntId: number,
-  newEndTime: number,
-): Promise<ExtendHuntResult> {
-  if (typeof window === "undefined")
-    throw new Error("Browser environment required");
+export async function extendEndTime(huntId: number, newEndTime: number): Promise<ExtendHuntResult> {
+  if (typeof window === "undefined") throw new Error("Browser environment required");
 
   const server = new Server(SOROBAN_RPC_URL);
   const wallet = getActiveWalletAdapter();
   const publicKey = await wallet.getPublicKey();
 
-  const account = (await withSorobanRpcRetry(() =>
-    server.getAccount(publicKey),
-  )) as Account;
+  const account = (await withSorobanRpcRetry(() => server.getAccount(publicKey))) as Account;
   const payload = JSON.stringify({
     action: "extend_end_time",
     hunt_id: huntId,
@@ -317,9 +300,7 @@ export async function extendEndTime(
 
   const signedXdr = await wallet.signTransaction(tx.toXDR());
 
-  const res = (await withSorobanRpcRetry(() =>
-    server.submitTransaction(signedXdr),
-  )) as {
+  const res = (await withSorobanRpcRetry(() => server.submitTransaction(signedXdr))) as {
     hash?: string;
   };
   if (!res?.hash) throw new Error("Transaction submission failed");
@@ -328,26 +309,41 @@ export async function extendEndTime(
 
 /**
  * Retrieves the hunt leaderboard.
- * Attempts to fetch "live" data from the contract account's data attributes
- * (leveraging the manageData pattern) with a robust mock data fallback.
+ * Fetches real progress data from the server API, with localStorage fallback.
  */
-export async function get_hunt_leaderboard(
-  huntId: number,
-): Promise<LeaderboardEntry[]> {
-  // Simulate network latency
-  await new Promise((resolve) => setTimeout(resolve, 800));
+export async function get_hunt_leaderboard(huntId: number): Promise<LeaderboardEntry[]> {
+  const now = Math.floor(Date.now() / 1000);
 
-  const now = Math.floor(Date.now() / 1000)
-  const DAY = 86400
+  // Try fetching from server API when online
+  if (typeof window !== "undefined") {
+    try {
+      const baseUrl = window.location.origin;
+      const res = await fetch(`${baseUrl}/api/v1/hunts/${huntId}/leaderboard?limit=100`);
+      if (res.ok) {
+        const body = await res.json();
+        if (Array.isArray(body?.data) && body.data.length > 0) {
+          return body.data.map(
+            (entry: {
+              address?: string;
+              points?: number;
+              completionCount?: number;
+              completedAt?: number;
+            }) => ({
+              address: entry.address ?? "unknown",
+              points: entry.points ?? 0,
+              completionCount: entry.completionCount ?? 0,
+              completedAt: entry.completedAt,
+            })
+          );
+        }
+      }
+    } catch {
+      // Fall back to localStorage
+    }
+  }
 
-  const mockData: LeaderboardEntry[] = [
-    { address: "GDD...9X2", name: "StellarQuest", points: 45, completionCount: 12, completedAt: now - DAY * 0.5, category: "Trivia", difficulty: "Medium" },
-    { address: "GBX...A1B", points: 30, completionCount: 7, completedAt: now - DAY * 3, category: "Outdoor", difficulty: "Hard" },
-    { address: "GCT...Z9Y", name: "AliceCrypto", points: 58, completionCount: 18, completedAt: now - DAY * 1, category: "Campus", difficulty: "Easy" },
-    { address: "GDE...123", points: 15, completionCount: 4, completedAt: now - DAY * 20, category: "Indoor", difficulty: "Easy" },
-    { address: "GFA...789", name: "BobHunts", points: 41, completionCount: 10, completedAt: now - DAY * 6, category: "Onboarding", difficulty: "Medium" },
-    { address: "GCA...HB2", points: 28, completionCount: 6, completedAt: now - DAY * 45, category: "Community", difficulty: "Hard" },
-  ]
+  // Fallback: build from localStorage
+  const entries: LeaderboardEntry[] = [];
 
   if (typeof window !== "undefined") {
     try {
@@ -355,7 +351,13 @@ export async function get_hunt_leaderboard(
       if (myPointsStr) {
         const myPoints = parseInt(myPointsStr, 10);
         if (myPoints > 0) {
-          mockData.push({ address: "YOU...PLYR", name: "You (Current Player)", points: myPoints, completionCount: 1, completedAt: now - DAY * 0.1 })
+          entries.push({
+            address: "YOU...PLYR",
+            name: "You (Current Player)",
+            points: myPoints,
+            completionCount: 1,
+            completedAt: now - 86400 * 0.1,
+          });
         }
       }
     } catch (e) {
@@ -363,14 +365,14 @@ export async function get_hunt_leaderboard(
     }
   }
 
-  return mockData;
+  return entries;
 }
 
 export async function get_hunt_leaderboard_paginated(
   huntId: number,
   page: number = 1,
   limit: number = 20,
-  currentUserAddress?: string,
+  currentUserAddress?: string
 ): Promise<{
   entries: LeaderboardEntry[];
   total: number;
@@ -390,19 +392,14 @@ export async function get_hunt_leaderboard_paginated(
   return { entries, total, currentUserRank };
 }
 
-export async function get_hunt_fastest_players(
-  huntId: number,
-): Promise<FastestPlayerEntry[]> {
+export async function get_hunt_fastest_players(huntId: number): Promise<FastestPlayerEntry[]> {
   const indexerUrl = process.env.NEXT_PUBLIC_TORII_INDEXER_URL;
 
   if (indexerUrl) {
     try {
-      const response = await fetch(
-        `${indexerUrl}/hunts/${huntId}/fastest-completions`,
-        {
-          cache: "no-store",
-        },
-      );
+      const response = await fetch(`${indexerUrl}/hunts/${huntId}/fastest-completions`, {
+        cache: "no-store",
+      });
 
       if (response.ok) {
         const body = await response.json();
@@ -432,17 +429,14 @@ export async function get_hunt_fastest_players(
               return {
                 address: entry.address,
                 name: entry.name,
-                points:
-                  typeof entry.points === "number" ? entry.points : undefined,
+                points: typeof entry.points === "number" ? entry.points : undefined,
                 completionTimeSeconds:
                   typeof entry.completion_time_seconds === "number"
                     ? entry.completion_time_seconds
                     : typeof entry.duration_seconds === "number"
                       ? entry.duration_seconds
                       : Math.floor(
-                          Number(
-                            entry.completion_time_ms ?? entry.duration_ms ?? 0,
-                          ) / 1000 || 0,
+                          Number(entry.completion_time_ms ?? entry.duration_ms ?? 0) / 1000 || 0
                         ),
               };
             })
@@ -450,7 +444,7 @@ export async function get_hunt_fastest_players(
               (entry): entry is FastestPlayerEntry =>
                 entry !== null &&
                 typeof entry.address === "string" &&
-                entry.completionTimeSeconds >= 0,
+                entry.completionTimeSeconds >= 0
             );
         }
       }
@@ -500,10 +494,7 @@ export async function get_hunt(huntId: number): Promise<HuntInfo> {
  * Fetches question and points for a specific clue.
  * Never returns the answer — answers are verified on-chain via submitAnswer.
  */
-export async function get_clue_info(
-  huntId: number,
-  clueId: number,
-): Promise<ClueInfo> {
+export async function get_clue_info(huntId: number, clueId: number): Promise<ClueInfo> {
   await new Promise((resolve) => setTimeout(resolve, 200));
 
   try {
@@ -513,10 +504,7 @@ export async function get_clue_info(
 
     if (typeof window !== "undefined") {
       try {
-        localStorage.setItem(
-          `hunt_clue_start_${huntId}_${clue.id}`,
-          Date.now().toString(),
-        );
+        localStorage.setItem(`hunt_clue_start_${huntId}_${clue.id}`, Date.now().toString());
       } catch (e) {
         logger.error("Failed to set start time:", e);
       }
@@ -539,58 +527,81 @@ export async function get_clue_info(
 /**
  * Polls the Soroban RPC for transaction inclusion.
  * Resolves to true if successful, throws if failed or timed out.
+ *
+ * Delegates to the centralised `pollTransactionStatus` helper from
+ * `contractHelpers`, which handles both SDK-native and raw JSON-RPC fallback,
+ * as well as development mock transactions.
  */
 export async function pollTransaction(txHash: string): Promise<boolean> {
   if (typeof window === "undefined") return true;
-  if (txHash.startsWith("mock_tx_")) {
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    return true;
+  return pollTransactionStatus(txHash, { maxAttempts: 15, pollInterval: 2000 });
+}
+
+async function saveProgressToServer(
+  huntId: number,
+  clueId: number,
+  wallet?: string
+): Promise<void> {
+  if (!wallet) return;
+
+  const clues = getHuntClues(huntId);
+  const progress = getHuntProgress(huntId);
+  const userPointsKey = `hunt_${huntId}_my_points`;
+  const totalPoints = parseInt(
+    typeof window !== "undefined" ? localStorage.getItem(userPointsKey) || "0" : "0",
+    10
+  );
+
+  const solvedClueIds: number[] = [];
+  for (const clue of clues) {
+    const solvedKey = `hunt_clue_solved_${huntId}_${clue.id}`;
+    if (typeof window !== "undefined" && localStorage.getItem(solvedKey) === "true") {
+      solvedClueIds.push(clue.id);
+    }
   }
 
-  const server = new Server(SOROBAN_RPC_URL);
-  const maybeServer = server as typeof server & {
-    getTransaction?: (hash: string) => Promise<{ status: string }>;
+  const payload = {
+    wallet,
+    currentClueIndex: progress.currentClueIndex,
+    totalClues: clues.length,
+    totalPoints,
+    completedClueIds: solvedClueIds,
+    completed: progress.completed,
   };
 
-  for (let i = 0; i < 15; i++) {
+  if (isOnline()) {
     try {
-      // Try using stellar-sdk SorobanRpc method if available
-      if (typeof maybeServer.getTransaction === "function") {
-        const res = await maybeServer.getTransaction(txHash);
-        if (res && res.status !== "NOT_FOUND" && res.status !== "PENDING") {
-          if (res.status === "SUCCESS") return true;
-          throw new Error(`Transaction failed with status: ${res.status}`);
-        }
-      } else {
-        // Fallback to raw JSON-RPC
-        const rpcRes = await fetch(SOROBAN_RPC_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            jsonrpc: "2.0",
-            id: 1,
-            method: "getTransaction",
-            params: { hash: txHash },
-          }),
-        }).then((r) => r.json());
-
-        if (rpcRes?.result) {
-          const status = rpcRes.result.status;
-          if (status !== "NOT_FOUND" && status !== "PENDING") {
-            if (status === "SUCCESS") return true;
-            throw new Error(`Transaction failed with status: ${status}`);
-          }
-        }
-      }
-    } catch (e: unknown) {
-      if (e instanceof Error && e.message.includes("Transaction failed")) {
-        throw e;
-      }
-      logger.warn("Polling error:", e);
+      const baseUrl =
+        typeof window !== "undefined"
+          ? window.location.origin
+          : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+      await fetch(`${baseUrl}/api/v1/hunts/${huntId}/progress`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    } catch {
+      queueProgressUpdate(
+        huntId,
+        wallet,
+        payload.currentClueIndex,
+        payload.totalClues,
+        payload.totalPoints,
+        payload.completedClueIds,
+        payload.completed
+      );
     }
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+  } else {
+    queueProgressUpdate(
+      huntId,
+      wallet,
+      payload.currentClueIndex,
+      payload.totalClues,
+      payload.totalPoints,
+      payload.completedClueIds,
+      payload.completed
+    );
   }
-  throw new Error("Transaction polling timed out after 30 seconds");
 }
 
 /**
@@ -601,19 +612,20 @@ export async function submitAnswer(
   huntId: number,
   clueId: number,
   answer: string,
+  wallet?: string
 ): Promise<SubmitAnswerResult> {
   await new Promise((resolve) => setTimeout(resolve, 500));
 
-  const clues = getHuntClues(huntId)
-  const clue = clues.find((c) => c.id === clueId)
-  if (!clue) throw new Error(`Clue ${clueId} not found for hunt ${huntId}`)
-  const clueIndex = clues.findIndex((c) => c.id === clueId)
-  const hunt = getStoredHunt(String(huntId))
-  const sequential = hunt?.sequential ?? false
-  const progress = getHuntProgress(huntId)
+  const clues = getHuntClues(huntId);
+  const clue = clues.find((c) => c.id === clueId);
+  if (!clue) throw new Error(`Clue ${clueId} not found for hunt ${huntId}`);
+  const clueIndex = clues.findIndex((c) => c.id === clueId);
+  const hunt = getStoredHunt(String(huntId));
+  const sequential = hunt?.sequential ?? false;
+  const progress = getHuntProgress(huntId);
 
   if (sequential && clueIndex !== progress.currentClueIndex) {
-    throw new SequentialClueError()
+    throw new SequentialClueError();
   }
 
   const userAnswer = answer.trim().toLowerCase();
@@ -640,9 +652,7 @@ export async function submitAnswer(
     try {
       const solvedKey = `hunt_clue_solved_${huntId}_${clue.id}`;
       if (!localStorage.getItem(solvedKey)) {
-        const startTimeStr = localStorage.getItem(
-          `hunt_clue_start_${huntId}_${clue.id}`,
-        );
+        const startTimeStr = localStorage.getItem(`hunt_clue_start_${huntId}_${clue.id}`);
         if (startTimeStr) {
           const startTime = parseInt(startTimeStr, 10);
           const elapsedSeconds = (Date.now() - startTime) / 1000;
@@ -653,27 +663,20 @@ export async function submitAnswer(
 
         // Add points to player's total for this hunt
         const userPointsKey = `hunt_${huntId}_my_points`;
-        const currentPoints = parseInt(
-          localStorage.getItem(userPointsKey) || "0",
-          10,
-        );
-        localStorage.setItem(
-          userPointsKey,
-          (currentPoints + clue.points + bonusPoints).toString(),
-        );
+        const currentPoints = parseInt(localStorage.getItem(userPointsKey) || "0", 10);
+        localStorage.setItem(userPointsKey, (currentPoints + clue.points + bonusPoints).toString());
 
         // Mark as solved
         localStorage.setItem(solvedKey, "true");
       }
     } catch (e) {
-      logger.error(
-        "Failed to update local clue state in localStorage after answer submission:",
-        e,
-      );
+      logger.error("Failed to update local clue state in localStorage after answer submission:", e);
     }
   }
 
-  advanceHuntProgress(huntId, clueIndex + 1, clues.length)
+  advanceHuntProgress(huntId, clueIndex + 1, clues.length);
+
+  saveProgressToServer(huntId, clue.id, wallet);
 
   return {
     txHash: `mock_tx_${Date.now()}`,

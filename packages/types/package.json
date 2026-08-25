@@ -7,9 +7,18 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./schemas": "./src/schemas.ts"
+    "./schemas": "./src/schemas.ts",
+    "./api-schemas": "./src/api-schemas.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
   },
   "sideEffects": false,
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest --run"
+  },
   "peerDependencies": {
     "zod": "^4.0.0"
   },
@@ -17,5 +26,11 @@
     "zod": {
       "optional": true
     }
+  },
+  "devDependencies": {
+    "eslint": "^9",
+    "typescript": "^5",
+    "vitest": "^4.0.18",
+    "zod": "^4.3.6"
   }
 }

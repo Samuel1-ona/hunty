@@ -1,7 +1,5 @@
 "use client"
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import Server from "@stellar/stellar-sdk"
 import {
   createContext,
   type ReactNode,
@@ -13,6 +11,7 @@ import {
 } from "react"
 
 import {
+  type Server,
   createSorobanServer,
   getSorobanNetworkPassphrase,
   getSorobanRpcOptimizer,
@@ -27,8 +26,7 @@ export type SorobanConnectionStatus =
 
 export type SorobanContextValue = {
   /** Valid Server instance for Soroban RPC (same API as soroban-client). */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  server: any | null
+  server: Server | null
   /** Network passphrase (e.g. Futurenet / Testnet). */
   networkPassphrase: string
   /** RPC URL in use. */
@@ -44,8 +42,7 @@ export type SorobanContextValue = {
 const SorobanContext = createContext<SorobanContextValue | null>(null)
 
 export function SorobanProvider({ children }: { children: ReactNode }) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [server, setServer] = useState<any | null>(null)
+  const [server, setServer] = useState<Server | null>(null)
   const [networkPassphrase] = useState(() => getSorobanNetworkPassphrase())
   const [rpcUrl] = useState(() => getSorobanRpcUrl())
   const [connectionStatus, setConnectionStatus] =

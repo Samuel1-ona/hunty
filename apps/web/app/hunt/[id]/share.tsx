@@ -40,6 +40,7 @@ import {
   updateHuntStatus,
   validateHuntInvite,
 } from "@/lib/huntStore";
+import { getHuntCapacity, getRemainingSpots } from "@/lib/huntStore";
 import { REGISTRATION_STATUS_DEBOUNCE_MS } from "@/lib/soroban/queryConfig";
 import { withTransactionToast } from "@/lib/txToast";
 import type {
@@ -48,6 +49,7 @@ import type {
   StoredHunt,
 } from "@/lib/types";
 import { addToWaitlist, getWaitlistPosition } from "@/lib/waitlist";
+import { getReferralLink, storePendingReferralCode } from "@/lib/referrals";
 
 interface HuntDetailProps {
   hunt: StoredHunt;
@@ -75,12 +77,19 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
 
   // Get current players (using stored hunt's playerCount, defaulting to 0)
   const currentPlayers = hunt.playerCount ?? 0;
-  const maxCapacity = hunt.maxCapacity;
+  const maxCapacity = getHuntCapacity(hunt);
+  const remainingSpots = getRemainingSpots(hunt);
 
   useEffect(() => {
     if (searchParams.get("reattempt") !== "1" || !connectedPublicKey) return;
     prepareHuntReattempt(connectedPublicKey, hunt.id);
   }, [connectedPublicKey, hunt.id, searchParams]);
+
+  useEffect(() => {
+    const referralCode = searchParams.get("ref")
+    if (!referralCode) return
+    storePendingReferralCode(referralCode)
+  }, [searchParams])
   
   /* eslint-disable react-hooks/set-state-in-effect -- wallet detection synchronizes React with an external browser extension. */
   useEffect(() => {
@@ -249,7 +258,12 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
   }, [hunt.id])
 
   const handleShare = async () => {
-    const url = buildDeepLink(`/hunt/${hunt.id}`)
+    const url = connectedPublicKey
+      ? getReferralLink(connectedPublicKey, {
+          baseUrl: window.location.origin,
+          huntId: hunt.id,
+        })
+      : buildDeepLink(`/hunt/${hunt.id}`)
     const copiedNow = await copyShareLink(url)
     if (copiedNow) {
       setCopied(true)
@@ -298,13 +312,18 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
                 currentPlayers={currentPlayers}
               />
               {/* Waitlist/Spot Display */}
-              {maxCapacity && (
+              {maxCapacity !== undefined && (
                 <WaitlistDisplay
                   huntId={hunt.id}
                   currentPlayers={currentPlayers}
                   maxCapacity={maxCapacity}
                   playerAddress={connectedPublicKey}
                 />
+              )}
+              {maxCapacity !== undefined && remainingSpots !== undefined && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                  {remainingSpots} of {maxCapacity} spots left
+                </div>
               )}
             </div>
           ) : (
@@ -395,6 +414,11 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
             </Button>
           )}
         </div>
+        {connectedPublicKey ? (
+          <p className="text-xs text-slate-500">
+            Shared links include your referral code and award bonus points after a first completed hunt.
+          </p>
+        ) : null}
         <QrCodeModal open={qrOpen} onClose={() => setQrOpen(false)} url={huntUrl} />
         {!hunt.is_private && (
           <EmbedModal
@@ -414,8 +438,7 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
         <HuntControls
           hunt={hunt}
           connectedPublicKey={connectedPublicKey}
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          onCancelled={(huntId, txHash) => {
+          onCancelled={(huntId, _txHash) => {
             markHuntCancelled(huntId)
             router.push("/hunts")
           }}
@@ -491,7 +514,6 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
     </div>
   );
 }
-
 
 
 

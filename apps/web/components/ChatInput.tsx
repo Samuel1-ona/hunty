@@ -1,24 +1,36 @@
-import { Send, Smile } from "lucide-react"
-import React, { useState } from "react"
+import { Send, Smile } from "lucide-react";
+import React, { useState } from "react";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Send, Smile } from "lucide-react"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const commonEmojis = [
-  "😀", "😂", "😍", "🤔", "👍", "👎", "❤️", "🔥", "🎉", "🙌",
-  "😎", "🤣", "😢", "😡", "👏", "🙏", "🤩", "😜", "🤗", "😇"
-]
+  "😀",
+  "😂",
+  "😍",
+  "🤔",
+  "👍",
+  "👎",
+  "❤️",
+  "🔥",
+  "🎉",
+  "🙌",
+  "😎",
+  "🤣",
+  "😢",
+  "😡",
+  "👏",
+  "🙏",
+  "🤩",
+  "😜",
+  "🤗",
+  "😇",
+];
 
 interface ChatInputProps {
-  onSend: (message: string) => void
-  disabled?: boolean
-  placeholder?: string
+  onSend: (message: string) => void;
+  disabled?: boolean;
+  placeholder?: string;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -26,27 +38,27 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   disabled = false,
   placeholder = "Type a message...",
 }) => {
-  const [message, setMessage] = useState("")
-  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false)
+  const [message, setMessage] = useState("");
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
 
   const handleSend = () => {
     if (message.trim()) {
-      onSend(message.trim())
-      setMessage("")
+      onSend(message.trim());
+      setMessage("");
     }
-  }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
+      e.preventDefault();
+      handleSend();
     }
-  }
+  };
 
   const insertEmoji = (emoji: string) => {
-    setMessage(prev => prev + emoji)
-    setEmojiPickerOpen(false)
-  }
+    setMessage((prev) => prev + emoji);
+    setEmojiPickerOpen(false);
+  };
 
   return (
     <div className="flex items-center gap-2 p-3 border-t border-slate-200 dark:border-slate-700">
@@ -61,9 +73,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         />
       </div>
       <div className="relative">
-        <Button 
-          variant="ghost" 
-          size="icon" 
+        <Button
+          variant="ghost"
+          size="icon"
           disabled={disabled}
           onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
           type="button"
@@ -98,5 +110,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         <Send className="h-4 w-4" />
       </Button>
     </div>
-  )
-}
+  );
+};
+ 

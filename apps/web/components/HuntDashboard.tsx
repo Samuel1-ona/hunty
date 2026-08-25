@@ -1,30 +1,6 @@
-"use client"
-
-import { BarChart3, Copy, Eye, List, Plus, Trash2, Trophy, X } from "lucide-react"
-import Link from "next/link"
-import { useState, type MouseEvent as ReactMouseEvent } from "react"
-import { toast } from "sonner"
-
-import { ActivateHuntModal } from "@/components/ActivateHuntModal"
-import { CreatorAnalytics } from "@/components/CreatorAnalytics"
-import { LeaderboardTable } from "@/components/LeaderBoardTable"
-import { RewardPoolManager } from "@/components/RewardPoolManager"
-import { StarRating } from "@/components/StarRating"
-import { Button } from "@/components/ui/button"
-import { Card, CardDescription, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
 "use client";
 
-import {
-  BarChart3,
-  Copy,
-  Eye,
-  List,
-  Plus,
-  Trash2,
-  Trophy,
-  X,
-} from "lucide-react";
+import { BarChart3, Copy, Eye, List, Plus, Trash2, Trophy, X } from "lucide-react";
 import Link from "next/link";
 import { type MouseEvent as ReactMouseEvent, useState } from "react";
 import { toast } from "sonner";
@@ -34,26 +10,16 @@ import { CreatorAnalytics } from "@/components/CreatorAnalytics";
 import { HuntInviteControls } from "@/components/HuntInviteControls";
 import { LeaderboardTable } from "@/components/LeaderBoardTable";
 import { RewardPoolManager } from "@/components/RewardPoolManager";
+import { StarRating } from "@/components/StarRating";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { deleteHunts, archiveHunts, duplicateHunt } from "@/lib/huntStore"
-import { Input } from "@/components/ui/input"
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   HUNT_HISTORY_STATUS_FILTERS,
   type HuntHistorySortOption,
   type HuntHistoryStatusFilter,
-} from "@/lib/huntHistory"
-import type { ClueRow, StoredHunt } from "@/lib/types"
-import { cn } from "@/lib/utils"
 } from "@/lib/huntHistory";
 import { archiveHunts, deleteHunts, duplicateHunt } from "@/lib/huntStore";
 import type { ClueRow, StoredHunt } from "@/lib/types";
@@ -94,7 +60,7 @@ function StatusBadge({ status }: { status: StoredHunt["status"] }) {
     <span
       className={cn(
         "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium",
-        styles,
+        styles
       )}
     >
       {status}
@@ -139,9 +105,7 @@ export function HuntDashboard({
   const [modalHunt, setModalHunt] = useState<StoredHunt | null>(null);
   const [activatingId, setActivatingId] = useState<number | null>(null);
   const [clueModalHunt, setClueModalHunt] = useState<StoredHunt | null>(null);
-  const [leaderboardHunt, setLeaderboardHunt] = useState<StoredHunt | null>(
-    null,
-  );
+  const [leaderboardHunt, setLeaderboardHunt] = useState<StoredHunt | null>(null);
   const [clueRows, setClueRows] = useState<ClueRow[]>([
     { id: 1, question: "", answer: "", points: 10 },
   ]);
@@ -150,19 +114,11 @@ export function HuntDashboard({
   const [activeTab, setActiveTab] = useState<"hunts" | "analytics">("hunts");
 
   const visibleHuntIds = hunts.map((hunt) => hunt.id);
-  const selectedVisibleCount = visibleHuntIds.filter((id) =>
-    selectedIds.has(id),
-  ).length;
-  const allVisibleSelected =
-    hunts.length > 0 && selectedVisibleCount === hunts.length;
-  const pageNumbers = Array.from(
-    { length: totalPages },
-    (_, index) => index + 1,
-  ).filter(
+  const selectedVisibleCount = visibleHuntIds.filter((id) => selectedIds.has(id)).length;
+  const allVisibleSelected = hunts.length > 0 && selectedVisibleCount === hunts.length;
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1).filter(
     (pageNumber) =>
-      pageNumber === 1 ||
-      pageNumber === totalPages ||
-      Math.abs(pageNumber - currentPage) <= 1,
+      pageNumber === 1 || pageNumber === totalPages || Math.abs(pageNumber - currentPage) <= 1
   );
 
   const toggleSelect = (id: number) => {
@@ -209,10 +165,7 @@ export function HuntDashboard({
     toast.success("Copied Hunt ID to clipboard!");
   };
 
-  const handleDuplicate = (
-    event: ReactMouseEvent<HTMLElement>,
-    hunt: StoredHunt,
-  ) => {
+  const handleDuplicate = (event: ReactMouseEvent<HTMLElement>, hunt: StoredHunt) => {
     event.preventDefault();
     event.stopPropagation();
     const duplicated = duplicateHunt(hunt.id);
@@ -246,12 +199,8 @@ export function HuntDashboard({
   };
 
   const addClueRow = () => {
-    const newId =
-      clueRows.length > 0 ? Math.max(...clueRows.map((row) => row.id)) + 1 : 1;
-    setClueRows([
-      ...clueRows,
-      { id: newId, question: "", answer: "", points: 10 },
-    ]);
+    const newId = clueRows.length > 0 ? Math.max(...clueRows.map((row) => row.id)) + 1 : 1;
+    setClueRows([...clueRows, { id: newId, question: "", answer: "", points: 10 }]);
   };
 
   const removeClueRow = (id: number) => {
@@ -260,21 +209,13 @@ export function HuntDashboard({
     }
   };
 
-  const updateClueRow = (
-    id: number,
-    field: keyof Omit<ClueRow, "id">,
-    value: string | number,
-  ) => {
-    setClueRows(
-      clueRows.map((row) => (row.id === id ? { ...row, [field]: value } : row)),
-    );
+  const updateClueRow = (id: number, field: keyof Omit<ClueRow, "id">, value: string | number) => {
+    setClueRows(clueRows.map((row) => (row.id === id ? { ...row, [field]: value } : row)));
   };
 
   const handleSaveClues = async () => {
     if (!clueModalHunt) return;
-    const validRows = clueRows.filter(
-      (row) => row.question.trim() && row.answer.trim(),
-    );
+    const validRows = clueRows.filter((row) => row.question.trim() && row.answer.trim());
     if (!validRows.length) return;
 
     setIsSavingClues(true);
@@ -287,9 +228,7 @@ export function HuntDashboard({
     }
   };
 
-  const cluesAreValid = clueRows.some(
-    (row) => row.question.trim() && row.answer.trim(),
-  );
+  const cluesAreValid = clueRows.some((row) => row.question.trim() && row.answer.trim());
   const resultsLabel =
     filteredCount === totalHunts
       ? `${totalHunts} total hunts`
@@ -305,7 +244,7 @@ export function HuntDashboard({
             "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all",
             activeTab === "hunts"
               ? "bg-[#3737A4] text-white shadow-sm"
-              : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white",
+              : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
           )}
         >
           <List className="w-4 h-4" />
@@ -317,7 +256,7 @@ export function HuntDashboard({
             "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all",
             activeTab === "analytics"
               ? "bg-[#3737A4] text-white shadow-sm"
-              : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white",
+              : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
           )}
         >
           <BarChart3 className="w-4 h-4" />
@@ -354,9 +293,7 @@ export function HuntDashboard({
                 Sort by
                 <select
                   value={sortOption}
-                  onChange={(event) =>
-                    onSortChange(event.target.value as HuntHistorySortOption)
-                  }
+                  onChange={(event) => onSortChange(event.target.value as HuntHistorySortOption)}
                   className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#3737A4] dark:border-white/10 dark:bg-slate-900 dark:text-slate-100"
                 >
                   {Object.entries(SORT_LABELS).map(([value, label]) => (
@@ -438,39 +375,6 @@ export function HuntDashboard({
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
-                <Link href={`/hunt/${hunt.id}`}>
-                  <div className="p-5">
-                    <div className="mb-2 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <CardTitle className="line-clamp-2 text-lg dark:text-white">{hunt.title}</CardTitle>
-                        <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-md text-xs text-slate-500 dark:text-slate-400 font-mono">
-                          #{hunt.id}
-                          <button
-                            onClick={(e) => handleCopyId(e, hunt.id)}
-                            aria-label={`Copy hunt ID ${hunt.id}`}
-                            className="hover:text-slate-800 dark:hover:text-white transition-colors"
-                          >
-                            <Copy className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                      <StatusBadge status={hunt.status} />
-                    </div>
-                    <CardDescription className="mb-4 line-clamp-3 text-sm text-slate-600 dark:text-slate-400">
-                      {hunt.description}
-                    </CardDescription>
-                    <StarRating
-                      rating={hunt.averageRating}
-                      count={hunt.reviewCount}
-                      className="mb-3"
-                    />
-                    <div className="mb-4 flex flex-wrap gap-2">
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-white/5 dark:text-slate-300">
-                        {hunt.playerCount ?? 0} players
-                      </span>
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-white/5 dark:text-slate-300">
-                        {hunt.rewardPool ?? 0} XLM reward pool
-                      </span>
               )}
             </div>
           </div>
@@ -482,8 +386,7 @@ export function HuntDashboard({
                   No hunts found for this filter
                 </p>
                 <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                  Try another status or sort option to explore your hunt
-                  history.
+                  Try another status or sort option to explore your hunt history.
                 </p>
               </div>
             ) : (
@@ -502,7 +405,7 @@ export function HuntDashboard({
                       "group relative overflow-hidden rounded-2xl border transition-all",
                       selectedIds.has(hunt.id)
                         ? "border-blue-400 dark:border-blue-500 bg-blue-50/30 dark:bg-blue-900/10 ring-1 ring-blue-400 dark:ring-blue-500"
-                        : "border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-white/20 shadow-sm",
+                        : "border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-white/20 shadow-sm"
                     )}
                   >
                     <div className="absolute right-3 top-3 z-10">
@@ -537,6 +440,11 @@ export function HuntDashboard({
                         <CardDescription className="mb-4 line-clamp-3 text-sm text-slate-600 dark:text-slate-400">
                           {hunt.description}
                         </CardDescription>
+                        <StarRating
+                          rating={hunt.averageRating}
+                          count={hunt.reviewCount}
+                          className="mb-3"
+                        />
                         <div className="mb-4 flex flex-wrap gap-2">
                           <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-white/5 dark:text-slate-300">
                             {hunt.playerCount ?? 0} players
@@ -553,8 +461,7 @@ export function HuntDashboard({
                         <HuntInviteControls hunt={hunt} onRefresh={onRefresh} />
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <span className="text-xs text-slate-500 dark:text-slate-400">
-                            {hunt.cluesCount}{" "}
-                            {hunt.cluesCount === 1 ? "clue" : "clues"}
+                            {hunt.cluesCount} {hunt.cluesCount === 1 ? "clue" : "clues"}
                           </span>
                           <div className="flex gap-2">
                             <Button
@@ -583,9 +490,7 @@ export function HuntDashboard({
                                     variant="outline"
                                     asChild
                                     className="border-amber-400 text-amber-700 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-400 dark:hover:bg-amber-900/20"
-                                    onClick={(e: React.MouseEvent) =>
-                                      e.stopPropagation()
-                                    }
+                                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
                                   >
                                     <Link href={`/hunt/${hunt.id}/preview`}>
                                       <Eye className="mr-1 h-3 w-3" />
@@ -602,9 +507,7 @@ export function HuntDashboard({
                                 asChild
                                 className="flex items-center gap-1.5 border-[#3737A4] text-[#3737A4] hover:bg-[#3737A4] hover:text-white"
                               >
-                                <Link
-                                  href={`/dashboard/hunts/${hunt.id}/leaderboard`}
-                                >
+                                <Link href={`/dashboard/hunts/${hunt.id}/leaderboard`}>
                                   <Trophy className="h-4 w-4" />
                                   Leaderboard
                                 </Link>
@@ -661,20 +564,15 @@ export function HuntDashboard({
               {pageNumbers.map((pageNumber, index) => {
                 const previousPage = pageNumbers[index - 1];
                 const shouldShowGap =
-                  typeof previousPage === "number" &&
-                  pageNumber - previousPage > 1;
+                  typeof previousPage === "number" && pageNumber - previousPage > 1;
 
                 return (
                   <div key={pageNumber} className="flex items-center gap-2">
-                    {shouldShowGap && (
-                      <span className="px-1 text-sm text-slate-400">…</span>
-                    )}
+                    {shouldShowGap && <span className="px-1 text-sm text-slate-400">…</span>}
                     <Button
                       type="button"
                       size="sm"
-                      variant={
-                        pageNumber === currentPage ? "default" : "outline"
-                      }
+                      variant={pageNumber === currentPage ? "default" : "outline"}
                       onClick={() => onPageChange(pageNumber)}
                       className={
                         pageNumber === currentPage
@@ -710,14 +608,8 @@ export function HuntDashboard({
         isActivating={activatingId !== null}
       />
 
-      <Dialog
-        open={!!leaderboardHunt}
-        onOpenChange={(open) => !open && setLeaderboardHunt(null)}
-      >
-        <DialogContent
-          showCloseButton
-          className="bg-[#f9f9ff] sm:max-w-2xl dark:bg-slate-950"
-        >
+      <Dialog open={!!leaderboardHunt} onOpenChange={(open) => !open && setLeaderboardHunt(null)}>
+        <DialogContent showCloseButton className="bg-[#f9f9ff] sm:max-w-2xl dark:bg-slate-950">
           <DialogHeader className="mb-4">
             <DialogTitle className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] bg-clip-text text-center text-2xl font-bold text-transparent">
               Leaderboard - {leaderboardHunt?.title}
@@ -725,17 +617,12 @@ export function HuntDashboard({
           </DialogHeader>
 
           <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-inner dark:border-white/5 dark:bg-slate-900">
-            {leaderboardHunt && (
-              <LeaderboardTable huntId={leaderboardHunt.id} />
-            )}
+            {leaderboardHunt && <LeaderboardTable huntId={leaderboardHunt.id} />}
           </div>
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={!!clueModalHunt}
-        onOpenChange={(open) => !open && setClueModalHunt(null)}
-      >
+      <Dialog open={!!clueModalHunt} onOpenChange={(open) => !open && setClueModalHunt(null)}>
         <DialogContent showCloseButton className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] bg-clip-text text-2xl font-bold text-transparent">
@@ -748,20 +635,13 @@ export function HuntDashboard({
               <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 Riddle / Question
               </span>
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                Answer
-              </span>
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                Points
-              </span>
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Answer</span>
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Points</span>
               <span />
             </div>
 
             {clueRows.map((row, index) => (
-              <div
-                key={row.id}
-                className="grid grid-cols-[1fr_1fr_56px_32px] items-center gap-2"
-              >
+              <div key={row.id} className="grid grid-cols-[1fr_1fr_56px_32px] items-center gap-2">
                 <div className="flex items-center gap-1.5">
                   <span className="w-4 shrink-0 text-xs text-slate-400 dark:text-slate-500">
                     {index + 1}.
@@ -769,18 +649,14 @@ export function HuntDashboard({
                   <Input
                     placeholder="e.g. What has keys but no locks?"
                     value={row.question}
-                    onChange={(event) =>
-                      updateClueRow(row.id, "question", event.target.value)
-                    }
+                    onChange={(event) => updateClueRow(row.id, "question", event.target.value)}
                     className="py-2 pl-3 text-sm"
                   />
                 </div>
                 <Input
                   placeholder="Answer (e.g. keyboard|laptop)"
                   value={row.answer}
-                  onChange={(event) =>
-                    updateClueRow(row.id, "answer", event.target.value)
-                  }
+                  onChange={(event) => updateClueRow(row.id, "answer", event.target.value)}
                   className="py-2 pl-3 text-sm"
                 />
                 <Input
@@ -789,11 +665,7 @@ export function HuntDashboard({
                   value={row.points}
                   min={1}
                   onChange={(event) =>
-                    updateClueRow(
-                      row.id,
-                      "points",
-                      parseInt(event.target.value, 10) || 0,
-                    )
+                    updateClueRow(row.id, "points", parseInt(event.target.value, 10) || 0)
                   }
                   className="py-2 pl-3 text-sm"
                 />
@@ -848,3 +720,4 @@ export function HuntDashboard({
     </>
   );
 }
+ 

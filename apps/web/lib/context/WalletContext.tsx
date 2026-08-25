@@ -1,11 +1,6 @@
-"use client"
+"use client";
 
-import {
-  getAddress,
-  isConnected,
-  requestAccess,
-  WatchWalletChanges,
-} from "@stellar/freighter-api"
+import { useRouter } from "next/navigation";
 import {
   createContext,
   type ReactNode,
@@ -13,8 +8,8 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useState,
-} from "react"
+  useRef,
+} from "react";
 
 import { useIsMounted } from "@/hooks/useIsMounted"
 import { migrateGuestProgressToWallet } from "@/lib/huntStore"
@@ -27,8 +22,13 @@ import {
 } from "@/lib/walletAdapter"
 import { useWalletStore } from "@/lib/wallets/walletStore"
 import { truncateAddress } from "@/lib/walletAddress"
+import { truncateAddress } from "@/lib/walletAddress";
+import { useWalletMachine } from "@/lib/wallet/walletMachine";
+import { useWalletStore } from "@/lib/wallets/walletStore";
+import { usePlayerStore, useWalletStore as useLegacyWalletStore } from "@/store/useStore";
+import type { WalletProvider } from "@/lib/wallets/types";
 
-const STORAGE_KEY = "freighter_public_key"
+// ─── Address display helper ────────────────────────────────────────────────
 
 /**
  * Shortens a Stellar public key for display.
@@ -39,129 +39,59 @@ const STORAGE_KEY = "freighter_public_key"
  * 4 + 4 default used elsewhere.
  */
 export function shortenAddress(address: string, chars = 6): string {
-  if (!address) return address
-  return truncateAddress(address, { lead: chars, tail: chars })
+  if (!address) return address;
+  return truncateAddress(address, { lead: chars, tail: chars });
 }
+
+// ─── Context value type ────────────────────────────────────────────────────
 
 interface WalletContextValue {
   /** Whether a wallet is currently connected */
-  connected: boolean
+  connected: boolean;
   /** Full Stellar public key of connected account, or empty string */
-  publicKey: string
+  publicKey: string;
   /** Shortened public key suitable for display in header */
-  displayKey: string
+  displayKey: string;
   /** Call this when the user clicks "Connect Wallet" — triggers wallet popup */
-  connect: (provider?: WalletProvider) => Promise<{ error?: string }>
+  connect: (provider?: WalletProvider) => Promise<{ error?: string }>;
   /** Current selected wallet provider. */
-  walletProvider: WalletProvider | null
-  /** Disconnects and clears localStorage */
-  disconnect: () => void
+  walletProvider: WalletProvider | null;
+  /** Disconnects, clears all wallet/session state, and redirects home */
+  disconnect: () => void;
 }
 
-export const WalletContext = createContext<WalletContextValue | null>(null)
+export const WalletContext = createContext<WalletContextValue | null>(null);
+
+// ─── Provider ──────────────────────────────────────────────────────────────
 
 export function WalletProvider({ children }: { children: ReactNode }) {
-  const mounted = useIsMounted()
-  const [publicKey, setPublicKey] = useState<string>("")
-  const [connected, setConnected] = useState(false)
-  const [walletProvider, setWalletProvider] = useState<WalletProvider | null>(null)
+  const router = useRouter();
+  const serverSafe = useRef(typeof window !== "undefined");
 
-  const { setConnected: storeSetConnected, setDisconnected: storeSetDisconnected } =
-    useWalletStore()
+  // ── State machine (single source of truth) ─────────────────────────
+  const {
+    state,
+    connect: machineConnect,
+    disconnect: machineDisconnect,
+  } = useWalletMachine();
 
-  // On client mount: restore persisted session and verify it's still valid
+  const { status, publicKey, provider, error } = state;
+  const connected = status === "connected";
+
+  // ── Sync machine state into zustand store (cross-component) ────────
+  const { syncFromMachine: storeSync } = useWalletStore();
+
   useEffect(() => {
-    if (!mounted) return
+    if (!serverSafe.current) return;
+    storeSync({ status, publicKey, provider, error });
 
-    const restoreSession = async () => {
-      const session = getStoredWalletSession()
-      if (session) {
-        try {
-          const address = await connectWalletProvider(session.provider)
-          setStoredWalletSession(session.provider, address)
-          localStorage.setItem(STORAGE_KEY, address)
-          setPublicKey(address)
-          setWalletProvider(session.provider)
-          setConnected(true)
-          return
-        } catch {
-          clearStoredWalletSession()
-        }
-      }
-
-      const saved = localStorage.getItem(STORAGE_KEY)
-      if (!saved) return
-
-      try {
-        // Check extension is present before calling getAddress
-        const connResult = await isConnected()
-        if (!connResult.isConnected) {
-          // Extension removed or disabled — clear stale session
-          localStorage.removeItem(STORAGE_KEY)
-          return
-        }
-
-        // getAddress() returns the active address without prompting the user.
-        // Returns empty string (not an error) if the app isn't on the allow list.
-        const addrResult = await getAddress()
-        if (addrResult.error || !addrResult.address) {
-          localStorage.removeItem(STORAGE_KEY)
-          return
-        }
-
-        // Restore session (update if user switched accounts in Freighter)
-        const resolvedKey = addrResult.address
-        if (resolvedKey !== saved) {
-          localStorage.setItem(STORAGE_KEY, resolvedKey)
-        }
-        setPublicKey(resolvedKey)
-        setWalletProvider("freighter")
-        setConnected(true)
-      } catch {
-        localStorage.removeItem(STORAGE_KEY)
-      }
+    // Also sync legacy stores for backwards compat
+    if (status === "connected") {
+      useLegacyWalletStore.getState().setWallet(publicKey);
     }
-
-    restoreSession()
-  }, [mounted])
-
-  // Watch for live account/network changes (e.g. user switches accounts in Freighter)
-  // Runs once on client mount — watcher polls internally every 3s
-  useEffect(() => {
-    if (!mounted) return
-
-    let watcher: InstanceType<typeof WatchWalletChanges> | null = null
-
-    try {
-      watcher = new WatchWalletChanges(3000)
-      watcher.watch(
-        ({
-          address,
-        }: {
-          address: string
-          network: string
-          networkPassphrase: string
-        }) => {
-          if (address) {
-            // Account changed or connected
-            setPublicKey(address)
-            setConnected(true)
-            localStorage.setItem(STORAGE_KEY, address)
-            setStoredWalletSession("freighter", address)
-          } else {
-            // Empty address = user locked or disconnected Freighter
-            setPublicKey("")
-            setConnected(false)
-            localStorage.removeItem(STORAGE_KEY)
-          }
-        },
-      )
-    } catch {
-      // Freighter not installed — watcher silently skipped
-    }
-
-    return () => {
-      watcher?.stop()
+    if (status === "disconnected") {
+      useLegacyWalletStore.getState().clearWallet();
+      usePlayerStore.getState().clearProgress();
     }
   }, [mounted])
 
@@ -223,40 +153,50 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, [storeSetConnected])
 
-  const disconnect = useCallback(() => {
-    clearStoredWalletSession()
-    localStorage.removeItem(STORAGE_KEY)
-    setPublicKey("")
-    setWalletProvider(null)
-    setConnected(false)
-    storeSetDisconnected()
-  }, [storeSetDisconnected])
+  }, [status, publicKey, provider, error, storeSync]);
 
+  // ── Connect wrapper (matches existing interface) ───────────────────
+  // machineConnect handles all errors internally by dispatching CONNECT_ERROR.
+  const connect = useCallback(
+    async (provider?: WalletProvider): Promise<{ error?: string }> => {
+      await machineConnect(provider);
+      return {};
+    },
+    [machineConnect]
+  );
+
+  // ── Disconnect wrapper ────────────────────────────────────────────
+  const disconnect = useCallback(() => {
+    machineDisconnect();
+    router.push("/");
+  }, [machineDisconnect, router]);
+
+  // ── Memoized context value ─────────────────────────────────────────
   const value = useMemo<WalletContextValue>(
     () => ({
       connected,
       publicKey,
       displayKey: shortenAddress(publicKey),
       connect,
-      walletProvider,
+      walletProvider: provider,
       disconnect,
     }),
-    [connected, publicKey, connect, walletProvider, disconnect],
-  )
+    [connected, publicKey, connect, provider, disconnect]
+  );
 
-  return (
-    <WalletContext.Provider value={value}>{children}</WalletContext.Provider>
-  )
+  return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
 }
+
+// ─── Hook ──────────────────────────────────────────────────────────────────
 
 /**
  * Hook to access wallet connection state and methods.
  * Must be used within a WalletProvider.
  */
 export function useWallet(): WalletContextValue {
-  const ctx = useContext(WalletContext)
+  const ctx = useContext(WalletContext);
   if (ctx == null) {
-    throw new Error("useWallet must be used within a WalletProvider")
+    throw new Error("useWallet must be used within a WalletProvider");
   }
-  return ctx
+  return ctx;
 }

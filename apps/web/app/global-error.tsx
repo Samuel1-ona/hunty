@@ -1,5 +1,6 @@
 "use client"
 
+import * as Sentry from "@sentry/nextjs"
 import { useEffect } from "react"
 
 import { logger } from "@/lib/logger"
@@ -13,8 +14,9 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     logger.error("[GlobalError] Fatal error:", error)
-    // Sentry-ready: pass error to your Sentry DSN when configured.
-    // Sentry.captureException(error)
+    Sentry.captureException(error, {
+      tags: { boundary: "GlobalError", digest: error.digest },
+    })
   }, [error])
 
   return (

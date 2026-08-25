@@ -33,6 +33,10 @@ export function RegistrationButton({
   const [retryCount, setRetryCount] = useState(0);
 
   const isHuntFull = maxCapacity !== undefined && currentPlayers !== undefined && currentPlayers >= maxCapacity;
+  const capacityCopy =
+    maxCapacity !== undefined && currentPlayers !== undefined
+      ? `${Math.max(0, maxCapacity - currentPlayers)} of ${maxCapacity} spots left`
+      : null;
 
   const handleRegister = async () => {
     setIsRegistering(true);
@@ -151,6 +155,9 @@ export function RegistrationButton({
             </>
           )}
         </button>
+      )}
+      {capacityCopy && (
+        <p className="text-center text-xs text-slate-500 dark:text-slate-400">{capacityCopy}</p>
       )}
 
       {/* Success message */}

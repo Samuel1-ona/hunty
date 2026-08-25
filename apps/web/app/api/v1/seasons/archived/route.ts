@@ -4,16 +4,13 @@ import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
 import { NotFoundError, ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
 
-import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
-import { getArchivedSeasonById,getArchivedSeasons } from "@/lib/seasonStore";
-
 /**
  * GET /api/v1/seasons/archived
  * Get all archived seasons
  */
 export const GET = withErrorHandling(async (req: Request) => {
   const ip = getIP(req);
-  const { success, reset } = rateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
+  const { success, reset } = await rateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
 
   if (!success) {
     return rateLimitResponse(reset);
@@ -39,3 +36,4 @@ export const GET = withErrorHandling(async (req: Request) => {
   const archived = getArchivedSeasons();
   return NextResponse.json({ archived });
 });
+ 

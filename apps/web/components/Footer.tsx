@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { FormEvent, useState } from "react"
-import Link from "next/link"
+import { FormEvent, useState } from "react";
+import Link from "next/link";
 import {
   ArrowUpRight,
   BadgeCheck,
@@ -11,7 +11,9 @@ import {
   Send,
   ShieldCheck,
   Sparkles,
-} from "lucide-react"
+} from "lucide-react";
+import { useTranslations } from "next-intl";
+
 
 const footerSections = [
   {
@@ -40,7 +42,7 @@ const footerSections = [
       { label: "FAQ", href: "/help" },
     ],
   },
-]
+];
 
 const socialLinks = [
   {
@@ -58,21 +60,24 @@ const socialLinks = [
     href: "https://t.me/huntyapp",
     icon: Send,
   },
-]
-import { HelpCircle } from "lucide-react"
+];
 
 export function Footer() {
+  const t = useTranslations("footer")
+  const commonT = useTranslations("common")
   const [email, setEmail] = useState("")
   const [isSubscribed, setIsSubscribed] = useState(false)
+  const [email, setEmail] = useState("");
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   const handleSubscribe = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
+    event.preventDefault();
 
-    if (!email.trim()) return
+    if (!email.trim()) return;
 
-    setIsSubscribed(true)
-    setEmail("")
-  }
+    setIsSubscribed(true);
+    setEmail("");
+  };
 
   return (
     <footer className="mt-12 border-t border-slate-200/80 bg-white/90 text-slate-700 dark:border-white/10 dark:bg-slate-950/90 dark:text-slate-300">
@@ -86,8 +91,8 @@ export function Footer() {
               Hunty
             </Link>
             <p className="max-w-sm text-sm leading-6 text-slate-600 dark:text-slate-400">
-              Create, discover, and complete Web3 scavenger hunts powered by
-              Stellar rewards.
+              {t("description")}
+              Create, discover, and complete Web3 scavenger hunts powered by Stellar rewards.
             </p>
             <Link
               href="https://stellar.org"
@@ -97,15 +102,12 @@ export function Footer() {
               aria-label="Built on Stellar"
             >
               <Sparkles className="h-3.5 w-3.5" />
-              Built on Stellar
+              {t("builtOnStellar")}
               <ArrowUpRight className="h-3.5 w-3.5" />
             </Link>
           </div>
 
-          <nav
-            className="grid grid-cols-1 gap-8 sm:grid-cols-3"
-            aria-label="Footer navigation"
-          >
+          <nav className="grid grid-cols-1 gap-8 sm:grid-cols-3" aria-label="Footer navigation">
             {footerSections.map((section) => (
               <div key={section.title}>
                 <h2 className="text-sm font-bold text-slate-900 dark:text-white">
@@ -130,16 +132,14 @@ export function Footer() {
           <div className="space-y-5">
             <div>
               <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                Stay in the hunt
+                {t("stayInHunt")}
               </h2>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Stay in the hunt</h2>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                Get product updates, new hunt drops, and creator tips.
+                {t("getUpdates")}
               </p>
             </div>
-            <form
-              onSubmit={handleSubscribe}
-              className="flex flex-col gap-3 sm:max-w-md"
-            >
+            <form onSubmit={handleSubscribe} className="flex flex-col gap-3 sm:max-w-md">
               <label htmlFor="footer-email" className="sr-only">
                 Email address
               </label>
@@ -153,8 +153,8 @@ export function Footer() {
                     aria-label="Email address"
                     value={email}
                     onChange={(event) => {
-                      setEmail(event.target.value)
-                      setIsSubscribed(false)
+                      setEmail(event.target.value);
+                      setIsSubscribed(false);
                     }}
                     placeholder="you@example.com"
                     className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-900 outline-none transition focus:border-[#3737A4] focus:ring-2 focus:ring-[#3737A4]/20 dark:border-white/10 dark:bg-slate-900 dark:text-white"
@@ -165,13 +165,13 @@ export function Footer() {
                   aria-label="Subscribe to updates"
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#0C0C4F] px-4 text-sm font-bold text-white transition hover:bg-[#3737A4] focus:outline-none focus:ring-2 focus:ring-[#3737A4]/40"
                 >
-                  Subscribe
+                  {t("subscribe")}
                 </button>
               </div>
               {isSubscribed && (
                 <p className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600 dark:text-emerald-400">
                   <BadgeCheck className="h-4 w-4" />
-                  Thanks for subscribing.
+                  {t("thanksForSubscribing")}
                 </p>
               )}
             </form>
@@ -180,13 +180,13 @@ export function Footer() {
 
         <div className="mt-10 flex flex-col gap-5 border-t border-slate-200 pt-6 text-sm text-slate-500 dark:border-white/10 dark:text-slate-400 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
-            <p>&copy; {new Date().getFullYear()} Hunty. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} {commonT("appName")}. {t("rights")}</p>
             <Link
               href="/help"
               className="inline-flex items-center gap-1.5 transition-colors hover:text-[#3737A4] dark:hover:text-blue-300"
             >
               <HelpCircle className="h-4 w-4" />
-              Help & Troubleshooting
+              {t("helpAndTroubleshooting")}
             </Link>
           </div>
 
@@ -207,5 +207,5 @@ export function Footer() {
         </div>
       </div>
     </footer>
-  )
+  );
 }

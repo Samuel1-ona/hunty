@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 /**
  * HuntAnalyticsDashboard
@@ -12,7 +12,7 @@
  *  6. Export analytics data as CSV
  */
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react";
 import {
   AreaChart,
   Area,
@@ -27,7 +27,7 @@ import {
   PieChart,
   Pie,
   Cell,
-} from "recharts"
+} from "recharts";
 import {
   Eye,
   Play,
@@ -42,34 +42,31 @@ import {
   Monitor,
   Tablet,
   HelpCircle,
-} from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import type { HuntAnalyticsResponse } from "@/lib/huntAnalytics"
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import type { HuntAnalyticsResponse } from "@/lib/huntAnalytics";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatSeconds(seconds: number | null): string {
-  if (seconds === null || seconds === undefined) return "N/A"
-  const s = Math.max(0, Math.round(seconds))
-  const h = Math.floor(s / 3600)
-  const m = Math.floor((s % 3600) / 60)
-  const rem = s % 60
-  if (h > 0) return `${h}h ${m.toString().padStart(2, "0")}m`
-  if (m > 0) return `${m}m ${rem.toString().padStart(2, "0")}s`
-  return `${rem}s`
+  if (seconds === null || seconds === undefined) return "N/A";
+  const s = Math.max(0, Math.round(seconds));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const rem = s % 60;
+  if (h > 0) return `${h}h ${m.toString().padStart(2, "0")}m`;
+  if (m > 0) return `${m}m ${rem.toString().padStart(2, "0")}s`;
+  return `${rem}s`;
 }
 
-function filterByDays(
-  timeSeries: HuntAnalyticsResponse["timeSeries"],
-  days: number | null
-) {
-  if (days === null) return timeSeries
-  const cutoff = new Date()
-  cutoff.setDate(cutoff.getDate() - days)
-  const cutoffStr = cutoff.toISOString().slice(0, 10)
-  return timeSeries.filter((p) => p.date >= cutoffStr)
+function filterByDays(timeSeries: HuntAnalyticsResponse["timeSeries"], days: number | null) {
+  if (days === null) return timeSeries;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+  return timeSeries.filter((p) => p.date >= cutoffStr);
 }
 
 const DEVICE_ICONS: Record<string, React.ReactNode> = {
@@ -77,27 +74,27 @@ const DEVICE_ICONS: Record<string, React.ReactNode> = {
   desktop: <Monitor className="w-4 h-4" />,
   tablet: <Tablet className="w-4 h-4" />,
   unknown: <HelpCircle className="w-4 h-4" />,
-}
+};
 
-const PIE_COLORS = ["#3737A4", "#39A437", "#E3225C", "#F59E0B", "#8B5CF6"]
+const PIE_COLORS = ["#3737A4", "#39A437", "#E3225C", "#F59E0B", "#8B5CF6"];
 
-type DateRange = "7d" | "30d" | "90d" | "all"
+type DateRange = "7d" | "30d" | "90d" | "all";
 
 const DATE_RANGE_OPTIONS: { value: DateRange; label: string; days: number | null }[] = [
   { value: "7d", label: "7d", days: 7 },
   { value: "30d", label: "30d", days: 30 },
   { value: "90d", label: "90d", days: 90 },
   { value: "all", label: "All", days: null },
-]
+];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 interface StatCardProps {
-  icon: React.ReactNode
-  iconBg: string
-  label: string
-  value: string | number
-  sub?: string
+  icon: React.ReactNode;
+  iconBg: string;
+  label: string;
+  value: string | number;
+  sub?: string;
 }
 
 function StatCard({ icon, iconBg, label, value, sub }: StatCardProps) {
@@ -107,16 +104,14 @@ function StatCard({ icon, iconBg, label, value, sub }: StatCardProps) {
         <div className="flex items-start gap-4">
           <div className={cn("p-2.5 rounded-xl flex-shrink-0", iconBg)}>{icon}</div>
           <div className="min-w-0">
-            <p className="text-2xl font-bold text-slate-900 dark:text-white truncate">
-              {value}
-            </p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-white truncate">{value}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{label}</p>
             {sub && <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{sub}</p>}
           </div>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 // ─── Loading skeleton ─────────────────────────────────────────────────────────
@@ -135,7 +130,7 @@ function DashboardSkeleton() {
       </div>
       <div className="h-64 rounded-xl bg-slate-200 dark:bg-slate-700" />
     </div>
-  )
+  );
 }
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
@@ -149,80 +144,75 @@ function NoData() {
         Data will appear once players start viewing and playing this hunt.
       </p>
     </div>
-  )
+  );
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export interface HuntAnalyticsDashboardProps {
-  huntId: number
-  huntTitle?: string
+  huntId: number;
+  huntTitle?: string;
 }
 
-export function HuntAnalyticsDashboard({
-  huntId,
-  huntTitle,
-}: HuntAnalyticsDashboardProps) {
-  const [analytics, setAnalytics] = useState<HuntAnalyticsResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [dateRange, setDateRange] = useState<DateRange>("30d")
-  const [exporting, setExporting] = useState(false)
+export function HuntAnalyticsDashboard({ huntId, huntTitle }: HuntAnalyticsDashboardProps) {
+  const [analytics, setAnalytics] = useState<HuntAnalyticsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<DateRange>("30d");
+  const [exporting, setExporting] = useState(false);
 
   // ── Fetch ────────────────────────────────────────────────────────────────
 
   const fetchAnalytics = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
-      const res = await fetch(`/api/analytics/${huntId}`)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = (await res.json()) as HuntAnalyticsResponse
-      setAnalytics(data)
+      const res = await fetch(`/api/analytics/${huntId}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as HuntAnalyticsResponse;
+      setAnalytics(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load analytics")
+      setError(err instanceof Error ? err.message : "Failed to load analytics");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [huntId])
+  }, [huntId]);
 
   useEffect(() => {
-    void fetchAnalytics()
-  }, [fetchAnalytics])
+    void fetchAnalytics();
+  }, [fetchAnalytics]);
 
   // ── CSV export ───────────────────────────────────────────────────────────
 
   const handleExport = async () => {
-    setExporting(true)
+    setExporting(true);
     try {
-      const res = await fetch(`/api/analytics/${huntId}?format=csv`)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `hunt-${huntId}-analytics.csv`
-      a.click()
-      URL.revokeObjectURL(url)
+      const res = await fetch(`/api/analytics/${huntId}?format=csv`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `hunt-${huntId}-analytics.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
     } finally {
-      setExporting(false)
+      setExporting(false);
     }
-  }
+  };
 
   // ── Derived data ─────────────────────────────────────────────────────────
 
-  const rangeDays = DATE_RANGE_OPTIONS.find((o) => o.value === dateRange)?.days ?? 30
-  const filteredSeries = analytics
-    ? filterByDays(analytics.timeSeries, rangeDays)
-    : []
+  const rangeDays = DATE_RANGE_OPTIONS.find((o) => o.value === dateRange)?.days ?? 30;
+  const filteredSeries = analytics ? filterByDays(analytics.timeSeries, rangeDays) : [];
 
   const hasData = analytics
     ? analytics.views + analytics.starts + analytics.completions > 0
-    : false
+    : false;
 
   // ── Render ───────────────────────────────────────────────────────────────
 
-  if (loading) return <DashboardSkeleton />
+  if (loading) return <DashboardSkeleton />;
 
   if (error) {
     return (
@@ -230,17 +220,12 @@ export function HuntAnalyticsDashboard({
         <p className="text-sm text-red-700 dark:text-red-400 font-medium">
           Failed to load analytics: {error}
         </p>
-        <Button
-          variant="outline"
-          size="sm"
-          className="mt-3"
-          onClick={() => void fetchAnalytics()}
-        >
+        <Button variant="outline" size="sm" className="mt-3" onClick={() => void fetchAnalytics()}>
           <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
           Retry
         </Button>
       </div>
-    )
+    );
   }
 
   return (
@@ -351,9 +336,7 @@ export function HuntAnalyticsDashboard({
               icon={<Users className="w-5 h-5 text-rose-600 dark:text-rose-400" />}
               iconBg="bg-rose-50 dark:bg-rose-900/20"
               label="Unique Devices"
-              value={
-                analytics?.demographics?.reduce((s, d) => s + d.count, 0) ?? 0
-              }
+              value={analytics?.demographics?.reduce((s, d) => s + d.count, 0) ?? 0}
             />
           </div>
 
@@ -458,10 +441,7 @@ export function HuntAnalyticsDashboard({
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={analytics.clueDropOff} barGap={4}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                          <XAxis
-                            dataKey="label"
-                            tick={{ fontSize: 11, fill: "#94a3b8" }}
-                          />
+                          <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#94a3b8" }} />
                           <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} allowDecimals={false} />
                           <Tooltip
                             contentStyle={{
@@ -494,7 +474,7 @@ export function HuntAnalyticsDashboard({
                         const rate =
                           clue.attempts > 0
                             ? Math.round((clue.completions / clue.attempts) * 100)
-                            : 0
+                            : 0;
                         return (
                           <div key={clue.clueIndex} className="flex items-center gap-3">
                             <span className="w-20 text-xs text-slate-500 truncate">
@@ -510,7 +490,7 @@ export function HuntAnalyticsDashboard({
                               {rate}%
                             </span>
                           </div>
-                        )
+                        );
                       })}
                     </div>
                   </>
@@ -567,11 +547,8 @@ export function HuntAnalyticsDashboard({
 
                     <div className="flex-1 space-y-2 min-w-0">
                       {analytics.demographics.map((d, index) => {
-                        const total = analytics.demographics.reduce(
-                          (s, x) => s + x.count,
-                          0
-                        )
-                        const pct = total > 0 ? Math.round((d.count / total) * 100) : 0
+                        const total = analytics.demographics.reduce((s, x) => s + x.count, 0);
+                        const pct = total > 0 ? Math.round((d.count / total) * 100) : 0;
                         return (
                           <div key={d.deviceType} className="flex items-center gap-3">
                             <span
@@ -589,8 +566,7 @@ export function HuntAnalyticsDashboard({
                                 className="h-full rounded-full transition-all duration-700"
                                 style={{
                                   width: `${pct}%`,
-                                  backgroundColor:
-                                    PIE_COLORS[index % PIE_COLORS.length],
+                                  backgroundColor: PIE_COLORS[index % PIE_COLORS.length],
                                 }}
                               />
                             </div>
@@ -598,7 +574,7 @@ export function HuntAnalyticsDashboard({
                               {d.count} ({pct}%)
                             </span>
                           </div>
-                        )
+                        );
                       })}
                     </div>
                   </div>
@@ -622,16 +598,11 @@ export function HuntAnalyticsDashboard({
                       data={analytics!.clueDropOff.map((c) => ({
                         label: c.label,
                         avgSecs:
-                          c.completions > 0
-                            ? Math.round(c.totalTimeSeconds / c.completions)
-                            : 0,
+                          c.completions > 0 ? Math.round(c.totalTimeSeconds / c.completions) : 0,
                       }))}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis
-                        dataKey="label"
-                        tick={{ fontSize: 11, fill: "#94a3b8" }}
-                      />
+                      <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#94a3b8" }} />
                       <YAxis
                         tick={{ fontSize: 11, fill: "#94a3b8" }}
                         label={{
@@ -642,10 +613,7 @@ export function HuntAnalyticsDashboard({
                         }}
                       />
                       <Tooltip
-                        formatter={(value: number) => [
-                          formatSeconds(value),
-                          "Avg time",
-                        ]}
+                        formatter={(value) => [formatSeconds(Number(value ?? 0)), "Avg time"]}
                         contentStyle={{
                           backgroundColor: "#1e293b",
                           border: "none",
@@ -680,5 +648,6 @@ export function HuntAnalyticsDashboard({
         </>
       )}
     </div>
-  )
+  );
 }
+ 

@@ -1,12 +1,13 @@
 "use client"
 
-import { Minus,Plus } from "lucide-react"
+import { Minus,Plus, Shield } from "lucide-react"
 
 import { ClaimRewardFlow } from "@/components/ClaimRewardFlow"
 import Coin from "@/components/icons/Coin"
 import Trash from "@/components/icons/trash"
 import { Button } from "@/components/ui/button"
 import { useXlmUsdPrice } from "@/hooks/useXlmUsdPrice"
+import { useIsFeatureEnabled } from "@/hooks/useFeatureFlag"
 import type { Reward, RewardPlayerProgress } from "@/lib/types"
 
 export type { RewardPlayerProgress as PlayerProgress,Reward }
@@ -23,6 +24,7 @@ export interface RewardsPanelProps {
 
 export function RewardsPanel({ rewards, rewardType = "XLM", onUpdateReward, onAddReward, onDeleteReward, error, playerProgress }: RewardsPanelProps) {
   const { price: xlmUsdPrice } = useXlmUsdPrice()
+  const advancedRewardsEnabled = useIsFeatureEnabled("advancedRewards")
 
   const currencyFormatter = new Intl.NumberFormat(undefined, {
     style: "currency",
@@ -108,6 +110,30 @@ export function RewardsPanel({ rewards, rewardType = "XLM", onUpdateReward, onAd
           </div>
         </div>
       ))}
+
+      {advancedRewardsEnabled && (
+        <div className="rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/30 px-4 py-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Shield className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            <span className="text-sm font-semibold text-purple-800 dark:text-purple-300">
+              Advanced Reward Configuration
+            </span>
+          </div>
+          <div className="space-y-2 text-sm text-purple-700 dark:text-purple-400">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" className="rounded border-purple-300" />
+              <span>Token-gated rewards (only specific token holders can claim)</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" className="rounded border-purple-300" />
+              <span>Multi-tier distribution (percentage-based pool split)</span>
+            </label>
+            <p className="text-xs text-purple-500 mt-1">
+              These options are available because the advanced rewards feature flag is enabled.
+            </p>
+          </div>
+        </div>
+      )}
 
       {onAddReward && (
         <div className="flex flex-col gap-2">

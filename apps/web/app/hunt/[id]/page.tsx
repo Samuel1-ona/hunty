@@ -1,13 +1,10 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import HuntDetailClient from "./share";
-import { HuntCountdown } from "./HuntCountdown";
-import { StructuredData, huntStructuredData } from "@/components/StructuredData";
 import { Suspense } from "react";
 
 import { FastestPlayersStrip } from "@/components/FastestPlayersStrip";
 import { Header } from "@/components/Header";
-import { huntStructuredData,StructuredData } from "@/components/StructuredData";
+import { huntStructuredData, StructuredData } from "@/components/StructuredData";
 import { formatTimestamp } from "@/lib/dateUtils";
 import { getAllHunts, getHunt } from "@/lib/huntStore";
 import type { HuntStatus } from "@/lib/types";
@@ -38,7 +35,9 @@ export async function generateMetadata({
 
   return {
     title: `${hunt.title} | Hunty - Scavenger Hunt Game`,
-    description: hunt.description || `Join the "${hunt.title}" scavenger hunt on Hunty. Solve clues, complete challenges, and earn XLM tokens or exclusive NFTs!`,
+    description:
+      hunt.description ||
+      `Join the "${hunt.title}" scavenger hunt on Hunty. Solve clues, complete challenges, and earn XLM tokens or exclusive NFTs!`,
     keywords: ["hunt", hunt.title, "scavenger hunt", "game", "blockchain", "Stellar"],
     authors: [{ name: "Hunty Team" }],
     openGraph: {
@@ -46,7 +45,9 @@ export async function generateMetadata({
       locale: "en_US",
       url: huntUrl,
       title: hunt.title,
-      description: hunt.description || `Join the "${hunt.title}" scavenger hunt on Hunty. Solve clues, complete challenges, and earn rewards!`,
+      description:
+        hunt.description ||
+        `Join the "${hunt.title}" scavenger hunt on Hunty. Solve clues, complete challenges, and earn rewards!`,
       siteName: "Hunty",
       images: [
         {
@@ -61,7 +62,9 @@ export async function generateMetadata({
     twitter: {
       card: "summary_large_image",
       title: hunt.title,
-      description: hunt.description || `Join the "${hunt.title}" scavenger hunt on Hunty. Solve clues, complete challenges, and earn rewards!`,
+      description:
+        hunt.description ||
+        `Join the "${hunt.title}" scavenger hunt on Hunty. Solve clues, complete challenges, and earn rewards!`,
       images: [ogImage],
       creator: "@huntyapp",
     },
@@ -111,11 +114,10 @@ async function HuntPageContent({ id }: { id: string }) {
 
   const status = statusStyles[huntDetails.status] ?? statusStyles["upcoming"];
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hunty.app"
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hunty.app";
 
   return (
     <div className="min-h-screen bg-[#0b0c10] text-white pb-24">
-      
       <StructuredData data={huntStructuredData(huntDetails, baseUrl)} />
 
       <div className="fixed inset-0 pointer-events-none">
@@ -128,7 +130,9 @@ async function HuntPageContent({ id }: { id: string }) {
       <div role="main" className="relative max-w-3xl mx-auto px-6 pt-16">
         {/* Status badge */}
         <div className="mb-6">
-          <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold tracking-widest uppercase ${status.classes}`}>
+          <span
+            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold tracking-widest uppercase ${status.classes}`}
+          >
             {huntDetails?.status === "Active" && (
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             )}
@@ -140,9 +144,7 @@ async function HuntPageContent({ id }: { id: string }) {
           {huntDetails.title}
         </h1>
 
-        <p className="text-zinc-400 text-lg leading-relaxed mb-10">
-          {huntDetails.description}
-        </p>
+        <p className="text-zinc-400 text-lg leading-relaxed mb-10">{huntDetails.description}</p>
 
         {/* Metadata cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-12">
@@ -161,26 +163,27 @@ async function HuntPageContent({ id }: { id: string }) {
           {huntDetails.startTime && (
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
               <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Starts</p>
-              <p className="text-white font-semibold text-sm">{formatTimestamp(huntDetails.startTime)}</p>
+              <p className="text-white font-semibold text-sm">
+                {formatTimestamp(huntDetails.startTime)}
+              </p>
             </div>
           )}
           {huntDetails.endTime && (
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
               <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Ends</p>
-              <p className="text-white font-semibold text-sm">{formatTimestamp(huntDetails.endTime)}</p>
+              <p className="text-white font-semibold text-sm">
+                {formatTimestamp(huntDetails.endTime)}
+              </p>
             </div>
           )}
           {huntDetails.endTime && (
-            <HuntCountdown
-              endTime={huntDetails.endTime}
-              startTime={huntDetails.startTime}
-            />
+            <HuntCountdown endTime={huntDetails.endTime} startTime={huntDetails.startTime} />
           )}
         </div>
 
         <FastestPlayersStrip huntId={huntDetails.id} />
 
-        <HuntDetailClient hunt={huntDetails}  />
+        <HuntDetailClient hunt={huntDetails} />
       </div>
     </div>
   );
@@ -197,5 +200,4 @@ const page = async ({ params }: PageProps) => {
 };
 
 export default page;
-
-
+ 

@@ -1,4 +1,4 @@
-import { getHuntById } from "@/lib/huntStore"
+import { getHuntById, getHuntCapacity } from "@/lib/huntStore"
 import type { WaitlistEntry } from "@/lib/types"
 
 const WAITLIST_STORAGE_KEY = "hunty_waitlist"
@@ -70,8 +70,9 @@ export function popFromWaitlist(huntId: number): WaitlistEntry | null {
 
 export function isHuntFull(huntId: number, currentPlayers: number): boolean {
   const hunt = getHuntById(huntId)
-  if (!hunt || !hunt.maxCapacity) return false
-  return currentPlayers >= hunt.maxCapacity
+  const capacity = getHuntCapacity(hunt)
+  if (!hunt || capacity === undefined) return false
+  return currentPlayers >= capacity
 }
 
 export function markWaitlistEntryNotified(entryId: string): void {
