@@ -27,6 +27,7 @@ import { NotificationPanel } from "@/components/NotificationPanel";
 import { Button } from "@/components/ui/button";
 import { useIsMounted } from "@/hooks/useIsMounted";
 import { useWallet } from "@/lib/context/WalletContext";
+import { OPEN_WALLET_EVENT } from "@/lib/firstHuntGuide";
 import { getUnreadNotificationCount } from "@/lib/notifications/rankTracker";
 import {
   createWeeklyDigestNotification,
@@ -300,6 +301,12 @@ export function Header() {
     if (shouldSendWeeklyDigest()) {
       createWeeklyDigestNotification();
     }
+  }, []);
+
+  useEffect(() => {
+    const openWallet = () => setModalOpen(true);
+    window.addEventListener(OPEN_WALLET_EVENT, openWallet);
+    return () => window.removeEventListener(OPEN_WALLET_EVENT, openWallet);
   }, []);
 
   // Close dropdowns on outside click

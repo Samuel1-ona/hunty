@@ -152,6 +152,39 @@
     "en": "Inglés",
     "es": "Español"
   },
+  "firstHuntGuide": {
+    "badge": "Guía para jugadores nuevos",
+    "title": "Completa tu primera cacería",
+    "titleDone": "Primera cacería completada",
+    "progress": "{completed} de {total} pasos hechos",
+    "doneDescription": "Conectaste, te uniste, resolviste y reclamaste.",
+    "launcher": "Primera cacería",
+    "dismiss": "Descartar la guía de la primera cacería",
+    "minimize": "Minimizar la guía de la primera cacería",
+    "open": "Abrir la guía de la primera cacería",
+    "connectAction": "Conectar",
+    "joinAction": "Unirse",
+    "solveAction": "Resolver",
+    "claimAction": "Reclamar",
+    "steps": {
+      "connect": {
+        "title": "Conectar billetera",
+        "description": "Vincula una billetera Stellar para unirte a cacerías y recibir recompensas."
+      },
+      "join": {
+        "title": "Unirse a una cacería",
+        "description": "Regístrate en una cacería activa desde el arcade."
+      },
+      "solve": {
+        "title": "Resolver una pista",
+        "description": "Desbloquea tu primera pista y empieza a sumar puntos."
+      },
+      "claim": {
+        "title": "Reclamar tu recompensa",
+        "description": "Cobra XLM o un NFT al terminar la cacería."
+      }
+    }
+  },
   "playGame": {
     "lockedClue": "Bloqueado hasta que se resuelva la pista anterior.",
     "timeExpired": "Se acabó el tiempo — progreso enviado automáticamente",

@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { AnimatedCheckmark } from "@/components/AnimatedCheckmark";
 import { Skeleton } from "@/components/ui/skeleton";
+import { markFirstHuntStep } from "@/lib/firstHuntGuide";
 import type { HuntRegistrationStatus } from "@/lib/types";
 
 interface RegistrationButtonProps {
@@ -45,6 +46,7 @@ export function RegistrationButton({
 
     try {
       await onRegister();
+      markFirstHuntStep("join", { huntId });
       setSuccessMessage("Successfully registered for the hunt!");
       setRetryCount(0); // Reset retry count on success
     } catch (err) {

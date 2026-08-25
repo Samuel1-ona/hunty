@@ -6,6 +6,7 @@ import { notFound } from "next/navigation"
 import { NextIntlClientProvider } from "next-intl"
 import { getMessages, getTranslations } from "next-intl/server"
 
+import { FirstHuntChecklist } from "@/components/FirstHuntChecklist"
 import { TxToaster } from "@/components/TxToaster"
 import { routing } from "@/i18n/routing"
 import { hankenGrotesk } from "@/lib/font"

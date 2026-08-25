@@ -152,6 +152,39 @@
     "en": "English",
     "es": "Spanish"
   },
+  "firstHuntGuide": {
+    "badge": "New player guide",
+    "title": "Complete your first hunt",
+    "titleDone": "First hunt complete",
+    "progress": "{completed} of {total} steps done",
+    "doneDescription": "You connected, joined, solved, and claimed.",
+    "launcher": "First hunt",
+    "dismiss": "Dismiss first hunt checklist",
+    "minimize": "Minimize first hunt checklist",
+    "open": "Open first hunt checklist",
+    "connectAction": "Connect",
+    "joinAction": "Join",
+    "solveAction": "Solve",
+    "claimAction": "Claim",
+    "steps": {
+      "connect": {
+        "title": "Connect wallet",
+        "description": "Link a Stellar wallet so you can join hunts and receive rewards."
+      },
+      "join": {
+        "title": "Join a hunt",
+        "description": "Register for an active scavenger hunt from the arcade."
+      },
+      "solve": {
+        "title": "Solve a clue",
+        "description": "Unlock your first clue and start scoring points."
+      },
+      "claim": {
+        "title": "Claim your reward",
+        "description": "Collect XLM or an NFT after you finish the hunt."
+      }
+    }
+  },
   "playGame": {
     "lockedClue": "Locked until the previous clue is solved.",
     "timeExpired": "Time's up — progress auto-submitted",
