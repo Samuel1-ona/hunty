@@ -17,6 +17,7 @@ import {
 } from "react"
 
 import { useIsMounted } from "@/hooks/useIsMounted"
+import { migrateGuestProgressToWallet } from "@/lib/huntStore"
 import {
   clearStoredWalletSession,
   connectWalletProvider,
@@ -195,6 +196,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
         setStoredWalletSession("freighter", address)
         localStorage.setItem(STORAGE_KEY, address)
+        migrateGuestProgressToWallet(address)
         setPublicKey(address)
         setWalletProvider("freighter")
         setConnected(true)
@@ -205,6 +207,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const address = await connectWalletProvider(provider)
       setStoredWalletSession(provider, address)
       localStorage.setItem(STORAGE_KEY, address)
+      migrateGuestProgressToWallet(address)
       setPublicKey(address)
       setWalletProvider(provider)
       setConnected(true)

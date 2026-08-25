@@ -34,6 +34,8 @@ import {
   advanceHuntProgress,
   clearHuntProgress,
   gcHunt,
+  migrateGuestProgressToWallet,
+  getWalletProgressKey,
   MAX_CLUES_PER_HUNT,
   takeHuntStoreSnapshot,
   updateClueAnswer,
@@ -1259,6 +1261,24 @@ describe("huntStore", () => {
 
       clearHuntProgress(9777);
       expect(localStorage.getItem("hunty_hunt_progress_9777")).toBeNull();
+    });
+
+    it("migrates guest progress into a wallet-scoped key and stays idempotent", () => {
+      const guestProgress = startHuntProgress(8765);
+      const walletAddress = "GABC1234567890";
+
+      const migrated = migrateGuestProgressToWallet(8765, walletAddress);
+
+      expect(migrated).toEqual({
+        ...guestProgress,
+        currentClueIndex: guestProgress.currentClueIndex,
+      });
+      expect(localStorage.getItem(getWalletProgressKey(8765, walletAddress))).toBeTruthy();
+      expect(localStorage.getItem("hunty_hunt_progress_8765")).toBeNull();
+
+      const duplicate = migrateGuestProgressToWallet(8765, walletAddress);
+      expect(duplicate).toEqual(migrated);
+      expect(localStorage.getItem(getWalletProgressKey(8765, walletAddress))).toBeTruthy();
     });
   });
 
