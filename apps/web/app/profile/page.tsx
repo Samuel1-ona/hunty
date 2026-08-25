@@ -440,7 +440,7 @@ export default function UserProfilePage() {
                   {nftRewards.length} Unlocked
                 </span>
               </div>
-              
+
               <NftGallery nfts={nftRewards} />
             </section>
 
@@ -591,15 +591,15 @@ const REGISTRATION_STATUS_STYLES: Record<
   RegisteredHunt["status"],
   { badge: string; dot: string }
 > = {
-  Registered:   { badge: "bg-blue-50 text-blue-700 border border-blue-200",    dot: "bg-blue-400"   },
-  "In Progress":{ badge: "bg-amber-50 text-amber-700 border border-amber-200",  dot: "bg-amber-400" },
-  Completed:    { badge: "bg-emerald-50 text-emerald-700 border border-emerald-200", dot: "bg-emerald-400" },
+  Registered: { badge: "bg-blue-50 text-blue-700 border border-blue-200", dot: "bg-blue-400" },
+  "In Progress": { badge: "bg-amber-50 text-amber-700 border border-amber-200", dot: "bg-amber-400" },
+  Completed: { badge: "bg-emerald-50 text-emerald-700 border border-emerald-200", dot: "bg-emerald-400" },
 }
 
 function RegistrationCard({ registration }: { registration: RegisteredHunt }) {
   const { badge, dot } = REGISTRATION_STATUS_STYLES[registration.status]
   const isCompleted = registration.status === "Completed"
-  const isActive    = registration.status === "In Progress"
+  const isActive = registration.status === "In Progress"
 
   return (
     <Card className="border border-slate-200 bg-white/80 shadow-sm">
@@ -692,11 +692,10 @@ function HuntCard({
             </CardDescription>
           </div>
           <span
-            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
-              isCompleted
+            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${isCompleted
                 ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                 : "bg-amber-50 text-amber-700 border border-amber-200"
-            }`}
+              }`}
           >
             {isCompleted ? "Completed" : "In Progress"}
           </span>

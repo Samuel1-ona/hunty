@@ -365,6 +365,58 @@ export const paymasterAdminConfigBodySchema = z.object({
   maxFeePerTxStroops: z.number().int().min(0).nullable().optional(),
 })
 
+// ─── v1 / Referrals / Leaderboard ────────────────────────────────────────────
+
+export const referralLeaderboardQuerySchema = z.object({
+  /** Max entries to return. Defaults to 50. */
+  limit: z
+    .string()
+    .optional()
+    .transform((v) => (v ? Math.min(Number(v), 200) : 50))
+    .refine((v) => Number.isFinite(v) && v > 0, { message: "limit must be a positive number" }),
+  /** Filter referrals registered within a time window. */
+  period: z.enum(["all", "week", "month"]).optional().default("all"),
+  /** If provided, also returns this player's rank on the board. */
+  address: z.string().optional(),
+})
+
+// ─── v1 / Referrals / Track ───────────────────────────────────────────────────
+
+export const referralTrackBodySchema = z.object({
+  /** The encoded referral code (e.g. wallet:<G-address>). */
+  code: nonEmptyStringSchema,
+  /** Wallet address of the player who shared the referral link. */
+  referrerAddress: nonEmptyStringSchema,
+  /** Wallet address of the newly registered player. */
+  referredAddress: nonEmptyStringSchema,
+  /** Browser session ID to detect cross-device self-referral attempts. */
+  sessionId: z.string().optional(),
+  /** Hunt context, if the referral was triggered from a hunt page. */
+  huntId: z.number().int().positive().optional(),
+})
+
+// ─── v1 / Referrals / Payouts ────────────────────────────────────────────────
+
+export const referralPayoutAllocationSchema = z.object({
+  /** 1-based rank position. */
+  rank: z.number().int().min(1),
+  /** Wallet address of the referrer receiving the reward. */
+  referrerAddress: nonEmptyStringSchema,
+  /** Reward amount (in XLM or bonus points depending on rewardType). */
+  amount: z.number().positive(),
+  /** Type of reward being distributed. */
+  rewardType: z.enum(["xlm", "points"]).default("points"),
+})
+
+export const referralPayoutBodySchema = z.object({
+  /** Time period this payout covers (for record-keeping). */
+  period: z.enum(["weekly", "monthly", "seasonal", "manual"]).default("manual"),
+  /** List of reward allocations for top referrers. */
+  allocations: z.array(referralPayoutAllocationSchema).min(1),
+  /** When true, actually executes the payouts. When false (default), dry-run only. */
+  execute: z.boolean().optional().default(false),
+})
+
 // ─── Re-export convenience map ───────────────────────────────────────────────
 
 export const apiSchemas = {
@@ -404,4 +456,7 @@ export const apiSchemas = {
   draftPatchBody: draftPatchBodySchema,
   paymasterSponsorBody: paymasterSponsorBodySchema,
   paymasterAdminConfigBody: paymasterAdminConfigBodySchema,
+  referralLeaderboardQuery: referralLeaderboardQuerySchema,
+  referralTrackBody: referralTrackBodySchema,
+  referralPayoutBody: referralPayoutBodySchema,
 } as const
