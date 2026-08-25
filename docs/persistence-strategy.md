@@ -47,6 +47,7 @@ The PostgreSQL database (connection string in `DATABASE_URL`) is the canonical s
 | `003_create_moderation_tables.sql` | `moderation_queue`, `moderation_notifications`                                         | Moderation review queue and creator notifications                                                                              |
 | `004_create_anti_cheat_tables.sql` | `anti_cheat_answers`, `anti_cheat_anomalies`, `anti_cheat_bans`, `anti_cheat_tracking` | Answer history, anomaly detection, bans, per-key submission tracking                                                           |
 | `005_create_hunt_drafts.sql`       | `hunt_drafts`                                                                          | Cloud-synced creator draft auto-saves                                                                                          |
+| `010_create_hunt_versions.sql`     | `hunt_versions`                                                                        | Immutable creator hunt snapshots for edit history and restore; retained for 90 days                                           |
 | `008_create_analytics.sql`         | `hunt_views`, `hint_usage_events`                                                      | Hunt view counters and hint-reveal event log (replaces `data/hunt-views.json`, `data/hint-usage.json`)                         |
 | `009_create_hunt_analytics.sql`    | `hunt_analytics`                                                                       | Per-hunt analytics: views, starts, completions, clue drop-off, demographics, time-series (replaces `data/hunt-analytics.json`) |
 
@@ -76,6 +77,15 @@ Four tables replace four JSON files:
 #### Hunt drafts (`app/api/v1/drafts/`, `hooks/useHuntDraftAutoSave.ts`)
 
 `hunt_drafts` stores the full `HuntDraftSave` JSON payload keyed on `draft_id` and `owner_key` (wallet public key). The draft hook saves to `localStorage` immediately for offline-first UX, then syncs to `POST /api/v1/drafts` for logged-in users.
+
+#### Hunt versions (`app/api/v1/hunts/[id]/versions/`)
+
+`hunt_versions` stores each creator-submitted hunt snapshot as an immutable JSONB
+record with a per-hunt version number, creator address, and timestamp. The creator
+can list versions and restore one; restore creates a new version rather than
+rewriting history. Snapshots are retained for 90 days. Reads exclude older rows,
+and the write path deletes expired rows; production deployments should also run
+the same cleanup query from a scheduled maintenance job.
 
 #### Hunt view analytics (`lib/analytics.ts`)
 

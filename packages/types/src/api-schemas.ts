@@ -227,6 +227,25 @@ export const huntDeleteBodySchema = z.object({
   confirmed: z.boolean().optional(),
 })
 
+// ─── v1 / Hunts / Versions ──────────────────────────────────────────────────
+
+export const huntSnapshotSchema = z.object({
+  id: positiveIntSchema,
+}).passthrough()
+
+export const huntVersionEditBodySchema = z.object({
+  actorAddress: nonEmptyStringSchema,
+  snapshot: huntSnapshotSchema,
+})
+
+export const huntVersionRestoreBodySchema = z.object({
+  actorAddress: nonEmptyStringSchema,
+})
+
+export const huntVersionsQuerySchema = z.object({
+  actorAddress: nonEmptyStringSchema,
+})
+
 // ─── v1 / Hunts / [id] / Collaborators ───────────────────────────────────────
 
 export const collaboratorRoleSchema = z.enum(["editor", "viewer"])
