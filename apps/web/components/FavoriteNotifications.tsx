@@ -6,6 +6,7 @@ import { useFavorites } from "@/hooks/useFavorites"
 import { getAllHunts } from "@/lib/huntStore"
 import { WalletContext } from "@/lib/context/WalletContext"
 import { logger } from "@/lib/logger"
+import { shouldNotifyForCategory } from "@/lib/notifications/notificationPreferences"
 
 export function FavoriteNotifications() {
   const { favorites, isLoaded } = useFavorites()
@@ -19,6 +20,9 @@ export function FavoriteNotifications() {
 
     const checkNotifications = () => {
       try {
+        // Favorite start alerts must respect the global mute and hunt-events category.
+        if (!shouldNotifyForCategory("huntEvents")) return
+
         const storedNotified = localStorage.getItem(storageKey)
         const notifiedSet = new Set<number>(storedNotified ? JSON.parse(storedNotified) : [])
         let hasNewNotifications = false

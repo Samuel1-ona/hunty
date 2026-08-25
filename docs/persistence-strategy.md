@@ -4,12 +4,12 @@ This document answers: **"Where does non-blockchain state live?"**
 
 ## Summary
 
-| Layer                      | What lives there                                                   | Technology                     |
-| -------------------------- | ------------------------------------------------------------------ | ------------------------------ |
-| On-chain (Stellar/Soroban) | Hunt definitions, reward escrow, NFT receipts, player registration | Soroban smart contracts        |
-| IPFS (Pinata)              | Hunt cover images, NFT media, NFT metadata JSON                    | Pinata + public IPFS           |
-| PostgreSQL database        | All mutable server-side application state (see below)              | `postgres` (porsager/postgres) |
-| localStorage (client)      | UI prefs, offline-first draft cache, wallet session                | Browser only — not canonical   |
+| Layer                      | What lives there                                                           | Technology                                                       |
+| -------------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| On-chain (Stellar/Soroban) | Hunt definitions, reward escrow, NFT receipts, player registration         | Soroban smart contracts                                          |
+| IPFS (Pinata)              | Hunt cover images, NFT media, NFT metadata JSON                            | Pinata + public IPFS                                             |
+| PostgreSQL database        | All mutable server-side application state (see below)                      | `postgres` (porsager/postgres)                                   |
+| localStorage (client)      | Cached notification preferences, offline-first draft cache, wallet session | Browser cache — server is canonical for notification preferences |
 
 ---
 
@@ -40,21 +40,26 @@ The PostgreSQL database (connection string in `DATABASE_URL`) is the canonical s
 
 ### Schema (migrations in `apps/web/lib/db/migrations/`)
 
-| Migration file                     | Table(s)                                                                               | Purpose                                                                                                                        |
-| ---------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `001_create_app_settings.sql`      | `app_settings`                                                                         | Generic key/value store; currently holds `featured_hunt_id`                                                                    |
-| `002_create_rate_limit.sql`        | `rate_limit`                                                                           | Distributed rate-limit counters (replaces in-memory Map)                                                                       |
-| `003_create_moderation_tables.sql` | `moderation_queue`, `moderation_notifications`                                         | Moderation review queue and creator notifications                                                                              |
-| `004_create_anti_cheat_tables.sql` | `anti_cheat_answers`, `anti_cheat_anomalies`, `anti_cheat_bans`, `anti_cheat_tracking` | Answer history, anomaly detection, bans, per-key submission tracking                                                           |
-| `005_create_hunt_drafts.sql`       | `hunt_drafts`                                                                          | Cloud-synced creator draft auto-saves                                                                                          |
-| `008_create_analytics.sql`         | `hunt_views`, `hint_usage_events`                                                      | Hunt view counters and hint-reveal event log (replaces `data/hunt-views.json`, `data/hint-usage.json`)                         |
-| `009_create_hunt_analytics.sql`    | `hunt_analytics`                                                                       | Per-hunt analytics: views, starts, completions, clue drop-off, demographics, time-series (replaces `data/hunt-analytics.json`) |
+| Migration file                         | Table(s)                                                                               | Purpose                                                                                                                        |
+| -------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `001_create_app_settings.sql`          | `app_settings`                                                                         | Generic key/value store; currently holds `featured_hunt_id`                                                                    |
+| `002_create_rate_limit.sql`            | `rate_limit`                                                                           | Distributed rate-limit counters (replaces in-memory Map)                                                                       |
+| `003_create_moderation_tables.sql`     | `moderation_queue`, `moderation_notifications`                                         | Moderation review queue and creator notifications                                                                              |
+| `004_create_anti_cheat_tables.sql`     | `anti_cheat_answers`, `anti_cheat_anomalies`, `anti_cheat_bans`, `anti_cheat_tracking` | Answer history, anomaly detection, bans, per-key submission tracking                                                           |
+| `005_create_hunt_drafts.sql`           | `hunt_drafts`                                                                          | Cloud-synced creator draft auto-saves                                                                                          |
+| `008_create_analytics.sql`             | `hunt_views`, `hint_usage_events`                                                      | Hunt view counters and hint-reveal event log (replaces `data/hunt-views.json`, `data/hint-usage.json`)                         |
+| `009_create_hunt_analytics.sql`        | `hunt_analytics`                                                                       | Per-hunt analytics: views, starts, completions, clue drop-off, demographics, time-series (replaces `data/hunt-analytics.json`) |
+| `010_add_notification_preferences.sql` | `notification_preferences`                                                             | Wallet-scoped notification categories and global mute, shared across devices                                                   |
 
 ### Feature details
 
 #### Featured hunt (`lib/featuredHuntDb.ts`)
 
 Single row in `app_settings` under `key = 'featured_hunt_id'`. Uses UPSERT so rotating the featured hunt is always consistent across instances.
+
+#### Notification preferences (`api/v1/notifications/preferences`)
+
+`notification_preferences` stores one normalized JSONB document per wallet. Web and mobile keep a local cache for offline rendering, but read and write the wallet-scoped database document whenever a wallet is connected. The `enabled` field is the global mute and is checked before category-specific delivery.
 
 #### Rate limiting (`lib/rate-limit.ts`)
 
