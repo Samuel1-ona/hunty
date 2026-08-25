@@ -258,6 +258,16 @@ export const collaboratorsBodySchema = z.discriminatedUnion("action", [
   }),
 ])
 
+export const presencePingBodySchema = z.object({
+  walletAddress: nonEmptyStringSchema,
+  editingField: z.string().optional().nullable(),
+})
+
+export const presenceQuerySchema = z.object({
+  walletAddress: nonEmptyStringSchema.optional(),
+  staleMs: z.number().int().positive().optional().default(30000),
+})
+
 // ─── v1 / Hunts / [id] / Progress ────────────────────────────────────────────
 
 export const huntProgressBodySchema = z.object({
@@ -390,6 +400,8 @@ export const apiSchemas = {
   huntArchiveBody: huntArchiveBodySchema,
   huntDeleteBody: huntDeleteBodySchema,
   collaboratorsBody: collaboratorsBodySchema,
+  presencePingBody: presencePingBodySchema,
+  presenceQuery: presenceQuerySchema,
   huntProgressBody: huntProgressBodySchema,
   huntProgressQuery: huntProgressQuerySchema,
   huntCompleteBody: huntCompleteBodySchema,
