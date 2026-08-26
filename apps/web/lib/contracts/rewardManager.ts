@@ -2,6 +2,7 @@ import Server, { Operation, TransactionBuilder } from "@stellar/stellar-sdk"
 
 import {
   getHunt,
+  REWARD_REFUND_GRACE_PERIOD_SECONDS,
   SPOTLIGHT_DURATION_SECONDS,
   updateHuntPromotion,
   updateHuntRewardEscrow,
@@ -30,6 +31,7 @@ export type RewardEscrow = {
   balance: number
   rewards: Reward[]
   expiresAt: number
+  gracePeriodSeconds?: number
   depositTxHash: string
   createdAt: number
   distributions: RewardReceipt[]
@@ -228,6 +230,7 @@ export async function createRewardEscrow(input: {
   rewardType: "XLM" | "NFT" | "Both"
   rewards: Reward[]
   expiresAt: number
+  gracePeriodSeconds?: number
 }): Promise<RewardEscrow | null> {
   if (input.rewardType === "NFT") return null
 
@@ -240,6 +243,7 @@ export async function createRewardEscrow(input: {
     totalPool,
     rewards: input.rewards.map(({ place, amount }) => ({ place, amount })),
     expiresAt: input.expiresAt,
+    grace_period_seconds: input.gracePeriodSeconds ?? REWARD_REFUND_GRACE_PERIOD_SECONDS,
   })
 
   const wallet = getActiveWalletAdapter()
@@ -252,6 +256,8 @@ export async function createRewardEscrow(input: {
     balance: totalPool,
     rewards: input.rewards,
     expiresAt: input.expiresAt,
+    gracePeriodSeconds:
+      input.gracePeriodSeconds ?? REWARD_REFUND_GRACE_PERIOD_SECONDS,
     depositTxHash: txHash,
     createdAt: Date.now(),
     distributions: [],
@@ -421,17 +427,18 @@ export async function refundUnclaimedRewards(
   creatorAddress?: string,
   /**
    * Grace period override in seconds. Reads from the hunt's `gracePeriodSeconds`
-   * field. Falls back to 0 (immediate refund is allowed once the escrow has
-   * expired) when not provided.
+  * field. Falls back to the canonical seven-day period for legacy escrows.
    */
-  gracePeriodSeconds = 0
+  gracePeriodSeconds?: number
 ): Promise<RewardReceipt> {
   const escrow = getRewardEscrow(huntId)
   if (!escrow) throw new Error("No reward escrow found for this hunt")
   if (creatorAddress && escrow.creator !== creatorAddress) {
     throw new Error("Only the hunt creator can request a refund")
   }
-  const refundableAfterMs = (escrow.expiresAt + gracePeriodSeconds) * 1000
+  const effectiveGracePeriod =
+    gracePeriodSeconds ?? escrow.gracePeriodSeconds ?? REWARD_REFUND_GRACE_PERIOD_SECONDS
+  const refundableAfterMs = (escrow.expiresAt + effectiveGracePeriod) * 1000
   if (Date.now() < refundableAfterMs) {
     const secondsRemaining = Math.ceil((refundableAfterMs - Date.now()) / 1000)
     throw new Error(

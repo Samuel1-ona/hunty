@@ -82,6 +82,8 @@ export async function createHunt(
   /** Overall difficulty tag persisted with the on-chain hunt metadata. */
   difficulty?: HuntDifficulty,
   maxParticipants?: number,
+  /** Seconds after the hunt ends before unclaimed rewards can be reclaimed. */
+  gracePeriodSeconds?: number,
 ): Promise<CreateHuntResult> {
   if (typeof window === "undefined") throw new Error("Browser environment required");
 
@@ -103,6 +105,7 @@ export async function createHunt(
     ...(sequential ? { sequential: true } : {}),
     ...(difficulty ? { difficulty } : {}),
     ...(maxParticipants !== undefined ? { max_participants: maxParticipants } : {}),
+    ...(gracePeriodSeconds !== undefined ? { grace_period_seconds: gracePeriodSeconds } : {}),
   });
 
   const publicKey = await wallet.getPublicKey();

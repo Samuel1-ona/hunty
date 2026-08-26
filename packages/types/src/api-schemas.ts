@@ -363,17 +363,6 @@ export const draftPatchBodySchema = z.object({
   recovered: z.boolean().optional(),
 })
 
-// ─── v1 / Hunts / [id] / Refund ──────────────────────────────────────────────
-
-/**
- * POST /api/v1/hunts/[id]/refund
- * Called by the creator after the grace period to reclaim unclaimed rewards.
- * `creatorAddress` is verified against the hunt's creator on the server.
- */
-export const huntRefundBodySchema = z.object({
-  creatorAddress: nonEmptyStringSchema,
-})
-
 // ─── v1 / Hunts / [id] / Sponsor ─────────────────────────────────────────────
 
 /**
@@ -440,6 +429,5 @@ export const apiSchemas = {
   draftPatchBody: draftPatchBodySchema,
   paymasterSponsorBody: paymasterSponsorBodySchema,
   paymasterAdminConfigBody: paymasterAdminConfigBodySchema,
-  huntRefundBody: huntRefundBodySchema,
   huntSponsorBody: huntSponsorBodySchema,
 } as const

@@ -45,6 +45,8 @@ export const DEFAULT_HUNT_INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const SPOTLIGHT_DURATION_SECONDS = 24 * 60 * 60;
 /** Cost in XLM to promote a hunt into the spotlight carousel. */
 export const SPOTLIGHT_FEE_XLM = 1;
+/** Time after a hunt ends before its creator can reclaim unclaimed rewards. */
+export const REWARD_REFUND_GRACE_PERIOD_SECONDS = 7 * 24 * 60 * 60;
 
 // Seed timestamps: active hunts end 7 days from first load, completed hunts in the past.
 const NOW_SECONDS = Math.floor(Date.now() / 1000);

@@ -94,6 +94,8 @@ export interface StoredHunt {
   startAt?: number;
   /** Canonical UTC timestamp for scheduled lifecycle transitions. */
   endAt?: number;
+  /** Seconds after the hunt ends before unclaimed rewards can be reclaimed. */
+  gracePeriodSeconds?: number;
   creatorEmail?: string;
   emailNotifications?: boolean;
   /** When true, the hunt is hidden from the public arcade grid. */

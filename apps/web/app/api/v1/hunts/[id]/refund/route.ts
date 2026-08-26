@@ -6,10 +6,9 @@ import { ValidationError, NotFoundError } from "@/lib/api/errors";
 import { huntRefundBodySchema } from "@hunty/types/api-schemas";
 import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { REWARD_REFUND_GRACE_PERIOD_SECONDS } from "@/lib/huntStore";
 
 const paramsSchema = z.object({ id: z.string() });
-
-const DEFAULT_GRACE_PERIOD_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
 /**
  * POST /api/v1/hunts/[id]/refund
@@ -50,7 +49,7 @@ export const POST = withValidation(
         throw new NotFoundError("Hunt not found", { huntId });
       }
 
-      if (hunt.status !== "Ended" && hunt.status !== "Completed") {
+      if (hunt.status !== "Ended" && hunt.status !== "ended" && hunt.status !== "Completed") {
         throw new ValidationError("Refunds are only available for ended or completed hunts", {
           status: hunt.status,
         });
@@ -59,7 +58,7 @@ export const POST = withValidation(
       const gracePeriodSeconds =
         typeof hunt.gracePeriodSeconds === "number"
           ? hunt.gracePeriodSeconds
-          : DEFAULT_GRACE_PERIOD_SECONDS;
+          : REWARD_REFUND_GRACE_PERIOD_SECONDS;
 
       const { refundUnclaimedRewards } = await import("@/lib/contracts/rewardManager");
       const receipt = await refundUnclaimedRewards(
