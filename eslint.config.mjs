@@ -3,7 +3,6 @@ import { fileURLToPath } from "url";
 
 import { FlatCompat } from "@eslint/eslintrc";
 
-import baseConfig from "@hunty/config/eslint/base";
 import baseConfig from "@hunty/config/eslint/base.mjs";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 import reactHooks from "eslint-plugin-react-hooks";
