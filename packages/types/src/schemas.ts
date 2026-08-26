@@ -64,6 +64,14 @@ export const storedHuntSchema = z.object({
   createdAt: z.number().optional(),
   startTime: z.number().optional(),
   endTime: z.number().optional(),
+  gracePeriodSeconds: z
+    .number()
+    .int()
+    .nonnegative()
+    .optional()
+    .describe(
+      "Seconds after endTime during which the creator can reclaim unclaimed rewards"
+    ),
   creatorEmail: z.string().optional(),
   emailNotifications: z.boolean().optional(),
   is_private: z.boolean().optional(),

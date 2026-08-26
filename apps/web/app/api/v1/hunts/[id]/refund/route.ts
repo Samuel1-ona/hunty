@@ -23,6 +23,12 @@ const DEFAULT_GRACE_PERIOD_SECONDS = 60 * 60 * 24 * 7; // 7 days
  * Body: { creatorAddress: string }
  *
  * Returns: { success: true, receipt: RewardReceipt }
+ *
+ * Errors:
+ *   400 – invalid hunt ID, request body, or hunt status
+ *   403 – caller is not the hunt creator
+ *   404 – hunt not found
+ *   409 – grace period has not elapsed, no escrow, or no rewards remain
  */
 export const POST = withValidation(
   { body: huntRefundBodySchema, params: paramsSchema },
@@ -67,6 +73,21 @@ export const POST = withValidation(
       if (error instanceof ValidationError || error instanceof NotFoundError) throw error;
       const message = error instanceof Error ? error.message : "Refund failed";
       logger.error("Refund unclaimed rewards error:", error);
+
+      // Map well-known contract errors to meaningful HTTP statuses.
+      if (
+        message.includes("No reward escrow found") ||
+        message.includes("No unclaimed rewards remain") ||
+        message.includes("only be refunded after the hunt expires") ||
+        message.includes("Grace period has not elapsed")
+      ) {
+        return NextResponse.json({ error: message }, { status: 409 });
+      }
+
+      if (message.includes("not the creator") || message.includes("creator")) {
+        return NextResponse.json({ error: message }, { status: 403 });
+      }
+
       return NextResponse.json({ error: message }, { status: 400 });
     }
   }
