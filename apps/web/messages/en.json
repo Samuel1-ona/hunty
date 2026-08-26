@@ -150,7 +150,8 @@
   },
   "language": {
     "en": "English",
-    "es": "Spanish"
+    "es": "Spanish",
+    "fr": "French"
   },
   "playGame": {
     "lockedClue": "Locked until the previous clue is solved.",

@@ -150,7 +150,8 @@
   },
   "language": {
     "en": "Inglés",
-    "es": "Español"
+    "es": "Español",
+    "fr": "Francés"
   },
   "playGame": {
     "lockedClue": "Bloqueado hasta que se resuelva la pista anterior.",
