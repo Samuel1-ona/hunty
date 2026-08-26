@@ -19,6 +19,10 @@ import { fetchPlayerRewardHistory } from "@/lib/rewardHistory"
 import { getPlayerAttempts } from "@/lib/huntAttemptHistory"
 import type { HuntAttemptRecord, ReferralStats } from "@/lib/types"
 import { getReferralStats } from "@/lib/referrals"
+import { useFavorites } from "@/hooks/useFavorites"
+import { getAllHunts } from "@/lib/huntStore"
+import type { StoredHunt } from "@/lib/types"
+import { HuntFeedCard } from "@/components/HuntFeedCard"
 
 // ---------------------------------------------------------------------------
 // #355 — Registered Hunts types and fetcher
@@ -184,6 +188,10 @@ export default function UserProfilePage() {
   const [registrations, setRegistrations] = useState<RegisteredHunt[]>([])
   const [attemptHistory, setAttemptHistory] = useState<HuntAttemptRecord[]>([])
   const [referralStats, setReferralStats] = useState<ReferralStats | null>(null)
+  
+  const { favorites, isLoaded: isFavoritesLoaded } = useFavorites()
+  const [savedHunts, setSavedHunts] = useState<StoredHunt[]>([])
+
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -258,6 +266,13 @@ export default function UserProfilePage() {
       cancelled = true
     }
   }, [connected, publicKey])
+
+  useEffect(() => {
+    if (isFavoritesLoaded && typeof window !== "undefined") {
+      const allHunts = getAllHunts()
+      setSavedHunts(allHunts.filter(h => favorites.includes(h.id)))
+    }
+  }, [favorites, isFavoritesLoaded])
 
   const summary = useMemo(() => {
     if (!hunts.length) {
@@ -556,6 +571,31 @@ export default function UserProfilePage() {
                       </ul>
                     )}
                   </div>
+                </div>
+              )}
+            </section>
+
+            <section aria-label="Saved hunts" className="mt-10 space-y-8">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-xl md:text-2xl font-semibold bg-linear-to-b from-[#3737A4] to-[#0C0C4F] bg-clip-text text-transparent">
+                  Saved Hunts
+                </h2>
+                <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-bold">
+                  {savedHunts.length} Saved
+                </span>
+              </div>
+              
+              {!isFavoritesLoaded ? (
+                <div className="text-sm text-slate-500">Loading saved hunts...</div>
+              ) : savedHunts.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/80 py-10 text-center text-slate-600">
+                  Bookmarked hunts will appear here. Build your play-later list from the Arcade.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {savedHunts.map(hunt => (
+                    <HuntFeedCard key={`saved-${hunt.id}`} hunt={hunt} />
+                  ))}
                 </div>
               )}
             </section>
