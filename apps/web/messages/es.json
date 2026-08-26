@@ -167,5 +167,20 @@
     "reset": "Reiniciar",
     "shareLink": "Compartir Enlace",
     "moreCards": "más tarjetas"
+  },
+  "dateTime": {
+    "d": "d",
+    "h": "h",
+    "m": "m",
+    "s": "s",
+    "daysLong": "días",
+    "hoursLong": "horas",
+    "minutesLong": "minutos",
+    "secondsLong": "segundos"
+  },
+  "scheduling": {
+    "startMustBeFuture": "La hora de inicio debe estar en el futuro.",
+    "endMustBeAfterStart": "La hora de fin debe ser posterior a la de inicio.",
+    "endMustBeAfterNow": "La hora de fin debe ser posterior a la hora actual."
   }
 }
