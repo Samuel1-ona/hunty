@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
@@ -6,6 +7,7 @@ import { FastestPlayersStrip } from "@/components/FastestPlayersStrip";
 import { Header } from "@/components/Header";
 import { huntStructuredData, StructuredData } from "@/components/StructuredData";
 import { formatTimestamp } from "@/lib/dateUtils";
+import { isHuntEnded } from "@/lib/huntStatus";
 import { getAllHunts, getHunt } from "@/lib/huntStore";
 import type { HuntStatus } from "@/lib/types";
 
@@ -30,6 +32,10 @@ export async function generateMetadata({
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hunty.app";
   const huntUrl = `${baseUrl}/hunt/${hunt.id}`;
+  const ended = isHuntEnded(hunt.status);
+  // Once a hunt ends, its permanent results page becomes the canonical,
+  // indexable record — this page stays reachable but defers to it for SEO.
+  const canonicalUrl = ended ? `${baseUrl}/hunt/${hunt.id}/results` : huntUrl;
   // Use the dynamic OG image route so every hunt gets a unique, branded preview card
   const ogImage = `${baseUrl}/api/og/hunt/${hunt.id}`;
 
@@ -80,7 +86,7 @@ export async function generateMetadata({
       },
     },
     alternates: {
-      canonical: huntUrl,
+      canonical: canonicalUrl,
     },
   };
 }
@@ -113,6 +119,7 @@ async function HuntPageContent({ id }: { id: string }) {
   };
 
   const status = statusStyles[huntDetails.status] ?? statusStyles["upcoming"];
+  const ended = isHuntEnded(huntDetails.status);
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hunty.app";
 
@@ -145,6 +152,16 @@ async function HuntPageContent({ id }: { id: string }) {
         </h1>
 
         <p className="text-zinc-400 text-lg leading-relaxed mb-10">{huntDetails.description}</p>
+
+        {ended && (
+          <Link
+            href={`/hunt/${huntDetails.id}/results`}
+            className="flex items-center justify-between gap-3 bg-violet-500/10 border border-violet-500/30 rounded-2xl px-5 py-4 mb-10 text-violet-300 hover:bg-violet-500/15 transition-colors"
+          >
+            <span className="font-semibold">This hunt has ended — view the final results</span>
+            <span aria-hidden="true">&rarr;</span>
+          </Link>
+        )}
 
         {/* Metadata cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-12">

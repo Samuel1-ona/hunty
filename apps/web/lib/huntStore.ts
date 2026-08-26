@@ -5,7 +5,7 @@
 
 import { migrateHuntScheduleFieldsInCollection } from "@/lib/huntScheduleMigration";
 import { applyHuntScheduleTransitions } from "@/lib/huntScheduling";
-import { normalizeHuntStatus } from "@/lib/huntStatus";
+import { isHuntEnded, normalizeHuntStatus } from "@/lib/huntStatus";
 import { getHuntsWithClientRatings } from "@/lib/reviewRatings";
 import type { Clue, HuntInvite, HuntStatus, StoredHunt } from "@/lib/types";
 
@@ -338,6 +338,20 @@ export function getAllHunts(): StoredHunt[] {
 /** All hunts including private ones (for creator dashboard). */
 export function getAllHuntsIncludingPrivate(): StoredHunt[] {
   return applyHuntScheduleTransitions(readHunts());
+}
+
+/**
+ * Ended hunts eligible for a permanent, indexable results page.
+ * Unlike `getAllHunts`, archived hunts are kept here — archiving only hides a
+ * hunt from the active feed, it must not break its existing results link.
+ * Private and soft-deleted hunts are still excluded since they were never
+ * (or are no longer) meant to be publicly shareable.
+ */
+export function getEndedPublicHunts(): StoredHunt[] {
+  const visible = applyHuntScheduleTransitions(readHunts()).filter(
+    (h) => !h.is_private && !h.deletedAt && isHuntEnded(h.status)
+  );
+  return getHuntsWithClientRatings(visible);
 }
 
 /** Creator hunts for dashboard (all stored hunts including private; excludes soft-deleted). */
