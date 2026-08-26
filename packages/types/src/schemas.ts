@@ -69,6 +69,8 @@ export const storedHuntSchema = z.object({
   is_private: z.boolean().optional(),
   coverImageCid: z.string().optional(),
   isFeaturedOfWeek: z.boolean().optional(),
+  gracePeriodSeconds: z.number().int().min(0).optional(),
+  sponsors: z.array(z.string()).optional(),
 })
 
 export const playerProgressSchema = z.object({
