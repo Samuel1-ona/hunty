@@ -9,16 +9,59 @@ import {
   getSubmissionHistory,
   setConfig,
   unbanUser,
-} from "./../../../lib/antiCheatDb"
-import { NotFoundError } from "./../../../lib/api/errors"
-import { withErrorHandling } from "../../../../lib/api/withErrorHandling"
-import { withValidation } from "../../../../lib/api/withValidation"
-import { assertAdminAuth } from "../../../../lib/api/adminAuth"
+} from "@/lib/antiCheatDb"
+import { NotFoundError, UnauthorizedError } from "@/lib/api/errors"
+import { withErrorHandling } from "@/lib/api/withErrorHandling"
+import { withValidation } from "@/lib/api/withValidation"
+import { assertAdminAuth } from "@/lib/api/adminAuth"
 import { antiCheatBodySchema, antiCheatQuerySchema } from "@hunty/types/api-schemas"
-import { auditLog } from "../../../../lib/audit"
+
+type AdminUser = {
+  id: string
+  email: string
+  role: string
+}
+
+function logUnauthorized(req: Request, reason: string) {
+  const ip = req.headers.get("x-forwarded-for") ?? "unknown"
+  const method = req.method
+  const url = req.url
+  console.error(`[UNAUTHORIZED] ${method} ${url} from ${ip}: ${reason}`)
+}
+
+function audit(actor: string, action: string, details: Record<string, unknown> = {}) {
+  console.log(`[AUDIT] actor=${actor} action=${action} details=${JSON.stringify(details)}`)
+}
+
+async function requireAdmin(req: Request): Promise<AdminUser> {
+  const adminKey = req.headers.get("x-admin-key")
+  if (adminKey !== null) {
+    if (adminKey !== process.env.ADMIN_API_KEY) {
+      logUnauthorized(req, "invalid api key")
+      throw new UnauthorizedError("Invalid API key")
+    }
+    return { id: "api-key", email: "api-key@internal", role: "ADMIN" }
+  }
+
+  try {
+    const admin = await assertAdminAuth(req)
+    if (!admin || admin.role !== "ADMIN") {
+      throw new UnauthorizedError("Requires admin privileges")
+    }
+    return admin
+  } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      logUnauthorized(req, "session not admin")
+      throw error
+    }
+    logUnauthorized(req, "session auth failed")
+    throw new UnauthorizedError("Authentication required")
+  }
+}
 
 export const GET = withErrorHandling(async (req: Request) => {
-  const admin = await assertAdminAuth(req)
+  await requireAdmin(req)
+
   const { searchParams } = new URL(req.url)
   const queryResult = antiCheatQuerySchema.safeParse({
     type: searchParams.get("type") ?? undefined,
@@ -49,28 +92,26 @@ export const GET = withErrorHandling(async (req: Request) => {
 export const POST = withValidation(
   { body: antiCheatBodySchema },
   async (req, _context, { body }) => {
-    const admin = await assertAdminAuth(req)
-    const actor = admin.email || admin.id || "unknown"
+    const admin = await requireAdmin(req)
 
     if (body.action === "ban") {
-      await banUser(body.wallet, body.ip ?? "", body.reason ?? "Manual ban by admin", body.bannedBy ?? actor)
-      auditLog("ban", { wallet: body.wallet, reason: body.reason, ip: body.ip }, actor)
+      audit(admin.email, "anti-cheat.ban", { wallet: body.wallet, ip: body.ip ?? "" })
+      await banUser(body.wallet, body.ip ?? "", body.reason ?? "Manual ban by admin", body.bannedBy ?? admin.email)
       return NextResponse.json({ success: true })
     }
 
     if (body.action === "unban") {
+      audit(admin.email, "anti-cheat.unban", { wallet: body.wallet })
       const result = await unbanUser(body.wallet)
       if (!result) {
         throw new NotFoundError("User not found in bans", { wallet: body.wallet })
       }
-      auditLog("unban", { wallet: body.wallet }, actor)
       return NextResponse.json({ success: true })
     }
 
     // action === "updateConfig"
-    const config = body.config as Parameters<typeof setConfig>[0]
-    await setConfig(config)
-    auditLog("updateConfig", { config }, actor)
+    audit(admin.email, "anti-cheat.config.update", { config: body.config })
+    await setConfig(body.config as Parameters<typeof setConfig>[0])
     return NextResponse.json({ success: true, config: await getConfig() })
   }
 )
