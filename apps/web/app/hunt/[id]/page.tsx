@@ -8,6 +8,7 @@ import { huntStructuredData, StructuredData } from "@/components/StructuredData"
 import { formatTimestamp } from "@/lib/dateUtils";
 import { getAllHunts, getHunt } from "@/lib/huntStore";
 import type { HuntStatus } from "@/lib/types";
+import { StarRating } from "@/components/StarRating";
 
 import { HuntCountdown } from "./HuntCountdown";
 import HuntPageSkeleton from "./loading";
@@ -148,6 +149,10 @@ async function HuntPageContent({ id }: { id: string }) {
 
         {/* Metadata cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-12">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col justify-center">
+            <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Rating</p>
+            <StarRating rating={huntDetails.averageRating} count={huntDetails.reviewCount} />
+          </div>
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
             <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Hunt ID</p>
             <p className="text-white font-semibold text-lg">#{huntDetails.id}</p>

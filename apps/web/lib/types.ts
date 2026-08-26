@@ -27,6 +27,8 @@ export interface HuntReview {
   createdAt: number;
   moderated?: boolean;
   flagged?: boolean;
+  upvotes?: number;
+  upvotedBy?: string[];
 }
 
 export type HuntStatus =
