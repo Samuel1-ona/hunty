@@ -35,6 +35,7 @@ import {
 import { cn } from "@/lib/utils";
 import { getStellarAccountExplorerUrl } from "@/lib/walletAddress";
 
+import { GasSponsorshipIndicator } from "./GasSponsorshipIndicator";
 import { LanguageSelector } from "./LanguageSelector";
 import { ThemeToggle } from "./ThemeToggle";
 import { WalletAddress } from "./WalletAddress";
@@ -241,6 +242,9 @@ function MobileMenu({
                 <LogOut className="w-4 h-4" />
                 Disconnect
               </button>
+            </div>
+            <div className="px-4 pb-3 bg-slate-50 dark:bg-slate-900">
+              <GasSponsorshipIndicator />
             </div>
           </div>
         ) : (
@@ -495,6 +499,9 @@ export function Header() {
                           </p>
                           <p className="text-white font-mono text-xs break-all">{publicKey}</p>
                         </div>
+                      </div>
+                      <div className="px-4 pt-3">
+                        <GasSponsorshipIndicator />
                       </div>
                       <div className="p-2 flex flex-col gap-1">
                         <button
