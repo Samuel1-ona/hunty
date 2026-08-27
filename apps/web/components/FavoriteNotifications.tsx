@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import { useFavorites } from "@/hooks/useFavorites"
 import { getAllHunts } from "@/lib/huntStore"
 import { WalletContext } from "@/lib/context/WalletContext"
+import { logger } from "@/lib/logger"
 
 export function FavoriteNotifications() {
   const { favorites, isLoaded } = useFavorites()
@@ -19,8 +20,13 @@ export function FavoriteNotifications() {
     const checkNotifications = () => {
       try {
         const storedNotified = localStorage.getItem(storageKey)
+        const storedNotifiedSoon = localStorage.getItem(`${storageKey}_soon`)
+        
         const notifiedSet = new Set<number>(storedNotified ? JSON.parse(storedNotified) : [])
+        const notifiedSoonSet = new Set<number>(storedNotifiedSoon ? JSON.parse(storedNotifiedSoon) : [])
+        
         let hasNewNotifications = false
+        let hasNewSoonNotifications = false
 
         const allHunts = getAllHunts()
         const now = Math.floor(Date.now() / 1000)
@@ -34,8 +40,8 @@ export function FavoriteNotifications() {
           const hunt = allHunts.find((h) => h.id === huntId)
           if (!hunt) continue
 
-          // If the hunt has started
-          if (hunt.startTime && hunt.startTime <= now) {
+          // If the hunt has started (and hasn't been notified)
+          if (!notifiedSet.has(huntId) && hunt.startTime && hunt.startTime <= now) {
             toast.success(`A hunt you favorited has started!`, {
               description: `"${hunt.title}" is now active.`,
               action: {
@@ -50,13 +56,38 @@ export function FavoriteNotifications() {
             notifiedSet.add(huntId)
             hasNewNotifications = true
           }
+          
+          // If the hunt is starting within 15 minutes (and hasn't been notified for soon)
+          if (
+            !notifiedSoonSet.has(huntId) && 
+            hunt.startTime && 
+            hunt.startTime > now && 
+            hunt.startTime - now <= 15 * 60
+          ) {
+            toast.info(`A hunt you saved is starting soon!`, {
+              description: `"${hunt.title}" starts in less than 15 minutes.`,
+              action: {
+                label: "View Hunt",
+                onClick: () => {
+                  window.location.href = `/hunt/${hunt.id}`
+                }
+              },
+              duration: 10000,
+            })
+            
+            notifiedSoonSet.add(huntId)
+            hasNewSoonNotifications = true
+          }
         }
 
         if (hasNewNotifications) {
           localStorage.setItem(storageKey, JSON.stringify(Array.from(notifiedSet)))
         }
+        if (hasNewSoonNotifications) {
+          localStorage.setItem(`${storageKey}_soon`, JSON.stringify(Array.from(notifiedSoonSet)))
+        }
       } catch (e) {
-        console.error("Failed to process favorite notifications", e)
+        logger.error("Failed to process favorite notifications", e)
       }
     }
 

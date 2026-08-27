@@ -11,7 +11,7 @@ import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
  */
 export const GET = withErrorHandling(async (req: Request) => {
   const ip = getIP(req);
-  const { success, reset } = rateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
+  const { success, reset } = await rateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
 
   if (!success) {
     return rateLimitResponse(reset);
@@ -28,6 +28,7 @@ export const GET = withErrorHandling(async (req: Request) => {
   const category = searchParams.get("category") || "all";
   const search = searchParams.get("search") || "";
   const sortBy = searchParams.get("sortBy") || "newest";
+  const ageClassification = searchParams.get("ageClassification") || "all";
   const tag = searchParams.get("tag") || "";
   const requestId = req.headers.get("x-request-id") ?? undefined;
 
@@ -49,6 +50,7 @@ export const GET = withErrorHandling(async (req: Request) => {
     category,
     search,
     sortBy,
+    ageClassification,
     tag,
     requestId,
   });

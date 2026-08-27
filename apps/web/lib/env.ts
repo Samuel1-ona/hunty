@@ -52,6 +52,15 @@ const serverSchema = z.object({
   /** Resend API key for transactional email */
   RESEND_API_KEY: z.string().min(1, "RESEND_API_KEY is required"),
 
+  // -- Paymaster --
+  /**
+   * Secret seed for the Stellar keypair that signs fee-bump transactions.
+   * Generate with: node -e "const {Keypair}=require('@stellar/stellar-sdk'); console.log(Keypair.random().secret())"
+   * The corresponding public key should be set as NEXT_PUBLIC_PAYMASTER_PUBLIC_KEY.
+   * Fund the account on testnet via https://laboratory.stellar.org/#account-creator?network=testnet
+   */
+  PAYMASTER_SECRET: z.string().min(1, "PAYMASTER_SECRET is required"),
+
   // -- Web Push (VAPID) --
   VAPID_PUBLIC_KEY: z.string().min(1, "VAPID_PUBLIC_KEY is required"),
   VAPID_PRIVATE_KEY: z.string().min(1, "VAPID_PRIVATE_KEY is required"),
@@ -140,6 +149,10 @@ const clientSchema = z.object({
   NEXT_PUBLIC_HUNTY_CORE_ADDRESS: z.string().optional(),
   NEXT_PUBLIC_REWARD_MANAGER_ADDRESS: z.string().optional(),
   NEXT_PUBLIC_NFT_REWARD_ADDRESS: z.string().optional(),
+
+  // -- Paymaster --
+  /** Public G-address of the paymaster keypair. Shown in UIs and explorer links. */
+  NEXT_PUBLIC_PAYMASTER_PUBLIC_KEY: z.string().optional(),
 
   // -- WalletConnect --
   NEXT_PUBLIC_WC_PROJECT_ID: z.string().optional(),

@@ -7,22 +7,13 @@
  * types (display entries, performance, chat, …) remain defined below.
  */
 
-import type {
-  HuntCategory as DomainHuntCategory,
-  HuntInvite,
-  PlayerProgress,
-  Reward as DomainReward,
-} from "@hunty/types";
+import type { HuntCategory as DomainHuntCategory, HuntInvite, PlayerProgress, Reward as DomainReward } from "@hunty/types";
 import type { ReactNode } from "react";
 
 import type { HuntCategoryId } from "./categories";
 import type { CollaboratorRole, HuntCollaborator } from "./collaboration";
 import type { AnswerStrictness } from "./fuzzyAnswer";
-import type {
-  ClueScoringBreakdown,
-  HuntScoringBreakdown,
-  ScoringWeights,
-} from "./scoring";
+import type { ClueScoringBreakdown, HuntScoringBreakdown, ScoringWeights } from "./scoring";
 
 // ─── Shared domain types (single source of truth: @hunty/types) ──────────────
 
@@ -36,6 +27,8 @@ export interface HuntReview {
   createdAt: number;
   moderated?: boolean;
   flagged?: boolean;
+  upvotes?: number;
+  upvotedBy?: string[];
 }
 
 export type HuntStatus =
@@ -56,15 +49,19 @@ export type HuntStatus =
  */
 export type HuntDifficulty = "Easy" | "Medium" | "Hard" | "Expert";
 
+export type HuntAgeClassification = "all-ages" | "13-plus" | "16-plus" | "18-plus";
+
 export interface StoredHunt {
   id: number;
   title: string;
   description: string;
   cluesCount: number;
-  /** Broad category used by legacy and current discovery filters. */
+  /** Broad hunt category used in discovery filters. */
   category?: DomainHuntCategory | HuntCategoryId;
   /** Overall hunt difficulty tag used in discovery filters. */
   difficulty?: HuntDifficulty;
+  /** Age suitability selected by the creator. Older hunts default to all ages. */
+  ageClassification?: HuntAgeClassification;
   status: HuntStatus;
   rewardType: "XLM" | "NFT" | "Both";
   /** When true, players must solve clues in order. */
@@ -107,8 +104,14 @@ export interface StoredHunt {
   invite?: HuntInvite;
   /** Optional game cover CID/URL for hunt cards and sharing previews. */
   coverImageCid?: string;
+  /** Optional map latitude for spatial discovery views. */
+  mapLatitude?: number;
+  /** Optional map longitude for spatial discovery views. */
+  mapLongitude?: number;
   /** Active editorial banner showcase at the top of the Arcade. */
   isFeaturedOfWeek?: boolean;
+  /** Unix timestamp in seconds until a paid spotlight placement remains active. */
+  promotedUntil?: number;
   /** Creator's wallet public key. */
   creator?: string;
   /** Average user rating (1-5). */
@@ -170,6 +173,10 @@ export interface Clue {
   question: string;
   answer: string;
   points: number;
+  /** Optional locale-specific question strings. The base `question` remains the fallback. */
+  questionTranslations?: Partial<Record<string, string>>;
+  /** Optional locale-specific hint strings. The base `hint` remains the fallback. */
+  hintTranslations?: Partial<Record<string, string>>;
   /**
    * Progressive hints array (up to 3). Takes precedence over the legacy
    * `hint` / `hintCost` fields when present.
@@ -191,12 +198,18 @@ export interface Clue {
   alternativeAnswers?: string[];
   /** Fuzzy matching strictness for this clue. Defaults to "normal". */
   answerStrictness?: AnswerStrictness;
+  /** Optional IPFS media reference, optionally tagged with a type query param. */
+  mediaCid?: string;
 }
 
 export type ClueInfo = {
   id: number;
   question: string;
   points: number;
+  /** Optional locale-specific question strings. */
+  questionTranslations?: Partial<Record<string, string>>;
+  /** Optional locale-specific hint strings. */
+  hintTranslations?: Partial<Record<string, string>>;
   /** Progressive hints (up to 3). Supersedes the legacy `hint`/`hintCost` fields. */
   hints?: ClueHint[];
   /** @deprecated Use `hints[0]` instead. */
@@ -211,6 +224,8 @@ export interface ClueRow {
   question: string;
   answer: string;
   points: number;
+  questionTranslations?: Partial<Record<string, string>>;
+  hintTranslations?: Partial<Record<string, string>>;
   hints?: ClueHint[];
   /** @deprecated */
   hint?: string;
@@ -219,14 +234,16 @@ export interface ClueRow {
   difficulty?: ClueDifficulty;
   alternativeAnswers?: string[];
   answerStrictness?: AnswerStrictness;
+  /** Optional IPFS media reference, optionally tagged with a type query param. */
+  mediaCid?: string;
 }
 export type {
   Achievement,
   AchievementId,
   AchievementRarity,
   HuntCategory,
-  HuntInvite,
   HuntProgressStatus,
+  HuntInvite,
   PlayerHuntProgress,
   PlayerProgress,
   RewardHistoryEntry,
@@ -234,6 +251,7 @@ export type {
   RewardReceipt,
   RewardReceiptType,
   RewardType,
+  SponsorContribution,
 } from "@hunty/types";
 
 export type { AnswerStrictness, CollaboratorRole, HuntCategoryId };
@@ -400,10 +418,7 @@ export interface RewardPlayerProgress {
 
 // ─── Activity Feed ───────────────────────────────────────────────────────────
 
-export type ActivityEventType =
-  | "HuntCompleted"
-  | "ClueCompleted"
-  | "HuntSponsored";
+export type ActivityEventType = "HuntCompleted" | "ClueCompleted" | "HuntSponsored";
 
 export interface ActivityEvent {
   id: string;
@@ -441,6 +456,8 @@ export interface HuntCard {
    * (passed in from individual clue views), so both are allowed here.
    */
   difficulty?: HuntDifficulty | ClueDifficulty;
+  /** Optional IPFS media reference, optionally tagged with a type query param. */
+  mediaCid?: string;
 }
 
 // HuntDraft and PlayerStats now live in @hunty/types (re-exported above).
@@ -453,6 +470,7 @@ export interface HuntDraft {
   image?: string;
   sequential?: boolean;
   maxParticipants?: number;
+  ageClassification?: HuntAgeClassification;
 }
 
 /**
@@ -501,11 +519,34 @@ export interface PlayerStats {
   lastUpdated: number;
 }
 
-export type CoverImageUploadState =
-  | "idle"
-  | "uploading"
-  | "succeeded"
-  | "failed";
+export type CoverImageUploadState = "idle" | "uploading" | "succeeded" | "failed";
+
+export interface PlayerProfile {
+  address: string
+  displayName?: string
+  avatarUrl?: string
+}
+
+export interface ReferralRecord {
+  code: string
+  referrerAddress: string
+  referredAddress: string
+  registeredAt: number
+  firstCompletedAt?: number
+  firstCompletedHuntId?: number
+  bonusAwarded: boolean
+  bonusPoints: number
+}
+
+export interface ReferralStats {
+  code: string
+  totalInvites: number
+  successfulReferrals: number
+  pendingReferrals: number
+  bonusPoints: number
+  referralLink: string
+  referrals: ReferralRecord[]
+}
 
 // ─── Player Count ────────────────────────────────────────────────────────────
 
@@ -606,6 +647,11 @@ export interface SeasonBadge {
   rank?: number;
   earnedAt: number;
 }
+
+// ─── Hunt Feed ───────────────────────────────────────────────────────────────
+
+export type HuntFeedCategory = "trending" | "new" | "nearby" | "featured"
+
 
 // ─── Core Web Vitals ────────────────────────────────────────────────────────────
 

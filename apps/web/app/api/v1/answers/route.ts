@@ -10,7 +10,7 @@ import {
   recordAnswer,
   trackClueSubmission,
   verifyAnswer,
-} from "@/lib/anti-cheat"
+} from "@/lib/antiCheatDb"
 import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit"
 import { getServerClue } from "@/lib/server/seedClues"
 import { ForbiddenError, NotFoundError, RateLimitError, ValidationError } from "@/lib/api/errors"
@@ -29,9 +29,10 @@ const answerSchema = z.object({
 export const POST = withErrorHandling(async (req: Request) => {
   const ip = getIP(req)
 
-  const { success: ipSuccess, reset: ipReset } = rateLimit(ip, {
-    limit: getConfig().maxSubmissionsPerWindow,
-    windowMs: getConfig().submissionWindowMs,
+  const config = await getConfig()
+  const { success: ipSuccess, reset: ipReset } = await rateLimit(ip, {
+    limit: config.maxSubmissionsPerWindow,
+    windowMs: config.submissionWindowMs,
   })
   if (!ipSuccess) {
     return rateLimitResponse(ipReset)
@@ -52,7 +53,7 @@ export const POST = withErrorHandling(async (req: Request) => {
 
   const { huntId, clueId, answer, wallet, clientTimestamp, hintsUsed: validatedHintsUsed } = parsed.data
 
-  if (isBanned(wallet, ip)) {
+  if (await isBanned(wallet, ip)) {
     throw new ForbiddenError("Account is banned due to suspicious activity")
   }
 
@@ -61,22 +62,22 @@ export const POST = withErrorHandling(async (req: Request) => {
     throw new NotFoundError("Clue not found", { huntId, clueId })
   }
 
-  const { allowed: intervalAllowed, waitMs } = checkMinInterval(wallet, huntId, clueId)
+  const { allowed: intervalAllowed, waitMs } = await checkMinInterval(wallet, huntId, clueId)
   if (!intervalAllowed) {
     throw new RateLimitError(`Please wait ${Math.ceil(waitMs / 1000)} seconds before submitting again`, {
       waitMs,
     })
   }
 
-  trackClueSubmission(wallet, huntId, clueId)
+  await trackClueSubmission(wallet, huntId, clueId)
 
   const correct = await verifyAnswer(huntId, clueId, answer)
 
-  const anomalyFlags = detectAnomalies(wallet, ip, huntId, clueId, correct)
+  const anomalyFlags = await detectAnomalies(wallet, ip, huntId, clueId, correct)
 
-  const { score, bonusPoints } = calculateScore(huntId, clueId, correct)
+  const { score, bonusPoints } = await calculateScore(huntId, clueId, correct)
 
-  recordAnswer(
+  await recordAnswer(
     huntId,
     clueId,
     wallet,

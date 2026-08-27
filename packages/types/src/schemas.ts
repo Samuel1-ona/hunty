@@ -16,6 +16,9 @@ export const huntStatusSchema = z.enum([
   "Completed",
   "Draft",
   "Cancelled",
+  "PendingReview",
+  "Scheduled",
+  "Ended",
 ])
 
 export const clueDifficultySchema = z.enum(["Easy", "Medium", "Hard"])

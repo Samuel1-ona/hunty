@@ -1,23 +1,17 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 // @ts-expect-error supertest has no types installed
 import request from 'supertest';
-import { describe, expect,it } from 'vitest';
 
-import { GET as getFeatured } from '../../app/api/admin/featured/route';
-import { GET as getAnalytics } from '../../app/api/analytics/route';
-import { GET as getIpfs } from '../../app/api/ipfs/route';
-import { GET as getLeaderboard } from '../../app/api/v1/hunts/[id]/leaderboard/route';
-// Import handlers from the app directory.
+import { GET as getFeatured } from '@/app/api/admin/featured/route';
+import { GET as getAnalytics } from '@/app/api/analytics/performance/route';
+import { POST as postIpfs, GET as getIpfs } from '@/app/api/ipfs/route';
 import { GET as getHunts } from '@/app/api/v1/hunts/route';
+import { GET as getHuntById } from '@/app/api/v1/hunts/[id]/route';
 import { GET as getLeaderboard } from '@/app/api/v1/hunts/[id]/leaderboard/route';
 import { GET as getPublicLeaderboard } from '@/app/api/v1/hunts/[id]/leaderboard/public/route';
 import { GET as getLeaderboardOgImage } from '@/app/api/og/leaderboard/route';
-import { GET as getFeatured } from '@/app/api/admin/featured/route';
-import { POST as postIpfs } from '@/app/api/ipfs/route';
-import { GET as getAnalytics } from '@/app/api/analytics/performance/route';
-import { GET as getHunts } from '../../app/api/v1/hunts/route';
 
-function handlerToExpress(handler: any) {
+function handlerToExpress(handler: unknown) {
   return async (req: any, res: any) => {
     try {
       const url = `http://localhost${req.url || req.originalUrl}`;
@@ -49,6 +43,10 @@ function handlerToExpress(handler: any) {
       const matchLeaderboard = req.url.match(/\/api\/v1\/hunts\/([^\/]+)\/leaderboard/);
       if (matchLeaderboard) {
         params.id = matchLeaderboard[1];
+      }
+      const matchHuntId = req.url.match(/\/api\/v1\/hunts\/([^\/]+)$/);
+      if (matchHuntId && !params.id) {
+        params.id = matchHuntId[1];
       }
 
       const result = await handler(webRequest, { params });
@@ -153,5 +151,22 @@ describe('API Integration Tests', () => {
     const response = await app.get('/api/error');
     expect(response.status).toBeGreaterThanOrEqual(400);
     expect(response.body).toHaveProperty('error');
+  });
+});
+
+describe('GET /api/v1/hunts/[id] - private hunt', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns 404 for a private hunt', async () => {
+    vi.mock('@/lib/db/queryOptimizer', () => ({
+      getPublicHuntByIdOptimized: vi.fn().mockReturnValue(undefined),
+    }));
+
+    const { GET } = await import('@/app/api/v1/hunts/[id]/route');
+    const app = request(handlerToExpress(GET));
+    const response = await app.get('/api/v1/hunts/999');
+    expect(response.status).toBe(404);
   });
 });

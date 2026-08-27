@@ -1,39 +1,42 @@
 import { NextResponse } from "next/server"
 import { readCompletions, writeCompletions } from "@/lib/reviews"
+import { withValidation } from "@/lib/api/withValidation"
+import { ValidationError } from "@/lib/api/errors"
+import { huntCompleteBodySchema } from "@hunty/types/api-schemas"
+import { getActiveSeason } from "@/lib/seasonStore"
+import { awardXp, XP_PER_HUNT } from "@/lib/battlePassStore"
+import { z from "zod"
+
+const paramsSchema = z.object({ id: z.string() })
 
 /**
  * POST /api/v1/hunts/[id]/complete
  * Register that a player address has completed a hunt.
+ * Also awards battle pass XP for the active season.
  */
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params
-    const huntId = parseInt(id, 10)
-
+export const POST = withValidation(
+  { body: huntCompleteBodySchema, params: paramsSchema },
+  async (_req, _context, { body, params }) => {
+    const huntId = parseInt(params!.id, 10)
     if (isNaN(huntId)) {
-      return NextResponse.json({ error: "Invalid hunt ID" }, { status: 400 })
-    }
-
-    const body = await req.json().catch(() => ({}))
-    const { playerAddress } = body
-
-    if (!playerAddress || typeof playerAddress !== "string" || playerAddress.trim() === "") {
-      return NextResponse.json({ error: "Invalid player address" }, { status: 400 })
+      throw new ValidationError("Invalid hunt ID", { id: params!.id })
     }
 
     const completions = await readCompletions()
     if (!completions[huntId]) {
       completions[huntId] = {}
     }
-    completions[huntId][playerAddress] = true
+    completions[huntId][body.playerAddress] = true
 
     await writeCompletions(completions)
 
-    return NextResponse.json({ success: true })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to register completion" }, { status: 500 })
+    // Award battle pass XP for active season
+    const activeSeason = getActiveSeason()
+    let battlePass = null
+    if (activeSeason) {
+      battlePass = awardXp(activeSeason.id, body.playerAddress, XP_PER_HUNT)
+    }
+
+    return NextResponse.json({ success: true, battlePass })
   }
-}
+)

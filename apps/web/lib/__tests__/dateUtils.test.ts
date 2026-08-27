@@ -1,11 +1,12 @@
-import { afterEach, beforeEach,describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
   formatDate,
   formatISOString,
   formatTimestamp,
+  formatTimestampWithTimezone,
   getCountdown,
-} from "../dateUtils";
+} from "../dateUtils"
 
 describe("dateUtils", () => {
   afterEach(() => {
@@ -160,7 +161,65 @@ describe("dateUtils", () => {
     });
 
     it("returns correct countdown for exactly one hour", () => {
-      expect(getCountdown(1000 + 3600)).toBe("1h 00s");
-    });
-  });
-});
+      expect(getCountdown(1000 + 3600)).toBe("1h 00s")
+    })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Locale-param extension tests
+// ---------------------------------------------------------------------------
+describe("dateUtils – locale params", () => {
+  const TS = 1739197920 // 2026-02-10T14:32:00Z
+
+  describe("formatTimestamp with locale", () => {
+    it("accepts a locale without throwing", () => {
+      expect(() => formatTimestamp(TS, "en-US")).not.toThrow()
+      expect(() => formatTimestamp(TS, "es-ES")).not.toThrow()
+      expect(() => formatTimestamp(TS, "fr-FR")).not.toThrow()
+    })
+
+    it("returns a non-empty string for each locale", () => {
+      expect(formatTimestamp(TS, "en-US").length).toBeGreaterThan(0)
+      expect(formatTimestamp(TS, "es-ES").length).toBeGreaterThan(0)
+      expect(formatTimestamp(TS, "fr-FR").length).toBeGreaterThan(0)
+    })
+  })
+
+  describe("formatDate with locale", () => {
+    it("accepts locales without throwing", () => {
+      expect(() => formatDate(TS, "en-US")).not.toThrow()
+      expect(() => formatDate(TS, "es-ES")).not.toThrow()
+    })
+
+    it("is shorter or equal to formatTimestamp (no time part)", () => {
+      expect(formatDate(TS, "en-US").length).toBeLessThanOrEqual(
+        formatTimestamp(TS, "en-US").length,
+      )
+    })
+  })
+
+  describe("formatISOString with locale", () => {
+    it("accepts locale param", () => {
+      const result = formatISOString("2026-02-10T14:32:00Z", "en-US")
+      expect(result.length).toBeGreaterThan(0)
+    })
+
+    it("still returns original on bad input", () => {
+      expect(formatISOString("bad-date", "es-ES")).toBe("bad-date")
+    })
+  })
+
+  describe("formatTimestampWithTimezone", () => {
+    it("includes a timezone abbreviation", () => {
+      const result = formatTimestampWithTimezone(TS, "en-US", "UTC")
+      expect(result).toMatch(/UTC|GMT/)
+    })
+
+    it("differs between UTC and America/New_York", () => {
+      const utc = formatTimestampWithTimezone(TS, "en-US", "UTC")
+      const nyc = formatTimestampWithTimezone(TS, "en-US", "America/New_York")
+      expect(utc).not.toBe(nyc)
+    })
+  })
+})

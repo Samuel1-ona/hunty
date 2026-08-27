@@ -12,28 +12,31 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          fetch-depth: 0
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+      - name: Setup Node.js with pnpm
+        uses: ./.github/actions/setup-node-pnpm
 
       - name: Build Next.js app
-        run: npm run build
+        run: pnpm build
 
       - name: Start Next.js app in background
         run: |
-          npm start &
+          pnpm start &
           npx wait-on http://localhost:3000 --timeout 30000
 
       - name: Dependency vulnerability scan
-        run: npm audit --audit-level=moderate || true
+        run: pnpm audit --audit-level=moderate || true
 
       - name: Run Playwright security tests
-        run: npm run security:test || true
+        run: pnpm security:test || true
 
       - name: OWASP ZAP baseline scan
         uses: zaproxy/action-baseline@v0.8.0

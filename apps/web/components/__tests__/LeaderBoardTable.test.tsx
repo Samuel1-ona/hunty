@@ -73,9 +73,12 @@ describe("LeaderboardTable", () => {
 
     it("renders empty state when no data is available", async () => {
       render(<LeaderboardTable data={[]} isLoading={false} />)
-      
+
+      // The EmptyState copy in apps/web/components/LeaderBoardTable.tsx uses
+      // title "No results for these filters" rather than the older
+      // "Be the first to complete" wording this test asserted.
       await waitFor(() => {
-        expect(screen.getByText(/Be the first to complete/)).toBeInTheDocument()
+        expect(screen.getByText(/No results for these filters/i)).toBeInTheDocument()
       })
     })
 
@@ -208,11 +211,11 @@ describe("LeaderboardTable", () => {
       const { container } = render(
         <LeaderboardTable data={[]} isLoading={false} />
       )
-      
+
       await waitFor(() => {
-        expect(screen.getByText(/Be the first to complete/)).toBeInTheDocument()
+        expect(screen.getByText(/No results for these filters/i)).toBeInTheDocument()
       })
-      
+
       expect(container).toMatchSnapshot()
     })
 

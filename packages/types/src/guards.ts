@@ -18,6 +18,9 @@ const HUNT_STATUSES: readonly HuntStatus[] = [
   "Completed",
   "Draft",
   "Cancelled",
+  "PendingReview",
+  "Scheduled",
+  "Ended",
 ]
 
 const REWARD_TYPES: readonly RewardType[] = ["XLM", "NFT", "Both"]

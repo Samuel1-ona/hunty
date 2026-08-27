@@ -1,18 +1,10 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Crown, Eye, Pencil, UserPlus, Users } from "lucide-react"
 import {
-  acceptInvite,
   appendActivity,
-  getActiveEditors,
   getActivityLog,
-  getCollaborators,
-  inviteCollaborator,
-  pingPresence,
-  removeCollaborator,
-  transferOwnership,
-  updateCollaboratorRole,
   type CollaboratorRole,
   type CollaborationActivityEntry,
   type HuntCollaborator,
@@ -20,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 interface CollaboratorsPanelProps {
   huntId: number
@@ -40,57 +33,115 @@ export function CollaboratorsPanel({
 }: CollaboratorsPanelProps) {
   const [collaborators, setCollaborators] = useState<HuntCollaborator[]>([])
   const [activity, setActivity] = useState<CollaborationActivityEntry[]>([])
+  const [activeEditors, setActiveEditors] = useState<HuntCollaborator[]>([])
   const [inviteAddress, setInviteAddress] = useState("")
   const [inviteRole, setInviteRole] = useState<"editor" | "viewer">("editor")
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const eventSourceRef = useRef<EventSource | null>(null)
 
-  const refresh = useCallback(() => {
-    setCollaborators(getCollaborators(huntId))
-    setActivity(getActivityLog(huntId, 30))
+  const refresh = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/v1/hunts/${huntId}/collaborators`)
+      if (!res.ok) throw new Error("Failed to fetch collaborators")
+      const data = await res.json()
+      setCollaborators(data.collaborators)
+      setActivity(data.activity)
+    } catch {
+      // silent
+    }
   }, [huntId])
 
   useEffect(() => {
     refresh()
   }, [refresh])
 
-  // Presence heartbeat while panel is open
   useEffect(() => {
     if (!currentWallet) return
-    pingPresence(huntId, currentWallet, "collaborators-panel")
-    const id = setInterval(() => {
-      pingPresence(huntId, currentWallet, "collaborators-panel")
-      refresh()
-    }, 8_000)
-    return () => {
-      clearInterval(id)
-      pingPresence(huntId, currentWallet, null)
+
+    const ping = async (editingField?: string | null) => {
+      try {
+        await fetch(`/api/v1/hunts/${huntId}/collaborators/presence`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            walletAddress: currentWallet,
+            editingField: editingField ?? null,
+          }),
+        })
+      } catch {
+        // silent
+      }
     }
-  }, [huntId, currentWallet, refresh])
+
+    ping("collaborators-panel")
+    const interval = setInterval(() => {
+      ping("collaborators-panel")
+    }, 8_000)
+
+    return () => {
+      clearInterval(interval)
+      ping(null)
+    }
+  }, [huntId, currentWallet])
+
+  useEffect(() => {
+    if (!currentWallet) return
+    const es = new EventSource(`/api/v1/hunts/${huntId}/collaborators/presence/stream`)
+    eventSourceRef.current = es
+
+    es.addEventListener("update", ((e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data)
+        if (data.activeEditors) {
+          setActiveEditors(data.activeEditors)
+        }
+      } catch {
+        // ignore parse errors
+      }
+    }) as EventListener)
+
+    es.onerror = () => {
+      es.close()
+    }
+
+    return () => {
+      es.close()
+      eventSourceRef.current = null
+    }
+  }, [huntId, currentWallet])
 
   const me = useMemo(
     () => collaborators.find((c) => c.walletAddress === currentWallet),
     [collaborators, currentWallet],
   )
   const isOwner = me?.role === "owner"
-  const activeEditors = useMemo(
-    () => getActiveEditors(huntId, currentWallet),
-    // refresh updates collaborators → recompute
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [huntId, currentWallet, collaborators],
-  )
 
-  const handleInvite = () => {
+  const handleInvite = async () => {
     setError(null)
     setMessage(null)
-    const result = inviteCollaborator(huntId, currentWallet, inviteAddress, inviteRole)
-    if (!result.ok) {
-      setError(result.error)
-      return
+    try {
+      const res = await fetch(`/api/v1/hunts/${huntId}/collaborators`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "invite",
+          actorAddress: currentWallet,
+          walletAddress: inviteAddress,
+          role: inviteRole,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error)
+        return
+      }
+      setInviteAddress("")
+      setMessage(`Invite sent to ${data.collaborator.walletAddress.slice(0, 6)}…`)
+      await refresh()
+    } catch {
+      setError("Network error")
     }
-    setInviteAddress("")
-    setMessage(`Invite sent to ${result.collaborator.walletAddress.slice(0, 6)}…`)
-    refresh()
   }
 
   return (
@@ -141,14 +192,24 @@ export function CollaboratorsPanel({
                     <select
                       className="rounded-md border border-white/10 bg-black/40 text-[11px] text-slate-200 px-1 py-1"
                       value={c.role}
-                      onChange={(e) => {
-                        updateCollaboratorRole(
-                          huntId,
-                          currentWallet,
-                          c.walletAddress,
-                          e.target.value as "editor" | "viewer",
-                        )
-                        refresh()
+                      onChange={async (e) => {
+                        setError(null)
+                        const res = await fetch(`/api/v1/hunts/${huntId}/collaborators`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            action: "update_role",
+                            actorAddress: currentWallet,
+                            walletAddress: c.walletAddress,
+                            role: e.target.value,
+                          }),
+                        })
+                        const data = await res.json()
+                        if (!res.ok) {
+                          setError(data.error)
+                          return
+                        }
+                        await refresh()
                       }}
                     >
                       <option value="editor">editor</option>
@@ -159,10 +220,24 @@ export function CollaboratorsPanel({
                       variant="ghost"
                       size="sm"
                       className="h-7 text-[11px]"
-                      onClick={() => {
-                        const res = transferOwnership(huntId, currentWallet, c.walletAddress)
-                        if (!res.ok) setError(res.error)
-                        refresh()
+                      onClick={async () => {
+                        setError(null)
+                        const res = await fetch(`/api/v1/hunts/${huntId}/collaborators`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            action: "transfer",
+                            actorAddress: currentWallet,
+                            newOwnerAddress: c.walletAddress,
+                          }),
+                        })
+                        const data = await res.json()
+                        if (!res.ok) {
+                          setError(data.error)
+                          return
+                        }
+                        await refresh()
+                        toast.success("Ownership transferred")
                       }}
                     >
                       Make owner
@@ -172,9 +247,23 @@ export function CollaboratorsPanel({
                       variant="ghost"
                       size="sm"
                       className="h-7 text-[11px] text-red-300"
-                      onClick={() => {
-                        removeCollaborator(huntId, currentWallet, c.walletAddress)
-                        refresh()
+                      onClick={async () => {
+                        setError(null)
+                        const res = await fetch(`/api/v1/hunts/${huntId}/collaborators`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            action: "remove",
+                            actorAddress: currentWallet,
+                            walletAddress: c.walletAddress,
+                          }),
+                        })
+                        const data = await res.json()
+                        if (!res.ok) {
+                          setError(data.error)
+                          return
+                        }
+                        await refresh()
                       }}
                     >
                       Remove
@@ -186,9 +275,22 @@ export function CollaboratorsPanel({
                     type="button"
                     size="sm"
                     className="h-7 text-[11px]"
-                    onClick={() => {
-                      acceptInvite(huntId, currentWallet)
-                      refresh()
+                    onClick={async () => {
+                      setError(null)
+                      const res = await fetch(`/api/v1/hunts/${huntId}/collaborators`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          action: "accept",
+                          actorAddress: currentWallet,
+                        }),
+                      })
+                      if (!res.ok) {
+                        const data = await res.json()
+                        setError(data.error)
+                        return
+                      }
+                      await refresh()
                     }}
                   >
                     Accept

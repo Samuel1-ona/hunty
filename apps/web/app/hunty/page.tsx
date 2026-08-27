@@ -36,12 +36,17 @@ import ToggleButton from "@/components/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { readDraftPayload, useHuntDraftAutoSave } from "@/hooks/useHuntDraftAutoSave";
+import {
+  fetchDraftFromServer,
+  readDraftPayload,
+  useHuntDraftAutoSave,
+} from "@/hooks/useHuntDraftAutoSave";
 import { useIsFeatureEnabled } from "@/hooks/useFeatureFlag";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import type { HuntCategoryId } from "@/lib/categories";
 import { ensureOwner } from "@/lib/collaboration";
 import { getCommunityTemplateBySlug } from "@/lib/communityTemplates";
+import { useWallet } from "@/lib/context/WalletContext";
 import { createHunt } from "@/lib/contracts/hunt";
 import { createRewardEscrow } from "@/lib/contracts/rewardManager";
 import { downloadElementAsImage } from "@/lib/downloadAsImage";
@@ -53,6 +58,7 @@ import { logger } from "@/lib/logger";
 import { withTransactionToast } from "@/lib/txToast";
 import type {
   CoverImageUploadState,
+  HuntAgeClassification,
   HuntDifficulty,
   HuntDraft,
   HuntDraftSave,
@@ -91,6 +97,10 @@ function CreateGameContent() {
     "draft-huntDifficulty",
     ""
   );
+  const [ageClassification, setAgeClassification] = useLocalStorage<HuntAgeClassification>(
+    "draft-ageClassification",
+    "all-ages"
+  );
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [direction, setDirection] = useState(0);
@@ -111,6 +121,7 @@ function CreateGameContent() {
   const previewContainerRef = useRef<HTMLDivElement | null>(null);
   const appliedTemplateRef = useRef<string | null>(null);
   const router = useRouter();
+  const { publicKey: walletPublicKey } = useWallet();
 
   const prefersReducedMotion = useReducedMotion();
 
@@ -141,6 +152,7 @@ function CreateGameContent() {
     rewards,
     meta: autoSaveMeta,
     draftId: activeDraftId ?? undefined,
+    walletPublicKey: walletPublicKey || undefined,
   });
 
   // Sync the hook-generated draftId back to state on first mount.
@@ -192,27 +204,45 @@ function CreateGameContent() {
     }
   }, []);
 
+  const appliedDraftIdRef = useRef<string | null>(null);
+
   // Load a previously auto-saved draft when navigating from the draft list.
+  // Falls back to the server copy when this device has no local copy (e.g.
+  // the draft was auto-saved from a different browser/device).
   useEffect(() => {
     const draftId = searchParams.get("draftId");
-    if (!draftId) return;
-    const saved = readDraftPayload(draftId);
-    if (!saved) return;
-    setHunts(saved.hunts);
-    setRewards(saved.rewards.map((r) => ({ ...r, icon: undefined })));
-    setGameName(saved.meta.gameName);
-    setStartDate(saved.meta.startDate);
-    setEndDate(saved.meta.endDate);
-    setRewardType(saved.meta.rewardType);
-    setSequential(saved.meta.sequential);
-    setIsPrivate(saved.meta.isPrivate);
-    setTimerEnabled(saved.meta.timerEnabled);
-    setCreatorEmail(saved.meta.creatorEmail);
-    setEmailNotifications(saved.meta.emailNotifications);
-    setActiveDraftId(draftId);
-    // Only run on mount; deps intentionally omitted to avoid re-loading on every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!draftId || appliedDraftIdRef.current === draftId) return;
+
+    const applyDraft = (saved: HuntDraftSave) => {
+      appliedDraftIdRef.current = draftId;
+      setHunts(saved.hunts);
+      setRewards(saved.rewards.map((r) => ({ ...r, icon: undefined })));
+      setGameName(saved.meta.gameName);
+      setStartDate(saved.meta.startDate);
+      setEndDate(saved.meta.endDate);
+      setRewardType(saved.meta.rewardType);
+      setSequential(saved.meta.sequential);
+      setIsPrivate(saved.meta.isPrivate);
+      setTimerEnabled(saved.meta.timerEnabled);
+      setCreatorEmail(saved.meta.creatorEmail);
+      setEmailNotifications(saved.meta.emailNotifications);
+      setActiveDraftId(draftId);
+    };
+
+    const local = readDraftPayload(draftId);
+    if (local) {
+      applyDraft(local);
+      return;
+    }
+
+    let cancelled = false;
+    void fetchDraftFromServer(draftId).then((remote) => {
+      if (!cancelled && remote) applyDraft(remote);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams]);
 
   useEffect(() => {
     const templateSlug = searchParams.get("template");
@@ -285,7 +315,7 @@ function CreateGameContent() {
   const rewardItemSchema = z.object({
     place: z.number().int().positive(),
     amount: z.number().positive("Reward amount must be greater than 0."),
-    icon: z.any().optional(),
+    icon: z.unknown().optional(),
   });
 
   const formSchema = z
@@ -519,6 +549,7 @@ function CreateGameContent() {
         emailNotifications: formValues.emailNotifications,
         is_private: formValues.isPrivate,
         sequential: formValues.sequential,
+        ageClassification,
         maxParticipants: formValues.hunts[0]?.maxParticipants,
         coverImageCid,
         category,
@@ -881,6 +912,33 @@ function CreateGameContent() {
                                 {d}
                               </option>
                             ))}
+                          </select>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <label
+                              htmlFor="hunt-age-classification"
+                              className="block text-xl font-normal text-[#808080]"
+                            >
+                              Age suitability
+                            </label>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              Helps players and moderators understand the intended audience
+                            </p>
+                          </div>
+                          <select
+                            id="hunt-age-classification"
+                            value={ageClassification}
+                            onChange={(e) =>
+                              setAgeClassification(e.target.value as HuntAgeClassification)
+                            }
+                            className="h-11 w-[160px] text-center rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#3737A4]/40"
+                          >
+                            <option value="all-ages">All ages</option>
+                            <option value="13-plus">13+</option>
+                            <option value="16-plus">16+</option>
+                            <option value="18-plus">18+</option>
                           </select>
                         </div>
 

@@ -35,7 +35,7 @@ interface WalletState {
  * Sync this store whenever useWallet fires connect / disconnect,
  * or call setWallet / clearWallet directly.
  */
-export const useWalletStore = create<WalletState>()(
+export const useWalletStore = create<StoreState["wallet"]>()(
   persist(
     (set) => ({
       walletAddress: "",
@@ -78,12 +78,24 @@ interface PlayerState {
 }
 
 /**
+ * Shape of the global Hunty store.
+ *
+ * Explicitly typed so that zustand never falls back to implicit `any`
+ * inference (TS7006) and so selectors/`setState` calls are type-checked
+ * against the full app state at every call site.
+ */
+export interface StoreState {
+  wallet: WalletState;
+  player: PlayerState;
+}
+
+/**
  * Player progress store — tracks the active hunt session in memory.
  *
  * Set currentProgress when a player registers or resumes a hunt.
  * Clear it when the hunt ends or the player navigates away.
  */
-export const usePlayerStore = create<PlayerState>()((set) => ({
+export const usePlayerStore = create<StoreState["player"]>()((set) => ({
   currentProgress: null,
 
   setProgress: (progress) => set({ currentProgress: progress }),

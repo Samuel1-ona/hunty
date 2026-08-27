@@ -2,45 +2,40 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   addHunt,
+  advanceHuntProgress,
   archiveHunts,
+  clearHuntProgress,
   deleteHunts,
+  gcHunt,
   getAllHunts,
   getAllHuntsIncludingPrivate,
   getCreatorHunts,
-  getHuntsByCreator,
-  updateHuntStatus,
-  updateHuntEndTime,
-  deleteHunts,
-  archiveHunts,
-  getHuntById,
-  addHunt,
-  getHuntClues,
-  saveClueLocally,
-  saveCluesLocallyBatch,
-  updateClueAnswer,
-  takeHuntStoreSnapshot,
-  restoreHuntStoreSnapshot,
-  getHunt,
   getFeaturedHunts,
   getHunt,
   getHuntById,
   getHuntClues,
+  getHuntProgress,
   getHuntsByCreator,
+  getSpotlightHunts,
+  MAX_CLUES_PER_HUNT,
   restoreHuntStoreSnapshot,
   saveClueLocally,
+  saveCluesLocallyBatch,
   setLocalFeaturedHunt,
-  getHuntProgress,
   startHuntProgress,
   advanceHuntProgress,
   clearHuntProgress,
   gcHunt,
+  migrateGuestProgressToWallet,
+  getWalletProgressKey,
   MAX_CLUES_PER_HUNT,
   takeHuntStoreSnapshot,
   updateClueAnswer,
   updateHuntEndTime,
+  updateHuntPromotion,
   updateHuntStatus,
 } from "@/lib/huntStore";
-import type { Clue,StoredHunt } from "@/lib/types";
+import type { Clue, StoredHunt } from "@/lib/types";
 
 describe("huntStore", () => {
   beforeEach(() => {
@@ -238,6 +233,52 @@ describe("huntStore", () => {
     it("returns undefined for non-existent hunt", () => {
       const found = getHuntById(99999);
       expect(found).toBeUndefined();
+    });
+  });
+
+  describe("spotlight promotions", () => {
+    it("stores a promoted-until timestamp on a hunt", () => {
+      const hunt: StoredHunt = {
+        id: 988,
+        title: "Spotlight Hunt",
+        description: "Featured on the arcade",
+        cluesCount: 2,
+        status: "Active",
+        rewardType: "XLM",
+      };
+      addHunt(hunt);
+      const promotedUntil = Math.floor(Date.now() / 1000) + 3600;
+
+      updateHuntPromotion(988, promotedUntil);
+
+      expect(getHuntById(988)?.promotedUntil).toBe(promotedUntil);
+    });
+
+    it("returns only active promoted hunts in the spotlight list", () => {
+      const promotedUntil = Math.floor(Date.now() / 1000) + 3600;
+      addHunt({
+        id: 987,
+        title: "Active Spotlight",
+        description: "Featured",
+        cluesCount: 1,
+        status: "Active",
+        rewardType: "NFT",
+        promotedUntil,
+      });
+      addHunt({
+        id: 986,
+        title: "Expired Spotlight",
+        description: "Expired",
+        cluesCount: 1,
+        status: "Active",
+        rewardType: "NFT",
+        promotedUntil: Math.floor(Date.now() / 1000) - 60,
+      });
+
+      const spotlight = getSpotlightHunts();
+
+      expect(spotlight.find((hunt) => hunt.id === 987)).toBeDefined();
+      expect(spotlight.find((hunt) => hunt.id === 986)).toBeUndefined();
     });
   });
 
@@ -1259,6 +1300,24 @@ describe("huntStore", () => {
 
       clearHuntProgress(9777);
       expect(localStorage.getItem("hunty_hunt_progress_9777")).toBeNull();
+    });
+
+    it("migrates guest progress into a wallet-scoped key and stays idempotent", () => {
+      const guestProgress = startHuntProgress(8765);
+      const walletAddress = "GABC1234567890";
+
+      const migrated = migrateGuestProgressToWallet(8765, walletAddress);
+
+      expect(migrated).toEqual({
+        ...guestProgress,
+        currentClueIndex: guestProgress.currentClueIndex,
+      });
+      expect(localStorage.getItem(getWalletProgressKey(8765, walletAddress))).toBeTruthy();
+      expect(localStorage.getItem("hunty_hunt_progress_8765")).toBeNull();
+
+      const duplicate = migrateGuestProgressToWallet(8765, walletAddress);
+      expect(duplicate).toEqual(migrated);
+      expect(localStorage.getItem(getWalletProgressKey(8765, walletAddress))).toBeTruthy();
     });
   });
 

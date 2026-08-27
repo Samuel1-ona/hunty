@@ -133,7 +133,14 @@
     "rights": "Tous droits réservés.",
     "privacyPolicy": "Politique de Confidentialité",
     "termsOfService": "Conditions d'Utilisation",
-    "contact": "Contact"
+    "contact": "Contact",
+    "stayInHunt": "Restez dans la chasse",
+    "getUpdates": "Recevez des mises à jour sur les produits, de nouvelles chasses et des conseils de créateurs.",
+    "subscribe": "S'abonner",
+    "thanksForSubscribing": "Merci de vous être abonné.",
+    "description": "Créez, découvrez et complétez des chasses au trésor Web3 propulsées par les récompenses Stellar.",
+    "builtOnStellar": "Construit sur Stellar",
+    "helpAndTroubleshooting": "Aide et Dépannage"
   },
   "errors": {
     "notFound": "Page non trouvée",
@@ -145,5 +152,36 @@
     "en": "Anglais",
     "es": "Espagnol",
     "fr": "Français"
+  },
+  "playGame": {
+    "lockedClue": "Verrouillé jusqu'à ce que l'indice précédent soit résolu.",
+    "timeExpired": "Temps écoulé — progression soumise automatiquement",
+    "retry": "Réessayer",
+    "goBack": "Retour",
+    "noClues": "Aucun indice disponible pour cette chasse pour le moment.",
+    "huntEnded": "Chasse terminée",
+    "finalScore": "Score final",
+    "goHome": "Accueil",
+    "editGame": "Modifier le jeu",
+    "onlyYouSeeThis": "(Seul vous pouvez voir ceci)",
+    "play": "Jouer",
+    "reset": "Réinitialiser",
+    "shareLink": "Partager le lien",
+    "moreCards": "cartes supplémentaires"
+  },
+  "dateTime": {
+    "d": "j",
+    "h": "h",
+    "m": "m",
+    "s": "s",
+    "daysLong": "jours",
+    "hoursLong": "heures",
+    "minutesLong": "minutes",
+    "secondsLong": "secondes"
+  },
+  "scheduling": {
+    "startMustBeFuture": "L'heure de début doit être dans le futur.",
+    "endMustBeAfterStart": "L'heure de fin doit être postérieure à l'heure de début.",
+    "endMustBeAfterNow": "L'heure de fin doit être postérieure à l'heure actuelle."
   }
 }

@@ -2,6 +2,8 @@
   "name": "hunty",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.32.1",
+  "packageManager": "pnpm@10.33.0",
   "description": "Cross-platform scavenger hunt dApp using Next.js, Expo, IPFS, and Stellar/Soroban.",
   "scripts": {
     "dev": "turbo run dev",
@@ -12,12 +14,15 @@
     "type-check": "turbo run typecheck",
     "test": "turbo run test",
     "test:coverage": "turbo run test:coverage",
-    "e2e": "npm run e2e --workspace @hunty/web",
-    "smoke": "npm run smoke --workspace @hunty/web",
-    "test:e2e": "npm run test:e2e --workspace @hunty/web",
-    "analyze": "npm run analyze --workspace @hunty/web",
-    "bundle:check": "npm run bundle:check --workspace @hunty/web",
-    "perf:budget": "npm run perf:budget --workspace @hunty/web",
+    "test:mutation": "turbo run test:mutation",
+    "e2e": "pnpm e2e --workspace @hunty/web",
+    "smoke": "pnpm smoke --workspace @hunty/web",
+    "test:e2e": "pnpm test:e2e --workspace @hunty/web",
+    "analyze": "pnpm analyze --workspace @hunty/web",
+    "bundle:check": "pnpm bundle:check --workspace @hunty/web",
+    "perf:budget": "pnpm perf:budget --workspace @hunty/web",
+    "storybook": "pnpm storybook --workspace @hunty/web",
+    "build-storybook": "pnpm build-storybook --workspace @hunty/web",
     "clean": "turbo run clean",
     "prepare": "husky"
   },
@@ -86,6 +91,7 @@
     "@commitlint/config-conventional": "19.8.1",
     "@eslint/eslintrc": "^3",
     "@faker-js/faker": "^10.5.0",
+    "@hunty/config": "workspace:*",
     "@playwright/test": "^1.58.2",
     "@storybook/addon-a11y": "^10.4.6",
     "@storybook/addon-docs": "^10.4.6",
@@ -106,7 +112,6 @@
     "@types/react-dom": "^19",
     "@types/serviceworker": "^0.0.197",
     "@types/web-push": "^3.6.4",
-    "@vitejs/plugin-react": "^6.0.4",
     "@vitest/browser-playwright": "^4.0.18",
     "@vitest/coverage-v8": "^4.1.1",
     "@vitest/ui": "^4.0.18",
@@ -134,8 +139,9 @@
     "vite": "^8.1.0",
     "vitest": "^4.0.18"
   },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ]
+  "pnpm.overrides": {
+    "@vitejs/plugin-react": "^6.0.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  }
 }

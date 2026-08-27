@@ -23,6 +23,7 @@ export interface ModerationSubmission {
   hunt: StoredHunt
   status: ModerationDecision
   submittedAt: number
+  submittedBy?: string
   reviewedAt?: number
   reviewedBy?: string
   rejectionReason?: string

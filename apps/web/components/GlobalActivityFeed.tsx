@@ -127,7 +127,7 @@ export function GlobalActivityFeed({
   const previousEventIdsRef = useRef<Set<string>>(new Set());
   const hasRenderedRef = useRef(false);
 
-  async function fetchActivity() {
+  const fetchActivity = useCallback(async () => {
     try {
       const data = await getRecentActivity(limit);
 
@@ -162,7 +162,7 @@ export function GlobalActivityFeed({
         hasRenderedRef.current = true;
       }
     }
-  }
+  }, [limit]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -173,8 +173,7 @@ export function GlobalActivityFeed({
       isMountedRef.current = false;
       clearInterval(timer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [limit, pollIntervalMs]);
+  }, [fetchActivity, pollIntervalMs]);
 
   return (
     <section

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 
-import { Badge } from '../shared/components/web/Badge'
+import { Badge } from '@hunty/ui/web'
 
 const meta = {
   title: 'Shared/Web/Badge',

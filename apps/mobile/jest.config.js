@@ -3,7 +3,16 @@ module.exports = {
   // Don't use jest-expo preset — expo-modules-core is not fully installed.
   // We configure transforms manually below.
   testEnvironment: 'node',
-
+  collectCoverageFrom: [
+    '**/*.{ts,tsx,js,jsx}',
+    '!**/node_modules/**',
+    '!**/__tests__/**',
+    '!**/__mocks__/**',
+    '!**/*.config.{js,ts}',
+    '!coverage/**',
+    '!**/.expo/**',
+    '!path-alias.js'
+  ],
   setupFiles: ['<rootDir>/__mocks__/jestSetup.js'],
 
   transform: {
@@ -25,7 +34,7 @@ module.exports = {
     '^@hooks/(.*)$': '<rootDir>/hooks/$1',
     '^@store/(.*)$': '<rootDir>/store/$1',
     '^@providers/(.*)$': '<rootDir>/providers/$1',
-    '^@lib/(.*)$': '<rootDir>/../lib/$1',
+    '^@lib/(.*)$': '<rootDir>/../web/lib/$1',
     '^@utils/(.*)$': '<rootDir>/utils/$1',
     '^@components/(.*)$': '<rootDir>/components/$1',
     '^@/(.*)$': '<rootDir>/$1',

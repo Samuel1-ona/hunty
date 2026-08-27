@@ -49,6 +49,7 @@ import type {
   StoredHunt,
 } from "@/lib/types";
 import { addToWaitlist, getWaitlistPosition } from "@/lib/waitlist";
+import { getReferralLink, storePendingReferralCode } from "@/lib/referrals";
 
 interface HuntDetailProps {
   hunt: StoredHunt;
@@ -83,6 +84,12 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
     if (searchParams.get("reattempt") !== "1" || !connectedPublicKey) return;
     prepareHuntReattempt(connectedPublicKey, hunt.id);
   }, [connectedPublicKey, hunt.id, searchParams]);
+
+  useEffect(() => {
+    const referralCode = searchParams.get("ref")
+    if (!referralCode) return
+    storePendingReferralCode(referralCode)
+  }, [searchParams])
   
   /* eslint-disable react-hooks/set-state-in-effect -- wallet detection synchronizes React with an external browser extension. */
   useEffect(() => {
@@ -251,7 +258,12 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
   }, [hunt.id])
 
   const handleShare = async () => {
-    const url = buildDeepLink(`/hunt/${hunt.id}`)
+    const url = connectedPublicKey
+      ? getReferralLink(connectedPublicKey, {
+          baseUrl: window.location.origin,
+          huntId: hunt.id,
+        })
+      : buildDeepLink(`/hunt/${hunt.id}`)
     const copiedNow = await copyShareLink(url)
     if (copiedNow) {
       setCopied(true)
@@ -402,6 +414,11 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
             </Button>
           )}
         </div>
+        {connectedPublicKey ? (
+          <p className="text-xs text-slate-500">
+            Shared links include your referral code and award bonus points after a first completed hunt.
+          </p>
+        ) : null}
         <QrCodeModal open={qrOpen} onClose={() => setQrOpen(false)} url={huntUrl} />
         {!hunt.is_private && (
           <EmbedModal
