@@ -27,6 +27,8 @@ export interface HuntReview {
   createdAt: number;
   moderated?: boolean;
   flagged?: boolean;
+  upvotes?: number;
+  upvotedBy?: string[];
 }
 
 export type HuntStatus =
@@ -249,6 +251,7 @@ export type {
   RewardReceipt,
   RewardReceiptType,
   RewardType,
+  SponsorContribution,
 } from "@hunty/types";
 
 export type { AnswerStrictness, CollaboratorRole, HuntCategoryId };
@@ -544,6 +547,68 @@ export interface ReferralStats {
   referralLink: string
   referrals: ReferralRecord[]
 }
+
+// ─── Referral Leaderboard ─────────────────────────────────────────────────────
+
+export type ReferralLeaderboardPeriod = "all" | "week" | "month"
+
+export type ReferralPayoutStatus = "pending" | "processing" | "paid" | "failed"
+
+/** A single row in the referral leaderboard. */
+export interface ReferralLeaderboardEntry {
+  /** 1-based rank using standard competition ranking (ties share a rank). */
+  rank: number
+  /** Stellar G-address of the referrer. */
+  referrerAddress: string
+  /** Optional resolved display name. */
+  displayName?: string
+  /** Number of referred players who completed at least one hunt. */
+  successfulReferrals: number
+  /** Total number of referred players (including pending). */
+  totalInvites: number
+  /** Accumulated bonus points awarded to this referrer. */
+  bonusPoints: number
+  /** Unix timestamp (ms) of the most recent referral activity. */
+  lastActiveAt: number
+  /** Payout status for this period. */
+  rewardPayoutStatus?: ReferralPayoutStatus
+  /** Reward amount pending or paid out. */
+  rewardAmount?: number
+}
+
+/** Aggregate stats describing the referral leaderboard. */
+export interface ReferralLeaderboardStats {
+  totalReferrers: number
+  totalSuccessfulReferrals: number
+  totalBonusDistributed: number
+  /** XLM amount in the active referral reward pool. */
+  activeRewardPool: number
+}
+
+/** A processed reward payout record for a top referrer. */
+export interface ReferralPayoutRecord {
+  /** Unique payout ID. */
+  id: string
+  /** Period this payout covers. */
+  period: "weekly" | "monthly" | "seasonal" | "manual"
+  /** Stellar G-address of the rewarded referrer. */
+  referrerAddress: string
+  /** Final rank position used to determine this reward. */
+  rank: number
+  /** Amount awarded. */
+  rewardAmount: number
+  /** Reward type. */
+  rewardType: "xlm" | "points"
+  /** Current status of the payout. */
+  status: ReferralPayoutStatus
+  /** Unix timestamp (ms) when the payout was created. */
+  createdAt: number
+  /** Unix timestamp (ms) when the payout was executed. null until processed. */
+  processedAt?: number
+  /** Optional transaction hash if paid via XLM. */
+  txHash?: string
+}
+
 
 // ─── Player Count ────────────────────────────────────────────────────────────
 

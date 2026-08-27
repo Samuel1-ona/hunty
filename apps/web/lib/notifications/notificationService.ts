@@ -1,13 +1,16 @@
 import { toast } from "sonner";
 import type { LeaderboardRankNotification } from "./types";
-import { shouldNotifyForRankChange } from "./notificationPreferences";
+import { getNotificationPreferences, shouldNotifyForRankChange } from "./notificationPreferences";
 
 import { saveNotifications } from "./rankTracker";
 
-export function handleRankNotifications(
-  notifications: LeaderboardRankNotification[]
-): void {
+export function handleRankNotifications(notifications: LeaderboardRankNotification[]): void {
   if (notifications.length === 0) return;
+
+  const preferences = getNotificationPreferences();
+  // Do not add events to the in-app notification center while the player has
+  // muted the social category (or all notifications).
+  if (!preferences.enabled || !preferences.social) return;
 
   const filtered = notifications.filter((n) => {
     const changeMagnitude = Math.abs(n.previousRank - n.currentRank);
@@ -57,4 +60,3 @@ function showRankToast(notification: LeaderboardRankNotification): void {
       break;
   }
 }
- 
