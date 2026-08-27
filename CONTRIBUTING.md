@@ -343,6 +343,50 @@ NFTs are cool, but they need to be done right:
 - Keep metadata consistent - it's what makes each NFT unique
 - Track ownership properly - this is critical for transfers
 
+## Merge Policy: Resolving Conflicts Correctly
+
+The #1 recurring damage in this repo's history: conflict resolutions that
+**keep both sides** of a conflicting hunk. This silently duplicates routes,
+components, and config — 31 files were damaged this way. Don't be the next one.
+
+### When you hit a conflict
+
+1. **Never accept both sides of a code block.** If both sides define the same
+   route, export, component, or config key, pick ONE (usually `main`'s version,
+   unless your branch intentionally changes it).
+2. After resolving, **verify no duplication slipped through**:
+
+   ```bash
+   # Routes: each API path should appear exactly once per method
+   grep -rn "export const POST" apps/web/app/api --include="*.ts" | sort | uniq -d
+
+   # Build must pass — a duplicated symbol will fail here
+   pnpm build
+   ```
+
+3. **Rebase on `main` before requesting review**:
+
+   ```bash
+   git fetch origin
+   git rebase origin/main
+   # resolve any conflicts (same rules), then force-push your branch
+   git push --force-with-lease
+   ```
+
+4. Run the full local check after rebasing — a clean rebase is not enough if
+   the merge kept both sides:
+
+   ```bash
+   pnpm lint && pnpm test && pnpm build
+   ```
+
+### Why this matters
+
+A "kept both sides" resolution sometimes compiles fine (duplicate files do),
+but breaks behavior at runtime: two handlers for one route, double-mounted
+providers, or conflicting config values. The failure shows up far from the
+cause and costs everyone time.
+
 ## Getting Help
 
 Stuck on something? We've got your back:
