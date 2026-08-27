@@ -2,14 +2,27 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { FeatureFlagProvider } from "@/components/FeatureFlagProvider";
 import { WebVitalsReporter } from "@/components/WebVitalsReporter";
 import { NetworkMismatchWarning } from "@/components/NetworkMismatchWarning";
 import { SessionProvider } from "@/lib/context/SessionContext";
 import { WalletProvider, useWallet } from "@/lib/context/WalletContext";
+import { fetchNotificationPreferences } from "@/lib/notifications/notificationPreferences";
 import { queryCachePolicy } from "@/lib/queryKeys";
+
+function NotificationPreferencesSync() {
+  const { connected, publicKey } = useWallet();
+
+  useEffect(() => {
+    if (connected && publicKey) {
+      void fetchNotificationPreferences(publicKey);
+    }
+  }, [connected, publicKey]);
+
+  return null;
+}
 
 function NetworkWarningWrapper() {
   const { walletProvider, connected } = useWallet();
@@ -35,6 +48,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <WalletProvider>
+        <NotificationPreferencesSync />
         <SessionProvider>
           <QueryClientProvider client={queryClient}>
             <FeatureFlagProvider>

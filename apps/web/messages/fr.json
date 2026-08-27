@@ -153,6 +153,39 @@
     "es": "Espagnol",
     "fr": "Français"
   },
+  "firstHuntGuide": {
+    "badge": "Guide nouveau joueur",
+    "title": "Terminez votre première chasse",
+    "titleDone": "Première chasse terminée",
+    "progress": "{completed} sur {total} étapes terminées",
+    "doneDescription": "Vous vous êtes connecté, inscrit, avez résolu et réclamé.",
+    "launcher": "Première chasse",
+    "dismiss": "Fermer le guide de première chasse",
+    "minimize": "Réduire le guide de première chasse",
+    "open": "Ouvrir le guide de première chasse",
+    "connectAction": "Connecter",
+    "joinAction": "Rejoindre",
+    "solveAction": "Résoudre",
+    "claimAction": "Réclamer",
+    "steps": {
+      "connect": {
+        "title": "Connecter le portefeuille",
+        "description": "Liez un portefeuille Stellar pour rejoindre des chasses et recevoir des récompenses."
+      },
+      "join": {
+        "title": "Rejoindre une chasse",
+        "description": "Inscrivez-vous à une chasse active depuis l'arcade."
+      },
+      "solve": {
+        "title": "Résoudre un indice",
+        "description": "Débloquez votre premier indice et commencez à marquer des points."
+      },
+      "claim": {
+        "title": "Réclamer votre récompense",
+        "description": "Récupérez des XLM ou un NFT après avoir terminé la chasse."
+      }
+    }
+  },
   "playGame": {
     "lockedClue": "Verrouillé jusqu'à ce que l'indice précédent soit résolu.",
     "timeExpired": "Temps écoulé — progression soumise automatiquement",
@@ -168,5 +201,20 @@
     "reset": "Réinitialiser",
     "shareLink": "Partager le lien",
     "moreCards": "cartes supplémentaires"
+  },
+  "dateTime": {
+    "d": "j",
+    "h": "h",
+    "m": "m",
+    "s": "s",
+    "daysLong": "jours",
+    "hoursLong": "heures",
+    "minutesLong": "minutes",
+    "secondsLong": "secondes"
+  },
+  "scheduling": {
+    "startMustBeFuture": "L'heure de début doit être dans le futur.",
+    "endMustBeAfterStart": "L'heure de fin doit être postérieure à l'heure de début.",
+    "endMustBeAfterNow": "L'heure de fin doit être postérieure à l'heure actuelle."
   }
 }

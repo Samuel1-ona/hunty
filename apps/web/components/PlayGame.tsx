@@ -23,6 +23,7 @@ import {
   getActiveAttempt,
 } from "@/lib/huntAttemptHistory";
 import { logger } from "@/lib/logger";
+import { markFirstHuntStep } from "@/lib/firstHuntGuide";
 import { awardReferralBonusOnFirstCompletion } from "@/lib/referrals";
 import { resolveLocalizedText } from "@/lib/clueLocalization";
 import type { HuntCard as Hunt, HuntInfo } from "@/lib/types";
@@ -205,6 +206,7 @@ export function PlayGame({
     const clue = hunts[clueIndex];
     if (clue) {
       setSolvedClues((prev) => new Set(prev).add(clue.id));
+      markFirstHuntStep("solve", huntId != null ? { huntId } : undefined);
     }
 
     if (huntId != null) {

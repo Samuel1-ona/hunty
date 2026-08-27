@@ -1,5 +1,6 @@
 import { logger } from "@/lib/logger"
 
+import { getNotificationPreferences } from "./notificationPreferences"
 import { getStoredNotifications, saveNotifications } from "./rankTracker"
 import type { LeaderboardRankNotification } from "./types"
 
@@ -95,6 +96,9 @@ export function generateWeeklyDigest(): WeeklyDigest | null {
 }
 
 export function shouldSendWeeklyDigest(): boolean {
+  const prefs = getNotificationPreferences()
+  if (!prefs.enabled || !prefs.social || !prefs.weeklyDigest) return false
+
   const lastSent = getLastDigestTimestamp()
   const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
   return lastSent < oneWeekAgo
@@ -102,6 +106,9 @@ export function shouldSendWeeklyDigest(): boolean {
 
 export function createWeeklyDigestNotification(): string | null {
   try {
+    const prefs = getNotificationPreferences()
+    if (!prefs.enabled || !prefs.social || !prefs.weeklyDigest) return null
+
     const digest = generateWeeklyDigest()
     if (!digest || digest.entries.length === 0) return null
 

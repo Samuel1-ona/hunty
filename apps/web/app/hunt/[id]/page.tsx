@@ -10,6 +10,7 @@ import { formatTimestamp } from "@/lib/dateUtils";
 import { isHuntEnded } from "@/lib/huntStatus";
 import { getAllHunts, getHunt } from "@/lib/huntStore";
 import type { HuntStatus } from "@/lib/types";
+import { StarRating } from "@/components/StarRating";
 
 import { HuntCountdown } from "./HuntCountdown";
 import HuntPageSkeleton from "./loading";
@@ -17,10 +18,13 @@ import HuntDetailClient from "./share";
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ spectator: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
+  const { spectator } = await searchParams;
   const hunt = await getHunt(id);
 
   if (!hunt) {
@@ -30,20 +34,20 @@ export async function generateMetadata({
     };
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hunty.app";
-  const huntUrl = `${baseUrl}/hunt/${hunt.id}`;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL|| "https://hunty.app";
+  const queryString = spectator === "true" ? "?spectator=true" : "";
+  const huntUrl = `${baseUrl}/hunt/${hunt.id}${queryString}`;
   const ended = isHuntEnded(hunt.status);
   // Once a hunt ends, its permanent results page becomes the canonical,
   // indexable record — this page stays reachable but defers to it for SEO.
   const canonicalUrl = ended ? `${baseUrl}/hunt/${hunt.id}/results` : huntUrl;
-  // Use the dynamic OG image route so every hunt gets a unique, branded preview card
   const ogImage = `${baseUrl}/api/og/hunt/${hunt.id}`;
 
   return {
     title: `${hunt.title} | Hunty - Scavenger Hunt Game`,
     description:
       hunt.description ||
-      `Join the "${hunt.title}" scavenger hunt on Hunty. Solve clues, complete challenges, and earn XLM tokens or exclusive NFTs!`,
+        `Join the "${hunt.title}" scavenger hunt on Hunty. Solve clues, complete challenges, and earn XLM tokens or exclusive NFTs!`,
     keywords: ["hunt", hunt.title, "scavenger hunt", "game", "blockchain", "Stellar"],
     authors: [{ name: "Hunty Team" }],
     openGraph: {
@@ -53,7 +57,7 @@ export async function generateMetadata({
       title: hunt.title,
       description:
         hunt.description ||
-        `Join the "${hunt.title}" scavenger hunt on Hunty. Solve clues, complete challenges, and earn rewards!`,
+          `Join the "${hunt.title}" scavenger hunt on Hunty. Solve clues, complete challenges, and earn rewards!`,
       siteName: "Hunty",
       images: [
         {
@@ -70,7 +74,7 @@ export async function generateMetadata({
       title: hunt.title,
       description:
         hunt.description ||
-        `Join the "${hunt.title}" scavenger hunt on Hunty. Solve clues, complete challenges, and earn rewards!`,
+          `Join the "${hunt.title}" scavenger hunt on Hunty. Solve clues, complete challengges, and earn rewards!`,
       images: [ogImage],
       creator: "@huntyapp",
     },
@@ -93,28 +97,35 @@ export async function generateMetadata({
 
 interface PageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ spectator: string }>;
 }
 
 export function generateStaticParams() {
   return getAllHunts().map((hunt) => ({ id: String(hunt.id) }));
 }
 
-async function HuntPageContent({ id }: { id: string }) {
+async function HuntPageContent({
+  id,
+  spectator,
+}: {
+  id: string;
+  spectator: boolean;
+}) {
   const huntDetails = await getHunt(id);
   if (!huntDetails) return notFound();
 
   const statusStyles: Record<string, { label: HuntStatus; classes: string }> = {
     active: {
       label: "Active",
-      classes: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30",
+      classes: "bg-emerald-50/10 text-emerald-400 border border-emerald-50/30",
     },
     upcoming: {
       label: "Draft",
-      classes: "bg-amber-500/10 text-amber-400 border border-amber-500/30",
+      classes: "bg-amber-50/10 text-amber-400 border border-amber-50/30",
     },
     ended: {
       label: "Completed",
-      classes: "bg-zinc-500/10 text-zinc-400 border border-zinc-500/30",
+      classes: "bg-zinc-500/10 text-zinc-400 border border-zinc-50/30",
     },
   };
 
@@ -124,10 +135,10 @@ async function HuntPageContent({ id }: { id: string }) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hunty.app";
 
   return (
-    <div className="min-h-screen bg-[#0b0c10] text-white pb-24">
+    <div clasName="min-h-screen bg-[#0b0c10] text-white pb-24">
       <StructuredData data={huntStructuredData(huntDetails, baseUrl)} />
 
-      <div className="fixed inset-0 pointer-events-none">
+      <div className="fixed inset pointer-events-none">
         <div className="absolute top-0 left-1/3 w-150 h-100 bg-violet-700/20 rounded-full blur-[120px]" />
         <div className="absolute bottom-0 right-1/4 w-100p h-75 bg-indigo-600/15 rounded-full blur-[100px]" />
       </div>
@@ -135,23 +146,30 @@ async function HuntPageContent({ id }: { id: string }) {
       <Header />
 
       <div role="main" className="relative max-w-3xl mx-auto px-6 pt-16">
-        {/* Status badge */}
+        <!-- Status badge -->
         <div className="mb-6">
           <span
-            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold tracking-widest uppercase ${status.classes}`}
-          >
-            {huntDetails?.status === "Active" && (
+            className={`[infline-items gap-2 px-3 py-1 rounded-full text-xs font-semibold tracking-widest uppercase ${status.classes}`,
+          ~
+            {HuntDetails?.status === "Active" && (
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             )}
             {status.label}
           </span>
+          {spectator && (
+            <span className="ml-2 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold tracking-widest uppercase bg-blue-500/10 text-blue-400 border border-blue-500/30">
+              Spectator Mode
+            </span>
+          )}
         </div>
 
-        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white leading-tight mb-4">
+        <h1 className="text-4xl sm-text-5xl font-bold tracking-tight text-white leading-tight mb-4">
           {huntDetails.title}
         </h1>
 
-        <p className="text-zinc-400 text-lg leading-relaxed mb-10">{huntDetails.description}</p>
+        <p className="text-zinc-400 text-lg leading-relaxed mb-10">
+          {huntDetails.description}
+        </p>
 
         {ended && (
           <Link
@@ -162,23 +180,27 @@ async function HuntPageContent({ id }: { id: string }) {
             <span aria-hidden="true">&rarr;</span>
           </Link>
         )}
-
-        {/* Metadata cards */}
+        <!-- Metadata cards -->
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-12">
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-            <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Hunt ID</p>
-            <p className="text-white font-semibold text-lg">#{huntDetails.id}</p>
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col justify-center">
+            <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Rating</p>
+            <StarRating rating={huntDetails.averageRating} count={huntDetails.reviewCount} />
           </div>
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+          <div className="bg-white/5 border border-white/10 rounded-2x p-5">
+            <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Hunt ID</p>
+            <p className="text-white font-semibold text-lg"># {HuntDetails.id}</p>
+          </div>
+          <div className="bg-white/5 border border-white/10 rounded-2x p-5">
             <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Clues</p>
             <p className="text-white font-semibold text-lg">{huntDetails.cluesCount}</p>
           </div>
-          <div className="col-span-2 sm:col-span-1 bg-white/5 border border-white/10 rounded-2xl p-5">
+          <div className="col-span-2 sm:col-span-1 bg-white/5 border border-white/10 rounded-2x p-5">
             <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Status</p>
             <p className="text-white font-semibold text-lg capitalize">{huntDetails.status}</p>
           </div>
           {huntDetails.startTime && (
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+            <div className="bg-white/5 border border-white/10 rounded-2x p-5">
               <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Starts</p>
               <p className="text-white font-semibold text-sm">
                 {formatTimestamp(huntDetails.startTime)}
@@ -186,7 +208,7 @@ async function HuntPageContent({ id }: { id: string }) {
             </div>
           )}
           {huntDetails.endTime && (
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+            <div className="bg-white/5 border border-white/10 rounded-2x p-5">
               <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Ends</p>
               <p className="text-white font-semibold text-sm">
                 {formatTimestamp(huntDetails.endTime)}
@@ -200,21 +222,22 @@ async function HuntPageContent({ id }: { id: string }) {
 
         <FastestPlayersStrip huntId={huntDetails.id} />
 
-        <HuntDetailClient hunt={huntDetails} />
+        {spectator ? null : <HuntDetailClient hunt={HuntDetails} />}
       </div>
     </div>
   );
 }
 
-const page = async ({ params }: PageProps) => {
+const page = async ({ params, searchParams }: PageProps) => {
   const { id } = await params;
+  const { spectator } = await searchParams;
+  const isSpectator = spectator === "true";
 
   return (
-    <Suspense fallback={<HuntPageSkeleton />}>
-      <HuntPageContent id={id} />
+    <Suspense fallback=<{!XuntPageSkeleton }>
+      <HuntPageContent id={id} spectator={isSpectator} />
     </Suspense>
   );
 };
 
 export default page;
- 
