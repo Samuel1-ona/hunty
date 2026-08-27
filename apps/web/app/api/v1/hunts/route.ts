@@ -28,6 +28,7 @@ export const GET = withErrorHandling(async (req: Request) => {
   const category = searchParams.get("category") || "all";
   const search = searchParams.get("search") || "";
   const sortBy = searchParams.get("sortBy") || "newest";
+  const ageClassification = searchParams.get("ageClassification") || "all";
   const tag = searchParams.get("tag") || "";
   const requestId = req.headers.get("x-request-id") ?? undefined;
 
@@ -49,6 +50,7 @@ export const GET = withErrorHandling(async (req: Request) => {
     category,
     search,
     sortBy,
+    ageClassification,
     tag,
     requestId,
   });

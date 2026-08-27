@@ -16,7 +16,8 @@ import { queryCachePolicy, queryKeys } from "@/lib/queryKeys"
 import { useRefreshByUser } from "@/useRefreshByUser"
 import { HuntFeedCard, HuntFeedCardGridSkeleton } from "@/components/HuntFeedCard"
 import { EmptyState } from "@/components/EmptyState"
-import type { StoredHunt, HuntFeedCategory } from "@/lib/types"
+import type { HuntAgeClassification, StoredHunt, HuntFeedCategory } from "@/lib/types"
+import { getDistanceMeters } from "@/lib/locationServices"
 
 // ─── Constants ───────────────────────────────────────────────────────────
 
@@ -127,6 +128,18 @@ function requestLocationPermission(): Promise<GeolocationPosition | null> {
   })
 }
 
+function getHuntDistanceMeters(hunt: StoredHunt, userLocation: { latitude: number; longitude: number } | null): number | undefined {
+  if (!userLocation) return undefined
+  if (typeof hunt.mapLatitude !== "number" || typeof hunt.mapLongitude !== "number") {
+    return undefined
+  }
+
+  return getDistanceMeters(
+    { latitude: userLocation.latitude, longitude: userLocation.longitude },
+    { latitude: hunt.mapLatitude, longitude: hunt.mapLongitude }
+  )
+}
+
 // ─── Pull-to-refresh indicator ──────────────────────────────────────────────
 
 function PullToRefreshIndicator({
@@ -216,6 +229,8 @@ export function HuntFeed({
   const [activeCategory, setActiveCategory] = useState<HuntFeedCategory>(defaultCategory)
   const [geoLoading, setGeoLoading] = useState(false)
   const [geoError, setGeoError] = useState<string | null>(null)
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null)
+  const [ageClassification, setAgeClassification] = useState<HuntAgeClassification | "all">("all")
 
   // Pull-to-refresh state
   const [pullDistance, setPullDistance] = useState(0)
@@ -233,12 +248,12 @@ export function HuntFeed({
     isLoading: isLoadingHunts,
     refetch,
   } = useInfiniteQuery({
-    queryKey: queryKeys.hunts.feed(activeCategory),
+    queryKey: [...queryKeys.hunts.feed(activeCategory), ageClassification],
     queryFn: async ({ pageParam }) => {
       const cursorVal = pageParam !== null ? String(pageParam) : ""
 
       // For the "nearby" category, pass coordinates if available
-      let url = `/api/v1/hunts?limit=${FEED_PAGE_SIZE}&cursor=${cursorVal}&status=Active&category=${activeCategory}&sortBy=newest`
+      let url = `/api/v1/hunts?limit=${FEED_PAGE_SIZE}&cursor=${cursorVal}&status=Active&category=${activeCategory}&sortBy=newest&ageClassification=${ageClassification}`
 
       // Try to include geolocation for nearby
       if (activeCategory === "nearby") {
@@ -331,8 +346,22 @@ export function HuntFeed({
 
   const hunts = useMemo(() => {
     if (!infiniteData) return []
-    return infiniteData.pages.flatMap((page) => page.data)
-  }, [infiniteData])
+    const baseHunts = infiniteData.pages.flatMap((page) => page.data)
+
+    if (activeCategory !== "nearby" || !userLocation) {
+      return baseHunts
+    }
+
+    return [...baseHunts].sort((a, b) => {
+      const distanceA = getHuntDistanceMeters(a, userLocation)
+      const distanceB = getHuntDistanceMeters(b, userLocation)
+
+      if (typeof distanceA !== "number" && typeof distanceB !== "number") return 0
+      if (typeof distanceA !== "number") return 1
+      if (typeof distanceB !== "number") return -1
+      return distanceA - distanceB
+    })
+  }, [activeCategory, infiniteData, userLocation])
 
   const totalResults = useMemo(() => {
     return infiniteData?.pages[0]?.pagination.total ?? 0
@@ -356,12 +385,21 @@ export function HuntFeed({
         setGeoError(null)
         requestLocationPermission()
           .then((pos) => {
+            if (pos) {
+              setUserLocation({
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+              })
+            } else {
+              setUserLocation(null)
+            }
             if (!pos) {
               setGeoError("Location access denied. Showing recent hunts instead.")
             }
             setGeoLoading(false)
           })
           .catch(() => {
+            setUserLocation(null)
             setGeoError("Unable to get location. Showing recent hunts instead.")
             setGeoLoading(false)
           })
@@ -444,6 +482,24 @@ export function HuntFeed({
             </p>
           )}
 
+          <label className="mt-3 flex items-center gap-2 px-1 text-xs text-slate-500 dark:text-slate-400">
+            <span>Age suitability</span>
+            <select
+              value={ageClassification}
+              onChange={(event) =>
+                setAgeClassification(event.target.value as HuntAgeClassification | "all")
+              }
+              className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              aria-label="Filter hunts by age suitability"
+            >
+              <option value="all">Any</option>
+              <option value="all-ages">All ages</option>
+              <option value="13-plus">13+</option>
+              <option value="16-plus">16+</option>
+              <option value="18-plus">18+</option>
+            </select>
+          </label>
+
           {/* Geo error message */}
           {geoError && (
             <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 px-1">
@@ -489,6 +545,7 @@ export function HuntFeed({
                 <HuntFeedCard
                   key={`${activeCategory}-${hunt.id}`}
                   hunt={hunt}
+                  distanceMeters={getHuntDistanceMeters(hunt, userLocation)}
                 />
               ))}
             </div>

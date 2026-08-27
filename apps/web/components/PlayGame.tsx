@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import React, { useEffect, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { Header } from "@/components/Header";
@@ -24,6 +24,7 @@ import {
 } from "@/lib/huntAttemptHistory";
 import { logger } from "@/lib/logger";
 import { awardReferralBonusOnFirstCompletion } from "@/lib/referrals";
+import { resolveLocalizedText } from "@/lib/clueLocalization";
 import type { HuntCard as Hunt, HuntInfo } from "@/lib/types";
 
 import { HuntCards } from "./HuntCards";
@@ -52,6 +53,7 @@ export function PlayGame({
   playerAddress,
 }: PlayGameProps) {
   const t = useTranslations("playGame");
+  const locale = useLocale();
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [solvedClues, setSolvedClues] = useState<Set<number>>(new Set());
@@ -79,15 +81,24 @@ export function PlayGame({
 
       for (let i = 0; i < huntInfo.totalClues; i++) {
         const clue = await get_clue_info(huntId, i);
-        const localClue = localClues[i] ?? localClues.find((item) => item.question === clue.question);
+        const localizedQuestion = resolveLocalizedText(clue.questionTranslations, locale, clue.question);
+        const localizedHint = resolveLocalizedText(clue.hintTranslations, locale, clue.hint);
+        const localClue =
+          localClues[i] ??
+          localClues.find(
+            (item) =>
+              item.id === clue.id ||
+              item.question === clue.question ||
+              resolveLocalizedText(item.questionTranslations, locale, item.question) === localizedQuestion
+          );
         clues.push({
           id: clue.id,
-          title: clue.question,
+          title: localizedQuestion,
           description: `${clue.points} pts`,
           link: "",
           code: "",
           points: clue.points,
-          hint: clue.hint,
+          hint: localizedHint,
           hintCost: clue.hintCost,
           difficulty: clue.difficulty,
           mediaCid: localClue?.mediaCid,

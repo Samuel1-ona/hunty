@@ -58,6 +58,7 @@ import { logger } from "@/lib/logger";
 import { withTransactionToast } from "@/lib/txToast";
 import type {
   CoverImageUploadState,
+  HuntAgeClassification,
   HuntDifficulty,
   HuntDraft,
   HuntDraftSave,
@@ -95,6 +96,10 @@ function CreateGameContent() {
   const [huntDifficulty, setHuntDifficulty] = useLocalStorage<HuntDifficulty | "">(
     "draft-huntDifficulty",
     ""
+  );
+  const [ageClassification, setAgeClassification] = useLocalStorage<HuntAgeClassification>(
+    "draft-ageClassification",
+    "all-ages"
   );
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
@@ -544,6 +549,7 @@ function CreateGameContent() {
         emailNotifications: formValues.emailNotifications,
         is_private: formValues.isPrivate,
         sequential: formValues.sequential,
+        ageClassification,
         maxParticipants: formValues.hunts[0]?.maxParticipants,
         coverImageCid,
         category,
@@ -906,6 +912,33 @@ function CreateGameContent() {
                                 {d}
                               </option>
                             ))}
+                          </select>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <label
+                              htmlFor="hunt-age-classification"
+                              className="block text-xl font-normal text-[#808080]"
+                            >
+                              Age suitability
+                            </label>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              Helps players and moderators understand the intended audience
+                            </p>
+                          </div>
+                          <select
+                            id="hunt-age-classification"
+                            value={ageClassification}
+                            onChange={(e) =>
+                              setAgeClassification(e.target.value as HuntAgeClassification)
+                            }
+                            className="h-11 w-[160px] text-center rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#3737A4]/40"
+                          >
+                            <option value="all-ages">All ages</option>
+                            <option value="13-plus">13+</option>
+                            <option value="16-plus">16+</option>
+                            <option value="18-plus">18+</option>
                           </select>
                         </div>
 

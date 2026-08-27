@@ -356,6 +356,129 @@ function SpotlightCarousel({ hunts }: { hunts: StoredHunt[] }) {
   )
 }
 
+function getHuntMapPosition(hunt: StoredHunt): { x: number; y: number } {
+  const lat = hunt.mapLatitude ?? 40 + ((hunt.id * 17) % 20);
+  const lng = hunt.mapLongitude ?? -20 + ((hunt.id * 23) % 40);
+
+  const x = 72 + ((lng + 180) / 360) * 856;
+  const y = 80 + ((90 - lat) / 90) * 360;
+
+  return { x, y };
+}
+
+function ActiveHuntsMap({ hunts }: { hunts: StoredHunt[] }) {
+  const router = useRouter();
+  const clusters = useMemo(() => {
+    const map = new Map<string, { x: number; y: number; count: number; hunts: StoredHunt[] }>();
+
+    for (const hunt of hunts) {
+      const { x, y } = getHuntMapPosition(hunt);
+      const bucketX = Math.round(x / 28);
+      const bucketY = Math.round(y / 28);
+      const key = `${bucketX}:${bucketY}`;
+      const existing = map.get(key);
+
+      if (existing) {
+        existing.count += 1;
+        existing.hunts.push(hunt);
+        existing.x = (existing.x * (existing.count - 1) + x) / existing.count;
+        existing.y = (existing.y * (existing.count - 1) + y) / existing.count;
+      } else {
+        map.set(key, { x, y, count: 1, hunts: [hunt] });
+      }
+    }
+
+    return [...map.values()].sort((a, b) => b.count - a.count);
+  }, [hunts]);
+
+  if (hunts.length === 0) return null;
+
+  return (
+    <section className="mt-12">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] bg-clip-text text-transparent">
+            Active Hunt Map
+          </h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Explore live hunts by location and open a pin to jump in.
+          </p>
+        </div>
+      </div>
+
+      <div className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 shadow-sm">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#e7e9ff,#f8fafc_52%,#eef2ff_100%)]" />
+        <svg
+          viewBox="0 0 1000 520"
+          className="relative h-[360px] w-full"
+          aria-hidden="true"
+          preserveAspectRatio="xMidYMid meet"
+        >
+          <path d="M80 120C150 60 220 30 310 50C355 60 400 90 450 100C490 108 530 80 580 88C655 100 720 170 780 150C860 120 930 150 950 200V438C880 384 820 370 760 398C700 425 620 448 550 420C480 392 405 360 332 370C245 382 140 448 80 438V120Z" fill="rgba(79,70,229,0.08)" stroke="rgba(79,70,229,0.12)" strokeWidth="2" />
+          <path d="M150 250C210 200 270 180 340 210C410 240 455 228 510 185C560 145 610 130 700 170C760 195 815 195 865 175" fill="none" stroke="rgba(148,163,184,0.45)" strokeWidth="2" strokeDasharray="6 10" />
+          <path d="M125 292C174 260 220 270 250 312C275 346 314 355 342 332C378 303 417 285 460 298C515 315 545 372 600 390C675 415 722 340 800 322C870 306 905 328 945 344" fill="none" stroke="rgba(148,163,184,0.3)" strokeWidth="2" strokeDasharray="3 12" />
+          {[...Array(9)].map((_, index) => (
+            <line
+              key={`grid-${index}`}
+              x1={80 + index * 100}
+              x2={80 + index * 100}
+              y1={20}
+              y2={500}
+              stroke="rgba(148,163,184,0.12)"
+              strokeWidth="1"
+            />
+          ))}
+          {[...Array(7)].map((_, index) => (
+            <line
+              key={`row-${index}`}
+              x1={30}
+              x2={970}
+              y1={60 + index * 60}
+              y2={60 + index * 60}
+              stroke="rgba(148,163,184,0.10)"
+              strokeWidth="1"
+            />
+          ))}
+        </svg>
+
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-0 top-0 h-full w-full bg-[radial-gradient(circle_at_center,transparent_40%,rgba(15,23,42,0.06)_100%)]" />
+        </div>
+
+        <div className="absolute inset-0">
+          {clusters.map((cluster) => {
+            const hunt = cluster.hunts[0];
+            const left = (cluster.x / 1000) * 100;
+            const top = (cluster.y / 520) * 100;
+            const isDense = cluster.count > 1;
+
+            return (
+              <button
+                key={`${hunt.id}-${cluster.x}-${cluster.y}`}
+                type="button"
+                onClick={() => router.push(`/hunt/${hunt.id}`)}
+                className="absolute -translate-x-1/2 -translate-y-1/2 transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-[#3737A4] rounded-full"
+                style={{ left: `${left}%`, top: `${top}%` }}
+                aria-label={`Open ${hunt.title}`}
+              >
+                <span
+                  className={`flex items-center justify-center rounded-full border-2 border-white shadow-lg ${
+                    isDense
+                      ? "h-8 w-8 bg-[#3737A4] text-[10px] font-bold text-white"
+                      : "h-5 w-5 bg-[#E87785] text-white"
+                  }`}
+                >
+                  {isDense ? cluster.count : ""}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 const INACTIVE_CARD_ESTIMATED_HEIGHT = 200
 const INACTIVE_GRID_GAP = 24
 
@@ -1003,6 +1126,8 @@ export default function GameArcade() {
         <RecentlyCompletedSection hunts={recentlyCompleted} />
 
         <SpotlightCarousel hunts={spotlightHunts} />
+
+        <ActiveHuntsMap hunts={displayedActiveHunts} />
 
         {/* Active Hunts Grid */}
         <div id="discovery-arcade" className="mt-10">

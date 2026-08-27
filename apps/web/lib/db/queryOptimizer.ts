@@ -108,6 +108,7 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
   category?: string | null;
   search?: string | null;
   sortBy?: string | null;
+  ageClassification?: string | null;
   tag?: string | null;
   requestId?: string;
 }) {
@@ -120,6 +121,7 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
     category = "all",
     search = "",
     sortBy = "newest",
+    ageClassification = "all",
     tag = "",
     requestId,
   } = params;
@@ -127,9 +129,9 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
 
   return withTimedQuery(
     "listPublicActiveHuntsByCursorOptimized",
-    { cursor, limit, status, reward, difficulty, category, search, sortBy, tag },
+    { cursor, limit, status, reward, difficulty, category, search, sortBy, ageClassification, tag },
     () => {
-      const cacheKey = `active:${cursor ?? "start"}:${limit}:${status ?? "all"}:${reward ?? "all"}:${difficulty ?? "all"}:${category ?? "all"}:${search ?? ""}:${sortBy ?? "newest"}:${tag ?? ""}`;
+      const cacheKey = `active:${cursor ?? "start"}:${limit}:${status ?? "all"}:${reward ?? "all"}:${difficulty ?? "all"}:${category ?? "all"}:${search ?? ""}:${sortBy ?? "newest"}:${ageClassification ?? "all"}:${tag ?? ""}`;
       const cached = readCache<{ data: StoredHunt[]; nextCursor: number | null; total: number }>(
         cacheKey
       );
@@ -182,13 +184,19 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
         const matchesTag =
           !tag || (hunt.tags ?? []).some((huntTag) => huntTag.toLowerCase() === tag.toLowerCase());
 
+        const matchesAgeClassification =
+          ageClassification === "all" ||
+          !ageClassification ||
+          (hunt.ageClassification ?? "all-ages") === ageClassification;
+
         return (
           matchesStatus &&
           matchesReward &&
           matchesDifficulty &&
           matchesCategory &&
           matchesSearch &&
-          matchesTag
+          matchesTag &&
+          matchesAgeClassification
         );
       });
 

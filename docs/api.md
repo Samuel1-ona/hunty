@@ -11,6 +11,8 @@ This document describes the public REST API for Hunty.
 - **GET Endpoints**: Public, no authentication required.
 - **Write Endpoints (POST/PUT/DELETE)**: Require an API key passed in the `X-API-Key` header.
   _(Note: Current implementation only includes public GET endpoints)_
+- **Write Endpoints**: Hunt version writes require the creator's `actorAddress` in the
+  validated request body. The server compares it with the snapshot creator address.
 
 ## Rate Limiting
 
@@ -114,6 +116,46 @@ Returns detailed information about a specific hunt.
 
 ### 3. Get Hunt Leaderboard
 
+### 3. Version a Hunt Edit
+`PATCH /hunts/[id]`
+
+Stores the submitted hunt snapshot as the next immutable version. The request must
+include the creator wallet address and a snapshot whose `id` matches the URL.
+
+```json
+{
+  "actorAddress": "G...creator",
+  "snapshot": {
+    "id": 1,
+    "title": "Updated title",
+    "description": "Updated description",
+    "creator": "G...creator"
+  }
+}
+```
+
+The response contains the assigned `version`, the stored snapshot, and its creation
+timestamp. On-chain creation records remain immutable; this history versions the
+mutable application snapshot.
+
+### 4. List Hunt Versions
+`GET /hunts/[id]/versions?actorAddress=G...creator`
+
+Returns version metadata, newest first. History is retained for **90 days** from
+creation, after which it is excluded and removed during subsequent version writes.
+
+### 5. Restore a Hunt Version
+`POST /hunts/[id]/versions/[version]/restore`
+
+Restores a prior snapshot by creating a new version containing that snapshot. The
+creator must provide `actorAddress`; clients should apply the returned `data.snapshot`
+to their current hunt projection.
+
+```json
+{ "actorAddress": "G...creator" }
+```
+
+### 6. Get Hunt Leaderboard
 `GET /hunts/[id]/leaderboard`
 
 Returns the paginated leaderboard for a specific hunt.

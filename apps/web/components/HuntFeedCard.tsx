@@ -1,6 +1,6 @@
 "use client"
 
-import { Trophy, MapPin, Clock, Users } from "lucide-react"
+import { Trophy, MapPin, Clock, Users, ShieldCheck } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardTitle } from "@/components/ui/card"
@@ -12,6 +12,8 @@ interface HuntFeedCardProps {
   hunt: StoredHunt
   /** Optional player count badge */
   playerCount?: number
+  /** Optional distance from the user's location, in meters */
+  distanceMeters?: number
   /** Whether this hunt is trending */
   isTrending?: boolean
   /** Whether the card is compact (list style) or full (grid style) */
@@ -32,14 +34,34 @@ function relativeTime(timestampSeconds: number): string {
   return new Date(timestampSeconds * 1000).toLocaleDateString()
 }
 
+function formatDistance(distanceMeters?: number): string | null {
+  if (typeof distanceMeters !== "number" || Number.isNaN(distanceMeters) || !Number.isFinite(distanceMeters)) {
+    return null
+  }
+
+  if (distanceMeters < 1000) {
+    return `${Math.round(distanceMeters)} m away`
+  }
+
+  return `${(distanceMeters / 1000).toFixed(distanceMeters < 10000 ? 1 : 0)} km away`
+}
+
+function formatAgeClassification(classification?: StoredHunt["ageClassification"]): string {
+  if (!classification || classification === "all-ages") return "All ages"
+  return classification.replace("-plus", "+")
+}
+
 export function HuntFeedCard({
   hunt,
   playerCount,
+  distanceMeters,
   isTrending,
   compact = false,
   className,
 }: HuntFeedCardProps) {
   const huntStatus = hunt.status === "Active" ? "Live" : hunt.status
+  const distanceLabel = formatDistance(distanceMeters)
+  const ageLabel = formatAgeClassification(hunt.ageClassification)
 
   return (
     <Link href={`/hunt/${hunt.id}`} className="block group focus:outline-none">
@@ -106,6 +128,18 @@ export function HuntFeedCard({
 
           {/* Meta info */}
           <div className={cn("flex items-center flex-wrap gap-2", compact ? "mt-2" : "mt-4")}>
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+              <ShieldCheck className="w-3 h-3" />
+              {ageLabel}
+            </span>
+
+            {distanceLabel && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-0.5 text-[11px] font-medium text-indigo-700 dark:text-indigo-400">
+                <MapPin className="w-3 h-3" />
+                {distanceLabel}
+              </span>
+            )}
+
             {/* Clues count */}
             <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-950/40 px-2.5 py-0.5 text-[11px] font-medium text-[#3737A4] dark:text-blue-400">
               <MapPin className="w-3 h-3" />
