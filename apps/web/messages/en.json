@@ -150,7 +150,8 @@
   },
   "language": {
     "en": "English",
-    "es": "Spanish"
+    "es": "Spanish",
+    "fr": "French"
   },
   "playGame": {
     "lockedClue": "Locked until the previous clue is solved.",
@@ -167,5 +168,20 @@
     "reset": "Reset",
     "shareLink": "Share Link",
     "moreCards": "more cards"
+  },
+  "dateTime": {
+    "d": "d",
+    "h": "h",
+    "m": "m",
+    "s": "s",
+    "daysLong": "days",
+    "hoursLong": "hours",
+    "minutesLong": "minutes",
+    "secondsLong": "seconds"
+  },
+  "scheduling": {
+    "startMustBeFuture": "Start time must be in the future.",
+    "endMustBeAfterStart": "End time must be after the start time.",
+    "endMustBeAfterNow": "End time must be after the current time."
   }
 }

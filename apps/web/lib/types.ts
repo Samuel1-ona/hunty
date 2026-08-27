@@ -251,6 +251,7 @@ export type {
   RewardReceipt,
   RewardReceiptType,
   RewardType,
+  SponsorContribution,
 } from "@hunty/types";
 
 export type { AnswerStrictness, CollaboratorRole, HuntCategoryId };
