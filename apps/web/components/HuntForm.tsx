@@ -9,8 +9,19 @@ import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { addCluesBatch } from "@/lib/contracts/hunt";
 import { sha256Hex } from "@/lib/crypto";
+import { parseClueCsv, type CsvRow, type CsvParseResult } from "@/lib/csv";
 import {
   restoreHuntStoreSnapshot,
   saveCluesLocallyBatch,
@@ -78,6 +89,10 @@ export function HuntForm({
   const dragDropEnabled = useIsFeatureEnabled("dragDropClues");
   const clueFileInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const [uploadingClueIndex, setUploadingClueIndex] = useState<number | null>(null);
+  const [csvDialogOpen, setCsvDialogOpen] = useState(false);
+  const [csvPreview, setCsvPreview] = useState<CsvParseResult | null>(null);
+  const [csvFileName, setCsvFileName] = useState<string | null>(null);
+  const csvInputRef = useRef<HTMLInputElement>(null);
 
   const {
     control,
@@ -170,6 +185,48 @@ export function HuntForm({
       remove(index);
     }
   };
+
+  const handleCsvFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setCsvFileName(file.name)
+    const reader = new FileReader()
+    reader.onload = () => {
+      const text = typeof reader.result === "string" ? reader.result : ""
+      const result = parseClueCsv(text)
+      setCsvPreview(result)
+    }
+    reader.readAsText(file)
+  }
+
+  const handleCsvImport = () => {
+    if (!csvPreview) return
+    const validRows = csvPreview.rows.filter((row) => {
+      return row.question.trim() && row.answer.trim() && row.points >= 1
+    })
+    if (validRows.length === 0) {
+      toast.error("No valid clues to import")
+      return
+    }
+    for (const row of validRows) {
+      append({
+        question: row.question,
+        answer: row.answer,
+        points: row.points,
+        hint: row.hint || "",
+        hintCost: row.hintCost ?? 0,
+        difficulty: row.difficulty,
+        mediaCid: "",
+      })
+    }
+    toast.success(`Imported ${validRows.length} clue(s)`)
+    setCsvDialogOpen(false)
+    setCsvPreview(null)
+    setCsvFileName(null)
+    if (csvInputRef.current) {
+      csvInputRef.current.value = ""
+    }
+  }
 
   const clueSortItems = useMemo(
     () =>
@@ -492,15 +549,127 @@ export function HuntForm({
             <span className="text-xl font-semibold bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-transparent bg-clip-text">
               Clues
             </span>
-            <Button
-              type="button"
-              onClick={addClueRow}
-              size="sm"
-              className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-white flex items-center gap-1 rounded-xl"
-            >
-              <Plus className="w-4 h-4" />
-              Add Clue
-            </Button>
+            <div className="flex items-center gap-2">
+              <Dialog open={csvDialogOpen} onOpenChange={setCsvDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                  >
+                    Import CSV
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Import clues from CSV</DialogTitle>
+                    <DialogDescription>
+                      Upload a CSV file with columns: question, answer, points, hint, hintCost, difficulty.
+                      Header row is optional.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="flex flex-col gap-2">
+                      <Input
+                        ref={csvInputRef}
+                        type="file"
+                        accept=".csv,text/csv"
+                        onChange={handleCsvFileChange}
+                        className="text-sm"
+                      />
+                      {csvFileName && (
+                        <p className="text-xs text-slate-500">Selected: {csvFileName}</p>
+                      )}
+                    </div>
+                    {csvPreview && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-slate-400">
+                          {csvPreview.rows.length} row(s) parsed, {csvPreview.errors.length} error(s)
+                        </p>
+                        <div className="max-h-60 overflow-y-auto border border-white/10 rounded-lg">
+                          <table className="w-full text-xs">
+                            <thead className="bg-white/5 text-slate-400">
+                              <tr>
+                                <th className="text-left px-2 py-1">#</th>
+                                <th className="text-left px-2 py-1">Question</th>
+                                <th className="text-left px-2 py-1">Answer</th>
+                                <th className="text-left px-2 py-1">Pts</th>
+                                <th className="text-left px-2 py-1">Hint</th>
+                                <th className="text-left px-2 py-1">Cost</th>
+                                <th className="text-left px-2 py-1">Diff</th>
+                                <th className="text-left px-2 py-1">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {csvPreview.rows.map((row, idx) => {
+                                const rowErrors = csvPreview.errors.filter((e) => e.row === idx + 1)
+                                const isValid = rowErrors.length === 0
+                                return (
+                                  <tr key={idx} className={cn("border-t border-white/5", isValid ? "" : "bg-red-500/10")}>
+                                    <td className="px-2 py-1 text-slate-500">{idx + 1}</td>
+                                    <td className="px-2 py-1 text-slate-200 truncate max-w-[200px]">{row.question}</td>
+                                    <td className="px-2 py-1 text-slate-200 truncate max-w-[120px]">{row.answer}</td>
+                                    <td className="px-2 py-1 text-slate-200">{row.points}</td>
+                                    <td className="px-2 py-1 text-slate-400 truncate max-w-[150px]">{row.hint || "—"}</td>
+                                    <td className="px-2 py-1 text-slate-400">{row.hintCost ?? 0}</td>
+                                    <td className="px-2 py-1 text-slate-400">{row.difficulty || "—"}</td>
+                                    <td className="px-2 py-1">
+                                      {isValid ? (
+                                        <span className="text-emerald-400">Valid</span>
+                                      ) : (
+                                        <span className="text-red-400">{rowErrors.map((e) => e.message).join(", ")}</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                        {csvPreview.errors.length > 0 && (
+                          <p className="text-xs text-red-400">
+                            Fix the highlighted rows before importing, or note that invalid rows will be skipped.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setCsvDialogOpen(false)
+                        setCsvPreview(null)
+                        setCsvFileName(null)
+                        if (csvInputRef.current) {
+                          csvInputRef.current.value = ""
+                        }
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleCsvImport}
+                      disabled={!csvPreview || csvPreview.rows.length === 0}
+                    >
+                      Import {csvPreview ? `(${csvPreview.rows.length})` : ""}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              <Button
+                type="button"
+                onClick={addClueRow}
+                size="sm"
+                className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-white flex items-center gap-1 rounded-xl"
+              >
+                <Plus className="w-4 h-4" />
+                Add Clue
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-2">
