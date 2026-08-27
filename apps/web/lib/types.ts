@@ -27,6 +27,8 @@ export interface HuntReview {
   createdAt: number;
   moderated?: boolean;
   flagged?: boolean;
+  upvotes?: number;
+  upvotedBy?: string[];
 }
 
 export type HuntStatus =
@@ -249,6 +251,7 @@ export type {
   RewardReceipt,
   RewardReceiptType,
   RewardType,
+  SponsorContribution,
 } from "@hunty/types";
 
 export type { AnswerStrictness, CollaboratorRole, HuntCategoryId };

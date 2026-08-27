@@ -168,5 +168,20 @@
     "reset": "Réinitialiser",
     "shareLink": "Partager le lien",
     "moreCards": "cartes supplémentaires"
+  },
+  "dateTime": {
+    "d": "j",
+    "h": "h",
+    "m": "m",
+    "s": "s",
+    "daysLong": "jours",
+    "hoursLong": "heures",
+    "minutesLong": "minutes",
+    "secondsLong": "secondes"
+  },
+  "scheduling": {
+    "startMustBeFuture": "L'heure de début doit être dans le futur.",
+    "endMustBeAfterStart": "L'heure de fin doit être postérieure à l'heure de début.",
+    "endMustBeAfterNow": "L'heure de fin doit être postérieure à l'heure actuelle."
   }
 }

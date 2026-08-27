@@ -1,5 +1,6 @@
-import react from "@vitejs/plugin-react";
 import path from "path";
+
+import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
@@ -19,7 +20,6 @@ export default defineConfig({
     exclude: ["e2e/**", "node_modules/**"],
     coverage: {
       provider: "v8",
-      all: true,
       reporter: ["text", "json", "html", "lcov"],
       reportsDirectory: "./coverage",
       include: ["lib/**/*.{ts,tsx}", "hooks/**/*.{ts,tsx}"],
@@ -48,6 +48,24 @@ export default defineConfig({
       "@hunty/types": path.resolve(__dirname, "../../packages/types/src/index.ts"),
       "@": path.resolve(__dirname, "./"),
     },
+    // Keep subpath aliases ahead of the package root alias. Vite matches
+    // aliases by prefix, so @hunty/types would otherwise swallow
+    // @hunty/types/api-schemas.
+    alias: [
+      {
+        find: "@hunty/types/api-schemas",
+        replacement: path.resolve(__dirname, "../../packages/types/src/api-schemas.ts"),
+      },
+      {
+        find: "@hunty/types/schemas",
+        replacement: path.resolve(__dirname, "../../packages/types/src/schemas.ts"),
+      },
+      {
+        find: "@hunty/types",
+        replacement: path.resolve(__dirname, "../../packages/types/src/index.ts"),
+      },
+      { find: "@", replacement: path.resolve(__dirname, "./") },
+    ],
   },
 });
 

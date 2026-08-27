@@ -1,0 +1,28 @@
+# CODEOWNERS — review requirements per path (#1145).
+# Owner: @Samuel1-ona (repo maintainer) as default and per-area fallback.
+# External contributors: add yourself here if you become a recurring
+# owner of an area (paired with the maintainer).
+
+# Default owner for everything not matched below
+*                                   @Samuel1-ona
+
+# Web application (Next.js): routes, lib, components, tests
+/apps/web/                          @Samuel1-ona
+
+# Mobile application
+/apps/mobile/                       @Samuel1-ona
+
+# Shared packages
+/packages/types/                    @Samuel1-ona
+/packages/config/                   @Samuel1-ona
+/packages/ui/                       @Samuel1-ona
+
+# CI/CD and repository automation — changes require maintainer review
+/.github/                           @Samuel1-ona
+/turbo.json                         @Samuel1-ona
+/pnpm-workspace.yaml                @Samuel1-ona
+/pnpm-lock.yaml                     @Samuel1-ona
+
+# Security-sensitive files always need the maintainer
+/SECURITY.md                        @Samuel1-ona
+/docker-compose.yml                 @Samuel1-ona

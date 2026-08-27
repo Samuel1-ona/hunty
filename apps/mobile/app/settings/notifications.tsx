@@ -8,27 +8,48 @@ import {
   type NotificationPreferences,
   setPreferences,
 } from '@services/notifications/notificationPreferences';
+import { useWalletStore } from '@store/useStore';
+import { cancelAllHuntExpiryNotifications } from '@utils/huntNotifications';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Linking, Platform,ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 export default function NotificationsScreen() {
   const { colors } = useTheme();
   const { enabled, permissionStatus, loading, toggle } = useNotifications();
+  const walletAddress = useWalletStore((state) => state.walletAddress);
   const [prefs, setPrefs] = useState<NotificationPreferences>(DEFAULT_PREFERENCES);
 
-  // Hydrate preferences from storage on mount
+  // Hydrate the local copy, then replace it with the wallet-scoped server
+  // copy. This makes the mobile screen reflect changes made on web or another
+  // phone while retaining offline support.
   useEffect(() => {
-    getPreferences().then(setPrefs);
-  }, []);
+    let cancelled = false;
+    getPreferences(walletAddress || undefined).then((nextPrefs) => {
+      if (!cancelled) setPrefs(nextPrefs);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [walletAddress]);
 
   /** Persist a partial preference update. */
   const updatePref = useCallback(
     async (key: keyof NotificationPreferences, value: boolean) => {
       const updated = { ...prefs, [key]: value };
       setPrefs(updated);
-      await setPreferences(updated);
+
+      if (!value && (key === 'enabled' || key === 'huntEvents')) {
+        try {
+          await cancelAllHuntExpiryNotifications();
+        } catch {
+          // Preference changes should still persist if a scheduled reminder
+          // cannot be inspected on this device.
+        }
+      }
+
+      await setPreferences(updated, walletAddress || undefined);
     },
-    [prefs],
+    [prefs, walletAddress],
   );
 
   /** Handle the master toggle — requests OS permission when enabling. */
@@ -67,17 +88,23 @@ export default function NotificationsScreen() {
       <SettingsSection title="General">
         <SettingsRow
           icon="notifications-outline"
-          label="Push Notifications"
+          label="All Notifications"
           description={
-            permissionStatus === 'denied'
-              ? 'Permission denied — tap to open Settings'
-              : 'Receive push notifications from Hunty'
+            prefs.enabled ? 'Receive notifications from Hunty' : 'All notifications are muted'
           }
-          type={permissionStatus === 'denied' ? 'navigate' : 'toggle'}
-          value={enabled && prefs.enabled}
+          type="toggle"
+          value={prefs.enabled}
           onToggle={handleMasterToggle}
-          onPress={permissionStatus === 'denied' ? openDeviceSettings : undefined}
         />
+        {permissionStatus === 'denied' && (
+          <SettingsRow
+            icon="settings-outline"
+            label="Device Permission"
+            description="Permission denied — tap to open Settings"
+            type="navigate"
+            onPress={openDeviceSettings}
+          />
+        )}
       </SettingsSection>
 
       {/* Hunt events */}
