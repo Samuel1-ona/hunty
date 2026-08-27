@@ -7,7 +7,12 @@
  * types (display entries, performance, chat, …) remain defined below.
  */
 
-import type { HuntCategory as DomainHuntCategory, HuntInvite, PlayerProgress, Reward as DomainReward } from "@hunty/types";
+import type {
+  HuntCategory as DomainHuntCategory,
+  HuntInvite,
+  PlayerProgress,
+  Reward as DomainReward,
+} from "@hunty/types";
 import type { ReactNode } from "react";
 
 import type { HuntCategoryId } from "./categories";
@@ -242,8 +247,8 @@ export type {
   AchievementId,
   AchievementRarity,
   HuntCategory,
-  HuntProgressStatus,
   HuntInvite,
+  HuntProgressStatus,
   PlayerHuntProgress,
   PlayerProgress,
   RewardHistoryEntry,
@@ -300,6 +305,10 @@ export type LeaderboardEntry = {
   completedAt?: number;
   category?: string;
   difficulty?: ClueDifficulty;
+  /** Total seconds the player took to complete the hunt (completedAt - startedAt). */
+  completionTimeSeconds?: number;
+  /** Time-based speed bonus added on top of the player's raw clue points. */
+  timeBonus?: number;
 };
 
 export interface LeaderboardFilters {
@@ -329,6 +338,10 @@ export interface LeaderboardDisplayEntry {
   address?: string;
   /** True when `name` is a player-chosen display name rather than a truncated address. */
   hasDisplayName?: boolean;
+  /** Total hunt completion time in seconds (for display). */
+  completionTimeSeconds?: number;
+  /** Time-based speed bonus applied on top of raw clue points. */
+  timeBonus?: number;
 }
 
 export interface FastestPlayerDisplayEntry {
@@ -522,93 +535,92 @@ export interface PlayerStats {
 export type CoverImageUploadState = "idle" | "uploading" | "succeeded" | "failed";
 
 export interface PlayerProfile {
-  address: string
-  displayName?: string
-  avatarUrl?: string
+  address: string;
+  displayName?: string;
+  avatarUrl?: string;
 }
 
 export interface ReferralRecord {
-  code: string
-  referrerAddress: string
-  referredAddress: string
-  registeredAt: number
-  firstCompletedAt?: number
-  firstCompletedHuntId?: number
-  bonusAwarded: boolean
-  bonusPoints: number
+  code: string;
+  referrerAddress: string;
+  referredAddress: string;
+  registeredAt: number;
+  firstCompletedAt?: number;
+  firstCompletedHuntId?: number;
+  bonusAwarded: boolean;
+  bonusPoints: number;
 }
 
 export interface ReferralStats {
-  code: string
-  totalInvites: number
-  successfulReferrals: number
-  pendingReferrals: number
-  bonusPoints: number
-  referralLink: string
-  referrals: ReferralRecord[]
+  code: string;
+  totalInvites: number;
+  successfulReferrals: number;
+  pendingReferrals: number;
+  bonusPoints: number;
+  referralLink: string;
+  referrals: ReferralRecord[];
 }
 
 // ─── Referral Leaderboard ─────────────────────────────────────────────────────
 
-export type ReferralLeaderboardPeriod = "all" | "week" | "month"
+export type ReferralLeaderboardPeriod = "all" | "week" | "month";
 
-export type ReferralPayoutStatus = "pending" | "processing" | "paid" | "failed"
+export type ReferralPayoutStatus = "pending" | "processing" | "paid" | "failed";
 
 /** A single row in the referral leaderboard. */
 export interface ReferralLeaderboardEntry {
   /** 1-based rank using standard competition ranking (ties share a rank). */
-  rank: number
+  rank: number;
   /** Stellar G-address of the referrer. */
-  referrerAddress: string
+  referrerAddress: string;
   /** Optional resolved display name. */
-  displayName?: string
+  displayName?: string;
   /** Number of referred players who completed at least one hunt. */
-  successfulReferrals: number
+  successfulReferrals: number;
   /** Total number of referred players (including pending). */
-  totalInvites: number
+  totalInvites: number;
   /** Accumulated bonus points awarded to this referrer. */
-  bonusPoints: number
+  bonusPoints: number;
   /** Unix timestamp (ms) of the most recent referral activity. */
-  lastActiveAt: number
+  lastActiveAt: number;
   /** Payout status for this period. */
-  rewardPayoutStatus?: ReferralPayoutStatus
+  rewardPayoutStatus?: ReferralPayoutStatus;
   /** Reward amount pending or paid out. */
-  rewardAmount?: number
+  rewardAmount?: number;
 }
 
 /** Aggregate stats describing the referral leaderboard. */
 export interface ReferralLeaderboardStats {
-  totalReferrers: number
-  totalSuccessfulReferrals: number
-  totalBonusDistributed: number
+  totalReferrers: number;
+  totalSuccessfulReferrals: number;
+  totalBonusDistributed: number;
   /** XLM amount in the active referral reward pool. */
-  activeRewardPool: number
+  activeRewardPool: number;
 }
 
 /** A processed reward payout record for a top referrer. */
 export interface ReferralPayoutRecord {
   /** Unique payout ID. */
-  id: string
+  id: string;
   /** Period this payout covers. */
-  period: "weekly" | "monthly" | "seasonal" | "manual"
+  period: "weekly" | "monthly" | "seasonal" | "manual";
   /** Stellar G-address of the rewarded referrer. */
-  referrerAddress: string
+  referrerAddress: string;
   /** Final rank position used to determine this reward. */
-  rank: number
+  rank: number;
   /** Amount awarded. */
-  rewardAmount: number
+  rewardAmount: number;
   /** Reward type. */
-  rewardType: "xlm" | "points"
+  rewardType: "xlm" | "points";
   /** Current status of the payout. */
-  status: ReferralPayoutStatus
+  status: ReferralPayoutStatus;
   /** Unix timestamp (ms) when the payout was created. */
-  createdAt: number
+  createdAt: number;
   /** Unix timestamp (ms) when the payout was executed. null until processed. */
-  processedAt?: number
+  processedAt?: number;
   /** Optional transaction hash if paid via XLM. */
-  txHash?: string
+  txHash?: string;
 }
-
 
 // ─── Player Count ────────────────────────────────────────────────────────────
 
@@ -712,8 +724,7 @@ export interface SeasonBadge {
 
 // ─── Hunt Feed ───────────────────────────────────────────────────────────────
 
-export type HuntFeedCategory = "trending" | "new" | "nearby" | "featured"
-
+export type HuntFeedCategory = "trending" | "new" | "nearby" | "featured";
 
 // ─── Core Web Vitals ────────────────────────────────────────────────────────────
 

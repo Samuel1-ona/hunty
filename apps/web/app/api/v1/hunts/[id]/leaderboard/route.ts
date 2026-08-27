@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 
 import { ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
-import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { getAllProgressForHunt } from "@/lib/progressData";
+import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { calculateHuntTimeBonus } from "@/lib/scoring";
 
 export const GET = withErrorHandling<{
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string }>;
 }>(async (req, { params }) => {
   const ip = getIP(req);
   const { success, reset } = await rateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
@@ -35,12 +36,28 @@ export const GET = withErrorHandling<{
 
   const leaderboard = entries
     .filter((e) => e.totalPoints > 0)
-    .map((e) => ({
-      address: e.wallet,
-      points: e.totalPoints,
-      completionCount: e.completed ? 1 : 0,
-      completedAt: e.completedAt ?? undefined,
-    }))
+    .map((e) => {
+      // Derive completion time from persisted timestamps (both in ms).
+      const completionTimeSeconds =
+        e.completed && e.completedAt != null
+          ? Math.max(0, Math.round((e.completedAt - e.startedAt) / 1000))
+          : undefined;
+
+      // Only completed hunts earn the speed bonus.
+      const timeBonus =
+        completionTimeSeconds !== undefined ? calculateHuntTimeBonus(completionTimeSeconds) : 0;
+
+      return {
+        address: e.wallet,
+        // totalPoints already includes per-clue time bonuses; we add the
+        // hunt-level completion speed bonus on top.
+        points: e.totalPoints + timeBonus,
+        completionCount: e.completed ? 1 : 0,
+        completedAt: e.completedAt ?? undefined,
+        completionTimeSeconds,
+        timeBonus,
+      };
+    })
     .sort((a, b) => b.points - a.points);
 
   const total = leaderboard.length;
