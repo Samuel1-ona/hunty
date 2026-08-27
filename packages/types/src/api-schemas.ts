@@ -158,6 +158,34 @@ export const pushTokenDeleteBodySchema = z.object({
   message: "token or walletAddress is required",
 })
 
+// ─── Webhooks ───────────────────────────────────────────────────────────────
+
+export const webhookEventSchema = z.enum(["hunt.published", "hunt.joined", "hunt.completed"])
+
+export const webhookCreateBodySchema = z.object({
+  creatorAddress: stellarAddressSchema,
+  url: z.string().url().max(2048),
+  events: z.array(webhookEventSchema).min(1).max(3),
+})
+
+export const webhookUpdateBodySchema = z.object({
+  url: z.string().url().max(2048).optional(),
+  events: z.array(webhookEventSchema).min(1).max(3).optional(),
+  active: z.boolean().optional(),
+}).refine((body) => body.url !== undefined || body.events !== undefined || body.active !== undefined, {
+  message: "At least one field is required",
+})
+
+export const webhookQuerySchema = z.object({
+  creatorAddress: stellarAddressSchema,
+})
+
+export const webhookEmitBodySchema = z.object({
+  type: webhookEventSchema,
+  creatorAddress: stellarAddressSchema,
+  data: z.record(z.string(), z.unknown()),
+})
+
 // ─── Moderation / Submit ─────────────────────────────────────────────────────
 
 export const moderationSubmitBodySchema = z.object({

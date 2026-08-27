@@ -3,6 +3,7 @@ import { readCompletions, writeCompletions } from "@/lib/reviews"
 import { withValidation } from "@/lib/api/withValidation"
 import { ValidationError } from "@/lib/api/errors"
 import { huntCompleteBodySchema } from "@hunty/types/api-schemas"
+import { emitWebhookEvent } from "@/lib/webhooks"
 import { z } from "zod"
 
 const paramsSchema = z.object({ id: z.string() })
@@ -26,6 +27,16 @@ export const POST = withValidation(
     completions[huntId][body.playerAddress] = true
 
     await writeCompletions(completions)
+
+    const { getHuntById } = await import("@/lib/huntStore")
+    const hunt = getHuntById(huntId)
+    if (hunt?.creator || hunt?.ownerAddress) {
+      await emitWebhookEvent("hunt.completed", {
+        huntId,
+        playerAddress: body.playerAddress,
+        creatorAddress: hunt.creator ?? hunt.ownerAddress,
+      }).catch(() => undefined)
+    }
 
     return NextResponse.json({ success: true })
   }

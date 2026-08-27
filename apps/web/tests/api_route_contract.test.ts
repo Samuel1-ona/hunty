@@ -233,6 +233,11 @@ const ROUTE_MANIFEST: RouteEntry[] = [
 
   // ── v1 / time ────────────────────────────────────────────────────────
   { file: "v1/time/route.ts",                       path: "/api/v1/time",                       methods: ["GET"],           auth: "public" },
+
+  // ── v1 / webhooks ────────────────────────────────────────────────────
+  { file: "v1/webhooks/route.ts",                  path: "/api/v1/webhooks",                  methods: ["GET", "POST"],   auth: "public" },
+  { file: "v1/webhooks/[id]/route.ts",             path: "/api/v1/webhooks/[id]",             methods: ["PATCH", "DELETE"], auth: "public" },
+  { file: "v1/webhooks/events/route.ts",           path: "/api/v1/webhooks/events",           methods: ["POST"],          auth: "public" },
 ]
 
 // ──────────────────────────────────────────────────────────────────────────
