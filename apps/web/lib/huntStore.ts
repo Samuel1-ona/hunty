@@ -7,6 +7,7 @@ import { migrateHuntScheduleFieldsInCollection } from "@/lib/huntScheduleMigrati
 import { applyHuntScheduleTransitions } from "@/lib/huntScheduling";
 import { normalizeHuntStatus } from "@/lib/huntStatus";
 import { getHuntsWithClientRatings } from "@/lib/reviewRatings";
+import { getRecurringOccurrenceWindow } from "@/lib/huntScheduling";
 import type { Clue, HuntInvite, HuntStatus, StoredHunt } from "@/lib/types";
 
 export type { Clue, HuntInvite, HuntStatus, StoredHunt };
@@ -360,6 +361,73 @@ export function getHuntsByCreator(creator?: string): StoredHunt[] {
 export function updateHuntStatus(huntId: number, status: HuntStatus): void {
   const hunts = readHunts().map((h) => (h.id === huntId ? { ...h, status } : h));
   writeHunts(hunts);
+}
+
+/** Cancel one occurrence without changing any other occurrence in its series. */
+export function cancelHuntOccurrence(huntId: number): boolean {
+  const hunts = readHunts();
+  if (!hunts.some((hunt) => hunt.id === huntId)) return false;
+  writeHunts(hunts.map((hunt) => (hunt.id === huntId ? { ...hunt, status: "Cancelled" } : hunt)));
+  return true;
+}
+
+/** Return all occurrences belonging to a recurring hunt series. */
+export function getHuntOccurrences(seriesId: number): StoredHunt[] {
+  return applyHuntScheduleTransitions(readHunts()).filter(
+    (hunt) => hunt.recurrence?.seriesId === seriesId
+  );
+}
+
+/** Materialize the next scheduled occurrence when the scheduler runs. */
+export function materializeRecurringOccurrences(now = Date.now()): StoredHunt[] {
+  const hunts = readHunts();
+  const created: StoredHunt[] = [];
+  let nextId = hunts.length ? Math.max(...hunts.map((hunt) => hunt.id)) + 1 : 1;
+
+  for (const source of [...hunts]) {
+    const recurrence = source.recurrence;
+    if (!recurrence || source.id !== recurrence.seriesId || recurrence.occurrenceNumber >= recurrence.occurrences) continue;
+
+    const series = hunts.filter((hunt) => hunt.recurrence?.seriesId === recurrence.seriesId);
+    const latest = series.reduce((left, right) =>
+      (left.recurrence?.occurrenceNumber ?? 0) > (right.recurrence?.occurrenceNumber ?? 0) ? left : right
+    );
+    const latestRecurrence = latest.recurrence!;
+    if (latest.endAt == null) continue;
+
+    const window = getRecurringOccurrenceWindow({
+      startAt: latest.startAt ?? latest.endTime! * 1000,
+      endAt: latest.endAt ?? latest.endTime! * 1000,
+      frequency: recurrence.frequency,
+      interval: recurrence.interval,
+    });
+    if (series.some((hunt) => hunt.startAt === window.startAt)) continue;
+
+    const id = nextId++;
+    const sourceClues = readClues().filter((clue) => clue.huntId === latest.id);
+    const allClues = readClues();
+    const clueId = allClues.length ? Math.max(...allClues.map((clue) => clue.id)) + 1 : 1;
+    writeClues([
+      ...allClues,
+      ...sourceClues.map((clue, index) => ({ ...clue, id: clueId + index, huntId: id })),
+    ]);
+    const occurrence: StoredHunt = {
+      ...latest,
+      id,
+      status: "scheduled",
+      startAt: window.startAt,
+      endAt: window.endAt,
+      startTime: Math.floor(window.startAt / 1000),
+      endTime: Math.floor(window.endAt / 1000),
+      playerCount: 0,
+      recurrence: { ...latestRecurrence, occurrenceNumber: latestRecurrence.occurrenceNumber + 1 },
+    };
+    hunts.push(occurrence);
+    created.push(occurrence);
+  }
+
+  if (created.length) writeHunts(hunts);
+  return created;
 }
 
 /**

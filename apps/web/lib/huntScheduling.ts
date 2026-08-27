@@ -1,4 +1,4 @@
-import type { StoredHunt } from "@/lib/types"
+import type { HuntRecurrenceFrequency, StoredHunt } from "@/lib/types"
 
 export type HuntScheduleValidationResult = {
   isValid: boolean
@@ -10,6 +10,33 @@ export type HuntReminderState = Map<number, number>
 const REMINDER_WINDOWS_MS = [24 * 60 * 60 * 1000, 60 * 60 * 1000]
 const TRANSITION_TOLERANCE_MS = 60 * 1000
 const VALIDATION_TOLERANCE_MS = 5 * 1000
+
+export function getRecurringOccurrenceWindow({
+  startAt,
+  endAt,
+  frequency,
+  interval,
+}: {
+  startAt: number
+  endAt: number
+  frequency: HuntRecurrenceFrequency
+  interval: number
+}): { startAt: number; endAt: number } {
+  const start = new Date(startAt)
+  const end = new Date(endAt)
+  if (frequency === "monthly") {
+    const startDay = start.getDate()
+    const endDay = end.getDate()
+    start.setMonth(start.getMonth() + interval)
+    end.setMonth(end.getMonth() + interval)
+    start.setDate(Math.min(startDay, new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate()))
+    end.setDate(Math.min(endDay, new Date(end.getFullYear(), end.getMonth() + 1, 0).getDate()))
+  } else {
+    start.setDate(start.getDate() + interval * 7)
+    end.setDate(end.getDate() + interval * 7)
+  }
+  return { startAt: start.getTime(), endAt: end.getTime() }
+}
 
 export function validateHuntSchedule({
   startAt,

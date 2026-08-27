@@ -39,6 +39,16 @@ export type HuntStatus =
   | "active"
   | "ended";
 
+export type HuntRecurrenceFrequency = "weekly" | "monthly";
+
+export interface HuntRecurrence {
+  frequency: HuntRecurrenceFrequency;
+  interval: number;
+  occurrences: number;
+  seriesId: number;
+  occurrenceNumber: number;
+}
+
 /**
  * Hunt-level difficulty rating set by the creator so players can gauge
  * challenge before joining. Independent of `ClueDifficulty` which rates
@@ -130,6 +140,8 @@ export interface StoredHunt {
   ownerAddress?: string;
   /** Collaborators snapshot (authoritative list may live in collaboration store). */
   collaborators?: HuntCollaborator[];
+  /** Recurrence metadata. Every occurrence is stored as an independent hunt. */
+  recurrence?: HuntRecurrence;
 }
 
 export type HuntInfo = {

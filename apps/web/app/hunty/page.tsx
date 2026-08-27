@@ -90,6 +90,12 @@ function CreateGameContent() {
   const [gameName, setGameName] = useLocalStorage("draft-gameName", "Hunty");
   const [startDate, setStartDate] = useLocalStorage("draft-startDate", "");
   const [endDate, setEndDate] = useLocalStorage("draft-endDate", "");
+  const [recurrenceFrequency, setRecurrenceFrequency] = useLocalStorage<"none" | "weekly" | "monthly">(
+    "draft-recurrence-frequency",
+    "none"
+  );
+  const [recurrenceInterval, setRecurrenceInterval] = useLocalStorage("draft-recurrence-interval", 1);
+  const [recurrenceOccurrences, setRecurrenceOccurrences] = useLocalStorage("draft-recurrence-occurrences", 4);
   // Hunt-level difficulty rating. Persisted in localStorage so the creator's
   // last choice is restored on refresh, and surfaced once at the publish step
   // (one rating applied to the whole hunt rather than per clue).
@@ -506,7 +512,15 @@ function CreateGameContent() {
             formValues.sequential,
             // Normalize empty-string sentinel ("") from the publish-tab select back
             // to undefined so the on-chain metadata stays clean.
-            huntDifficulty ? huntDifficulty : undefined
+            huntDifficulty ? huntDifficulty : undefined,
+            undefined,
+            recurrenceFrequency === "none"
+              ? undefined
+              : {
+                  frequency: recurrenceFrequency,
+                  interval: recurrenceInterval,
+                  occurrences: recurrenceOccurrences,
+                }
           );
           const escrow = await createRewardEscrow({
             huntId: localId,
@@ -535,7 +549,7 @@ function CreateGameContent() {
         title: formValues.gameName,
         description,
         cluesCount: formValues.hunts.length,
-        status: "Draft",
+        status: recurrenceFrequency === "none" ? "Draft" : "scheduled",
         rewardType: formValues.rewardType,
         rewardPool,
         rewards: formValues.rewards.map(({ place, amount }) => ({ place, amount })),
@@ -545,6 +559,8 @@ function CreateGameContent() {
         createdAt: Math.floor(Date.now() / 1000),
         startTime: start_time,
         endTime: end_time,
+        startAt: start_time * 1000,
+        endAt: end_time * 1000,
         creatorEmail: formValues.creatorEmail || undefined,
         emailNotifications: formValues.emailNotifications,
         is_private: formValues.isPrivate,
@@ -555,6 +571,17 @@ function CreateGameContent() {
         category,
         tags,
         ...(createdDifficulty ? { difficulty: createdDifficulty } : {}),
+        ...(recurrenceFrequency !== "none"
+          ? {
+              recurrence: {
+                frequency: recurrenceFrequency,
+                interval: recurrenceInterval,
+                occurrences: recurrenceOccurrences,
+                seriesId: localId,
+                occurrenceNumber: 1,
+              },
+            }
+          : {}),
       });
       if (ownerWallet) {
         ensureOwner(localId, ownerWallet);
@@ -785,6 +812,38 @@ function CreateGameContent() {
                               <span className="text-red-500 text-sm">
                                 {errors.gameName.message}
                               </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <label htmlFor="hunt-recurrence" className="block text-xl font-normal text-[#808080]">
+                              Repeat hunt
+                            </label>
+                            <p className="text-xs text-slate-400 mt-0.5">Each occurrence has its own leaderboard</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <select
+                              id="hunt-recurrence"
+                              value={recurrenceFrequency}
+                              onChange={(e) => setRecurrenceFrequency(e.target.value as "none" | "weekly" | "monthly")}
+                              className="h-11 rounded-md border border-slate-200 bg-white px-2 text-slate-700"
+                            >
+                              <option value="none">Does not repeat</option>
+                              <option value="weekly">Weekly</option>
+                              <option value="monthly">Monthly</option>
+                            </select>
+                            {recurrenceFrequency !== "none" && (
+                              <Input
+                                aria-label="Number of occurrences"
+                                type="number"
+                                min={2}
+                                max={52}
+                                value={recurrenceOccurrences}
+                                onChange={(e) => setRecurrenceOccurrences(Math.max(2, Math.min(52, Number(e.target.value))))}
+                                className="h-11 w-20"
+                              />
                             )}
                           </div>
                         </div>

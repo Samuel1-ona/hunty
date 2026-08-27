@@ -3,6 +3,7 @@ import type { StoredHunt } from "@/lib/types"
 import {
   applyHuntScheduleTransitions,
   getReminderCandidates,
+  getRecurringOccurrenceWindow,
   validateHuntSchedule,
 } from "@/lib/huntScheduling"
 
@@ -86,5 +87,19 @@ describe("hunt scheduling", () => {
 
     expect(first).toHaveLength(1)
     expect(second).toHaveLength(0)
+  })
+
+  it("creates weekly and month-end occurrence windows", () => {
+    const startAt = new Date("2026-01-31T10:00:00.000Z").getTime()
+    const endAt = new Date("2026-01-31T11:00:00.000Z").getTime()
+
+    expect(getRecurringOccurrenceWindow({ startAt, endAt, frequency: "weekly", interval: 1 })).toEqual({
+      startAt: new Date("2026-02-07T10:00:00.000Z").getTime(),
+      endAt: new Date("2026-02-07T11:00:00.000Z").getTime(),
+    })
+    expect(getRecurringOccurrenceWindow({ startAt, endAt, frequency: "monthly", interval: 1 })).toEqual({
+      startAt: new Date("2026-02-28T10:00:00.000Z").getTime(),
+      endAt: new Date("2026-02-28T11:00:00.000Z").getTime(),
+    })
   })
 })

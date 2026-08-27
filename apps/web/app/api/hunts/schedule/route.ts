@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getAllHuntsIncludingPrivate, updateHuntStatus } from "@/lib/huntStore"
+import { getAllHuntsIncludingPrivate, materializeRecurringOccurrences, updateHuntStatus } from "@/lib/huntStore"
 import { applyHuntScheduleTransitions, getReminderCandidates } from "@/lib/huntScheduling"
 import { logger } from "@/lib/logger"
 import { sendHuntStartReminder } from "@/lib/notifications/huntScheduleNotifications"
@@ -7,6 +7,7 @@ import { sendHuntStartReminder } from "@/lib/notifications/huntScheduleNotificat
 export async function POST() {
   try {
     const hunts = getAllHuntsIncludingPrivate()
+    const occurrences = materializeRecurringOccurrences()
     const updated = applyHuntScheduleTransitions(hunts)
 
     for (const hunt of updated) {
@@ -30,6 +31,7 @@ export async function POST() {
 
     return NextResponse.json({
       updated: updated.filter((hunt) => hunt.status === "active" || hunt.status === "ended" || hunt.status === "scheduled").length,
+      occurrences: occurrences.map((hunt) => hunt.id),
       reminders: reminderCandidates.map((hunt) => hunt.id),
       sent: reminderResults.filter(Boolean).length,
     })
