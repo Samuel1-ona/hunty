@@ -19,6 +19,7 @@ import type { Achievement, AchievementId, AchievementRarity, Clue, ClueDifficult
 // ── Type compatibility assertions ─────────────────────────────────────────
 // Compile-time checks that each schema infers to the same shape as its TS interface.
 // These are pure type-level: if the types drift apart the project won't compile.
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 type RewardInfer = z.infer<typeof rewardSchema>
 type _RewardCheck = RewardInfer extends Reward ? Reward extends RewardInfer ? true : false : false
@@ -565,7 +566,7 @@ describe("schemas convenience map", () => {
   })
 
   it("each entry is a valid Zod schema", () => {
-    for (const [key, schema] of Object.entries(schemas)) {
+    for (const [_key, schema] of Object.entries(schemas)) {
       expect(typeof schema.parse).toBe("function")
       expect(typeof schema.safeParse).toBe("function")
     }

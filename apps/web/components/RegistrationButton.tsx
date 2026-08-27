@@ -6,6 +6,7 @@ import { useState } from "react";
 import { AnimatedCheckmark } from "@/components/AnimatedCheckmark";
 import { Skeleton } from "@/components/ui/skeleton";
 import { markFirstHuntStep } from "@/lib/firstHuntGuide";
+import { checkRegistrationStatus } from "@/lib/contracts/player-registration";
 import type { HuntRegistrationStatus } from "@/lib/types";
 
 interface RegistrationButtonProps {
@@ -32,6 +33,7 @@ export function RegistrationButton({
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [isAlreadyRegistered, setIsAlreadyRegistered] = useState(false);
 
   const isHuntFull = maxCapacity !== undefined && currentPlayers !== undefined && currentPlayers >= maxCapacity;
   const capacityCopy =
@@ -45,6 +47,12 @@ export function RegistrationButton({
     setSuccessMessage(null);
 
     try {
+      const status = await checkRegistrationStatus(huntId, playerAddress);
+      if (status.isRegistered) {
+        setIsAlreadyRegistered(true);
+        return;
+      }
+
       await onRegister();
       markFirstHuntStep("join", { huntId });
       setSuccessMessage("Successfully registered for the hunt!");
@@ -104,14 +112,11 @@ export function RegistrationButton({
   return (
     <div className="space-y-3">
       {/* Registration button */}
-      {registrationStatus.isRegistered ? (
-        <button
-          className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 active:scale-95 transition-all duration-150 text-white font-semibold text-base px-8 py-4 rounded-2xl shadow-lg shadow-green-900/40"
-          disabled={isRegistering}
-        >
-          <AnimatedCheckmark asCircle className="text-green-600" size={20} />
-          Continue Hunt
-        </button>
+      {registrationStatus.isRegistered || isAlreadyRegistered ? (
+        <div className="w-full flex items-center justify-center gap-2 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-200 font-semibold text-base px-8 py-4 rounded-2xl border border-green-200 dark:border-green-800">
+          <AnimatedCheckmark asCircle className="text-green-600 dark:text-green-400" size={20} />
+          You're already registered
+        </div>
       ) : registrationStatus.isWaitlisted ? (
         <div className="w-full flex items-center justify-center gap-2 bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200 font-semibold text-base px-8 py-4 rounded-2xl border border-amber-200 dark:border-amber-800">
           <div className="animate-pulse w-2 h-2 bg-amber-600 dark:bg-amber-500 rounded-full" />
