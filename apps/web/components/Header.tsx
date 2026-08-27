@@ -27,6 +27,7 @@ import { NotificationPanel } from "@/components/NotificationPanel";
 import { Button } from "@/components/ui/button";
 import { useIsMounted } from "@/hooks/useIsMounted";
 import { useWallet } from "@/lib/context/WalletContext";
+import { OPEN_WALLET_EVENT } from "@/lib/firstHuntGuide";
 import { getUnreadNotificationCount } from "@/lib/notifications/rankTracker";
 import {
   createWeeklyDigestNotification,
@@ -35,6 +36,7 @@ import {
 import { cn } from "@/lib/utils";
 import { getStellarAccountExplorerUrl } from "@/lib/walletAddress";
 
+import { GasSponsorshipIndicator } from "./GasSponsorshipIndicator";
 import { LanguageSelector } from "./LanguageSelector";
 import { ThemeToggle } from "./ThemeToggle";
 import { WalletAddress } from "./WalletAddress";
@@ -242,6 +244,9 @@ function MobileMenu({
                 Disconnect
               </button>
             </div>
+            <div className="px-4 pb-3 bg-slate-50 dark:bg-slate-900">
+              <GasSponsorshipIndicator />
+            </div>
           </div>
         ) : (
           <Button
@@ -300,6 +305,12 @@ export function Header() {
     if (shouldSendWeeklyDigest()) {
       createWeeklyDigestNotification();
     }
+  }, []);
+
+  useEffect(() => {
+    const openWallet = () => setModalOpen(true);
+    window.addEventListener(OPEN_WALLET_EVENT, openWallet);
+    return () => window.removeEventListener(OPEN_WALLET_EVENT, openWallet);
   }, []);
 
   // Close dropdowns on outside click
@@ -495,6 +506,9 @@ export function Header() {
                           </p>
                           <p className="text-white font-mono text-xs break-all">{publicKey}</p>
                         </div>
+                      </div>
+                      <div className="px-4 pt-3">
+                        <GasSponsorshipIndicator />
                       </div>
                       <div className="p-2 flex flex-col gap-1">
                         <button
