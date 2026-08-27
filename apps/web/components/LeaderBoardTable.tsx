@@ -3,22 +3,22 @@
 import { Trophy } from "lucide-react";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 
-import { EmptyState } from "@/components/QueryState";
 import Medal from "@/components/icons/Medal";
 import { LeaderboardTableSkeleton } from "@/components/LoadingSkeletons";
+import { EmptyState } from "@/components/QueryState";
 import { SeasonInfo } from "@/components/SeasonInfo";
-import { useWalletStore } from "@/store/useStore";
 import { WalletAddress } from "@/components/WalletAddress";
 import { WalletIdenticon } from "@/components/WalletIdenticon";
-import { truncateAddress } from "@/lib/walletAddress";
-import { detectRankChanges } from "@/lib/notifications/rankTracker";
 import { get_hunt_leaderboard } from "@/lib/contracts/hunt";
 import { logger } from "@/lib/logger";
 import { handleRankNotifications } from "@/lib/notifications/notificationService";
+import { detectRankChanges } from "@/lib/notifications/rankTracker";
 import { getActiveSeason } from "@/lib/seasonStore";
 import type { LeaderboardDisplayEntry, LeaderboardFilters } from "@/lib/types";
 import type { LeaderboardEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { truncateAddress } from "@/lib/walletAddress";
+import { useWalletStore } from "@/store/useStore";
 
 const DEFAULT_FILTERS: LeaderboardFilters = {
   timePeriod: "all",
@@ -92,6 +92,8 @@ function LeaderboardTableComponent({
         points: entry.points,
         completionCount: entry.completionCount,
         completedAt: entry.completedAt,
+        completionTimeSeconds: entry.completionTimeSeconds,
+        timeBonus: entry.timeBonus,
         category: entry.category,
         difficulty: entry.difficulty,
         address: entry.address,
@@ -261,7 +263,24 @@ function LeaderboardTableComponent({
                     )}
                   </td>
                   <td className="px-4 py-2 text-center border border-b-2 border-[#808080] dark:border-slate-700 text-[16px] bg-gradient-to-b from-[#576065] to-[#787884] dark:from-slate-200 dark:to-slate-400 bg-clip-text text-transparent">
-                    {filters.metric === "completions" ? (entry.completionCount ?? 0) : entry.points}
+                    {filters.metric === "completions" ? (
+                      (entry.completionCount ?? 0)
+                    ) : (
+                      <span
+                        title={
+                          entry.timeBonus && entry.timeBonus > 0
+                            ? `Includes +${entry.timeBonus} speed bonus`
+                            : undefined
+                        }
+                      >
+                        {entry.points}
+                        {entry.timeBonus != null && entry.timeBonus > 0 && (
+                          <span className="ml-1.5 text-xs font-medium text-emerald-500 dark:text-emerald-400">
+                            +{entry.timeBonus}⚡
+                          </span>
+                        )}
+                      </span>
+                    )}
                   </td>
                 </tr>
               );
@@ -274,4 +293,3 @@ function LeaderboardTableComponent({
 }
 
 export const LeaderboardTable = memo(LeaderboardTableComponent);
- 

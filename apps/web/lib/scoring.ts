@@ -69,6 +69,52 @@ export function calculateTimeBonus(
 }
 
 /**
+ * Default configuration values for the hunt-level time bonus.
+ * Exported so the /api/v1/scoring/formula endpoint and any UI can read them
+ * without repeating magic numbers.
+ */
+export const HUNT_TIME_BONUS_CONFIG = {
+  /** Maximum bonus points, awarded near-instantly. */
+  maxBonus: 500,
+  /** Seconds at which the bonus drops to zero (default: 1 hour). */
+  benchmarkSeconds: 3600,
+} as const;
+
+/**
+ * Calculate a hunt-level completion speed bonus.
+ *
+ * Formula:
+ *   bonus = floor(maxBonus × max(0, 1 - completionTimeSeconds / benchmarkSeconds))
+ *
+ * The bonus decays linearly from `maxBonus` (instant finish) to 0 (at or past
+ * `benchmarkSeconds`). Completions slower than the benchmark receive no bonus.
+ *
+ * Default values are calibrated for a typical hunt of ~10 clues:
+ *   - maxBonus: 500 points — awarded to the theoretically fastest possible
+ *     completion (t ≈ 0).
+ *   - benchmarkSeconds: 3600 (1 hour) — the boundary at which the bonus
+ *     reaches 0. A player finishing in 30 min earns 250 pts, 15 min earns 375,
+ *     etc.
+ *
+ * These values are intentionally exposed (see GET /api/v1/scoring/formula) so
+ * players can see the formula before they start.
+ *
+ * @param completionTimeSeconds  How long the player took to finish the hunt.
+ * @param maxBonus               Maximum bonus awarded (default 500).
+ * @param benchmarkSeconds       Completion time at which the bonus drops to 0 (default 3600).
+ * @returns Integer bonus in points (0 when completionTimeSeconds >= benchmarkSeconds).
+ */
+export function calculateHuntTimeBonus(
+  completionTimeSeconds: number,
+  maxBonus: number = HUNT_TIME_BONUS_CONFIG.maxBonus,
+  benchmarkSeconds: number = HUNT_TIME_BONUS_CONFIG.benchmarkSeconds
+): number {
+  if (completionTimeSeconds <= 0) return maxBonus;
+  const ratio = Math.max(0, 1 - completionTimeSeconds / benchmarkSeconds);
+  return Math.floor(maxBonus * ratio);
+}
+
+/**
  * Calculate the hint penalty for a clue using the legacy weight-based approach.
  * Used when per-hint `penalty` values are not available (backwards compatibility).
  * @param basePoints Base points for the clue
@@ -163,4 +209,3 @@ export function calculateCluePoints(
     newStreak: currentStreak + 1,
   };
 }
- 
