@@ -206,7 +206,6 @@ const ROUTE_MANIFEST: RouteEntry[] = [
 
   // ── v1 / hunts ───────────────────────────────────────────────────────
   { file: "v1/hunts/route.ts",                      path: "/api/v1/hunts",                      methods: ["GET"],           auth: "public" },
-  { file: "v1/hunts/id/route.ts",                   path: "/api/v1/hunts/id",                   methods: ["GET"],           auth: "public" },
   { file: "v1/hunts/bulk/route.ts",                 path: "/api/v1/hunts/bulk",                 methods: ["POST"],          auth: "public" },
   { file: "v1/hunts/[id]/route.ts",                 path: "/api/v1/hunts/[id]",                 methods: ["GET"],           auth: "public" },
   { file: "v1/hunts/[id]/archive/route.ts",         path: "/api/v1/hunts/[id]/archive",         methods: ["POST"],          auth: "public" },
