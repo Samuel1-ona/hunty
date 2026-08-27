@@ -16,6 +16,10 @@ export const queryKeys = {
     nftCount: (address: string | undefined) =>
       ["wallet", "nftCount", address || "anonymous"] as const,
   },
+  paymaster: {
+    budget: (address: string | undefined) =>
+      ["paymaster", "budget", address || "anonymous"] as const,
+  },
 } as const
 
 export const queryCachePolicy = {
@@ -43,5 +47,15 @@ export const queryCachePolicy = {
     staleTime: 15 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchInterval: 30 * 1000,
+  },
+  /**
+   * Sponsorship budget changes only when the player actually submits a
+   * sponsored transaction, so this can poll less aggressively than the wallet
+   * balance while still catching quota changes made by an admin.
+   */
+  paymasterBudget: {
+    staleTime: 20 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchInterval: 60 * 1000,
   },
 } as const
