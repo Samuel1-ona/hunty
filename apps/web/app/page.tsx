@@ -79,6 +79,8 @@ const ACTIVE_PAGE_SIZE = 12;
 const INACTIVE_PAGE_SIZE = 6;
 const ACTIVE_GRID_GAP = 24;
 const ACTIVE_CARD_ESTIMATED_HEIGHT = 360;
+const HUNT_COVER_BLUR_DATA_URL =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
 
 function sortByRecentFirst(a: StoredHunt, b: StoredHunt): number {
   const aSortTime = a.endTime ?? a.startTime ?? 0;
@@ -123,6 +125,10 @@ function ActiveHuntCard({
         src={hunt.coverImageCid}
         alt={`${hunt.title} cover`}
         className="relative w-full h-40 bg-slate-100"
+        fill
+        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+        placeholder="blur"
+        blurDataURL={HUNT_COVER_BLUR_DATA_URL}
       />
       <div className="p-5">
         <div className="flex items-center gap-2 mb-1">
