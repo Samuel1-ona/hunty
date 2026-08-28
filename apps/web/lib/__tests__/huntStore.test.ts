@@ -13,9 +13,11 @@ import {
   getFeaturedHunts,
   getHunt,
   getHuntById,
+  getHuntCapacity,
   getHuntClues,
   getHuntProgress,
   getHuntsByCreator,
+  getRemainingSpots,
   getSpotlightHunts,
   MAX_CLUES_PER_HUNT,
   restoreHuntStoreSnapshot,
@@ -23,12 +25,8 @@ import {
   saveCluesLocallyBatch,
   setLocalFeaturedHunt,
   startHuntProgress,
-  advanceHuntProgress,
-  clearHuntProgress,
-  gcHunt,
   migrateGuestProgressToWallet,
   getWalletProgressKey,
-  MAX_CLUES_PER_HUNT,
   takeHuntStoreSnapshot,
   updateClueAnswer,
   updateHuntEndTime,
@@ -46,6 +44,72 @@ describe("huntStore", () => {
 
   afterEach(() => {
     localStorage.clear();
+  });
+
+  describe("getHuntCapacity", () => {
+    it.each([
+      { name: "missing hunt", hunt: undefined, expected: undefined },
+      { name: "unlimited capacity", hunt: {}, expected: undefined },
+      { name: "zero capacity", hunt: { maxParticipants: 0 }, expected: 0 },
+      { name: "finite capacity", hunt: { maxParticipants: 5 }, expected: 5 },
+      { name: "legacy capacity", hunt: { maxCapacity: 8 }, expected: 8 },
+      { name: "zero legacy capacity", hunt: { maxCapacity: 0 }, expected: 0 },
+      {
+        name: "preferred limit overrides legacy capacity",
+        hunt: { maxParticipants: 5, maxCapacity: 8 },
+        expected: 5,
+      },
+      {
+        name: "zero preferred limit overrides legacy capacity",
+        hunt: { maxParticipants: 0, maxCapacity: 8 },
+        expected: 0,
+      },
+    ])("returns the capacity for $name", ({ hunt, expected }) => {
+      expect(getHuntCapacity(hunt)).toBe(expected);
+    });
+  });
+
+  describe("getRemainingSpots", () => {
+    it.each([
+      { name: "missing hunt", hunt: undefined, expected: undefined },
+      { name: "unlimited empty hunt", hunt: {}, expected: undefined },
+      {
+        name: "unlimited populated hunt",
+        hunt: { playerCount: 100 },
+        expected: undefined,
+      },
+      {
+        name: "zero capacity",
+        hunt: { maxParticipants: 0, playerCount: 0 },
+        expected: 0,
+      },
+      {
+        name: "missing player count defaults to zero",
+        hunt: { maxParticipants: 5 },
+        expected: 5,
+      },
+      {
+        name: "empty finite hunt",
+        hunt: { maxParticipants: 5, playerCount: 0 },
+        expected: 5,
+      },
+    ])("handles $name", ({ hunt, expected }) => {
+      expect(getRemainingSpots(hunt)).toBe(expected);
+    });
+
+    describe.each(["maxParticipants", "maxCapacity"] as const)("%s", (field) => {
+      it.each([
+        { playerCount: 3, expected: 2 },
+        { playerCount: 4, expected: 1 },
+        { playerCount: 5, expected: 0 },
+        { playerCount: 6, expected: 0 },
+      ])(
+        "returns $expected spots with $playerCount players and a limit of 5",
+        ({ playerCount, expected }) => {
+          expect(getRemainingSpots({ [field]: 5, playerCount })).toBe(expected);
+        },
+      );
+    });
   });
 
   describe("getAllHunts", () => {
