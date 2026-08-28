@@ -380,8 +380,6 @@ export function migrateGuestProgressToWallet(
       }
     })();
 
-    if (!guestProgress) continue;
-
     const walletKey = getWalletProgressKey(guestHuntId, walletAddress);
     const storedWalletProgress = (() => {
       try {
@@ -391,6 +389,11 @@ export function migrateGuestProgressToWallet(
         return null;
       }
     })();
+
+    if (!guestProgress) {
+      if (hasSpecificHunt) return storedWalletProgress;
+      continue;
+    }
 
     const mergedProgress = storedWalletProgress
       ? mergeProgressSnapshots(storedWalletProgress, guestProgress)
@@ -971,7 +974,6 @@ export function advanceHuntProgress(
   nextClueIndex: number,
   totalClues: number,
   walletAddress?: string | null,
-  totalClues: number
 ): HuntProgressSnapshot {
   const current = getHuntProgress(huntId, walletAddress);
   const completed = nextClueIndex >= totalClues;
@@ -1142,4 +1144,3 @@ export function setLocalFeaturedHunt(huntId: number | null): void {
   }));
   writeHunts(hunts);
 }
- 
