@@ -4,6 +4,8 @@ import { listPublicActiveHuntsByCursorOptimized } from "@/lib/db/queryOptimizer"
 import { ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
 import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { getFollowing } from "@/lib/follows";
+import type { StoredHunt } from "@/lib/types";
 
 /**
  * GET /api/v1/hunts
@@ -30,6 +32,7 @@ export const GET = withErrorHandling(async (req: Request) => {
   const sortBy = searchParams.get("sortBy") || "newest";
   const ageClassification = searchParams.get("ageClassification") || "all";
   const tag = searchParams.get("tag") || "";
+  const following = searchParams.get("following") || "";
   const requestId = req.headers.get("x-request-id") ?? undefined;
 
   if (
@@ -55,10 +58,22 @@ export const GET = withErrorHandling(async (req: Request) => {
     requestId,
   });
 
+  let filteredData = data;
+  let filteredTotal = total;
+  if (following) {
+    const follows = getFollowing(following);
+    const followSet = new Set(follows.map((w) => w.toLowerCase()));
+    filteredData = data.filter((hunt) => {
+      const creator = (hunt as StoredHunt & { creator?: string }).creator;
+      return creator ? followSet.has(creator.toLowerCase()) : false;
+    });
+    filteredTotal = filteredData.length;
+  }
+
   return NextResponse.json({
-    data,
+    data: filteredData,
     pagination: {
-      total,
+      total: filteredTotal,
       limit,
       cursor,
       nextCursor,
