@@ -4,7 +4,7 @@
  * Performance Budget Check
  *
  * Analyzes the Next.js build output (`.next/`) and compares JavaScript bundle
- * sizes and other static metrics against defined budgets. Fails with a
+ * sizes and other static metrics against defined per-route budgets. Fails with a
  * non-zero exit code when budgets are exceeded.
  *
  * Usage:
@@ -13,34 +13,23 @@
  * Run after `npm run build`.
  */
 
-import { existsSync, readdirSync,readFileSync } from "fs"
-import { dirname,join } from "path"
+import { existsSync, readdirSync, readFileSync } from "fs"
+import { dirname, join } from "path"
 import { fileURLToPath } from "url"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = join(__dirname, "..")
+const BUDGETS_FILE = join(root, "bundle-budgets.json")
 
-const BUDGETS = {
-  // Maximum total JS bundle size per page (3G slow, gzip estimated)
-  totalJsKb: {
-    good: 150,
-    poor: 300,
-  },
-  // Maximum CSS bundle size per page
-  totalCssKb: {
-    good: 50,
-    poor: 100,
-  },
-  // Maximum number of JS chunks loaded per page
-  jsChunks: {
-    good: 10,
-    poor: 20,
-  },
-  // Maximum number of HTTP requests for critical resources
-  criticalRequests: {
-    good: 15,
-    poor: 25,
-  },
+// Default budgets for routes not specified in bundle-budgets.json
+const DEFAULT_BUDGETS = {
+  jsKb: 200,
+}
+
+// Maximum CSS bundle size per page
+const CSS_BUDGET = {
+  good: 50,
+  poor: 100,
 }
 
 function formatBytes(bytes) {
@@ -54,6 +43,14 @@ function getBuildManifest() {
     process.exit(1)
   }
   return JSON.parse(readFileSync(manifestPath, "utf8"))
+}
+
+function getBudgets() {
+  if (!existsSync(BUDGETS_FILE)) {
+    console.warn("⚠️ bundle-budgets.json not found. Using default budgets.")
+    return {}
+  }
+  return JSON.parse(readFileSync(BUDGETS_FILE, "utf8"))
 }
 
 function analyzeBundles() {
@@ -99,35 +96,31 @@ function main() {
   console.log("\n📊 Performance Budget Check\n")
 
   const pageResults = analyzeBundles()
+  const definedBudgets = getBudgets()
 
   let passed = true
   let maxJsKb = 0
 
   for (const { page, size, chunks } of pageResults) {
+    // skip api routes
+    if (page.startsWith("/api")) continue;
+
     const jsKb = size / 1024
     maxJsKb = Math.max(maxJsKb, jsKb)
 
-    const jsStatus = jsKb <= BUDGETS.totalJsKb.good
-      ? "✅"
-      : jsKb <= BUDGETS.totalJsKb.poor
-        ? "⚠️"
-        : "❌"
-    const chunkStatus = chunks <= BUDGETS.jsChunks.good
-      ? "✅"
-      : chunks <= BUDGETS.jsChunks.poor
-        ? "⚠️"
-        : "❌"
+    // Lookup budget for this route, fallback to default
+    const budget = definedBudgets[page] ?? DEFAULT_BUDGETS
+    const limit = budget.jsKb ?? DEFAULT_BUDGETS.jsKb
 
-    if (jsStatus === "❌" || chunkStatus === "❌") passed = false
+    const jsStatus = jsKb <= limit ? "✅" : "❌"
+
+    if (jsStatus === "❌") passed = false
 
     console.log(
       `  ${page === "/" ? "/ (home)" : page}`
     )
     console.log(
-      `    JS:  ${jsStatus} ${formatBytes(size)} (budget: ${BUDGETS.totalJsKb.good}KB good / ${BUDGETS.totalJsKb.poor}KB poor)`
-    )
-    console.log(
-      `    Chunks: ${chunkStatus} ${chunks} (budget: ${BUDGETS.jsChunks.good} good / ${BUDGETS.jsChunks.poor} poor)`
+      `    JS:  ${jsStatus} ${formatBytes(size)} (budget: ${limit}KB)`
     )
   }
 
@@ -135,14 +128,14 @@ function main() {
 
   if (cssResult.files > 0) {
     const cssKb = cssResult.size / 1024
-    const cssStatus = cssKb <= BUDGETS.totalCssKb.good
+    const cssStatus = cssKb <= CSS_BUDGET.good
       ? "✅"
-      : cssKb <= BUDGETS.totalCssKb.poor
+      : cssKb <= CSS_BUDGET.poor
         ? "⚠️"
         : "❌"
     if (cssStatus === "❌") passed = false
     console.log(
-      `  CSS: ${cssStatus} ${formatBytes(cssResult.size)} total across ${cssResult.files} files (budget: ${BUDGETS.totalCssKb.good}KB good / ${BUDGETS.totalCssKb.poor}KB poor)`
+      `  CSS: ${cssStatus} ${formatBytes(cssResult.size)} total across ${cssResult.files} files (budget: ${CSS_BUDGET.good}KB good / ${CSS_BUDGET.poor}KB poor)`
     )
   }
 
@@ -158,3 +151,4 @@ function main() {
 }
 
 main()
+

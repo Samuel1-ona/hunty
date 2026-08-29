@@ -10,11 +10,13 @@
     "./schemas": "./src/schemas.ts",
     "./api-schemas": "./src/api-schemas.ts"
   },
+  "sideEffects": false,
   "scripts": {
-    "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
     "test": "vitest --run"
   },
+  "sideEffects": false,
   "peerDependencies": {
     "zod": "^4.0.0"
   },
@@ -26,6 +28,7 @@
   "devDependencies": {
     "eslint": "^9",
     "typescript": "^5",
+    "typescript-eslint": "^8",
     "vitest": "^4.0.18",
     "zod": "^4.3.6"
   }

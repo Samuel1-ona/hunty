@@ -3,40 +3,36 @@
  *
  * Two sections:
  *  1. buildAnalyticsCsv — pure function, no I/O, fully isolated.
- *  2. recordAnalyticsEvent / getHuntAnalytics — uses a real temp file
- *     in a dedicated test directory that is cleaned up after each test.
+ *  2. recordAnalyticsEvent / getHuntAnalytics — hits a real PostgreSQL DB.
+ *     Each test uses a unique huntId >= 9000 that is deleted after each suite.
+ *     The analytics cache is also cleared between tests so reads always go to
+ *     the DB and reflect the exact state written by the test.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest"
-import { promises as fs } from "fs"
-import path from "path"
-import os from "os"
+import { afterEach, describe, expect, it } from "vitest"
 
-// ─── Helpers: override ANALYTICS_PATH per test ───────────────────────────────
-// lib/huntAnalytics resolves ANALYTICS_PATH at module load time from
-// process.cwd(). We can't change that at runtime easily, so integration
-// tests use a unique huntId range (>= 9000) that won't collide with
-// production ids, and we clean up the file after each test.
-
-const ANALYTICS_FILE = path.join(process.cwd(), "data", "hunt-analytics.json")
-
-async function clearAnalyticsForIds(ids: number[]) {
-  try {
-    const raw = await fs.readFile(ANALYTICS_FILE, "utf8")
-    const data = JSON.parse(raw) as Record<string, unknown>
-    for (const id of ids) delete data[String(id)]
-    await fs.writeFile(ANALYTICS_FILE, JSON.stringify(data, null, 2), "utf8")
-  } catch {
-    // file may not exist yet — that's fine
-  }
-}
-
+import { invalidate } from "@/lib/analyticsCache"
+import { getDb } from "@/lib/db"
 import {
-  recordAnalyticsEvent,
-  getHuntAnalytics,
   buildAnalyticsCsv,
+  getHuntAnalytics,
+  recordAnalyticsEvent,
   type HuntAnalyticsResponse,
 } from "@/lib/huntAnalytics"
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+async function clearAnalyticsForIds(ids: number[]) {
+  if (ids.length === 0) return;
+  try {
+    const sql = getDb();
+    await sql`DELETE FROM hunt_analytics WHERE hunt_id = ANY(${sql.array(ids)})`;
+    // Evict cache so subsequent reads don't serve stale data from prior tests.
+    await Promise.all(ids.map(invalidate));
+  } catch {
+    // DB may not be available in CI without a real connection — silently skip.
+  }
+}
 
 // ─── recordAnalyticsEvent / getHuntAnalytics ─────────────────────────────────
 // Each test uses a unique huntId >= 9000 to avoid collisions with each other

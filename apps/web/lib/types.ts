@@ -27,6 +27,8 @@ export interface HuntReview {
   createdAt: number;
   moderated?: boolean;
   flagged?: boolean;
+  upvotes?: number;
+  upvotedBy?: string[];
 }
 
 export type HuntStatus =
@@ -47,6 +49,8 @@ export type HuntStatus =
  */
 export type HuntDifficulty = "Easy" | "Medium" | "Hard" | "Expert";
 
+export type HuntAgeClassification = "all-ages" | "13-plus" | "16-plus" | "18-plus";
+
 export interface StoredHunt {
   id: number;
   title: string;
@@ -56,6 +60,8 @@ export interface StoredHunt {
   category?: DomainHuntCategory | HuntCategoryId;
   /** Overall hunt difficulty tag used in discovery filters. */
   difficulty?: HuntDifficulty;
+  /** Age suitability selected by the creator. Older hunts default to all ages. */
+  ageClassification?: HuntAgeClassification;
   status: HuntStatus;
   rewardType: "XLM" | "NFT" | "Both";
   /** When true, players must solve clues in order. */
@@ -90,6 +96,8 @@ export interface StoredHunt {
   startAt?: number;
   /** Canonical UTC timestamp for scheduled lifecycle transitions. */
   endAt?: number;
+  /** Seconds after the hunt ends before unclaimed rewards can be reclaimed. */
+  gracePeriodSeconds?: number;
   creatorEmail?: string;
   emailNotifications?: boolean;
   /** When true, the hunt is hidden from the public arcade grid. */
@@ -98,6 +106,10 @@ export interface StoredHunt {
   invite?: HuntInvite;
   /** Optional game cover CID/URL for hunt cards and sharing previews. */
   coverImageCid?: string;
+  /** Optional map latitude for spatial discovery views. */
+  mapLatitude?: number;
+  /** Optional map longitude for spatial discovery views. */
+  mapLongitude?: number;
   /** Active editorial banner showcase at the top of the Arcade. */
   isFeaturedOfWeek?: boolean;
   /** Unix timestamp in seconds until a paid spotlight placement remains active. */
@@ -163,6 +175,10 @@ export interface Clue {
   question: string;
   answer: string;
   points: number;
+  /** Optional locale-specific question strings. The base `question` remains the fallback. */
+  questionTranslations?: Partial<Record<string, string>>;
+  /** Optional locale-specific hint strings. The base `hint` remains the fallback. */
+  hintTranslations?: Partial<Record<string, string>>;
   /**
    * Progressive hints array (up to 3). Takes precedence over the legacy
    * `hint` / `hintCost` fields when present.
@@ -186,12 +202,33 @@ export interface Clue {
   answerStrictness?: AnswerStrictness;
   /** Optional IPFS media reference, optionally tagged with a type query param. */
   mediaCid?: string;
+  /** Optional A/B variants. When present, players may be assigned to A or B. */
+  variants?: {
+    A?: {
+      question?: string;
+      answer: string;
+      alternativeAnswers?: string[];
+      answerStrictness?: AnswerStrictness;
+      hints?: ClueHint[];
+    };
+    B?: {
+      question?: string;
+      answer: string;
+      alternativeAnswers?: string[];
+      answerStrictness?: AnswerStrictness;
+      hints?: ClueHint[];
+    };
+  };
 }
 
 export type ClueInfo = {
   id: number;
   question: string;
   points: number;
+  /** Optional locale-specific question strings. */
+  questionTranslations?: Partial<Record<string, string>>;
+  /** Optional locale-specific hint strings. */
+  hintTranslations?: Partial<Record<string, string>>;
   /** Progressive hints (up to 3). Supersedes the legacy `hint`/`hintCost` fields. */
   hints?: ClueHint[];
   /** @deprecated Use `hints[0]` instead. */
@@ -206,6 +243,8 @@ export interface ClueRow {
   question: string;
   answer: string;
   points: number;
+  questionTranslations?: Partial<Record<string, string>>;
+  hintTranslations?: Partial<Record<string, string>>;
   hints?: ClueHint[];
   /** @deprecated */
   hint?: string;
@@ -231,6 +270,7 @@ export type {
   RewardReceipt,
   RewardReceiptType,
   RewardType,
+  SponsorContribution,
 } from "@hunty/types";
 
 export type { AnswerStrictness, CollaboratorRole, HuntCategoryId };
@@ -449,6 +489,7 @@ export interface HuntDraft {
   image?: string;
   sequential?: boolean;
   maxParticipants?: number;
+  ageClassification?: HuntAgeClassification;
 }
 
 /**
@@ -529,6 +570,68 @@ export interface ReferralStats {
   referralLink: string
   referrals: ReferralRecord[]
 }
+
+// ─── Referral Leaderboard ─────────────────────────────────────────────────────
+
+export type ReferralLeaderboardPeriod = "all" | "week" | "month"
+
+export type ReferralPayoutStatus = "pending" | "processing" | "paid" | "failed"
+
+/** A single row in the referral leaderboard. */
+export interface ReferralLeaderboardEntry {
+  /** 1-based rank using standard competition ranking (ties share a rank). */
+  rank: number
+  /** Stellar G-address of the referrer. */
+  referrerAddress: string
+  /** Optional resolved display name. */
+  displayName?: string
+  /** Number of referred players who completed at least one hunt. */
+  successfulReferrals: number
+  /** Total number of referred players (including pending). */
+  totalInvites: number
+  /** Accumulated bonus points awarded to this referrer. */
+  bonusPoints: number
+  /** Unix timestamp (ms) of the most recent referral activity. */
+  lastActiveAt: number
+  /** Payout status for this period. */
+  rewardPayoutStatus?: ReferralPayoutStatus
+  /** Reward amount pending or paid out. */
+  rewardAmount?: number
+}
+
+/** Aggregate stats describing the referral leaderboard. */
+export interface ReferralLeaderboardStats {
+  totalReferrers: number
+  totalSuccessfulReferrals: number
+  totalBonusDistributed: number
+  /** XLM amount in the active referral reward pool. */
+  activeRewardPool: number
+}
+
+/** A processed reward payout record for a top referrer. */
+export interface ReferralPayoutRecord {
+  /** Unique payout ID. */
+  id: string
+  /** Period this payout covers. */
+  period: "weekly" | "monthly" | "seasonal" | "manual"
+  /** Stellar G-address of the rewarded referrer. */
+  referrerAddress: string
+  /** Final rank position used to determine this reward. */
+  rank: number
+  /** Amount awarded. */
+  rewardAmount: number
+  /** Reward type. */
+  rewardType: "xlm" | "points"
+  /** Current status of the payout. */
+  status: ReferralPayoutStatus
+  /** Unix timestamp (ms) when the payout was created. */
+  createdAt: number
+  /** Unix timestamp (ms) when the payout was executed. null until processed. */
+  processedAt?: number
+  /** Optional transaction hash if paid via XLM. */
+  txHash?: string
+}
+
 
 // ─── Player Count ────────────────────────────────────────────────────────────
 
@@ -632,7 +735,7 @@ export interface SeasonBadge {
 
 // ─── Hunt Feed ───────────────────────────────────────────────────────────────
 
-export type HuntFeedCategory = "trending" | "new" | "nearby" | "featured"
+export type HuntFeedCategory = "trending" | "new" | "nearby" | "featured" | "following"
 
 // ─── Core Web Vitals ────────────────────────────────────────────────────────────
 
