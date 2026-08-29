@@ -32,7 +32,16 @@ export const GET = withErrorHandling(async (req: Request) => {
   const sortBy = searchParams.get("sortBy") || "newest";
   const ageClassification = searchParams.get("ageClassification") || "all";
   const tag = searchParams.get("tag") || "";
-  const following = searchParams.get("following") || "";
+  const remotePlayableParam = searchParams.get("remotePlayable");
+  const remotePlayable =
+    remotePlayableParam === "true"
+      ? 
+      remotePlayableParam === "true"
+        ? ? 
+      true
+      : remotePlayableParam === "false"
+        ? false
+      : undefined;
   const requestId = req.headers.get("x-request-id") ?? undefined;
 
   if (
@@ -55,6 +64,7 @@ export const GET = withErrorHandling(async (req: Request) => {
     sortBy,
     ageClassification,
     tag,
+    remotePlayable,
     requestId,
   });
 
@@ -80,4 +90,3 @@ export const GET = withErrorHandling(async (req: Request) => {
     },
   });
 });
- 
