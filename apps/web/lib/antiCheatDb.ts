@@ -96,6 +96,7 @@ interface AnswerRow {
   score: number
   bonus_points: number
   anomaly_flags: string[]
+  variant?: string | null
 }
 
 interface AnomalyRow {
@@ -138,6 +139,7 @@ interface StoredAnswer {
   score: number
   bonusPoints: number
   anomalyFlags: string[]
+  variant?: string | null
 }
 
 interface AnomalyRecord {
@@ -171,6 +173,7 @@ function answerRowToStored(row: AnswerRow): StoredAnswer {
     score: row.score,
     bonusPoints: row.bonus_points,
     anomalyFlags: row.anomaly_flags ?? [],
+    variant: row.variant ?? null,
   }
 }
 
@@ -213,9 +216,21 @@ export async function verifyAnswer(
   huntId: number,
   clueId: number,
   answer: string,
+  /** Optional wallet used to deterministically pick a variant */
+  wallet?: string,
 ): Promise<boolean> {
   const clue = getServerClue(huntId, clueId)
   if (!clue) return false
+  // If wallet provided and clue has variants, compute variant and pass to matcher
+  if (wallet && clue.variants) {
+    try {
+      const { getVariantForPlayer } = await import("./abTest")
+      const variant = await getVariantForPlayer(wallet, huntId, clueId)
+      return matchesClueAnswer(answer, clue, huntId, variant)
+    } catch (e) {
+      // fall back to default behaviour
+    }
+  }
   return matchesClueAnswer(answer, clue, huntId)
 }
 
@@ -337,6 +352,8 @@ export async function detectAnomalies(
 export async function recordAnswer(
   huntId: number,
   clueId: number,
+  /** Optional variant key 'A'|'B' */
+  variant: string | null,
   wallet: string,
   ip: string,
   answer: string,
@@ -352,10 +369,10 @@ export async function recordAnswer(
   await sql`
     INSERT INTO anti_cheat_answers
       (hunt_id, clue_id, wallet, ip, correct, server_timestamp,
-       client_timestamp, score, bonus_points, anomaly_flags)
+       client_timestamp, score, bonus_points, anomaly_flags, variant)
     VALUES
       (${huntId}, ${clueId}, ${wallet}, ${ip}, ${correct}, ${serverTimestamp},
-       ${clientTimestamp}, ${score}, ${bonusPoints}, ${anomalyFlags})
+       ${clientTimestamp}, ${score}, ${bonusPoints}, ${anomalyFlags}, ${variant})
   `
 
   for (const flag of anomalyFlags) {
@@ -437,7 +454,7 @@ export async function getSubmissionHistory(
 
   if (wallet) {
     const rows = await sql<AnswerRow[]>`
-      SELECT * FROM anti_cheat_answers
+      SELECT *, variant FROM anti_cheat_answers
       WHERE  wallet = ${wallet}
       ORDER  BY server_timestamp DESC
     `
@@ -445,7 +462,7 @@ export async function getSubmissionHistory(
   }
 
   const rows = await sql<AnswerRow[]>`
-    SELECT * FROM anti_cheat_answers
+    SELECT *, variant FROM anti_cheat_answers
     ORDER  BY server_timestamp DESC
   `
   return rows.map(answerRowToStored)

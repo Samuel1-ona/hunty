@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardTitle } from "@/components/ui/card"
 import { HuntCoverImage } from "@/components/HuntCoverImage"
+import { DifficultyBadge } from "@/components/DifficultyBadge"
 import type { StoredHunt } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -145,6 +146,9 @@ export function HuntFeedCard({
               <MapPin className="w-3 h-3" />
               {hunt.cluesCount} {hunt.cluesCount === 1 ? "Clue" : "Clues"}
             </span>
+
+            {/* Computed difficulty — fetched client-side; renders nothing while loading */}
+            <DifficultyBadge huntId={hunt.id} />
 
             {/* Reward type */}
             <span

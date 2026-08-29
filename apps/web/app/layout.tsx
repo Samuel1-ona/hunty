@@ -10,6 +10,7 @@ import { Footer } from "@/components/Footer";
 import { FavoriteNotifications } from "@/components/FavoriteNotifications";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { PageTransitionWrapper } from "@/components/PageTransitionWrapper";
+import { FirstHuntChecklist } from "@/components/FirstHuntChecklist";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { TestnetWarning } from "@/components/NetworkIndicator";
 
@@ -110,6 +111,7 @@ export default function RootLayout({
           <TxToaster />
           <FavoriteNotifications />
           <PWAInstallPrompt />
+          <FirstHuntChecklist />
           <EnvironmentIndicator />
           <main id="main-content">
             <Suspense fallback={<PageSkeleton />}>

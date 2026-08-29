@@ -3,14 +3,16 @@ import { readCompletions, writeCompletions } from "@/lib/reviews"
 import { withValidation } from "@/lib/api/withValidation"
 import { ValidationError } from "@/lib/api/errors"
 import { huntCompleteBodySchema } from "@hunty/types/api-schemas"
-import { emitWebhookEvent } from "@/lib/webhooks"
-import { z } from "zod"
+import { getActiveSeason } from "@/lib/seasonStore"
+import { awardXp, XP_PER_HUNT } from "@/lib/battlePassStore"
+import { z from "zod"
 
 const paramsSchema = z.object({ id: z.string() })
 
 /**
  * POST /api/v1/hunts/[id]/complete
  * Register that a player address has completed a hunt.
+ * Also awards battle pass XP for the active season.
  */
 export const POST = withValidation(
   { body: huntCompleteBodySchema, params: paramsSchema },
@@ -28,16 +30,13 @@ export const POST = withValidation(
 
     await writeCompletions(completions)
 
-    const { getHuntById } = await import("@/lib/huntStore")
-    const hunt = getHuntById(huntId)
-    if (hunt?.creator || hunt?.ownerAddress) {
-      await emitWebhookEvent("hunt.completed", {
-        huntId,
-        playerAddress: body.playerAddress,
-        creatorAddress: hunt.creator ?? hunt.ownerAddress,
-      }).catch(() => undefined)
+    // Award battle pass XP for active season
+    const activeSeason = getActiveSeason()
+    let battlePass = null
+    if (activeSeason) {
+      battlePass = awardXp(activeSeason.id, body.playerAddress, XP_PER_HUNT)
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, battlePass })
   }
 )

@@ -11,6 +11,7 @@ import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
 
 import { incrementBadge } from './badgeService';
+import { shouldShowNotification } from './notificationPreferences';
 import type { NotificationPayload } from './types';
 
 // ─── Background task ─────────────────────────────────────────────────────────
@@ -31,8 +32,14 @@ TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async ({ data, error }) => 
   }
 
   if (data) {
-    // Increment the badge count for every background notification
-    await incrementBadge();
+    const notificationType =
+      typeof data === 'object' && data !== null && 'type' in data
+        ? String((data as { type: unknown }).type)
+        : null;
+    const shouldShow = notificationType ? await shouldShowNotification(notificationType) : true;
+
+    // A muted notification should not increment the app badge either.
+    if (shouldShow) await incrementBadge();
   }
 });
 
@@ -59,13 +66,18 @@ export async function registerBackgroundNotificationTask(): Promise<void> {
  */
 export function configureNotificationHandler(): void {
   Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
+    handleNotification: async (notification) => {
+      const payload = extractPayload(notification);
+      const shouldShow = payload ? await shouldShowNotification(payload.type) : true;
+
+      return {
+        shouldShowAlert: shouldShow,
+        shouldPlaySound: shouldShow,
+        shouldSetBadge: shouldShow,
+        shouldShowBanner: shouldShow,
+        shouldShowList: shouldShow,
+      };
+    },
   });
 }
 
@@ -121,7 +133,7 @@ export async function requestPermission(): Promise<PermissionStatus> {
 export function extractPayload(
   notification: Notifications.Notification,
 ): NotificationPayload | null {
-  const data = notification.request.content.data as Record<string, unknown> | null;
+  const data = notification?.request?.content?.data as Record<string, unknown> | null | undefined;
   if (!data || typeof data.type !== 'string') return null;
 
   return data as unknown as NotificationPayload;
