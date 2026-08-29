@@ -3,12 +3,17 @@ import { get_hunt_leaderboard, get_hunt_fastest_players } from "@/lib/contracts/
 import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
 import { ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
+import { withAuth } from "@/lib/api/withAuth";
 
 /**
  * GET /api/v1/hunts/[id]/leaderboard/export
  *
  * Exports a hunt leaderboard for creators in CSV or JSON format,
- * optionally filtered by a date range (on completion time).
+ * optionally filtered by a date range (on completion time). This is a bulk
+ * wallet+score PII export that previously had no auth at all — gated
+ * behind `withAuth` (an `x-wallet-address` header) as part of issue #865.
+ * `components/LeaderboardExport.tsx` (the only caller) now sends that
+ * header from the connected wallet.
  *
  * Query params:
  *   - format: "csv" (default) | "json"
@@ -19,7 +24,7 @@ import { withErrorHandling } from "@/lib/api/withErrorHandling";
  * The export also includes aggregate statistics.
  */
 export const GET = withErrorHandling<{ params: Promise<{ id: string }> }>(
-  async (req, { params }) => {
+  withAuth(async (req, { params }) => {
     const ip = getIP(req);
     const { success, reset } = rateLimit(ip, { limit: 30, windowMs: 60 * 1000 });
 
@@ -137,7 +142,7 @@ export const GET = withErrorHandling<{ params: Promise<{ id: string }> }>(
         "content-disposition": `attachment; filename="hunt-${huntId}-leaderboard.csv"`,
       },
     });
-  }
+  })
 );
 
 interface ExportRow {

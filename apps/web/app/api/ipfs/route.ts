@@ -3,20 +3,17 @@ import { NextRequest, NextResponse } from "next/server"
 import { logger } from "@/lib/logger"
 import { BadGatewayError, RateLimitError, ServiceUnavailableError, ValidationError } from "@/lib/api/errors"
 import { withErrorHandling } from "@/lib/api/withErrorHandling"
+import { withAuth } from "@/lib/api/withAuth"
 import { getIP, rateLimit } from "@/lib/rate-limit"
 
 const PINATA_JWT = process.env.PINATA_JWT
 
-export const POST = withErrorHandling(async (req: NextRequest) => {
+export const POST = withErrorHandling(
+  withAuth(async (req: NextRequest) => {
   if (!PINATA_JWT) {
     throw new ServiceUnavailableError(
       "IPFS uploads are not configured. Add PINATA_JWT to your environment variables.",
     )
-  }
-
-  const wallet = req.headers.get("x-wallet-address")
-  if (!wallet) {
-    throw new ValidationError("Wallet address required", { header: "x-wallet-address" })
   }
 
   const ip = getIP(req)
@@ -52,4 +49,5 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
 
   const data = (await pinataRes.json()) as { IpfsHash: string }
   return NextResponse.json({ cid: data.IpfsHash })
-})
+  })
+)

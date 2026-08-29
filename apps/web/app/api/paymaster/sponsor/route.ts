@@ -21,12 +21,13 @@
 import { NextResponse } from "next/server";
 
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
+import { withAuth } from "@/lib/api/withAuth";
 import { ValidationError } from "@/lib/api/errors";
 import { getPaymaster } from "@/lib/paymaster";
 
 export const dynamic = "force-dynamic";
 
-export const POST = withErrorHandling(async (request: Request) => {
+export const POST = withErrorHandling(withAuth(async (request: Request) => {
   // ── 1. Parse & validate body ───────────────────────────────────────
   let body: unknown;
   try {
@@ -50,4 +51,4 @@ export const POST = withErrorHandling(async (request: Request) => {
   const result = await paymaster.sponsorTransaction(txXdr, walletAddress);
 
   return NextResponse.json(result);
-});
+}));

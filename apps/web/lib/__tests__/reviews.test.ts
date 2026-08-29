@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest"
+import { describe, it, expect, beforeEach } from "vitest"
 import {
   readReviewsSync,
   writeReviewsSync,
@@ -183,15 +183,17 @@ describe("Hunt Reviews System API Routes", () => {
   })
 
   describe("POST /api/v1/hunts/[id]/complete", () => {
-    it("should fail with 400 if playerAddress is missing", async () => {
+    it("should fail with 401 if playerAddress/identity is missing (withAuth, issue #865)", async () => {
       const req = new Request("http://localhost/api/v1/hunts/100/complete", {
         method: "POST",
         body: JSON.stringify({}),
       })
       const res = await completePost(req, { params: Promise.resolve({ id: "100" }) })
-      expect(res.status).toBe(400)
-      const body = await res.json()
-      expect(body.error).toBe("Invalid player address")
+      // Centralized auth (withAuth) now rejects requests with no identity
+      // before the route's own body validation runs — this used to be a
+      // 400 "Invalid player address" from ad hoc validation inside the
+      // handler; it's now a 401 from the shared wrapper. See lib/api/withAuth.ts.
+      expect(res.status).toBe(401)
     })
 
     it("should successfully record completion", async () => {
@@ -258,15 +260,15 @@ describe("Hunt Reviews System API Routes", () => {
   })
 
   describe("POST /api/v1/hunts/[id]/reviews", () => {
-    it("should reject review if playerAddress is missing", async () => {
+    it("should reject review with 401 if playerAddress/identity is missing (withAuth, issue #865)", async () => {
       const req = new Request("http://localhost/api/v1/hunts/100/reviews", {
         method: "POST",
         body: JSON.stringify({ rating: 5 }),
       })
       const res = await reviewsPost(req, { params: Promise.resolve({ id: "100" }) })
-      expect(res.status).toBe(400)
-      const body = await res.json()
-      expect(body.error).toBe("Player address is required")
+      // See note above — withAuth now rejects with 401 before the route's
+      // own "Player address is required" validation would have run.
+      expect(res.status).toBe(401)
     })
 
     it("should reject review if rating is invalid", async () => {

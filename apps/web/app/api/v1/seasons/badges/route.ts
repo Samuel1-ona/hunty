@@ -3,6 +3,7 @@ import { getPlayerSeasonBadges, getAllSeasonBadges, awardSeasonBadge } from "@/l
 import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
 import { ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
+import { withAdminAuth } from "@/lib/api/withAuth";
 
 /**
  * GET /api/v1/seasons/badges
@@ -31,28 +32,33 @@ export const GET = withErrorHandling(async (req: Request) => {
 /**
  * POST /api/v1/seasons/badges
  * Award a season badge to a player (admin only)
+ *
+ * Was documented as "admin only" but had no auth check at all — one of the
+ * unauthenticated admin-grade endpoints closed by issue #865.
  */
-export const POST = withErrorHandling(async (req: Request) => {
-  const ip = getIP(req);
-  const { success, reset } = await rateLimit(ip, { limit: 10, windowMs: 60 * 1000 });
+export const POST = withErrorHandling(
+  withAdminAuth(async (req: Request) => {
+    const ip = getIP(req);
+    const { success, reset } = await rateLimit(ip, { limit: 10, windowMs: 60 * 1000 });
 
-  if (!success) {
-    return rateLimitResponse(reset);
-  }
+    if (!success) {
+      return rateLimitResponse(reset);
+    }
 
-  let body: { seasonId?: number; address?: string; name?: string; rank?: number };
-  try {
-    body = await req.json();
-  } catch {
-    throw new ValidationError("Invalid request body");
-  }
-  const { seasonId, address, name, rank } = body;
+    let body: { seasonId?: number; address?: string; name?: string; rank?: number };
+    try {
+      body = await req.json();
+    } catch {
+      throw new ValidationError("Invalid request body");
+    }
+    const { seasonId, address, name, rank } = body;
 
-  if (!seasonId || !address) {
-    throw new ValidationError("Missing required fields", { required: ["seasonId", "address"] });
-  }
+    if (!seasonId || !address) {
+      throw new ValidationError("Missing required fields", { required: ["seasonId", "address"] });
+    }
 
-  const badge = awardSeasonBadge(seasonId, address, name, rank);
-  return NextResponse.json({ badge }, { status: 201 });
-});
+    const badge = awardSeasonBadge(seasonId, address, name, rank);
+    return NextResponse.json({ badge }, { status: 201 });
+  })
+);
  

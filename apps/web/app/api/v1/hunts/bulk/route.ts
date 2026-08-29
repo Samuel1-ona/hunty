@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
 import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { withErrorHandling } from "@/lib/api/withErrorHandling";
+import { withAdminAuth } from "@/lib/api/withAuth";
 
 /**
  * POST /api/v1/hunts/bulk
  * Bulk operations on multiple hunts (archive, delete, restore).
+ *
+ * Admin-only: this endpoint accepts an arbitrary list of hunt IDs with no
+ * per-hunt ownership check (including irreversible permanent-delete), so it
+ * is not safe to expose to individual creators until real ownership
+ * verification exists. See issue #865.
  */
-export async function POST(req: Request) {
+export const POST = withErrorHandling(withAdminAuth(async (req: Request) => {
   const ip = getIP(req);
   const { success, reset } = await rateLimit(ip, { limit: 30, windowMs: 60 * 1000 });
 
@@ -81,4 +88,4 @@ export async function POST(req: Request) {
     logger.error("Bulk hunt operation error:", error);
     return NextResponse.json({ error: "Failed to perform bulk operation" }, { status: 500 });
   }
-}
+}))

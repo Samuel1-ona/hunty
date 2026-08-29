@@ -46,6 +46,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useWallet } from "@/lib/context/WalletContext";
 import type { HuntAnalyticsResponse } from "@/lib/huntAnalytics";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -155,6 +156,7 @@ export interface HuntAnalyticsDashboardProps {
 }
 
 export function HuntAnalyticsDashboard({ huntId, huntTitle }: HuntAnalyticsDashboardProps) {
+  const { publicKey } = useWallet();
   const [analytics, setAnalytics] = useState<HuntAnalyticsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -162,12 +164,22 @@ export function HuntAnalyticsDashboard({ huntId, huntTitle }: HuntAnalyticsDashb
   const [exporting, setExporting] = useState(false);
 
   // ── Fetch ────────────────────────────────────────────────────────────────
+  // /api/analytics/[huntId] requires an x-wallet-address header (see
+  // issue #865) — this dashboard is the creator's own analytics view, so
+  // the connected wallet is the caller's identity.
 
   const fetchAnalytics = useCallback(async () => {
+    if (!publicKey) {
+      setLoading(false);
+      setError("Connect your wallet to view analytics");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/analytics/${huntId}`);
+      const res = await fetch(`/api/analytics/${huntId}`, {
+        headers: { "x-wallet-address": publicKey },
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as HuntAnalyticsResponse;
       setAnalytics(data);
@@ -176,7 +188,7 @@ export function HuntAnalyticsDashboard({ huntId, huntTitle }: HuntAnalyticsDashb
     } finally {
       setLoading(false);
     }
-  }, [huntId]);
+  }, [huntId, publicKey]);
 
   useEffect(() => {
     void fetchAnalytics();
@@ -185,9 +197,12 @@ export function HuntAnalyticsDashboard({ huntId, huntTitle }: HuntAnalyticsDashb
   // ── CSV export ───────────────────────────────────────────────────────────
 
   const handleExport = async () => {
+    if (!publicKey) return;
     setExporting(true);
     try {
-      const res = await fetch(`/api/analytics/${huntId}?format=csv`);
+      const res = await fetch(`/api/analytics/${huntId}?format=csv`, {
+        headers: { "x-wallet-address": publicKey },
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);

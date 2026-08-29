@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { readReviews, writeReviews, readCompletions } from "@/lib/reviews"
 import type { HuntReview } from "@/lib/types"
+import { withErrorHandling } from "@/lib/api/withErrorHandling"
+import { type AuthContext, withAuth } from "@/lib/api/withAuth"
 
 /**
  * GET /api/v1/hunts/[id]/reviews
@@ -33,14 +35,16 @@ export async function GET(
  * Submit a review for a specific hunt.
  * Enforces:
  * - One review per completed hunt per wallet.
- * - Player address validation.
+ * - Player identity via `withAuth`.
  * - Star rating between 1 and 5.
  * - Verification that player has completed the hunt.
  */
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const POST = withErrorHandling(
+  withAuth(async (
+    req: Request,
+    { params }: { params: Promise<{ id: string }> },
+    auth: AuthContext
+  ) => {
   try {
     const { id } = await params
     const huntId = parseInt(id, 10)
@@ -50,11 +54,8 @@ export async function POST(
     }
 
     const body = await req.json().catch(() => ({}))
-    const { playerAddress, rating, text, difficultyRating } = body
-
-    if (!playerAddress || typeof playerAddress !== "string" || playerAddress.trim() === "") {
-      return NextResponse.json({ error: "Player address is required" }, { status: 400 })
-    }
+    const { rating, text, difficultyRating } = body
+    const playerAddress = auth.identity
 
     const ratingVal = parseInt(rating, 10)
     if (isNaN(ratingVal) || ratingVal < 1 || ratingVal > 5) {
@@ -95,4 +96,5 @@ export async function POST(
     const message = error instanceof Error ? error.message : "Failed to submit review"
     return NextResponse.json({ error: message }, { status: 500 })
   }
-}
+  })
+)

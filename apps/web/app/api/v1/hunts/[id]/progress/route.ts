@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 
-import { NotFoundError, ValidationError } from "@/lib/api/errors"
+import { ValidationError } from "@/lib/api/errors"
 import { withErrorHandling } from "@/lib/api/withErrorHandling"
+import { withAuth } from "@/lib/api/withAuth"
 import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit"
 import {
   getPlayerProgress,
@@ -42,7 +43,7 @@ export const GET = withErrorHandling<{
 
 export const POST = withErrorHandling<{
   params: Promise<{ id: string }>
-}>(async (req, { params }) => {
+}>(withAuth(async (req, { params }) => {
   const ip = getIP(req)
   const { success, reset } = await rateLimit(ip, {
     limit: 60,
@@ -96,4 +97,4 @@ export const POST = withErrorHandling<{
   )
 
   return NextResponse.json({ data: entry })
-})
+}))

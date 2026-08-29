@@ -14,6 +14,7 @@ import { NextResponse } from "next/server";
 
 import { ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
+import { withAuth } from "@/lib/api/withAuth";
 import { getDb } from "@/lib/db";
 import type { HuntDraftSave } from "@/lib/types";
 
@@ -112,6 +113,10 @@ async function handlePost(req: Request): Promise<NextResponse> {
 }
 
 // ── Route exports ────────────────────────────────────────────────────────────
+//
+// Both accept an `ownerKey` (a wallet address) already — withAuth just
+// centralizes "is a wallet identity present" instead of leaving GET/POST to
+// enforce it (or not) independently. See lib/api/withAuth.ts.
 
-export const GET = withErrorHandling(handleGet);
-export const POST = withErrorHandling(handlePost);
+export const GET = withErrorHandling(withAuth(handleGet));
+export const POST = withErrorHandling(withAuth(handlePost));

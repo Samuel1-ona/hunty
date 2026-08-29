@@ -1,17 +1,34 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 // @ts-expect-error supertest has no types installed
 import request from 'supertest';
 
 import { GET as getFeatured } from '@/app/api/admin/featured/route';
 import { GET as getAnalytics } from '@/app/api/analytics/performance/route';
-import { POST as postIpfs, GET as getIpfs } from '@/app/api/ipfs/route';
+import { POST as postIpfs } from '@/app/api/ipfs/route';
 import { GET as getHunts } from '@/app/api/v1/hunts/route';
 import { GET as getLeaderboard } from '@/app/api/v1/hunts/[id]/leaderboard/route';
 import { GET as getPublicLeaderboard } from '@/app/api/v1/hunts/[id]/leaderboard/public/route';
 import { GET as getLeaderboardOgImage } from '@/app/api/og/leaderboard/route';
 
+// Minimal shape of the req/res pair supertest hands to a raw request
+// listener — narrower than Node's IncomingMessage/ServerResponse (no
+// `originalUrl`/`body` there), but exactly what this shim reads/writes.
+interface MockExpressRequest {
+  url?: string;
+  originalUrl?: string;
+  method: string;
+  headers: Record<string, string | string[] | undefined>;
+  body?: unknown;
+}
+
+interface MockExpressResponse {
+  statusCode: number;
+  setHeader: (name: string, value: string) => void;
+  end: (chunk?: string) => void;
+}
+
 function handlerToExpress(handler: unknown) {
-  return async (req: any, res: any) => {
+  return async (req: MockExpressRequest, res: MockExpressResponse) => {
     try {
       const url = `http://localhost${req.url || req.originalUrl}`;
       const method = req.method;
@@ -39,7 +56,7 @@ function handlerToExpress(handler: unknown) {
       // Parse route parameters from the URL path.
       // e.g. /api/v1/hunts/123/leaderboard -> id = 123
       const params: Record<string, string> = {};
-      const matchLeaderboard = req.url.match(/\/api\/v1\/hunts\/([^\/]+)\/leaderboard/);
+      const matchLeaderboard = (req.url ?? "").match(/\/api\/v1\/hunts\/([^\/]+)\/leaderboard/);
       if (matchLeaderboard) {
         params.id = matchLeaderboard[1];
       }
@@ -68,10 +85,10 @@ function handlerToExpress(handler: unknown) {
         res.statusCode = 200;
         res.end(typeof result === "string" ? result : JSON.stringify(result));
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       res.statusCode = 500;
       res.setHeader("content-type", "application/json");
-      res.end(JSON.stringify({ error: err.message }));
+      res.end(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }));
     }
   };
 }
@@ -117,10 +134,19 @@ describe('API Integration Tests', () => {
   });
 
   it('POST /api/ipfs returns 503 if not configured', async () => {
+    // /api/ipfs now requires a caller identity via withAuth (issue #865) —
+    // send the wallet header so the request gets past auth and exercises
+    // the "not configured" check this test is actually about.
     const app = request(handlerToExpress(postIpfs));
-    const response = await app.post('/api/ipfs');
+    const response = await app.post('/api/ipfs').set('x-wallet-address', 'GABC123TESTWALLET');
     expect(response.status).toBe(503);
     expect(response.body).toHaveProperty('error');
+  });
+
+  it('POST /api/ipfs returns 401 with no wallet identity', async () => {
+    const app = request(handlerToExpress(postIpfs));
+    const response = await app.post('/api/ipfs');
+    expect(response.status).toBe(401);
   });
 
   it('GET /api/analytics returns analytics data', async () => {

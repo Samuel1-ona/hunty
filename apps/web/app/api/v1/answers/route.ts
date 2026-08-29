@@ -15,6 +15,7 @@ import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit"
 import { getServerClue } from "@/lib/server/seedClues"
 import { ForbiddenError, NotFoundError, RateLimitError, ValidationError } from "@/lib/api/errors"
 import { withErrorHandling } from "@/lib/api/withErrorHandling"
+import { withAuth } from "@/lib/api/withAuth"
 import { recordHintUsage } from "@/lib/analytics"
 
 const answerSchema = z.object({
@@ -26,7 +27,7 @@ const answerSchema = z.object({
   clientTimestamp: z.number().optional(),
 })
 
-export const POST = withErrorHandling(async (req: Request) => {
+export const POST = withErrorHandling(withAuth(async (req: Request) => {
   const ip = getIP(req)
 
   const config = await getConfig()
@@ -116,4 +117,4 @@ export const POST = withErrorHandling(async (req: Request) => {
     flags: anomalyFlags,
     hintsUsed: validatedHintsUsed,
   })
-})
+}))

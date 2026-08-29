@@ -1,3 +1,5 @@
 export * from "./errors"
 export * from "./response"
 export * from "./withErrorHandling"
+export * from "./withAuth"
+export * from "./publicRoutes"

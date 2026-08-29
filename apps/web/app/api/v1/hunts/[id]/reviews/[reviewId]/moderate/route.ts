@@ -1,16 +1,23 @@
 import { NextResponse } from "next/server"
 import { readReviews, writeReviews } from "@/lib/reviews"
 import { getHuntById } from "@/lib/huntStore"
+import { withErrorHandling } from "@/lib/api/withErrorHandling"
+import { type AuthContext, withAuth } from "@/lib/api/withAuth"
 
 /**
  * POST /api/v1/hunts/[id]/reviews/[reviewId]/moderate
  * Moderate a review. Action can be 'delete', 'flag', or 'unflag'.
  * Enforces creator-only authorization.
+ *
+ * The caller's identity now comes from `withAuth` (a wallet address, same
+ * as the `moderatorAddress` body field this route used to trust directly)
+ * instead of being read straight out of the request body.
  */
-export async function POST(
+export const POST = withErrorHandling(withAuth(async (
   req: Request,
-  { params }: { params: Promise<{ id: string; reviewId: string }> }
-) {
+  { params }: { params: Promise<{ id: string; reviewId: string }> },
+  auth: AuthContext
+) => {
   try {
     const { id, reviewId } = await params
     const huntId = parseInt(id, 10)
@@ -20,11 +27,8 @@ export async function POST(
     }
 
     const body = await req.json().catch(() => ({}))
-    const { action, moderatorAddress } = body
-
-    if (!moderatorAddress || typeof moderatorAddress !== "string" || moderatorAddress.trim() === "") {
-      return NextResponse.json({ error: "Moderator address is required" }, { status: 400 })
-    }
+    const { action } = body
+    const moderatorAddress = auth.identity
 
     if (!["delete", "flag", "unflag"].includes(action)) {
       return NextResponse.json({ error: "Invalid action. Must be 'delete', 'flag', or 'unflag'" }, { status: 400 })
@@ -64,4 +68,4 @@ export async function POST(
     const message = error instanceof Error ? error.message : "Failed to moderate review"
     return NextResponse.json({ error: message }, { status: 500 })
   }
-}
+}))

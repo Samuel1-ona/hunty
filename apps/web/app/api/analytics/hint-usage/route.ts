@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit"
 import { recordHintUsage, getHintUsageStats } from "@/lib/analytics"
 import { logger } from "@/lib/logger"
+import { withErrorHandling } from "@/lib/api/withErrorHandling"
+import { withAuth } from "@/lib/api/withAuth"
 
 /**
  * POST /api/analytics/hint-usage
@@ -50,23 +52,28 @@ export async function POST(req: Request) {
 /**
  * GET /api/analytics/hint-usage?huntId=<n>
  *
- * Returns aggregated hint reveal counts for a hunt.
- * Intended for creator dashboards; no auth in this mock implementation.
+ * Returns aggregated hint reveal counts for a hunt. Intended for creator
+ * dashboards — previously had no auth at all despite its own comment
+ * flagging that as a gap. Not currently called anywhere in the frontend,
+ * so requiring an `x-wallet-address` header via `withAuth` doesn't risk
+ * breaking a live flow. See issue #865.
  */
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url)
-  const huntIdParam = searchParams.get("huntId")
-  const huntId = huntIdParam ? Number(huntIdParam) : NaN
+export const GET = withErrorHandling(
+  withAuth(async (req: Request) => {
+    const { searchParams } = new URL(req.url)
+    const huntIdParam = searchParams.get("huntId")
+    const huntId = huntIdParam ? Number(huntIdParam) : NaN
 
-  if (!huntId || Number.isNaN(huntId)) {
-    return NextResponse.json({ error: "huntId query param is required" }, { status: 400 })
-  }
+    if (!huntId || Number.isNaN(huntId)) {
+      return NextResponse.json({ error: "huntId query param is required" }, { status: 400 })
+    }
 
-  try {
-    const stats = await getHintUsageStats(huntId)
-    return NextResponse.json({ huntId, stats }, { status: 200 })
-  } catch (error) {
-    logger.error("Failed to fetch hint usage stats:", error)
-    return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
-  }
-}
+    try {
+      const stats = await getHintUsageStats(huntId)
+      return NextResponse.json({ huntId, stats }, { status: 200 })
+    } catch (error) {
+      logger.error("Failed to fetch hint usage stats:", error)
+      return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
+    }
+  })
+)

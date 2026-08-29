@@ -17,8 +17,9 @@
 
 import { NextResponse } from "next/server";
 
-import { AuthError, ValidationError } from "@/lib/api/errors";
+import { ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
+import { withAdminAuth } from "@/lib/api/withAuth";
 import { getPaymasterConfig } from "@/lib/paymaster/config";
 import {
   deleteConfigValue,
@@ -35,28 +36,14 @@ import {
 
 export const dynamic = "force-dynamic";
 
-// ─── Auth check helper ─────────────────────────────────────────────────────
-
-function requireAdmin(request: Request): void {
-  const auth = request.headers.get("authorization");
-  const secret = process.env.ADMIN_API_SECRET;
-
-  if (!secret) {
-    throw new AuthError(
-      "Paymaster admin is not configured (ADMIN_API_SECRET is not set).",
-    );
-  }
-
-  if (!auth || !auth.startsWith("Bearer ") || auth.slice(7) !== secret) {
-    throw new AuthError("Invalid or missing admin authorization token.");
-  }
-}
+// Auth is now centralized in `withAdminAuth` (see lib/api/withAuth.ts),
+// which reuses the same ADMIN_API_SECRET bearer-token check this route
+// used to implement inline.
 
 // ─── GET ───────────────────────────────────────────────────────────────────
 
-export const GET = withErrorHandling(async (request: Request) => {
-  requireAdmin(request);
-
+export const GET = withErrorHandling(
+  withAdminAuth(async () => {
   const baseConfig = getPaymasterConfig();
 
   // Load any DB overrides
@@ -90,13 +77,13 @@ export const GET = withErrorHandling(async (request: Request) => {
       updatedAt: u.updated_at,
     })),
   });
-});
+  })
+);
 
 // ─── POST ──────────────────────────────────────────────────────────────────
 
-export const POST = withErrorHandling(async (request: Request) => {
-  requireAdmin(request);
-
+export const POST = withErrorHandling(
+  withAdminAuth(async (request: Request) => {
   let body: unknown;
   try {
     body = await request.json();
@@ -154,4 +141,5 @@ export const POST = withErrorHandling(async (request: Request) => {
     updated,
     config: getPaymasterConfig(),
   });
-});
+  })
+);

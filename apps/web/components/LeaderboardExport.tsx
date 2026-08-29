@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useWallet } from "@/lib/context/WalletContext";
 
 interface LeaderboardExportProps {
   huntId: number;
@@ -14,6 +15,7 @@ interface LeaderboardExportProps {
 type Format = "csv" | "json";
 
 export function LeaderboardExport({ huntId }: LeaderboardExportProps) {
+  const { publicKey } = useWallet();
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [downloading, setDownloading] = useState<Format | null>(null);
@@ -30,9 +32,16 @@ export function LeaderboardExport({ huntId }: LeaderboardExportProps) {
 
   const download = useCallback(
     async (format: Format) => {
+      if (!publicKey) {
+        toast.error("Connect your wallet to export the leaderboard");
+        return;
+      }
       setDownloading(format);
       try {
-        const res = await fetch(buildUrl(format), { method: "GET" });
+        const res = await fetch(buildUrl(format), {
+          method: "GET",
+          headers: { "x-wallet-address": publicKey },
+        });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error(body.error || "Export failed");
@@ -55,7 +64,7 @@ export function LeaderboardExport({ huntId }: LeaderboardExportProps) {
         setDownloading(null);
       }
     },
-    [buildUrl, huntId]
+    [buildUrl, huntId, publicKey]
   );
 
   return (

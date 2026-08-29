@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { NotFoundError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
-import { assertAdminAuth } from "@/lib/api/adminAuth";
+import { withAdminAuth } from "@/lib/api/withAuth";
 import { readFeaturedId, writeFeaturedId } from "@/lib/featuredHuntDb";
 import { SEED_HUNTS } from "@/lib/huntStore";
 
@@ -16,32 +16,33 @@ import { SEED_HUNTS } from "@/lib/huntStore";
  * Any database failure propagates as an HTTP 500 rather than being silently
  * ignored.
  */
-export const POST = withErrorHandling(async (req: Request) => {
-  assertAdminAuth(req);
-  // Only rotate amongst active seeded hunts
-  const activeSeedHunts = SEED_HUNTS.filter((h) => h.status === "Active");
-  if (activeSeedHunts.length === 0) {
-    throw new NotFoundError("No active seeded hunts available to rotate");
-  }
-
-  const currentId = await readFeaturedId();
-  let nextIndex = 0;
-
-  if (currentId !== null) {
-    const currentIndex = activeSeedHunts.findIndex((h) => h.id === currentId);
-    if (currentIndex !== -1) {
-      nextIndex = (currentIndex + 1) % activeSeedHunts.length;
+export const POST = withErrorHandling(
+  withAdminAuth(async () => {
+    // Only rotate amongst active seeded hunts
+    const activeSeedHunts = SEED_HUNTS.filter((h) => h.status === "Active");
+    if (activeSeedHunts.length === 0) {
+      throw new NotFoundError("No active seeded hunts available to rotate");
     }
-  }
 
-  const nextHunt = activeSeedHunts[nextIndex];
-  // writeFeaturedId throws on DB failure — the error bubbles to withErrorHandling
-  // which converts it to an HTTP 500 response.
-  await writeFeaturedId(nextHunt.id);
+    const currentId = await readFeaturedId();
+    let nextIndex = 0;
 
-  return NextResponse.json({
-    success: true,
-    rotatedTo: nextHunt.id,
-    hunt: nextHunt,
-  });
-});
+    if (currentId !== null) {
+      const currentIndex = activeSeedHunts.findIndex((h) => h.id === currentId);
+      if (currentIndex !== -1) {
+        nextIndex = (currentIndex + 1) % activeSeedHunts.length;
+      }
+    }
+
+    const nextHunt = activeSeedHunts[nextIndex];
+    // writeFeaturedId throws on DB failure — the error bubbles to withErrorHandling
+    // which converts it to an HTTP 500 response.
+    await writeFeaturedId(nextHunt.id);
+
+    return NextResponse.json({
+      success: true,
+      rotatedTo: nextHunt.id,
+      hunt: nextHunt,
+    });
+  })
+);
