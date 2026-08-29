@@ -79,6 +79,24 @@
         "@types/react-dom"
       ],
       "groupName": "react packages"
+    },
+    {
+      "description": "Group and coordinate Playwright browser updates",
+      "matchPackageNames": [
+        "@playwright/test",
+        "playwright"
+      ],
+      "groupName": "playwright packages",
+      "groupSlug": "playwright-group",
+      "labels": [
+        "dependencies",
+        "playwright",
+        "e2e"
+      ],
+      "automerge": false,
+      "semanticCommits": false,
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "playwright"
     }
   ],
   "vulnerabilityAlerts": {
