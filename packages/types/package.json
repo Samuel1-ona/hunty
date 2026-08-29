@@ -10,6 +10,7 @@
     "./schemas": "./src/schemas.ts",
     "./api-schemas": "./src/api-schemas.ts"
   },
+  "sideEffects": false,
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
@@ -28,7 +29,7 @@
     "eslint": "^9",
     "typescript": "^5",
     "typescript-eslint": "^8",
-    "vitest": "^4",
-    "zod": "^4"
+    "vitest": "^4.0.18",
+    "zod": "^4.3.6"
   }
 }

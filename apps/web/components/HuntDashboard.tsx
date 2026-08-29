@@ -3,6 +3,7 @@
 import { BarChart3, Copy, Eye, List, Plus, Trash2, Trophy, X } from "lucide-react";
 import Link from "next/link";
 import { type MouseEvent as ReactMouseEvent, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { ActivateHuntModal } from "@/components/ActivateHuntModal";
@@ -112,6 +113,7 @@ export function HuntDashboard({
   const [poolHuntId, setPoolHuntId] = useState<number | null>(null);
   const [isSavingClues, setIsSavingClues] = useState(false);
   const [activeTab, setActiveTab] = useState<"hunts" | "analytics">("hunts");
+  const a11y = useTranslations("a11y");
 
   const visibleHuntIds = hunts.map((hunt) => hunt.id);
   const selectedVisibleCount = visibleHuntIds.filter((id) => selectedIds.has(id)).length;
@@ -371,6 +373,7 @@ export function HuntDashboard({
                     variant="ghost"
                     onClick={() => setSelectedIds(new Set())}
                     className="h-8 px-2 text-slate-500"
+                    aria-label={a11y("clearSelection")}
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -414,7 +417,7 @@ export function HuntDashboard({
                         onCheckedChange={() => toggleSelect(hunt.id)}
                         onClick={(e: React.MouseEvent) => e.stopPropagation()}
                         className="h-5 w-5 rounded-md border-slate-300 dark:border-white/20"
-                        aria-label={`Select hunt ${hunt.title}`}
+                        aria-label={a11y("selectHunt", { title: hunt.title })}
                       />
                     </div>
                     <Link href={`/hunt/${hunt.id}`}>
@@ -428,7 +431,7 @@ export function HuntDashboard({
                               #{hunt.id}
                               <button
                                 onClick={(e) => handleCopyId(e, hunt.id)}
-                                aria-label={`Copy hunt ID ${hunt.id}`}
+                                aria-label={a11y("copyHuntId", { id: hunt.id })}
                                 className="hover:text-slate-800 dark:hover:text-white transition-colors"
                               >
                                 <Copy className="w-3 h-3" />
@@ -674,7 +677,7 @@ export function HuntDashboard({
                   variant="ghost"
                   size="icon"
                   onClick={() => removeClueRow(row.id)}
-                  aria-label={`Remove clue row ${index + 1}`}
+                  aria-label={a11y("removeClueRow", { row: index + 1 })}
                   disabled={clueRows.length === 1}
                   className="text-red-400 hover:text-red-600 disabled:opacity-30"
                 >

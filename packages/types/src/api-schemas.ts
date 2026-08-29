@@ -583,5 +583,4 @@ export const apiSchemas = {
   referralLeaderboardQuery: referralLeaderboardQuerySchema,
   referralTrackBody: referralTrackBodySchema,
   referralPayoutBody: referralPayoutBodySchema,
-} as const
 } as const;

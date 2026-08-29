@@ -1,4 +1,4 @@
-import nextConfig from "@hunty/config/eslint/next.mjs";
+import nextConfig from "@hunty/config/eslint/next";
 
 import jsxA11y from "eslint-plugin-jsx-a11y";
 
@@ -63,4 +63,4 @@ eslintConfig.push({
   },
 });
 
-export default eslintConfig
+export default eslintConfig;
