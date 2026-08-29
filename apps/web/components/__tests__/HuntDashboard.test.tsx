@@ -21,6 +21,18 @@ import type { StoredHunt } from "@/lib/types";
 
 // ── External dependencies ─────────────────────────────────────────────────────
 
+vi.mock("next-intl", () => ({
+  useTranslations: () => (key: string, params?: Record<string, unknown>) => {
+    if (params) {
+      return Object.entries(params).reduce(
+        (result, [k, v]) => result.replace(`{${k}}`, String(v)),
+        key
+      );
+    }
+    return key;
+  },
+}));
+
 vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
