@@ -11,6 +11,7 @@ import {
   trackClueSubmission,
   verifyAnswer,
 } from "@/lib/antiCheatDb"
+import { getVariantForPlayer } from "@/lib/abTest"
 import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit"
 import { getServerClue } from "@/lib/server/seedClues"
 import { ForbiddenError, NotFoundError, RateLimitError, ValidationError } from "@/lib/api/errors"
@@ -62,6 +63,16 @@ export const POST = withErrorHandling(async (req: Request) => {
     throw new NotFoundError("Clue not found", { huntId, clueId })
   }
 
+  // Determine A/B variant for this player (if the clue defines variants)
+  let variant: string | null = null
+  if (clue.variants) {
+    try {
+      variant = await getVariantForPlayer(wallet, huntId, clueId)
+    } catch {
+      variant = null
+    }
+  }
+
   const { allowed: intervalAllowed, waitMs } = await checkMinInterval(wallet, huntId, clueId)
   if (!intervalAllowed) {
     throw new RateLimitError(`Please wait ${Math.ceil(waitMs / 1000)} seconds before submitting again`, {
@@ -71,7 +82,7 @@ export const POST = withErrorHandling(async (req: Request) => {
 
   await trackClueSubmission(wallet, huntId, clueId)
 
-  const correct = await verifyAnswer(huntId, clueId, answer)
+  const correct = await verifyAnswer(huntId, clueId, answer, wallet)
 
   const anomalyFlags = await detectAnomalies(wallet, ip, huntId, clueId, correct)
 
@@ -80,6 +91,7 @@ export const POST = withErrorHandling(async (req: Request) => {
   await recordAnswer(
     huntId,
     clueId,
+    variant,
     wallet,
     ip,
     answer,

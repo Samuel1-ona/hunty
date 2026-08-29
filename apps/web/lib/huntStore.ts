@@ -984,8 +984,7 @@ export function advanceHuntProgress(
   huntId: number,
   nextClueIndex: number,
   totalClues: number,
-  walletAddress?: string | null,
-  totalClues: number
+  walletAddress?: string | null
 ): HuntProgressSnapshot {
   const current = getHuntProgress(huntId, walletAddress);
   const completed = nextClueIndex >= totalClues;
@@ -1139,6 +1138,7 @@ export function duplicateHunt(huntId: number): StoredHunt | undefined {
   const originalClues = getHuntClues(huntId);
   for (const clue of originalClues) {
     const { id, ...clueWithoutId } = clue;
+    void id;
     saveClueLocally({
       ...clueWithoutId,
       huntId: newId,

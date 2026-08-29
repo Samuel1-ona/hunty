@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import Image from "next/image";
 
 import { FastestPlayersStrip } from "@/components/FastestPlayersStrip";
 import { Header } from "@/components/Header";
