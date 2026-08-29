@@ -1,8 +1,9 @@
 import type { BadgeVariant, SharedBadgeProps } from "@hunty/types";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { colors as tokenColors } from "../tokens/colors";
+import { ThemedCustomText } from "./ThemedCustomText";
 
 const variantColors: Record<BadgeVariant, { bg: string; text: string }> = {
   primary: { bg: tokenColors.badgePrimary, text: tokenColors.badgePrimaryText },
@@ -12,14 +13,17 @@ const variantColors: Record<BadgeVariant, { bg: string; text: string }> = {
   gray: { bg: tokenColors.badgeGray, text: tokenColors.badgeGrayText },
 };
 
-export type BadgeProps = SharedBadgeProps;
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface BadgeProps extends SharedBadgeProps {}
 
 export function Badge({ label, variant = "gray", testID }: BadgeProps) {
   const { bg, text } = variantColors[variant];
 
   return (
     <View testID={testID} style={[styles.container, { backgroundColor: bg }]}>
-      <Text style={[styles.label, { color: text }]}>{label}</Text>
+      <ThemedCustomText variant="caption" lightColor={text} darkColor={text} weight="500">
+        {label}
+      </ThemedCustomText>
     </View>
   );
 }
@@ -30,10 +34,5 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
     paddingHorizontal: 10,
     paddingVertical: 2,
-  },
-  label: {
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: "500",
   },
 });
