@@ -10,7 +10,6 @@ import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import { HuntyRefreshControl } from './HuntyRefreshControl';
 import { FeedItemSkeleton } from './skeletons/FeedItemSkeleton';
-import type { StoredHunt } from '@hunty/types';
 
 const PAGE_SIZE = 8;
 const INITIAL_PAGE_SIZE = 6;
