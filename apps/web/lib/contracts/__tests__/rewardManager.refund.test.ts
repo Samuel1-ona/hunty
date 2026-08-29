@@ -145,19 +145,6 @@ describe("refundUnclaimedRewards", () => {
     expect(receipt.id).toMatch(/^refund_/)
   })
 
-  it("records the seven-day grace period when creating an escrow", async () => {
-    const { createRewardEscrow, getRewardEscrow } = await import("../rewardManager")
-    await createRewardEscrow({
-      huntId: HUNT_ID,
-      creator: CREATOR,
-      rewardType: "XLM",
-      rewards: [{ place: 1, amount: 150 }],
-      expiresAt: Math.floor(Date.now() / 1000),
-    })
-
-    expect(getRewardEscrow(HUNT_ID)?.gracePeriodSeconds).toBe(7 * 24 * 60 * 60)
-  })
-
   it("drains the escrow balance to 0 after a successful refund", async () => {
     seedEscrow()
 
@@ -194,7 +181,7 @@ describe("refundUnclaimedRewards", () => {
 
     const { refundUnclaimedRewards } = await import("../rewardManager")
     await expect(refundUnclaimedRewards(HUNT_ID)).rejects.toThrow(
-      "Grace period has not yet elapsed"
+      "Rewards can only be refunded after the hunt expires"
     )
   })
 

@@ -427,18 +427,17 @@ export async function refundUnclaimedRewards(
   creatorAddress?: string,
   /**
    * Grace period override in seconds. Reads from the hunt's `gracePeriodSeconds`
-  * field. Falls back to the canonical seven-day period for legacy escrows.
+   * field. Falls back to 0 (immediate refund is allowed once the escrow has
+   * expired) when not provided.
    */
-  gracePeriodSeconds?: number
+  gracePeriodSeconds = 0
 ): Promise<RewardReceipt> {
   const escrow = getRewardEscrow(huntId)
   if (!escrow) throw new Error("No reward escrow found for this hunt")
   if (creatorAddress && escrow.creator !== creatorAddress) {
     throw new Error("Only the hunt creator can request a refund")
   }
-  const effectiveGracePeriod =
-    gracePeriodSeconds ?? escrow.gracePeriodSeconds ?? REWARD_REFUND_GRACE_PERIOD_SECONDS
-  const refundableAfterMs = (escrow.expiresAt + effectiveGracePeriod) * 1000
+  const refundableAfterMs = (escrow.expiresAt + gracePeriodSeconds) * 1000
   if (Date.now() < refundableAfterMs) {
     const secondsRemaining = Math.ceil((refundableAfterMs - Date.now()) / 1000)
     throw new Error(

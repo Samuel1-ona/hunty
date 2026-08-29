@@ -11,6 +11,7 @@ import { withErrorHandling } from "@/lib/api/withErrorHandling";
 import { withValidation } from "@/lib/api/withValidation";
 import type { SeasonStatus } from "@/lib/types";
 import { seasonArchiveBodySchema, seasonPatchBodySchema } from "@hunty/types/api-schemas";
+import { getBattlePassTiers, getPlayerProgress } from "@/lib/battlePassStore";
 import { z } from "zod";
 
 type Context = { params: Promise<{ id: string }> };
@@ -41,7 +42,16 @@ export const GET = withErrorHandling(async (req: Request, context: Context) => {
   const now = Math.floor(Date.now() / 1000);
   const timeRemaining = season.status === "Active" ? Math.max(0, season.endTime - now) : 0;
 
-  return NextResponse.json({ season, leaderboard, timeRemaining });
+  const tiers = getBattlePassTiers(season);
+
+  const { searchParams } = new URL(req.url);
+  const address = searchParams.get("address");
+  let battlePass = null;
+  if (address) {
+    battlePass = getPlayerProgress(seasonId, address);
+  }
+
+  return NextResponse.json({ season, leaderboard, timeRemaining, tiers, battlePass });
 });
 
 /**
@@ -69,7 +79,9 @@ export const PATCH = withValidation(
       throw new NotFoundError("Season not found", { seasonId });
     }
 
-    return NextResponse.json({ season: updatedSeason });
+    const tiers = getBattlePassTiers(updatedSeason);
+
+    return NextResponse.json({ season: updatedSeason, tiers });
   }
 );
 

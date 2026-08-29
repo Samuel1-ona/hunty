@@ -13,6 +13,19 @@ import {
   transferOwnership,
   updateCollaboratorRole,
 } from "@/lib/collaboration"
+import {
+  dbAcceptInvite,
+  dbEnsureOwner,
+  dbGetActiveEditors,
+  dbGetCollaborators,
+  dbGetRoleForWallet,
+  dbInviteCollaborator,
+  dbPingPresence,
+  dbRemoveCollaborator,
+  dbSaveCollaborators,
+  dbTransferOwnership,
+  dbUpdateCollaboratorRole,
+} from "@/lib/collaborationDb"
 import { collaboratorsBodySchema } from "@hunty/types/api-schemas"
 import { z } from "zod"
 
@@ -40,8 +53,9 @@ export const GET = withErrorHandling(async (req: Request, context: RouteContext)
     throw new ValidationError("Invalid hunt id", { id })
   }
 
+  const collaborators = await dbGetCollaborators(huntId)
   return NextResponse.json({
-    collaborators: getCollaborators(huntId),
+    collaborators,
     activity: getActivityLog(huntId, 50),
   })
 })
@@ -64,32 +78,33 @@ export const POST = withValidation(
 
     switch (body.action) {
       case "ensure_owner": {
-        const owner = ensureOwner(huntId, body.actorAddress)
+        const owner = await dbEnsureOwner(huntId, body.actorAddress)
+        await dbSaveCollaborators(huntId, [owner, ...(await dbGetCollaborators(huntId)).filter((c) => c.walletAddress !== body.actorAddress)])
         return NextResponse.json({ ok: true, collaborator: owner })
       }
       case "invite": {
         const role = body.role === "viewer" ? "viewer" : "editor"
-        const result = inviteCollaborator(huntId, body.actorAddress, body.walletAddress, role)
+        const result = await dbInviteCollaborator(huntId, body.actorAddress, body.walletAddress, role)
         if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
         return NextResponse.json({ ok: true, collaborator: result.collaborator })
       }
       case "accept": {
-        const ok = acceptInvite(huntId, body.actorAddress)
+        const ok = await dbAcceptInvite(huntId, body.actorAddress)
         if (!ok) return NextResponse.json({ error: "Invite not found" }, { status: 404 })
         return NextResponse.json({ ok: true })
       }
       case "update_role": {
-        const result = updateCollaboratorRole(huntId, body.actorAddress, body.walletAddress, body.role)
+        const result = await dbUpdateCollaboratorRole(huntId, body.actorAddress, body.walletAddress, body.role)
         if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
         return NextResponse.json({ ok: true, collaborator: result.collaborator })
       }
       case "remove": {
-        const result = removeCollaborator(huntId, body.actorAddress, body.walletAddress)
+        const result = await dbRemoveCollaborator(huntId, body.actorAddress, body.walletAddress)
         if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
         return NextResponse.json({ ok: true })
       }
       case "transfer": {
-        const result = transferOwnership(huntId, body.actorAddress, body.newOwnerAddress)
+        const result = await dbTransferOwnership(huntId, body.actorAddress, body.newOwnerAddress)
         if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
         return NextResponse.json({ ok: true })
       }

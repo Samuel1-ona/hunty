@@ -206,11 +206,12 @@ const ROUTE_MANIFEST: RouteEntry[] = [
 
   // ── v1 / hunts ───────────────────────────────────────────────────────
   { file: "v1/hunts/route.ts",                      path: "/api/v1/hunts",                      methods: ["GET"],           auth: "public" },
-  { file: "v1/hunts/id/route.ts",                   path: "/api/v1/hunts/id",                   methods: ["GET"],           auth: "public" },
   { file: "v1/hunts/bulk/route.ts",                 path: "/api/v1/hunts/bulk",                 methods: ["POST"],          auth: "public" },
   { file: "v1/hunts/[id]/route.ts",                 path: "/api/v1/hunts/[id]",                 methods: ["GET"],           auth: "public" },
   { file: "v1/hunts/[id]/archive/route.ts",         path: "/api/v1/hunts/[id]/archive",         methods: ["POST"],          auth: "public" },
   { file: "v1/hunts/[id]/collaborators/route.ts",   path: "/api/v1/hunts/[id]/collaborators",   methods: ["GET", "POST"],   auth: "public" },
+  { file: "v1/hunts/[id]/collaborators/presence/route.ts", path: "/api/v1/hunts/[id]/collaborators/presence", methods: ["GET", "POST"], auth: "public" },
+  { file: "v1/hunts/[id]/collaborators/presence/stream/route.ts", path: "/api/v1/hunts/[id]/collaborators/presence/stream", methods: ["GET"], auth: "public" },
   { file: "v1/hunts/[id]/complete/route.ts",        path: "/api/v1/hunts/[id]/complete",        methods: ["POST"],          auth: "public" },
   { file: "v1/hunts/[id]/delete/route.ts",          path: "/api/v1/hunts/[id]/delete",          methods: ["POST"],          auth: "public" },
   { file: "v1/hunts/[id]/leaderboard/route.ts",     path: "/api/v1/hunts/[id]/leaderboard",     methods: ["GET"],           auth: "public" },
@@ -233,6 +234,11 @@ const ROUTE_MANIFEST: RouteEntry[] = [
 
   // ── v1 / time ────────────────────────────────────────────────────────
   { file: "v1/time/route.ts",                       path: "/api/v1/time",                       methods: ["GET"],           auth: "public" },
+
+  // ── v1 / webhooks ────────────────────────────────────────────────────
+  { file: "v1/webhooks/route.ts",                  path: "/api/v1/webhooks",                  methods: ["GET", "POST"],   auth: "public" },
+  { file: "v1/webhooks/[id]/route.ts",             path: "/api/v1/webhooks/[id]",             methods: ["PATCH", "DELETE"], auth: "public" },
+  { file: "v1/webhooks/events/route.ts",           path: "/api/v1/webhooks/events",           methods: ["POST"],          auth: "public" },
 ]
 
 // ──────────────────────────────────────────────────────────────────────────

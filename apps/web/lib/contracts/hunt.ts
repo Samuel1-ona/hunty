@@ -137,6 +137,16 @@ export async function createHunt(
   };
   if (!res || !res.hash) throw new Error("Transaction submission failed");
 
+  await fetch("/api/v1/webhooks/events", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-wallet-address": creator },
+    body: JSON.stringify({
+      type: "hunt.published",
+      creatorAddress: creator,
+      data: { title, transactionHash: res.hash },
+    }),
+  }).catch(() => undefined);
+
   return { txHash: res.hash };
 }
 
