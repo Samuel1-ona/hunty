@@ -1,5 +1,6 @@
 import { usePlayerLocation } from '@app/hooks/usePlayerLocation';
 import { ClueMarkdownRenderer } from '@components/ClueMarkdownRenderer';
+import { BackgroundLocationControl } from '@components/BackgroundLocationControl';
 import { EmptyState } from '@components/EmptyState';
 import { QRScanner } from '@components/QRScanner';
 import { ThemedButton, ThemedCustomText, ThemedView } from '@components/themed';
@@ -21,6 +22,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
 
 import { verifyClueGeofence } from '@/lib/locationGate';
+import { disableBackgroundProximity } from '@/services/backgroundLocation';
 
 export default function PlayScreen() {
   // Network status
@@ -152,6 +154,7 @@ export default function PlayScreen() {
       markClueCompleted(currentProgress.hunt_id, activeClueIndex);
 
       if (isLastClue) {
+        await disableBackgroundProximity();
         haptics.triggerImpact('heavy');
         markCompleted();
         router.push({
@@ -236,6 +239,13 @@ export default function PlayScreen() {
             </ThemedCustomText>
           ) : null}
         </View>
+
+        <BackgroundLocationControl
+          huntId={currentProgress.hunt_id}
+          clues={clues}
+          borderColor={colors.border}
+          primaryColor={colors.primary}
+        />
 
         {clues.map((clue, index) => {
           const isActive = index === activeClueIndex && !allSolved;

@@ -1,3 +1,12 @@
+import { getToken } from "next-auth/jwt"
+import { NextRequest } from "next/server"
+import { ApiError } from "./errors"
+import { auditLog } from "@/lib/audit"
+
+export interface AdminUser {
+  id: string
+  email?: string
+  role: string
 /**
  * Simple admin-request guard.
  *
@@ -30,32 +39,17 @@ class AdminAuthError extends AppError {
   }
 }
 
-/**
- * Assert that the incoming request carries a valid admin bearer token.
- *
- * Throws an `AdminAuthError` (which `withErrorHandling` will catch and turn
- * into the appropriate HTTP error response) if authentication fails.
- *
- * Also reports unauthenticated attempts to Sentry so you can detect probing.
- */
-export function assertAdminAuth(req: Request): void {
-  const secret = process.env.ADMIN_API_SECRET
+export async function assertAdminAuth(req: Request): Promise<AdminUser> {
+  const token = await getToken({ req: req as NextRequest })
 
-  if (!secret) {
-    if (process.env.NODE_ENV === "production") {
-      // In production, reject all requests when the secret is not configured.
-      const err = new AdminAuthError(
-        "Admin API secret is not configured.  Set ADMIN_API_SECRET.",
-        500
-      )
-      Sentry.captureException(err, { tags: { source: "adminAuth" } })
-      throw err
-    }
-    // In development, warn but allow — useful for local testing without secrets.
-    logger.warn("[adminAuth] ADMIN_API_SECRET is not set; admin routes are unprotected in dev mode.")
-    return
+  if (!token) {
+    auditLog("unauthorized", { path: new URL(req.url).pathname, reason: "missing_token" }, "anonymous")
+    throw new ApiError(401, "Unauthorized")
   }
 
+  if (token.role !== "admin") {
+    auditLog("unauthorized", { path: new URL(req.url).pathname, userId: token.sub, reason: "insufficient_role" }, token.sub ?? "unknown")
+    throw new ApiError(403, "Forbidden")
   const authHeader = req.headers.get("authorization") ?? ""
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null
 
@@ -73,8 +67,11 @@ export function assertAdminAuth(req: Request): void {
 
     throw new AdminAuthError("Unauthorized: valid admin token required.")
   }
-}
 
+  return {
+    id: token.sub!,
+    email: token.email ?? undefined,
+    role: token.role as string,
 /**
  * Convenience wrapper that returns a `NextResponse` instead of throwing.
  * Useful when you need to handle auth inline rather than relying on the

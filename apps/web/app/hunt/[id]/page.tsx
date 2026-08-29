@@ -141,20 +141,6 @@ async function HuntPageContent({
       <Header />
 
       <div role="main" className="relative max-w-3xl mx-auto px-6 pt-16">
-        {huntDetails.coverImage && (
-          <div className="relative mb-8 aspect-[16/9] w-full overflow-hidden rounded-2xl bg-white/5">
-            <Image
-              src={huntDetails.coverImage}
-              alt={huntDetails.title}
-              fill
-              priority
-              sizes="(max-width: 768px) 100vw, 768px"
-              className="object-cover"
-              placeholder="blur"
-              blurDataURL="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSI5IiB2aWV3Qm94PSIwIDAgMTYgOSI+PHJlY3Qgd2lkdGg9IjE2IiBoZWlnaHQ9IjkiIGZpbGw9IiMwYjBjMTAiLz48L3N2Zz4="
-            />
-          </div>
-        )}
         <!-- Status badge -->
         <div className="mb-6">
           <span
