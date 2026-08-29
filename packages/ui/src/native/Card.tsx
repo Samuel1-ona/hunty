@@ -1,8 +1,8 @@
 import type { SharedCardProps } from "@hunty/types";
 import React from "react";
-import { Pressable, StyleSheet, useColorScheme, View, type ViewStyle } from "react-native";
+import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
 
-import { colors as tokenColors } from "../tokens/colors";
+import { useTheme } from "./ThemeProvider";
 
 export interface CardProps extends SharedCardProps {
   children: React.ReactNode;
@@ -10,25 +10,20 @@ export interface CardProps extends SharedCardProps {
 }
 
 export function Card({ children, variant = "default", onPress, testID, style }: CardProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-
-  const background = isDark ? tokenColors.backgroundDark : tokenColors.background;
-  const surface = isDark ? tokenColors.surfaceDark : tokenColors.surface;
-  const border = isDark ? tokenColors.borderDark : tokenColors.border;
+  const { colors } = useTheme();
 
   const baseStyle: ViewStyle = {
     borderRadius: 12,
     overflow: "hidden",
     ...(variant === "default" && {
-      backgroundColor: surface,
+      backgroundColor: colors.surface ?? colors.background,
       borderWidth: 1,
-      borderColor: border,
+      borderColor: colors.border,
     }),
     ...(variant === "flat" && {
-      backgroundColor: background,
+      backgroundColor: colors.background,
       borderWidth: 1,
-      borderColor: border,
+      borderColor: colors.border,
     }),
     ...(variant === "ghost" && {
       backgroundColor: "transparent",
@@ -76,5 +71,10 @@ export function CardFooter({ children, style }: { children: React.ReactNode; sty
 const styles = StyleSheet.create({
   header: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
   content: { paddingHorizontal: 16, paddingVertical: 12 },
-  footer: { paddingHorizontal: 16, paddingBottom: 16, flexDirection: "row", alignItems: "center" },
+  footer: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+  },
 });

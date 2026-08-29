@@ -63,6 +63,12 @@ export interface StoredHunt {
   startTime?: number;
   /** Unix timestamp in seconds — when the hunt ends. */
   endTime?: number;
+  /**
+   * How long (in seconds) after `endTime` the creator can reclaim unclaimed
+   * rewards. Defaults to 0 (immediately after the hunt ends) when omitted.
+   * Must be a non-negative integer.
+   */
+  gracePeriodSeconds?: number;
   creatorEmail?: string;
   emailNotifications?: boolean;
   /** When true, the hunt is hidden from the public arcade grid. */
@@ -73,6 +79,18 @@ export interface StoredHunt {
   coverImageCid?: string;
   /** Active editorial banner showcase at the top of the Arcade. */
   isFeaturedOfWeek?: boolean;
+  /**
+   * Grace period in seconds after `endTime` during which unclaimed rewards
+   * remain escrowed. Once this window expires the creator may call the
+   * refund endpoint to reclaim the remaining escrow balance.
+   * Defaults to 604800 (7 days) when not explicitly set.
+   */
+  gracePeriodSeconds?: number;
+  /**
+   * Sponsors that have contributed to this hunt's reward pool.
+   * Each entry is the sponsor's Stellar wallet address.
+   */
+  sponsors?: string[];
 }
 
 /** Lightweight hunt projection used by list/detail views. */

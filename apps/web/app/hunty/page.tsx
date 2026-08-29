@@ -36,23 +36,33 @@ import ToggleButton from "@/components/ToggleButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { readDraftPayload, useHuntDraftAutoSave } from "@/hooks/useHuntDraftAutoSave";
+import {
+  fetchDraftFromServer,
+  readDraftPayload,
+  useHuntDraftAutoSave,
+} from "@/hooks/useHuntDraftAutoSave";
 import { useIsFeatureEnabled } from "@/hooks/useFeatureFlag";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import type { HuntCategoryId } from "@/lib/categories";
 import { ensureOwner } from "@/lib/collaboration";
 import { getCommunityTemplateBySlug } from "@/lib/communityTemplates";
+import { useWallet } from "@/lib/context/WalletContext";
 import { createHunt } from "@/lib/contracts/hunt";
 import { createRewardEscrow } from "@/lib/contracts/rewardManager";
 import { downloadElementAsImage } from "@/lib/downloadAsImage";
 import { dynapuff } from "@/lib/font";
-import { addHunt as addStoredHunt, getAllHuntsIncludingPrivate } from "@/lib/huntStore";
+import {
+  addHunt as addStoredHunt,
+  getAllHuntsIncludingPrivate,
+  REWARD_REFUND_GRACE_PERIOD_SECONDS,
+} from "@/lib/huntStore";
 import { buildDraftHuntsFromTemplate, getStarterTemplateBySlug } from "@/lib/huntTemplates";
 import { COVER_IMAGE_UPLOAD_ERROR_MESSAGE } from "@/lib/ipfs";
 import { logger } from "@/lib/logger";
 import { withTransactionToast } from "@/lib/txToast";
 import type {
   CoverImageUploadState,
+  HuntAgeClassification,
   HuntDifficulty,
   HuntDraft,
   HuntDraftSave,
@@ -91,6 +101,10 @@ function CreateGameContent() {
     "draft-huntDifficulty",
     ""
   );
+  const [ageClassification, setAgeClassification] = useLocalStorage<HuntAgeClassification>(
+    "draft-ageClassification",
+    "all-ages"
+  );
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [direction, setDirection] = useState(0);
@@ -111,6 +125,7 @@ function CreateGameContent() {
   const previewContainerRef = useRef<HTMLDivElement | null>(null);
   const appliedTemplateRef = useRef<string | null>(null);
   const router = useRouter();
+  const { publicKey: walletPublicKey } = useWallet();
 
   const prefersReducedMotion = useReducedMotion();
 
@@ -141,6 +156,7 @@ function CreateGameContent() {
     rewards,
     meta: autoSaveMeta,
     draftId: activeDraftId ?? undefined,
+    walletPublicKey: walletPublicKey || undefined,
   });
 
   // Sync the hook-generated draftId back to state on first mount.
@@ -195,24 +211,41 @@ function CreateGameContent() {
   const appliedDraftIdRef = useRef<string | null>(null);
 
   // Load a previously auto-saved draft when navigating from the draft list.
+  // Falls back to the server copy when this device has no local copy (e.g.
+  // the draft was auto-saved from a different browser/device).
   useEffect(() => {
     const draftId = searchParams.get("draftId");
     if (!draftId || appliedDraftIdRef.current === draftId) return;
-    const saved = readDraftPayload(draftId);
-    if (!saved) return;
-    appliedDraftIdRef.current = draftId;
-    setHunts(saved.hunts);
-    setRewards(saved.rewards.map((r) => ({ ...r, icon: undefined })));
-    setGameName(saved.meta.gameName);
-    setStartDate(saved.meta.startDate);
-    setEndDate(saved.meta.endDate);
-    setRewardType(saved.meta.rewardType);
-    setSequential(saved.meta.sequential);
-    setIsPrivate(saved.meta.isPrivate);
-    setTimerEnabled(saved.meta.timerEnabled);
-    setCreatorEmail(saved.meta.creatorEmail);
-    setEmailNotifications(saved.meta.emailNotifications);
-    setActiveDraftId(draftId);
+
+    const applyDraft = (saved: HuntDraftSave) => {
+      appliedDraftIdRef.current = draftId;
+      setHunts(saved.hunts);
+      setRewards(saved.rewards.map((r) => ({ ...r, icon: undefined })));
+      setGameName(saved.meta.gameName);
+      setStartDate(saved.meta.startDate);
+      setEndDate(saved.meta.endDate);
+      setRewardType(saved.meta.rewardType);
+      setSequential(saved.meta.sequential);
+      setIsPrivate(saved.meta.isPrivate);
+      setTimerEnabled(saved.meta.timerEnabled);
+      setCreatorEmail(saved.meta.creatorEmail);
+      setEmailNotifications(saved.meta.emailNotifications);
+      setActiveDraftId(draftId);
+    };
+
+    const local = readDraftPayload(draftId);
+    if (local) {
+      applyDraft(local);
+      return;
+    }
+
+    let cancelled = false;
+    void fetchDraftFromServer(draftId).then((remote) => {
+      if (!cancelled && remote) applyDraft(remote);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [searchParams]);
 
   useEffect(() => {
@@ -477,13 +510,16 @@ function CreateGameContent() {
             formValues.sequential,
             // Normalize empty-string sentinel ("") from the publish-tab select back
             // to undefined so the on-chain metadata stays clean.
-            huntDifficulty ? huntDifficulty : undefined
+            huntDifficulty ? huntDifficulty : undefined,
+            undefined,
+            REWARD_REFUND_GRACE_PERIOD_SECONDS
           );
           const escrow = await createRewardEscrow({
             huntId: localId,
             rewardType: formValues.rewardType,
             rewards: formValues.rewards,
             expiresAt: end_time,
+            gracePeriodSeconds: REWARD_REFUND_GRACE_PERIOD_SECONDS,
           });
           rewardEscrowTxHash = escrow?.depositTxHash;
 
@@ -516,10 +552,12 @@ function CreateGameContent() {
         createdAt: Math.floor(Date.now() / 1000),
         startTime: start_time,
         endTime: end_time,
+        gracePeriodSeconds: REWARD_REFUND_GRACE_PERIOD_SECONDS,
         creatorEmail: formValues.creatorEmail || undefined,
         emailNotifications: formValues.emailNotifications,
         is_private: formValues.isPrivate,
         sequential: formValues.sequential,
+        ageClassification,
         maxParticipants: formValues.hunts[0]?.maxParticipants,
         coverImageCid,
         category,
@@ -705,6 +743,10 @@ function CreateGameContent() {
                           </div>
                         </div>
 
+                        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                          Unclaimed rewards can be reclaimed by the creator 7 days after this hunt ends.
+                        </p>
+
                         <RewardsPanel
                           rewards={rewards}
                           rewardType={rewardType}
@@ -882,6 +924,33 @@ function CreateGameContent() {
                                 {d}
                               </option>
                             ))}
+                          </select>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <label
+                              htmlFor="hunt-age-classification"
+                              className="block text-xl font-normal text-[#808080]"
+                            >
+                              Age suitability
+                            </label>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              Helps players and moderators understand the intended audience
+                            </p>
+                          </div>
+                          <select
+                            id="hunt-age-classification"
+                            value={ageClassification}
+                            onChange={(e) =>
+                              setAgeClassification(e.target.value as HuntAgeClassification)
+                            }
+                            className="h-11 w-[160px] text-center rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#3737A4]/40"
+                          >
+                            <option value="all-ages">All ages</option>
+                            <option value="13-plus">13+</option>
+                            <option value="16-plus">16+</option>
+                            <option value="18-plus">18+</option>
                           </select>
                         </div>
 

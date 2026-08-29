@@ -50,13 +50,16 @@ function LeaderboardTableComponent({
   huntTitle,
   filters: filterOverrides,
 }: LeaderboardTableProps) {
-  const filters: LeaderboardFilters = { ...DEFAULT_FILTERS, ...filterOverrides };
+  const filters: LeaderboardFilters = useMemo(
+    () => ({ ...DEFAULT_FILTERS, ...filterOverrides }),
+    [filterOverrides]
+  );
 
   const [rawData, setRawData] = useState(initialData || []);
   const [isLoading, setIsLoading] = useState(initialLoading);
   const [error, setError] = useState<string | null>(null);
   const [activeSeason, setActiveSeason] = useState<ReturnType<typeof getActiveSeason>>(null);
-  const walletAddress = useWalletStore((s: { walletAddress: string }) => s.walletAddress);
+  const walletAddress = useWalletStore((state) => state.walletAddress);
 
   const fetchLeaderboard = useCallback(async () => {
     if (huntId === undefined) return;
@@ -76,7 +79,7 @@ function LeaderboardTableComponent({
             rawData as unknown as LeaderboardEntry[]
           );
           if (rankChanges.length > 0) {
-            handleRankNotifications(rankChanges, walletAddress);
+            handleRankNotifications(rankChanges);
           }
         } catch (err) {
           logger.error("Failed to detect rank changes:", err);
@@ -104,18 +107,28 @@ function LeaderboardTableComponent({
     } finally {
       setIsLoading(false);
     }
-  }, [huntId, rawData.length, walletAddress, huntTitle]);
+  }, [huntId, rawData, walletAddress, huntTitle]);
 
   useEffect(() => {
-    if (huntId !== undefined) {
-      fetchLeaderboard();
-      const interval = setInterval(fetchLeaderboard, 30000);
-      return () => clearInterval(interval);
-    }
+    if (huntId === undefined) return;
+    // Wrapped so setState calls inside fetchLeaderboard (isLoading/rawData)
+    // happen from a nested async function rather than synchronously in the
+    // effect body itself — see react-hooks/set-state-in-effect.
+    (async () => {
+      await fetchLeaderboard();
+    })();
+    const interval = setInterval(fetchLeaderboard, 30000);
+    return () => clearInterval(interval);
   }, [huntId, fetchLeaderboard]);
 
   useEffect(() => {
-    setActiveSeason(getActiveSeason());
+    // Deferred to a microtask (see above) so this stays effect-only and
+    // doesn't run during SSR/the initial client render — getActiveSeason()
+    // reads localStorage, so computing it eagerly via lazy useState would
+    // diverge from the server-rendered HTML and cause a hydration mismatch.
+    (async () => {
+      setActiveSeason(getActiveSeason());
+    })();
   }, []);
 
   const data = useMemo(() => {

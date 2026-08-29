@@ -1,8 +1,9 @@
 import { promises as fs } from "fs"
 import { NextRequest, NextResponse } from "next/server"
 import path from "path"
-import { ValidationError } from "@/lib/api/errors"
 import { withErrorHandling } from "@/lib/api/withErrorHandling"
+import { withValidation } from "@/lib/api/withValidation"
+import { performanceMetricBodySchema } from "@hunty/types/api-schemas"
 
 const PERFORMANCE_STORE_PATH = path.join(
   process.cwd(),
@@ -84,42 +85,26 @@ function summarizeMetrics(metrics: StoredMetric[]) {
   })
 }
 
-export const POST = withErrorHandling(async (request: NextRequest) => {
-  let body: {
-    name?: string
-    value?: number
-    rating?: string
-    timestamp?: number
-    url?: string
+export const POST = withValidation(
+  { body: performanceMetricBodySchema },
+  async (_req, _context, { body }) => {
+    const store = await readStore()
+    store.metrics.push({
+      name: body.name,
+      value: body.value,
+      rating: body.rating ?? "needs-improvement",
+      timestamp: body.timestamp ?? Date.now(),
+      url: body.url ?? "unknown",
+    })
+
+    if (store.metrics.length > 10000) {
+      store.metrics = store.metrics.slice(-10000)
+    }
+
+    await writeStore(store)
+    return NextResponse.json({ success: true })
   }
-  try {
-    body = await request.json()
-  } catch {
-    throw new ValidationError("Invalid metric payload")
-  }
-  const { name, value, rating, timestamp, url } = body
-
-  if (!name || typeof value !== "number") {
-    throw new ValidationError("Invalid metric payload", { name, value })
-  }
-
-  const store = await readStore()
-  store.metrics.push({
-    name,
-    value,
-    rating: rating ?? "needs-improvement",
-    timestamp: timestamp ?? Date.now(),
-    url: url ?? "unknown",
-  })
-
-  if (store.metrics.length > 10000) {
-    store.metrics = store.metrics.slice(-10000)
-  }
-
-  await writeStore(store)
-
-  return NextResponse.json({ success: true })
-})
+)
 
 export const GET = withErrorHandling(async (request: NextRequest) => {
   const url = new URL(request.url)

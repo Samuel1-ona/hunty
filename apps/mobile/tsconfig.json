@@ -1,8 +1,6 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "@hunty/config/tsconfig/react-native.json",
   "compilerOptions": {
-    "strict": true,
-    "jsx": "react-native",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],

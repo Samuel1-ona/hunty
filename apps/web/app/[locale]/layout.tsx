@@ -6,6 +6,7 @@ import { notFound } from "next/navigation"
 import { NextIntlClientProvider } from "next-intl"
 import { getMessages, getTranslations } from "next-intl/server"
 
+import { FirstHuntChecklist } from "@/components/FirstHuntChecklist"
 import { TxToaster } from "@/components/TxToaster"
 import { routing } from "@/i18n/routing"
 import { hankenGrotesk } from "@/lib/font"
@@ -88,7 +89,7 @@ export default async function LocaleLayout({
   const { locale } = await params
 
   // Validate that the incoming `locale` parameter is valid
-  if (!routing.locales.includes(locale as "en" | "es")) {
+  if (!routing.locales.includes(locale as "en" | "es" | "fr")) {
     notFound()
   }
 

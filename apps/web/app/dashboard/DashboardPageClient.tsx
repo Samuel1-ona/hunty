@@ -8,9 +8,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { EscrowDrawer } from "@/components/EscrowDrawer";
 import { Header } from "@/components/Header";
 import { HuntDashboard } from "@/components/HuntDashboard";
-import { RewardHistoryPanel } from "@/components/RewardHistoryPanel";
+import { PayoutDashboard } from "@/components/PayoutDashboard";
 import { Button } from "@/components/ui/button";
-import { activateHunt, addCluesBatch } from "@/lib/contracts/hunt";
 import {
   buildHuntHistoryQuery,
   getHuntHistoryView,
@@ -29,8 +28,14 @@ import {
   updateHuntStatus,
 } from "@/lib/huntStore";
 import { syncCreatorHuntsWithModeration } from "@/lib/moderation/clientSync";
+import { getActiveWalletAdapter } from "@/lib/walletAdapter";
 import { withTransactionToast } from "@/lib/txToast";
 import type { StoredHunt } from "@/lib/types";
+import dynamic from "next/dynamic";
+
+const RewardHistoryPanel = dynamic(() =>
+  import("@/components/RewardHistoryPanel").then((mod) => mod.RewardHistoryPanel)
+);
 
 type SearchParamValue = string | string[] | undefined;
 
@@ -49,6 +54,7 @@ export function DashboardPageClient({ searchParams = {} }: DashboardPageClientPr
   const pathname = usePathname();
   const [hunts, setHunts] = useState<StoredHunt[]>([]);
   const [escrowDrawerOpen, setEscrowDrawerOpen] = useState(false);
+  const [creatorAddress, setCreatorAddress] = useState<string | undefined>();
 
   const refresh = useCallback(() => {
     setHunts(getCreatorHunts());
@@ -58,6 +64,13 @@ export function DashboardPageClient({ searchParams = {} }: DashboardPageClientPr
     refresh();
     const huntsList = getCreatorHunts();
     void syncCreatorHuntsWithModeration(huntsList).then(() => refresh());
+
+    try {
+      const adapter = getActiveWalletAdapter();
+      adapter.getPublicKey().then(setCreatorAddress).catch(() => {});
+    } catch {
+      /* no wallet connected */
+    }
   }, [refresh]);
 
   const statusFilter = parseHuntHistoryStatusFilter(readSearchParam(searchParams.status));
@@ -159,9 +172,14 @@ export function DashboardPageClient({ searchParams = {} }: DashboardPageClientPr
         await withTransactionToast(
           async (setStage) => {
             setStage("approving");
+            const { addCluesBatch } = await import("@/lib/contracts/hunt");
             return addCluesBatch(
               huntId,
-              normalizedClues.map(({ huntId: _huntId, ...clue }) => clue)
+              normalizedClues.map((clue) => ({
+                question: clue.question,
+                answer: clue.answer,
+                points: clue.points,
+              }))
             );
           },
           {
@@ -206,6 +224,10 @@ export function DashboardPageClient({ searchParams = {} }: DashboardPageClientPr
         </p>
 
         <RewardHistoryPanel hunts={hunts} onRefresh={refresh} />
+
+        <div className="mb-4">
+          <PayoutDashboard creator={creatorAddress} />
+        </div>
 
         <div className="mb-4 flex items-center gap-3">
           <Button

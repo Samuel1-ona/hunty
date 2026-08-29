@@ -4,7 +4,7 @@
 [![Next.js](https://img.shields.io/badge/next.js-15.3.4-black.svg)](https://nextjs.org/)
 [![Expo](https://img.shields.io/badge/expo-Managed%20App-green.svg)](https://expo.dev/)
 [![Stellar](https://img.shields.io/badge/stellar-soroban-blueviolet.svg)](https://soroban.stellar.org/)
-[![Coverage](https://codecov.io/gh/TheShnider/hunty/branch/main/graph/badge.svg)](https://codecov.io/gh/TheShnider/hunty)
+[![Coverage](https://codecov.io/gh/Samuel1-ona/hunty/branch/main/graph/badge.svg)](https://codecov.io/gh/Samuel1-ona/hunty)
 
 Hunty is a cross-platform scavenger-hunt platform and dApp that combines web, mobile, and on-chain rewards. Creators publish location-based hunts and players complete challenges to earn NFTs, tokens, and other reward assets via Stellar/Soroban.
 
@@ -24,6 +24,7 @@ Hunty is a cross-platform scavenger-hunt platform and dApp that combines web, mo
 - Attach image, audio, or video media to clue cards through the existing IPFS upload flow.
 - Promote active hunts into a 24-hour spotlight carousel from the creator dashboard.
 - Mint and claim NFT rewards and on-chain token payouts for completed hunts.
+- Track creator payouts from a consolidated dashboard: total escrowed, paid, refunded, and remaining per hunt, with on-chain transactions linked to the explorer and figures reconciled against on-chain escrow state.
 - Community and leaderboard features for social play and competition.
 
 ## Tech Stack

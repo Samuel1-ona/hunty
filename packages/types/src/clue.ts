@@ -11,6 +11,10 @@ export interface Clue {
   question: string
   answer: string
   points: number
+  /** Optional locale-specific question strings. Base `question` remains the fallback. */
+  questionTranslations?: Partial<Record<string, string>>
+  /** Optional locale-specific hint strings. Base `hint` remains the fallback. */
+  hintTranslations?: Partial<Record<string, string>>
   hint?: string
   hintCost?: number
   /** Optional difficulty tag set by the creator. */
@@ -28,6 +32,8 @@ export interface ClueInfo {
   id: number
   question: string
   points: number
+  questionTranslations?: Partial<Record<string, string>>
+  hintTranslations?: Partial<Record<string, string>>
   hint?: string
   hintCost?: number
   difficulty?: ClueDifficulty
@@ -39,6 +45,8 @@ export interface ClueRow {
   question: string
   answer: string
   points: number
+  questionTranslations?: Partial<Record<string, string>>
+  hintTranslations?: Partial<Record<string, string>>
   hint?: string
   hintCost?: number
   difficulty?: ClueDifficulty

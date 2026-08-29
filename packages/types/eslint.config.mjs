@@ -5,7 +5,7 @@ const config = [
   ...base,
   {
     rules: {
-      "no-console": "off",
+      "no-console": "warn",
     },
   },
 ];
