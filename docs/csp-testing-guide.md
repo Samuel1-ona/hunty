@@ -61,7 +61,7 @@ curl -I http://localhost:3000
 ```
 HTTP/1.1 200 OK
 ...
-Content-Security-Policy-Report-Only: script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: https://gateway.pinata.cloud https://*.mypinata.cloud https://cloudflare-ipfs.com https://dweb.link https://ipfs.io; connect-src 'self' https://api.resend.com https://torii-indexer.stellar-mainnet.public.blastapi.io https://indexer.testnet.torii.com https://soroban-testnet.stellar.org https://rpc.testnet.soroban.stellar.org https://soroban-mainnet.stellar.org https://rpc.mainnet.soroban.stellar.org wss: https:; font-src 'self' data: https:; frame-ancestors 'none'; default-src 'self'; base-uri 'self'; form-action 'self'
+Content-Security-Policy-Report-Only: script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: https://gateway.pinata.cloud https://*.mypinata.cloud https://cloudflare-ipfs.com https://dweb.link https://ipfs.io; connect-src 'self' https://api.resend.com https://torii-indexer.stellar-mainnet.public.blastapi.io https://indexer.testnet.torii.com https://soroban-testnet.stellar.org https://rpc.testnet.soroban.stellar.org https://soroban-mainnet.stellar.org https://rpc.mainnet.soroban.stellar.org wss: https:; font-src 'self' data: https; frame-ancestors 'none'; default-src 'self'; base-uri 'self'; form-action 'self'
 X-Content-Type-Options: nosniff
 X-Frame-Options: DENY
 X-XSS-Protection: 1; mode=block
@@ -78,6 +78,8 @@ Permissions-Policy: geolocation=(self), microphone=(), camera=()
 - [ ] `X-XSS-Protection: 1; mode=block` is present
 - [ ] `Referrer-Policy: strict-origin-when-cross-origin` is present
 - [ ] `Permissions-Policy` is configured correctly
+
+---
 
 ### 2.2 Parse Headers More Clearly
 
@@ -118,6 +120,8 @@ X-Frame-Options: DENY
 - [ ] CSP is in report-only mode (in development)
 - [ ] No resources are blocked (all load successfully)
 
+---
+
 ### 3.2 Safari DevTools
 
 **Steps:**
@@ -129,6 +133,8 @@ X-Frame-Options: DENY
 6. View the Response Headers
 
 **Expected:** Same headers as Chrome
+
+---
 
 ### 3.3 Firefox DevTools
 
@@ -163,6 +169,8 @@ X-Frame-Options: DENY
 - [ ] IPFS images load without CSP violations
 - [ ] No warnings in console about blocked resources
 
+---
+
 ### 4.2 Test Blockchain Interactions
 
 **Action:** Connect wallet and perform a blockchain operation
@@ -177,6 +185,8 @@ X-Frame-Options: DENY
 - [ ] Wallet connects successfully
 - [ ] Blockchain calls reach the Soroban RPC endpoint
 - [ ] No CSP-related errors in console
+
+---
 
 ### 4.3 Check for CSP Report Violations
 
@@ -395,10 +405,12 @@ Navigate through the application and verify these work with CSP enabled:
 - [ ] Manage hunts
 
 **Verification Checklist:**
-- [ ] All features work without console errors
-- [ ] No CSP violations reported
-- [ ] Images from all IPFS gateways load
-- [ ] Blockchain calls reach Soroban endpoints
+- [ ] All pages load without errors
+- [ ] IPFS images display correctly
+- [ ] Blockchain operations work
+- [ ] Wallet connection successful
+- [ ] All E2E tests pass
+- [ ] Console is clean (no CSP violations for legitimate resources)
 
 ---
 
@@ -529,6 +541,8 @@ echo $NODE_ENV
 - [ ] `font-src` - Contains self and font sources
 - [ ] `frame-ancestors 'none'` - Prevents clickjacking
 - [ ] `default-src 'self'` - Safe default
+- [ ] `base-uri 'self'` - Safe default
+- [ ] `form-action 'self'` - Safe default
 
 ### Application Functionality:
 - [ ] All pages load without errors
@@ -549,11 +563,11 @@ echo $NODE_ENV
 
 This CSP implementation protects the Hunty application from:
 
-✅ **Script Injection Attacks** - Only self-hosted scripts and whitelisted origins  
-✅ **Data Exfiltration** - Limited connection sources  
-✅ **Clickjacking** - X-Frame-Options prevents framing  
-✅ **MIME Type Sniffing** - X-Content-Type-Options prevents misinterpretation  
-✅ **XSS Attacks** - XSS protection headers in place  
+✅ **Script Injection Attacks** - Only self-hosted scripts and whitelisted origins
+✅ **Data Exfiltration** - Limited connection sources
+✅ **Clickjacking** - X-Frame-Options prevents framing
+✅ **MIME Type Sniffing** - X-Content-Type-Options prevents misinterpretation
+✅ **XSS Attacks** - XSS protection headers in place
 
 The staged rollout approach ensures:
 - ✅ Report-only mode captures violations without breaking functionality
@@ -566,6 +580,5 @@ The staged rollout approach ensures:
 
 For issues or questions about CSP:
 1. Check the Troubleshooting Guide above
-2. Review OWASP CSP documentation: https://owasp.org/www-community/attacks/xss/#prevention-measures
+2. Reference OWASP CSP documentation: https://owasp.org/www-community/attacks/xss/#prevention-measures
 3. Reference MDN CSP Guide: https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
-

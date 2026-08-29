@@ -34,14 +34,12 @@ First things first, let's get the code on your machine:
 
 2. **Install all the dependencies:**
    ```bash
-   #  pnpm
+   # pnpm
    pnpm install
    ```
 
 3. **Start the development server:**
    ```bash
- 
-   # 
    pnpm dev
    ```
 
@@ -88,8 +86,7 @@ When you're ready to add something new or fix a bug, here's the workflow we foll
    git commit -m "Add awesome new feature that does X"
    git push origin feature/your-awesome-feature
    ```
-
-Then create a pull request on GitHub so others can review your work. We're all about collaboration here!
+   Then create a pull request on GitHub so others can review your work. We're all about collaboration here!
 
 ### Running the App
 
@@ -360,6 +357,10 @@ const user_name = "John"
 // Good
 const MAX_HUNTS = 10
 const API_BASE_URL = "https://api.example.com"
+
+// Bad
+const max_hunts = 10
+const api_base_url = "https://api.example.com"
 ```
 
 **Files:** Match the component/function name
@@ -533,10 +534,6 @@ Right now, the frontend is mostly UI. The big next steps are:
 
 If you want to tackle any of these, check out the issues on GitHub or reach out in discussions. We'd love your help!
 
----
-
 Happy coding! 🚀
 
 *Remember: There are no stupid questions, only questions we haven't answered yet.*
-
-

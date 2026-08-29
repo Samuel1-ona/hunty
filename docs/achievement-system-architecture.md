@@ -6,48 +6,48 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                     HUNTY APPLICATION                           │
 └─────────────────────────────────────────────────────────────────┘
-                              │
-                ┌─────────────┼─────────────┐
-                │             │             │
-        ┌───────▼────────┐   │   ┌─────────▼────────┐
-        │  Game Complete │   │   │  Player Profile  │
-        │    Modal       │   │   │     Page         │
-        └───────┬────────┘   │   └─────────┬────────┘
-                │            │            │
-                │            │            │
-        ┌───────▼────────────▼────────────▼────────┐
-        │   Achievement Service Layer              │
-        │  (lib/achievements/service.ts)           │
-        │                                          │
-        │  • checkAndAwardAchievements()           │
-        │  • getEarnedAchievements()               │
-        │  • hasAchievement()                      │
-        │  • awardAchievement()                    │
-        │  • getAllAchievementsWithStatus()        │
-        └───────┬────────────────────────────────┘
-                │
-        ┌───────▼──────────────────────────────┐
-        │   Achievement Config                 │
-        │  (lib/achievements/config.ts)        │
-        │                                      │
-        │  • 10 Achievement Definitions        │
-        │  • Rarity Levels & Colors            │
-        │  • TypeScript Types                  │
-        └───────┬──────────────────────────────┘
-                │
-        ┌───────▼──────────────────────────────┐
-        │   Browser localStorage               │
-        │  hunty_achievements_{address}        │
-        │                                      │
-        │  {                                   │
-        │    address: string                   │
-        │    earned: [{                        │
-        │      id: AchievementId               │
-        │      earnedAt: timestamp             │
-        │    }]                                │
-        │    lastUpdated: timestamp            │
-        │  }                                   │
-        └────────────────────────────────────┘
+                               │
+                 ┌─────────────┼─────────────┐
+                 │             │             │
+         ┌───────▼────────┐   │   ┌─────────▼────────┐
+         │  Game Complete │   │   │  Player Profile  │
+         │    Modal       │   │   │     Page         │
+         └───────┬────────┘   │   └─────────┬────────┘
+                 │            │            │
+                 │            │            │
+         ┌───────▼────────────▼────────────▼────────┐
+         │   Achievement Service Layer              │
+         │  (lib/achievements/service.ts)           │
+         │                                          │
+         │  • checkAndAwardAchievements()           │
+         │  • getEarnedAchievements()               │
+         │  • hasAchievement()                      │
+         │  • awardAchievement()                    │
+         │  • getAllAchievementsWithStatus()        │
+         └───────┬────────────────────────────────┘
+                 │
+         ┌───────▼──────────────────────────────┐
+         │   Achievement Config                 │
+         │  (lib/achievements/config.ts)        │
+         │                                      │
+         │  • 10 Achievement Definitions        │
+         │  • Rarity Levels & Colors            │
+         │  • TypeScript Types                  │
+         └───────┬──────────────────────────────┘
+                 │
+         ┌───────▼──────────────────────────────┐
+         │   Browser localStorage               │
+         │  hunty_achievements_{address}        │
+         │                                      │
+         │  {                                   │
+         │    address: string                   │
+         │    earned: [{                        │
+         │      id: AchievementId               │
+         │      earnedAt: timestamp             │
+         │    }]                                │
+         │    lastUpdated: timestamp            │
+         │  }                                   │
+         └────────────────────────────────────┘
 ```
 
 ## 🔄 Data Flow Diagram
@@ -58,15 +58,15 @@
 ┌──────────────────┐
 │  Hunt Completed  │
 └────────┬─────────┘
-         │
-         ▼
+          │
+          ▼
 ┌──────────────────────────────┐
 │ GameCompleteModal Opens      │
 │ - Confetti animation         │
 │ - Fetch registration status  │
 └────────┬─────────────────────┘
-         │
-         ▼
+          │
+          ▼
 ┌──────────────────────────────────────────┐
 │ checkAndAwardAchievements()              │
 │ Input: playerAddress, stats              │
@@ -75,8 +75,8 @@
 │ - totalNftsEarned                        │
 │ - fastestCompletionSeconds               │
 └────────┬─────────────────────────────────┘
-         │
-         ▼
+          │
+          ▼
 ┌──────────────────────────────────────────┐
 │ Check Each Achievement Condition         │
 │ - first_hunt_completed: >= 1 hunt        │
@@ -84,8 +84,8 @@
 │ - five_wins: >= 5 wins                   │
 │ - ... (all 10 achievements)              │
 └────────┬─────────────────────────────────┘
-         │
-         ▼
+          │
+          ▼
 ┌──────────────────────────────────────────┐
 │ Award New Achievements                   │
 │ - Check if already earned                │
@@ -93,8 +93,8 @@
 │ - Add timestamp                          │
 │ - Return newly earned IDs                │
 └────────┬─────────────────────────────────┘
-         │
-         ▼
+          │
+          ▼
 ┌──────────────────────────────────────────┐
 │ Show Toast Notifications                 │
 │ For each new achievement:                │
@@ -102,21 +102,21 @@
 │ - Description                            │
 │ - 5 second duration                      │
 └────────┬─────────────────────────────────┘
-         │
-         ▼
+          │
+          ▼
 ┌──────────────────────────────────────────┐
 │ Display in Modal                         │
 │ - Highlighted section                    │
 │ - Achievement icon, title, description   │
 │ - Grid layout                            │
 └────────┬─────────────────────────────────┘
-         │
-         ▼
+          │
+          ▼
 ┌──────────────────────────────────────────┐
 │ Player Views Profile                     │
 └────────┬─────────────────────────────────┘
-         │
-         ▼
+          │
+          ▼
 ┌──────────────────────────────────────────┐
 │ BadgeWall Component Loads                │
 │ - getAllAchievementsWithStatus()         │
@@ -162,15 +162,12 @@ hunty/
 │       ├── service.test.ts        # 28 tests
 │       ├── index.ts               # Exports
 │       └── README.md              # Documentation
-│
 ├── components/
 │   ├── BadgeWall.tsx              # Achievement display
 │   └── GameCompleteModal.tsx      # Integration point
-│
 ├── app/
 │   └── profile/
 │       └── page.tsx               # Profile integration
-│
 └── Documentation/
     ├── ACHIEVEMENT_SYSTEM_IMPLEMENTATION.md
     ├── ACHIEVEMENT_QUICK_START.md

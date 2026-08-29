@@ -61,7 +61,6 @@ Successfully added comprehensive Vitest unit tests for `lib/huntStore.ts` with *
 - **getHuntById()** - 2 tests
 - **addHunt()** - 3 tests
 - **getHuntClues()** - 3 tests
-- **saveClueLocally()** - 4 tests
 - **getHunt()** - 3 tests
 - **getFeaturedHunts()** - 5 tests
 - **localStorage persistence** - 3 tests

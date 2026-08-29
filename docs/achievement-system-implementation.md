@@ -20,7 +20,7 @@ All requirements from GitHub issue #381 have been completed:
 ```
 lib/achievements/
 ├── config.ts              # Achievement definitions and rarity colors
-├── service.ts             # Achievement logic and storage
+├── service.ts             # Core logic and storage
 ├── service.test.ts        # 28 comprehensive tests
 ├── index.ts               # Public exports
 └── README.md              # User documentation
@@ -269,7 +269,6 @@ npm test -- lib/achievements/service.test.ts
 
 ## 📊 Storage Pattern
 
-Follows existing Hunty patterns:
 - **Client-side storage**: localStorage for achievements
 - **On-chain ready**: Can be extended to Soroban contracts
 - **Wallet-based**: Achievements tied to Stellar address
@@ -378,18 +377,6 @@ All requirements met:
 - [x] Uses existing styling (Tailwind CSS)
 - [x] Uses existing state management (Zustand)
 - [x] Uses existing notification system (Sonner)
-
-## 🎓 Learning Resources
-
-The implementation demonstrates:
-- TypeScript union types and interfaces
-- React hooks (useState, useEffect)
-- localStorage API usage
-- Zustand store patterns
-- Radix UI component integration
-- Tailwind CSS responsive design
-- Vitest testing patterns
-- Error handling and edge cases
 
 ---
 

@@ -1,6 +1,7 @@
 # LeaderboardTable Performance Optimization - Testing Guide
 
 ## Assignment Summary
+
 This assignment addresses [PERF] LeaderboardTable rerenders on every parent state change by implementing:
 1. ✅ Wrapping `LeaderboardTable` in `React.memo` to prevent unnecessary re-renders
 2. ✅ Preparing infrastructure for memoizing the `data` prop with `useMemo`
@@ -54,21 +55,21 @@ npx vitest run components/__tests__/LeaderBoardTable.test.tsx
 **Expected Output:**
 ```
  ❯ components/__tests__/LeaderBoardTable.test.tsx (12 tests | all passed)
-   ✓ renders loading skeleton when isLoading is true and data is empty
-   ✓ renders empty state when no data is available
-   ✓ renders table with leaderboard data
-   ✓ renders table headers correctly
-   ✓ truncates wallet address when name is not provided
-   ✓ displays top 3 players with highlighted styling
-   ✓ renders snapshot of table with data
-   ✓ renders snapshot of empty state
-   ✓ renders snapshot of loading state
-   ✓ does not re-render when props remain the same (memo optimization)
-   ✓ re-renders when huntId prop changes (memo allows this)
-   ✓ renders snapshot confirming memo wrapper prevents unnecessary renders
+    ✓ renders loading skeleton when isLoading is true and data is empty
+    ✓ renders empty state when no data is available
+    ✓ renders table with leaderboard data
+    ✓ renders table headers correctly
+    ✓ truncates wallet address when name is not provided
+    ✓ displays top 3 players with highlighted styling
+    ✓ renders snapshot of table with data
+    ✓ renders snapshot of empty state
+    ✓ renders snapshot of loading state
+    ✓ does not re-render when props remain the same (memo optimization)
+    ✓ re-renders when huntId prop changes (memo allows this)
+    ✓ renders snapshot confirming memo wrapper prevents unnecessary renders
 
  Test Files  1 passed (1)
-      Tests  12 passed (12)
+    Tests  12 passed (12)
 ```
 
 **✓ Success Criteria:** All 12 tests pass successfully.
@@ -103,7 +104,7 @@ npm test -- components/__tests__/LeaderBoardTable.test.tsx -t "does not re-rende
 
 **Expected Output:**
 ```
-✓ does not re-render when props remain the same (memo optimization)
+ ✓ does not re-render when props remain the same (memo optimization)
 ```
 
 **✓ Success Criteria:** This specific test verifies that React.memo prevents unnecessary renders when props don't change.
@@ -115,7 +116,7 @@ npm test -- components/__tests__/LeaderBoardTable.test.tsx -t "re-renders when h
 
 **Expected Output:**
 ```
-✓ re-renders when huntId prop changes (memo allows this)
+ ✓ re-renders when huntId prop changes (memo allows this)
 ```
 
 **✓ Success Criteria:** Confirms that the component still re-renders when props actually change (correct behavior).
@@ -127,10 +128,10 @@ npm test -- components/__tests__/LeaderBoardTable.test.tsx -t "snapshot"
 
 **Expected Output:**
 ```
-✓ renders snapshot of table with data
-✓ renders snapshot of empty state
-✓ renders snapshot of loading state
-✓ renders snapshot confirming memo wrapper prevents unnecessary renders
+ ✓ renders snapshot of table with data
+ ✓ renders snapshot of empty state
+ ✓ renders snapshot of loading state
+ ✓ renders snapshot confirming memo wrapper prevents unnecessary renders
 ```
 
 **✓ Success Criteria:** All 4 snapshot tests pass, verifying the memo-optimized component output.
@@ -182,6 +183,7 @@ grep -A 2 "LeaderboardTable" components/HuntDashboard.tsx
 
 #### Step 5.1: Verify memo import is used correctly
 ```bash
+cd /workspaces/hunty
 grep -B 5 -A 5 "memo(" components/LeaderBoardTable.tsx | tail -10
 ```
 
@@ -211,7 +213,7 @@ data?: LeaderboardDisplayEntry[]
 
 ### After Optimization:
 - **Solution:** React.memo prevents re-renders when props haven't changed
-- **Impact:** 
+- **Impact:**
   - ✅ Parent state changes (search, filters, tabs) no longer trigger LeaderboardTable re-renders
   - ✅ Component only re-renders when `huntId`, `data`, or `isLoading` props actually change
   - ✅ Reduces CPU usage and improves UI responsiveness
@@ -246,17 +248,19 @@ data?: LeaderboardDisplayEntry[]
    - Wrapped component with `React.memo()`
    - Changed component to use explicit React import
 
-2. **Created: [components/__tests__/LeaderBoardTable.test.tsx](components/__tests__/LeaderBoardTable.test.tsx)**
-   - 12 comprehensive tests covering:
-     - Loading states
-     - Empty states
-     - Data rendering
-     - Top 3 player highlighting
-     - Memo optimization behavior
-     - Snapshot tests for regression detection
+### Created:
+- **[components/__tests__/LeaderBoardTable.test.tsx](components/__tests__/LeaderBoardTable.test.tsx)**
+  - 12 comprehensive tests covering:
+    - Loading states
+    - Empty states
+    - Data rendering
+    - Top 3 player highlighting
+    - Memo optimization behavior
+    - Snapshot tests for regression detection
 
-3. **Generated: [components/__tests__/__snapshots__/LeaderBoardTable.test.tsx.snap](components/__tests__/__snapshots__/LeaderBoardTable.test.tsx.snap)**
-   - Snapshot file documenting component output
+### Generated:
+- **[components/__tests__/__snapshots__/LeaderBoardTable.test.tsx.snap](components/__tests__/__snapshots__/LeaderBoardTable.test.tsx.snap)**
+  - Snapshot file documenting component output
 
 ---
 

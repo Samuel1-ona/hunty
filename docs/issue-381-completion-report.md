@@ -196,7 +196,6 @@ interface BadgeWallProps {
   - Awards legend
   - Prevents re-awarding
   - Awards multiple achievements in one call
-  - Returns empty array when no new achievements
 
 - [x] **getAllAchievementsWithStatus** (3 tests)
   - Returns all achievements with earned status
