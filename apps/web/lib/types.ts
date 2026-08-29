@@ -200,6 +200,23 @@ export interface Clue {
   answerStrictness?: AnswerStrictness;
   /** Optional IPFS media reference, optionally tagged with a type query param. */
   mediaCid?: string;
+  /** Optional A/B variants. When present, players may be assigned to A or B. */
+  variants?: {
+    A?: {
+      question?: string;
+      answer: string;
+      alternativeAnswers?: string[];
+      answerStrictness?: AnswerStrictness;
+      hints?: ClueHint[];
+    };
+    B?: {
+      question?: string;
+      answer: string;
+      alternativeAnswers?: string[];
+      answerStrictness?: AnswerStrictness;
+      hints?: ClueHint[];
+    };
+  };
 }
 
 export type ClueInfo = {
@@ -712,7 +729,7 @@ export interface SeasonBadge {
 
 // ─── Hunt Feed ───────────────────────────────────────────────────────────────
 
-export type HuntFeedCategory = "trending" | "new" | "nearby" | "featured"
+export type HuntFeedCategory = "trending" | "new" | "nearby" | "featured" | "following"
 
 
 // ─── Core Web Vitals ────────────────────────────────────────────────────────────

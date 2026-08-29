@@ -566,6 +566,7 @@ export const apiSchemas = {
   draftPatchBody: draftPatchBodySchema,
   paymasterSponsorBody: paymasterSponsorBodySchema,
   paymasterAdminConfigBody: paymasterAdminConfigBodySchema,
+  huntSponsorBody: huntSponsorBodySchema,
   referralLeaderboardQuery: referralLeaderboardQuerySchema,
   referralTrackBody: referralTrackBodySchema,
   referralPayoutBody: referralPayoutBodySchema,

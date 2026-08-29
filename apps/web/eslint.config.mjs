@@ -1,4 +1,5 @@
-import nextConfig from "@hunty/config/eslint/next.mjs";
+import nextConfig from "@hunty/config/eslint/next";
+
 import jsxA11y from "eslint-plugin-jsx-a11y";
 
 // @hunty/config/eslint/next already provides next/core-web-vitals,

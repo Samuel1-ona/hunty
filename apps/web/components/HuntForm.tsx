@@ -100,7 +100,7 @@ export function HuntForm({
     reset,
     setValue,
     watch,
-    formState: { errors },
+    formState: { errors, submitCount },
   } = useForm<CluesFormData>({
     resolver: zodResolver(cluesFormSchema),
     defaultValues: {
@@ -118,6 +118,19 @@ export function HuntForm({
       ],
     },
   });
+
+  const errorCount = useMemo(() => {
+    let count = 0;
+    if (errors.clues?.message) count++;
+    if (Array.isArray(errors.clues)) {
+      errors.clues.forEach((err) => {
+        if (err) {
+          count += Object.keys(err).length;
+        }
+      });
+    }
+    return count;
+  }, [errors]);
 
   const { fields, append, remove, move } = useFieldArray({
     control,
@@ -372,6 +385,11 @@ export function HuntForm({
 
   return (
     <div className="space-y-4 print:space-y-0">
+      <div className="sr-only" role="alert" aria-live="assertive">
+        {submitCount > 0 && errorCount > 0
+          ? `Form submission failed with ${errorCount} error${errorCount === 1 ? "" : "s"}. (Attempt ${submitCount})`
+          : ""}
+      </div>
       <div className="flex items-center justify-between print:hidden">
         <h3 className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-2xl font-semibold text-transparent bg-clip-text">
           Hunt {hunt.id}
@@ -678,8 +696,8 @@ export function HuntForm({
                 key={field.id}
                 className="flex flex-col gap-2 p-2 border border-slate-100 dark:border-white/5 rounded-lg bg-white/50 dark:bg-slate-900/50"
               >
-                <div className="flex gap-2 items-center">
-                  <span className="text-xs text-slate-400 dark:text-slate-500 w-4 shrink-0">
+                <div className="flex gap-2 items-start">
+                  <span className="text-xs text-slate-400 dark:text-slate-500 w-4 shrink-0 mt-2">
                     {index + 1}.
                   </span>
                   <div className="flex-1 flex flex-col">
@@ -690,6 +708,7 @@ export function HuntForm({
                         <Input
                           placeholder="Riddle / Question"
                           aria-label={`Clue ${index + 1} Question`}
+                          aria-invalid={!!errors.clues?.[index]?.question}
                           aria-describedby={
                             errors.clues?.[index]?.question
                               ? `clue-${index}-question-error`
@@ -719,6 +738,7 @@ export function HuntForm({
                         <Input
                           placeholder="Answer (use | for multiple)"
                           aria-label={`Clue ${index + 1} Answer`}
+                          aria-invalid={!!errors.clues?.[index]?.answer}
                           aria-describedby={
                             errors.clues?.[index]?.answer ? `clue-${index}-answer-error` : undefined
                           }
@@ -748,6 +768,10 @@ export function HuntForm({
                           placeholder="Pts"
                           aria-label={`Clue ${index + 1} Points`}
                           min={1}
+                          aria-invalid={!!errors.clues?.[index]?.points}
+                          aria-describedby={
+                            errors.clues?.[index]?.points ? `clue-${index}-points-error` : undefined
+                          }
                           value={f.value}
                           onChange={(e) => f.onChange(parseInt(e.target.value, 10) || 0)}
                           onBlur={f.onBlur}
@@ -757,6 +781,16 @@ export function HuntForm({
                         />
                       )}
                     />
+                    {errors.clues?.[index]?.points && (
+                      <span
+                        role="alert"
+                        aria-live="assertive"
+                        id={`clue-${index}-points-error`}
+                        className="text-red-500 text-xs mt-0.5"
+                      >
+                        {errors.clues[index].points.message}
+                      </span>
+                    )}
                   </div>
                   <Button
                     type="button"
@@ -807,52 +841,100 @@ export function HuntForm({
                     ))}
                   </div>
                 </div>
-                <div className="flex gap-2 items-center pl-6">
-                  <Controller
-                    control={control}
-                    name={`clues.${index}.hint`}
-                    render={({ field: f }) => (
-                      <Input
-                        placeholder="Optional Hint Text"
-                        {...f}
-                        className="flex-1 pl-3 py-2 text-sm"
-                      />
-                    )}
-                  />
-                  <Controller
-                    control={control}
-                    name={`clues.${index}.hintCost`}
-                    render={({ field: f }) => (
-                      <Input
-                        type="number"
-                        placeholder="Hint Cost"
-                        min={0}
-                        value={f.value}
-                        onChange={(e) => f.onChange(parseInt(e.target.value, 10) || 0)}
-                        onBlur={f.onBlur}
-                        name={f.name}
-                        ref={f.ref}
-                        className="w-24 pl-3 py-2 text-sm"
-                      />
-                    )}
-                  />
-                  <Controller
-                    control={control}
-                    name={`clues.${index}.difficulty`}
-                    render={({ field: f }) => (
-                      <select
-                        aria-label={`Clue ${index + 1} Difficulty`}
-                        value={f.value ?? ""}
-                        onChange={(e) => f.onChange(e.target.value || undefined)}
-                        className="w-28 pl-3 py-2 text-sm rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                <div className="flex gap-2 items-start pl-6">
+                  <div className="flex-1 flex flex-col">
+                    <Controller
+                      control={control}
+                      name={`clues.${index}.hint`}
+                      render={({ field: f }) => (
+                        <Input
+                          placeholder="Optional Hint Text"
+                          aria-invalid={!!errors.clues?.[index]?.hint}
+                          aria-describedby={
+                            errors.clues?.[index]?.hint ? `clue-${index}-hint-error` : undefined
+                          }
+                          {...f}
+                          className="w-full pl-3 py-2 text-sm"
+                        />
+                      )}
+                    />
+                    {errors.clues?.[index]?.hint && (
+                      <span
+                        role="alert"
+                        aria-live="assertive"
+                        id={`clue-${index}-hint-error`}
+                        className="text-red-500 text-xs mt-0.5"
                       >
-                        <option value="">Difficulty</option>
-                        <option value="Easy">Easy</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Hard">Hard</option>
-                      </select>
+                        {errors.clues[index].hint.message}
+                      </span>
                     )}
-                  />
+                  </div>
+                  <div className="w-24 flex flex-col">
+                    <Controller
+                      control={control}
+                      name={`clues.${index}.hintCost`}
+                      render={({ field: f }) => (
+                        <Input
+                          type="number"
+                          placeholder="Hint Cost"
+                          min={0}
+                          aria-invalid={!!errors.clues?.[index]?.hintCost}
+                          aria-describedby={
+                            errors.clues?.[index]?.hintCost ? `clue-${index}-hintCost-error` : undefined
+                          }
+                          value={f.value}
+                          onChange={(e) => f.onChange(parseInt(e.target.value, 10) || 0)}
+                          onBlur={f.onBlur}
+                          name={f.name}
+                          ref={f.ref}
+                          className="w-full pl-3 py-2 text-sm"
+                        />
+                      )}
+                    />
+                    {errors.clues?.[index]?.hintCost && (
+                      <span
+                        role="alert"
+                        aria-live="assertive"
+                        id={`clue-${index}-hintCost-error`}
+                        className="text-red-500 text-xs mt-0.5"
+                      >
+                        {errors.clues[index].hintCost.message}
+                      </span>
+                    )}
+                  </div>
+                  <div className="w-28 flex flex-col">
+                    <Controller
+                      control={control}
+                      name={`clues.${index}.difficulty`}
+                      render={({ field: f }) => (
+                        <select
+                          aria-label={`Clue ${index + 1} Difficulty`}
+                          aria-invalid={!!errors.clues?.[index]?.difficulty}
+                          aria-describedby={
+                            errors.clues?.[index]?.difficulty ? `clue-${index}-difficulty-error` : undefined
+                          }
+                          value={f.value ?? ""}
+                          onChange={(e) => f.onChange(e.target.value || undefined)}
+                          className="w-full pl-3 py-2 text-sm rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        >
+                          <option value="">Difficulty</option>
+                          <option value="Easy">Easy</option>
+                          <option value="Medium">Medium</option>
+                          <option value="Hard">Hard</option>
+                        </select>
+                      )}
+                    />
+                    {errors.clues?.[index]?.difficulty && (
+                      <span
+                        role="alert"
+                        aria-live="assertive"
+                        id={`clue-${index}-difficulty-error`}
+                        className="text-red-500 text-xs mt-0.5"
+                      >
+                        {errors.clues[index].difficulty.message}
+                      </span>
+                    )}
+                  </div>
                   <input
                     ref={(node) => {
                       clueFileInputRefs.current[index] = node;
