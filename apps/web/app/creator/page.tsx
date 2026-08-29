@@ -10,6 +10,7 @@ import {
   HelpCircle,
   Pencil,
   RefreshCw,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -52,6 +53,7 @@ import {
   SPOTLIGHT_FEE_XLM,
   unhideHuntsFromPublic,
 } from "@/lib/huntStore";
+import { saveHuntAsTemplate } from "@/lib/communityTemplates";
 import { logger } from "@/lib/logger";
 import { fetchCreatorRewardHistory } from "@/lib/rewardHistory";
 import type { StoredHunt } from "@/lib/types";
@@ -90,6 +92,12 @@ export default function CreatorPage() {
     huntIds: number[];
   }>({ open: false, action: "archive", huntIds: [] });
   const [promotingHuntId, setPromotingHuntId] = useState<number | null>(null);
+
+  const [templateDialog, setTemplateDialog] = useState<{ open: boolean; huntId: number | null }>({
+    open: false,
+    huntId: null,
+  });
+  const [templateAuthor, setTemplateAuthor] = useState("");
 
   const loadHunts = useCallback(() => {
     if (!publicKey) {
@@ -520,6 +528,18 @@ export default function CreatorPage() {
                                 variant="ghost"
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  setTemplateDialog({ open: true, huntId: hunt.id });
+                                }}
+                                className="h-6 w-6 p-0 text-slate-500 hover:text-orange-600"
+                                title="Save as Template"
+                              >
+                                <Sparkles className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   handleAction("archive", [hunt.id]);
                                 }}
                                 className="h-6 w-6 p-0 text-slate-500 hover:text-slate-700"
@@ -670,6 +690,63 @@ export default function CreatorPage() {
                 }
               >
                 Confirm
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Save as Template Dialog */}
+        <AlertDialog
+          open={templateDialog.open}
+          onOpenChange={(open) => setTemplateDialog({ ...templateDialog, open })}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-orange-600" />
+                Save as Template
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Save this hunt&apos;s structure as a template. The clues will be saved but the answers will be removed, allowing others to create new hunts from your design.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="py-4">
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Author Name
+              </label>
+              <Input
+                value={templateAuthor}
+                onChange={(e) => setTemplateAuthor(e.target.value)}
+                placeholder="Your Name or Studio"
+                autoFocus
+              />
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (!templateAuthor.trim()) {
+                    toast.error("Author name is required.");
+                    return;
+                  }
+                  if (templateDialog.huntId) {
+                    try {
+                        const hunt = [...hunts, ...archivedHunts, ...softDeletedHunts].find((h) => h.id === templateDialog.huntId);
+                        if (hunt) {
+                            saveHuntAsTemplate(hunt, templateAuthor);
+                            toast.success("Saved as template. It is now available in the Template Gallery.");
+                        }
+                    } catch (err: any) {
+                        toast.error(err.message || "Failed to save template.");
+                    }
+                  }
+                  setTemplateDialog({ open: false, huntId: null });
+                  setTemplateAuthor("");
+                }}
+                disabled={!templateAuthor.trim()}
+                className="bg-[#3737A4] hover:bg-slate-800"
+              >
+                Save Template
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

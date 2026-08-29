@@ -234,6 +234,9 @@ export default function AdminModerationPage() {
                         <span className="rounded-md bg-slate-100 px-2 py-1 dark:bg-slate-800">
                           {submission.hunt.rewardType} · pool {submission.hunt.rewardPool ?? 0}
                         </span>
+                        <span className="rounded-md bg-emerald-100 px-2 py-1 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                          Age: {(submission.hunt.ageClassification ?? "all-ages").replace("-plus", "+")}
+                        </span>
                         {submission.creatorEmail && (
                           <span className="rounded-md bg-slate-100 px-2 py-1 dark:bg-slate-800">
                             {submission.creatorEmail}

@@ -65,8 +65,6 @@ const socialLinks = [
 export function Footer() {
   const t = useTranslations("footer")
   const commonT = useTranslations("common")
-  const [email, setEmail] = useState("")
-  const [isSubscribed, setIsSubscribed] = useState(false)
   const [email, setEmail] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
 

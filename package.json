@@ -2,6 +2,7 @@
   "name": "hunty",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.32.1",
   "packageManager": "pnpm@10.33.0",
   "description": "Cross-platform scavenger hunt dApp using Next.js, Expo, IPFS, and Stellar/Soroban.",
   "scripts": {
@@ -14,12 +15,12 @@
     "test": "turbo run test",
     "test:coverage": "turbo run test:coverage",
     "test:mutation": "turbo run test:mutation",
-    "e2e": "pnpm e2e --workspace @hunty/web",
-    "smoke": "pnpm smoke --workspace @hunty/web",
+    "e2e": "turbo run e2e",
+    "smoke": "turbo run smoke",
     "test:e2e": "pnpm test:e2e --workspace @hunty/web",
     "analyze": "pnpm analyze --workspace @hunty/web",
-    "bundle:check": "pnpm bundle:check --workspace @hunty/web",
-    "perf:budget": "pnpm perf:budget --workspace @hunty/web",
+    "bundle:check": "turbo run bundle:check",
+    "perf:budget": "turbo run perf:budget",
     "storybook": "pnpm storybook --workspace @hunty/web",
     "build-storybook": "pnpm build-storybook --workspace @hunty/web",
     "clean": "turbo run clean",
@@ -111,7 +112,6 @@
     "@types/react-dom": "^19",
     "@types/serviceworker": "^0.0.197",
     "@types/web-push": "^3.6.4",
-    "@vitejs/plugin-react": "^6.0.4",
     "@vitest/browser-playwright": "^4.0.18",
     "@vitest/coverage-v8": "^4.1.1",
     "@vitest/ui": "^4.0.18",
@@ -138,5 +138,10 @@
     "typescript": "^5",
     "vite": "^8.1.0",
     "vitest": "^4.0.18"
+  },
+  "pnpm.overrides": {
+    "@vitejs/plugin-react": "^6.0.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
   }
 }

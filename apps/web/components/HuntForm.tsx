@@ -9,8 +9,19 @@ import { z } from "zod";
 
 import { Button } from "@hunty/ui";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { addCluesBatch } from "@/lib/contracts/hunt";
 import { sha256Hex } from "@/lib/crypto";
+import { parseClueCsv, type CsvRow, type CsvParseResult } from "@/lib/csv";
 import {
   restoreHuntStoreSnapshot,
   saveCluesLocallyBatch,
@@ -39,6 +50,8 @@ interface HuntFormProps {
   onClueReorder?: () => void
 }
 
+const clueTranslationLocales = ["en", "es", "fr"] as const;
+
 const clueSchema = z.object({
   question: z.string().min(1, "Question is required"),
   answer: z.string().min(1, "Answer is required"),
@@ -47,6 +60,8 @@ const clueSchema = z.object({
   hintCost: z.number().min(0),
   difficulty: z.enum(["Easy", "Medium", "Hard"]).optional(),
   mediaCid: z.string().optional(),
+  questionTranslations: z.record(z.string(), z.string()).optional(),
+  hintTranslations: z.record(z.string(), z.string()).optional(),
 });
 
 const cluesFormSchema = z.object({
@@ -74,6 +89,10 @@ export function HuntForm({
   const dragDropEnabled = useIsFeatureEnabled("dragDropClues");
   const clueFileInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const [uploadingClueIndex, setUploadingClueIndex] = useState<number | null>(null);
+  const [csvDialogOpen, setCsvDialogOpen] = useState(false);
+  const [csvPreview, setCsvPreview] = useState<CsvParseResult | null>(null);
+  const [csvFileName, setCsvFileName] = useState<string | null>(null);
+  const csvInputRef = useRef<HTMLInputElement>(null);
 
   const {
     control,
@@ -81,13 +100,37 @@ export function HuntForm({
     reset,
     setValue,
     watch,
-    formState: { errors },
+    formState: { errors, submitCount },
   } = useForm<CluesFormData>({
     resolver: zodResolver(cluesFormSchema),
     defaultValues: {
-      clues: [{ question: "", answer: "", points: 10, hint: "", hintCost: 0, mediaCid: "" }],
+      clues: [
+        {
+          question: "",
+          answer: "",
+          points: 10,
+          hint: "",
+          hintCost: 0,
+          mediaCid: "",
+          questionTranslations: { en: "", es: "", fr: "" },
+          hintTranslations: { en: "", es: "", fr: "" },
+        },
+      ],
     },
   });
+
+  const errorCount = useMemo(() => {
+    let count = 0;
+    if (errors.clues?.message) count++;
+    if (Array.isArray(errors.clues)) {
+      errors.clues.forEach((err) => {
+        if (err) {
+          count += Object.keys(err).length;
+        }
+      });
+    }
+    return count;
+  }, [errors]);
 
   const { fields, append, remove, move } = useFieldArray({
     control,
@@ -138,7 +181,16 @@ export function HuntForm({
   };
 
   const addClueRow = () => {
-    append({ question: "", answer: "", points: 10, hint: "", hintCost: 0, mediaCid: "" });
+    append({
+      question: "",
+      answer: "",
+      points: 10,
+      hint: "",
+      hintCost: 0,
+      mediaCid: "",
+      questionTranslations: { en: "", es: "", fr: "" },
+      hintTranslations: { en: "", es: "", fr: "" },
+    });
   };
 
   const removeClueRow = (index: number) => {
@@ -146,6 +198,48 @@ export function HuntForm({
       remove(index);
     }
   };
+
+  const handleCsvFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setCsvFileName(file.name)
+    const reader = new FileReader()
+    reader.onload = () => {
+      const text = typeof reader.result === "string" ? reader.result : ""
+      const result = parseClueCsv(text)
+      setCsvPreview(result)
+    }
+    reader.readAsText(file)
+  }
+
+  const handleCsvImport = () => {
+    if (!csvPreview) return
+    const validRows = csvPreview.rows.filter((row) => {
+      return row.question.trim() && row.answer.trim() && row.points >= 1
+    })
+    if (validRows.length === 0) {
+      toast.error("No valid clues to import")
+      return
+    }
+    for (const row of validRows) {
+      append({
+        question: row.question,
+        answer: row.answer,
+        points: row.points,
+        hint: row.hint || "",
+        hintCost: row.hintCost ?? 0,
+        difficulty: row.difficulty,
+        mediaCid: "",
+      })
+    }
+    toast.success(`Imported ${validRows.length} clue(s)`)
+    setCsvDialogOpen(false)
+    setCsvPreview(null)
+    setCsvFileName(null)
+    if (csvInputRef.current) {
+      csvInputRef.current.value = ""
+    }
+  }
 
   const clueSortItems = useMemo(
     () =>
@@ -198,6 +292,16 @@ export function HuntForm({
         question: row.question.trim(),
         answer: row.answer.trim().toLowerCase(),
         points: row.points,
+        questionTranslations: Object.fromEntries(
+          clueTranslationLocales
+            .map((locale) => [locale, row.questionTranslations?.[locale]?.trim() ?? ""])
+            .filter(([, value]) => value.length > 0)
+        ),
+        hintTranslations: Object.fromEntries(
+          clueTranslationLocales
+            .map((locale) => [locale, row.hintTranslations?.[locale]?.trim() ?? ""])
+            .filter(([, value]) => value.length > 0)
+        ),
         hint: row.hint?.trim() || undefined,
         hintCost: row.hintCost,
         difficulty: row.difficulty,
@@ -234,7 +338,20 @@ export function HuntForm({
       }
 
       onCluesSaved?.(valid.length);
-      reset({ clues: [{ question: "", answer: "", points: 10, hint: "", hintCost: 0, mediaCid: "" }] });
+      reset({
+        clues: [
+          {
+            question: "",
+            answer: "",
+            points: 10,
+            hint: "",
+            hintCost: 0,
+            mediaCid: "",
+            questionTranslations: { en: "", es: "", fr: "" },
+            hintTranslations: { en: "", es: "", fr: "" },
+          },
+        ],
+      });
     } catch (error) {
       restoreHuntStoreSnapshot(snapshot);
       throw error;
@@ -268,6 +385,11 @@ export function HuntForm({
 
   return (
     <div className="space-y-4 print:space-y-0">
+      <div className="sr-only" role="alert" aria-live="assertive">
+        {submitCount > 0 && errorCount > 0
+          ? `Form submission failed with ${errorCount} error${errorCount === 1 ? "" : "s"}. (Attempt ${submitCount})`
+          : ""}
+      </div>
       <div className="flex items-center justify-between print:hidden">
         <h3 className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-2xl font-semibold text-transparent bg-clip-text">
           Hunt {hunt.id}
@@ -445,15 +567,127 @@ export function HuntForm({
             <span className="text-xl font-semibold bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-transparent bg-clip-text">
               Clues
             </span>
-            <Button
-              type="button"
-              onClick={addClueRow}
-              size="sm"
-              className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-white flex items-center gap-1 rounded-xl"
-            >
-              <Plus className="w-4 h-4" />
-              Add Clue
-            </Button>
+            <div className="flex items-center gap-2">
+              <Dialog open={csvDialogOpen} onOpenChange={setCsvDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                  >
+                    Import CSV
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Import clues from CSV</DialogTitle>
+                    <DialogDescription>
+                      Upload a CSV file with columns: question, answer, points, hint, hintCost, difficulty.
+                      Header row is optional.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="flex flex-col gap-2">
+                      <Input
+                        ref={csvInputRef}
+                        type="file"
+                        accept=".csv,text/csv"
+                        onChange={handleCsvFileChange}
+                        className="text-sm"
+                      />
+                      {csvFileName && (
+                        <p className="text-xs text-slate-500">Selected: {csvFileName}</p>
+                      )}
+                    </div>
+                    {csvPreview && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-slate-400">
+                          {csvPreview.rows.length} row(s) parsed, {csvPreview.errors.length} error(s)
+                        </p>
+                        <div className="max-h-60 overflow-y-auto border border-white/10 rounded-lg">
+                          <table className="w-full text-xs">
+                            <thead className="bg-white/5 text-slate-400">
+                              <tr>
+                                <th className="text-left px-2 py-1">#</th>
+                                <th className="text-left px-2 py-1">Question</th>
+                                <th className="text-left px-2 py-1">Answer</th>
+                                <th className="text-left px-2 py-1">Pts</th>
+                                <th className="text-left px-2 py-1">Hint</th>
+                                <th className="text-left px-2 py-1">Cost</th>
+                                <th className="text-left px-2 py-1">Diff</th>
+                                <th className="text-left px-2 py-1">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {csvPreview.rows.map((row, idx) => {
+                                const rowErrors = csvPreview.errors.filter((e) => e.row === idx + 1)
+                                const isValid = rowErrors.length === 0
+                                return (
+                                  <tr key={idx} className={cn("border-t border-white/5", isValid ? "" : "bg-red-500/10")}>
+                                    <td className="px-2 py-1 text-slate-500">{idx + 1}</td>
+                                    <td className="px-2 py-1 text-slate-200 truncate max-w-[200px]">{row.question}</td>
+                                    <td className="px-2 py-1 text-slate-200 truncate max-w-[120px]">{row.answer}</td>
+                                    <td className="px-2 py-1 text-slate-200">{row.points}</td>
+                                    <td className="px-2 py-1 text-slate-400 truncate max-w-[150px]">{row.hint || "—"}</td>
+                                    <td className="px-2 py-1 text-slate-400">{row.hintCost ?? 0}</td>
+                                    <td className="px-2 py-1 text-slate-400">{row.difficulty || "—"}</td>
+                                    <td className="px-2 py-1">
+                                      {isValid ? (
+                                        <span className="text-emerald-400">Valid</span>
+                                      ) : (
+                                        <span className="text-red-400">{rowErrors.map((e) => e.message).join(", ")}</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                        {csvPreview.errors.length > 0 && (
+                          <p className="text-xs text-red-400">
+                            Fix the highlighted rows before importing, or note that invalid rows will be skipped.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setCsvDialogOpen(false)
+                        setCsvPreview(null)
+                        setCsvFileName(null)
+                        if (csvInputRef.current) {
+                          csvInputRef.current.value = ""
+                        }
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleCsvImport}
+                      disabled={!csvPreview || csvPreview.rows.length === 0}
+                    >
+                      Import {csvPreview ? `(${csvPreview.rows.length})` : ""}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              <Button
+                type="button"
+                onClick={addClueRow}
+                size="sm"
+                className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-white flex items-center gap-1 rounded-xl"
+              >
+                <Plus className="w-4 h-4" />
+                Add Clue
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -462,8 +696,8 @@ export function HuntForm({
                 key={field.id}
                 className="flex flex-col gap-2 p-2 border border-slate-100 dark:border-white/5 rounded-lg bg-white/50 dark:bg-slate-900/50"
               >
-                <div className="flex gap-2 items-center">
-                  <span className="text-xs text-slate-400 dark:text-slate-500 w-4 shrink-0">
+                <div className="flex gap-2 items-start">
+                  <span className="text-xs text-slate-400 dark:text-slate-500 w-4 shrink-0 mt-2">
                     {index + 1}.
                   </span>
                   <div className="flex-1 flex flex-col">
@@ -474,6 +708,7 @@ export function HuntForm({
                         <Input
                           placeholder="Riddle / Question"
                           aria-label={`Clue ${index + 1} Question`}
+                          aria-invalid={!!errors.clues?.[index]?.question}
                           aria-describedby={
                             errors.clues?.[index]?.question
                               ? `clue-${index}-question-error`
@@ -503,6 +738,7 @@ export function HuntForm({
                         <Input
                           placeholder="Answer (use | for multiple)"
                           aria-label={`Clue ${index + 1} Answer`}
+                          aria-invalid={!!errors.clues?.[index]?.answer}
                           aria-describedby={
                             errors.clues?.[index]?.answer ? `clue-${index}-answer-error` : undefined
                           }
@@ -532,6 +768,10 @@ export function HuntForm({
                           placeholder="Pts"
                           aria-label={`Clue ${index + 1} Points`}
                           min={1}
+                          aria-invalid={!!errors.clues?.[index]?.points}
+                          aria-describedby={
+                            errors.clues?.[index]?.points ? `clue-${index}-points-error` : undefined
+                          }
                           value={f.value}
                           onChange={(e) => f.onChange(parseInt(e.target.value, 10) || 0)}
                           onBlur={f.onBlur}
@@ -541,6 +781,16 @@ export function HuntForm({
                         />
                       )}
                     />
+                    {errors.clues?.[index]?.points && (
+                      <span
+                        role="alert"
+                        aria-live="assertive"
+                        id={`clue-${index}-points-error`}
+                        className="text-red-500 text-xs mt-0.5"
+                      >
+                        {errors.clues[index].points.message}
+                      </span>
+                    )}
                   </div>
                   <Button
                     type="button"
@@ -553,52 +803,138 @@ export function HuntForm({
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
-                <div className="flex gap-2 items-center pl-6">
-                  <Controller
-                    control={control}
-                    name={`clues.${index}.hint`}
-                    render={({ field: f }) => (
-                      <Input
-                        placeholder="Optional Hint Text"
-                        {...f}
-                        className="flex-1 pl-3 py-2 text-sm"
-                      />
-                    )}
-                  />
-                  <Controller
-                    control={control}
-                    name={`clues.${index}.hintCost`}
-                    render={({ field: f }) => (
-                      <Input
-                        type="number"
-                        placeholder="Hint Cost"
-                        min={0}
-                        value={f.value}
-                        onChange={(e) => f.onChange(parseInt(e.target.value, 10) || 0)}
-                        onBlur={f.onBlur}
-                        name={f.name}
-                        ref={f.ref}
-                        className="w-24 pl-3 py-2 text-sm"
-                      />
-                    )}
-                  />
-                  <Controller
-                    control={control}
-                    name={`clues.${index}.difficulty`}
-                    render={({ field: f }) => (
-                      <select
-                        aria-label={`Clue ${index + 1} Difficulty`}
-                        value={f.value ?? ""}
-                        onChange={(e) => f.onChange(e.target.value || undefined)}
-                        className="w-28 pl-3 py-2 text-sm rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                <div className="pl-6 space-y-2">
+                  <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
+                    Translations
+                  </div>
+                  <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                    {clueTranslationLocales.map((locale) => (
+                      <div key={`${field.id}-translation-${locale}`} className="space-y-1">
+                        <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                          {locale.toUpperCase()}
+                        </div>
+                        <Controller
+                          control={control}
+                          name={`clues.${index}.questionTranslations.${locale}`}
+                          render={({ field: f }) => (
+                            <Input
+                              placeholder={`Question (${locale})`}
+                              {...f}
+                              value={f.value ?? ""}
+                              className="pl-3 py-2 text-sm"
+                            />
+                          )}
+                        />
+                        <Controller
+                          control={control}
+                          name={`clues.${index}.hintTranslations.${locale}`}
+                          render={({ field: f }) => (
+                            <Input
+                              placeholder={`Hint (${locale})`}
+                              {...f}
+                              value={f.value ?? ""}
+                              className="pl-3 py-2 text-sm"
+                            />
+                          )}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2 items-start pl-6">
+                  <div className="flex-1 flex flex-col">
+                    <Controller
+                      control={control}
+                      name={`clues.${index}.hint`}
+                      render={({ field: f }) => (
+                        <Input
+                          placeholder="Optional Hint Text"
+                          aria-invalid={!!errors.clues?.[index]?.hint}
+                          aria-describedby={
+                            errors.clues?.[index]?.hint ? `clue-${index}-hint-error` : undefined
+                          }
+                          {...f}
+                          className="w-full pl-3 py-2 text-sm"
+                        />
+                      )}
+                    />
+                    {errors.clues?.[index]?.hint && (
+                      <span
+                        role="alert"
+                        aria-live="assertive"
+                        id={`clue-${index}-hint-error`}
+                        className="text-red-500 text-xs mt-0.5"
                       >
-                        <option value="">Difficulty</option>
-                        <option value="Easy">Easy</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Hard">Hard</option>
-                      </select>
+                        {errors.clues[index].hint.message}
+                      </span>
                     )}
-                  />
+                  </div>
+                  <div className="w-24 flex flex-col">
+                    <Controller
+                      control={control}
+                      name={`clues.${index}.hintCost`}
+                      render={({ field: f }) => (
+                        <Input
+                          type="number"
+                          placeholder="Hint Cost"
+                          min={0}
+                          aria-invalid={!!errors.clues?.[index]?.hintCost}
+                          aria-describedby={
+                            errors.clues?.[index]?.hintCost ? `clue-${index}-hintCost-error` : undefined
+                          }
+                          value={f.value}
+                          onChange={(e) => f.onChange(parseInt(e.target.value, 10) || 0)}
+                          onBlur={f.onBlur}
+                          name={f.name}
+                          ref={f.ref}
+                          className="w-full pl-3 py-2 text-sm"
+                        />
+                      )}
+                    />
+                    {errors.clues?.[index]?.hintCost && (
+                      <span
+                        role="alert"
+                        aria-live="assertive"
+                        id={`clue-${index}-hintCost-error`}
+                        className="text-red-500 text-xs mt-0.5"
+                      >
+                        {errors.clues[index].hintCost.message}
+                      </span>
+                    )}
+                  </div>
+                  <div className="w-28 flex flex-col">
+                    <Controller
+                      control={control}
+                      name={`clues.${index}.difficulty`}
+                      render={({ field: f }) => (
+                        <select
+                          aria-label={`Clue ${index + 1} Difficulty`}
+                          aria-invalid={!!errors.clues?.[index]?.difficulty}
+                          aria-describedby={
+                            errors.clues?.[index]?.difficulty ? `clue-${index}-difficulty-error` : undefined
+                          }
+                          value={f.value ?? ""}
+                          onChange={(e) => f.onChange(e.target.value || undefined)}
+                          className="w-full pl-3 py-2 text-sm rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        >
+                          <option value="">Difficulty</option>
+                          <option value="Easy">Easy</option>
+                          <option value="Medium">Medium</option>
+                          <option value="Hard">Hard</option>
+                        </select>
+                      )}
+                    />
+                    {errors.clues?.[index]?.difficulty && (
+                      <span
+                        role="alert"
+                        aria-live="assertive"
+                        id={`clue-${index}-difficulty-error`}
+                        className="text-red-500 text-xs mt-0.5"
+                      >
+                        {errors.clues[index].difficulty.message}
+                      </span>
+                    )}
+                  </div>
                   <input
                     ref={(node) => {
                       clueFileInputRefs.current[index] = node;

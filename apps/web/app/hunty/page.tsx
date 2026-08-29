@@ -51,13 +51,18 @@ import { createHunt } from "@/lib/contracts/hunt";
 import { createRewardEscrow } from "@/lib/contracts/rewardManager";
 import { downloadElementAsImage } from "@/lib/downloadAsImage";
 import { dynapuff } from "@/lib/font";
-import { addHunt as addStoredHunt, getAllHuntsIncludingPrivate } from "@/lib/huntStore";
+import {
+  addHunt as addStoredHunt,
+  getAllHuntsIncludingPrivate,
+  REWARD_REFUND_GRACE_PERIOD_SECONDS,
+} from "@/lib/huntStore";
 import { buildDraftHuntsFromTemplate, getStarterTemplateBySlug } from "@/lib/huntTemplates";
 import { COVER_IMAGE_UPLOAD_ERROR_MESSAGE } from "@/lib/ipfs";
 import { logger } from "@/lib/logger";
 import { withTransactionToast } from "@/lib/txToast";
 import type {
   CoverImageUploadState,
+  HuntAgeClassification,
   HuntDifficulty,
   HuntDraft,
   HuntDraftSave,
@@ -95,6 +100,10 @@ function CreateGameContent() {
   const [huntDifficulty, setHuntDifficulty] = useLocalStorage<HuntDifficulty | "">(
     "draft-huntDifficulty",
     ""
+  );
+  const [ageClassification, setAgeClassification] = useLocalStorage<HuntAgeClassification>(
+    "draft-ageClassification",
+    "all-ages"
   );
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
@@ -501,13 +510,16 @@ function CreateGameContent() {
             formValues.sequential,
             // Normalize empty-string sentinel ("") from the publish-tab select back
             // to undefined so the on-chain metadata stays clean.
-            huntDifficulty ? huntDifficulty : undefined
+            huntDifficulty ? huntDifficulty : undefined,
+            undefined,
+            REWARD_REFUND_GRACE_PERIOD_SECONDS
           );
           const escrow = await createRewardEscrow({
             huntId: localId,
             rewardType: formValues.rewardType,
             rewards: formValues.rewards,
             expiresAt: end_time,
+            gracePeriodSeconds: REWARD_REFUND_GRACE_PERIOD_SECONDS,
           });
           rewardEscrowTxHash = escrow?.depositTxHash;
 
@@ -540,10 +552,12 @@ function CreateGameContent() {
         createdAt: Math.floor(Date.now() / 1000),
         startTime: start_time,
         endTime: end_time,
+        gracePeriodSeconds: REWARD_REFUND_GRACE_PERIOD_SECONDS,
         creatorEmail: formValues.creatorEmail || undefined,
         emailNotifications: formValues.emailNotifications,
         is_private: formValues.isPrivate,
         sequential: formValues.sequential,
+        ageClassification,
         maxParticipants: formValues.hunts[0]?.maxParticipants,
         coverImageCid,
         category,
@@ -729,6 +743,10 @@ function CreateGameContent() {
                           </div>
                         </div>
 
+                        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                          Unclaimed rewards can be reclaimed by the creator 7 days after this hunt ends.
+                        </p>
+
                         <RewardsPanel
                           rewards={rewards}
                           rewardType={rewardType}
@@ -906,6 +924,33 @@ function CreateGameContent() {
                                 {d}
                               </option>
                             ))}
+                          </select>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <label
+                              htmlFor="hunt-age-classification"
+                              className="block text-xl font-normal text-[#808080]"
+                            >
+                              Age suitability
+                            </label>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              Helps players and moderators understand the intended audience
+                            </p>
+                          </div>
+                          <select
+                            id="hunt-age-classification"
+                            value={ageClassification}
+                            onChange={(e) =>
+                              setAgeClassification(e.target.value as HuntAgeClassification)
+                            }
+                            className="h-11 w-[160px] text-center rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#3737A4]/40"
+                          >
+                            <option value="all-ages">All ages</option>
+                            <option value="13-plus">13+</option>
+                            <option value="16-plus">16+</option>
+                            <option value="18-plus">18+</option>
                           </select>
                         </div>
 

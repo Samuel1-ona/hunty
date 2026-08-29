@@ -3,6 +3,7 @@
 import { Wallet } from "lucide-react";
 import Link from "next/link";
 
+import { AchievementShowcase } from "@/components/AchievementShowcase";
 import { HuntCompletionTimeline } from "@/components/HuntCompletionTimeline";
 import { ProfileHighlightBadge, ProfileStatsDashboard } from "@/components/ProfileStatsDashboard";
 import { Button } from "@hunty/ui";
@@ -93,6 +94,18 @@ export function PlayerProfileView({ address, isOwnProfile = false }: PlayerProfi
         </div>
       )}
 
+      {hasAddress && (
+        <AchievementShowcase
+          playerAddress={address}
+          stats={{
+            totalHuntsCompleted: stats.totalHuntsCompleted,
+            totalHuntsWon: stats.firstPlaceFinishes,
+            totalNftsEarned: stats.nftsWon,
+          }}
+          isOwnProfile={isOwnProfile}
+        />
+      )}
+
       {/* ── Aggregated statistics ───────────────────────────────────────── */}
       <section aria-label="Player statistics" className="mb-10">
         <div className="mb-4">
@@ -163,4 +176,3 @@ export function ProfilePageHeading({
     </div>
   );
 }
- 

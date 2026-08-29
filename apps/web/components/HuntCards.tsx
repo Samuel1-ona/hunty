@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import confetti from "canvas-confetti";
@@ -5,6 +7,7 @@ import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@hunty/ui";
 import { ArrowRight, CheckCircle2, Loader2, Printer } from "lucide-react";
+import { useTranslations } from "next-intl";
 import picture from "@/public/static-images/image1.png";
 import { HuntCardSkeleton } from "@/components/LoadingSkeletons";
 import { cn } from "@/lib/utils";
@@ -109,6 +112,7 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
   const [hintsUsed, setHintsUsed] = useState(0);
   const [keyboardInsetHeight, setKeyboardInsetHeight] = useState(0);
   const prefersReducedMotion = useReducedMotion();
+  const a11y = useTranslations("a11y");
   const [shake, setShake] = useState(false);
   const clueMediaKind = getClueMediaKind(hunt.mediaCid);
   const clueMediaSrc = getClueMediaSource(hunt.mediaCid, imgGatewayIdx);
@@ -336,7 +340,7 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
             {trending && (
               <span
                 className="trending-badge bg-orange-500/80 text-white px-2 py-0.5 rounded-full text-xs font-semibold print:hidden"
-                aria-label="Trending hunt"
+                aria-label={a11y("trendingHunt")}
               >
                 🔥 Trending
               </span>
@@ -372,11 +376,11 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
         <p className="text-xs sm:text-sm opacity-90 mb-4 sm:mb-6 line-clamp-3 print:text-lg print:opacity-100 print:mb-8" dangerouslySetInnerHTML={{ __html: sanitizeHtml(hunt.description || "No description provided.") }} />
         <div className="flex justify-center">
           {clueMediaSrc && clueMediaKind === "audio" ? (
-            <audio controls aria-label="Clue audio media" className="w-full max-w-xs">
+              <audio controls aria-label={a11y("clueAudio")} className="w-full max-w-xs">
               <source src={clueMediaSrc} />
             </audio>
           ) : clueMediaSrc && clueMediaKind === "video" ? (
-            <video controls aria-label="Clue video media" className="w-full max-w-xs rounded-xl">
+            <video controls aria-label={a11y("clueVideo")} className="w-full max-w-xs rounded-xl">
               <source src={clueMediaSrc} />
             </video>
           ) : clueMediaSrc ? (
@@ -496,6 +500,7 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
           )}
           onClick={handleUnlock}
           disabled={isLocked}
+          aria-label={a11y("submitAnswer")}
         >
           {isPending ? (
             <Loader2 className="w-4 h-4 animate-spin" />
