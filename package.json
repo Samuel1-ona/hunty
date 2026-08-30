@@ -19,7 +19,9 @@
     "bundle:check": "npm run bundle:check --workspace @hunty/web",
     "perf:budget": "npm run perf:budget --workspace @hunty/web",
     "clean": "turbo run clean",
-    "prepare": "husky"
+    "prepare": "husky",
+    "security:audit": "npm audit --audit-level=moderate",
+    "security:test": "npm run security:audit && npm run --workspace @hunty/web e2e -- e2e/security.spec.ts --project=chromium-desktop"
   },
   "lint-staged": {
     "apps/mobile/**/*.{js,jsx,ts,tsx,json,md}": [

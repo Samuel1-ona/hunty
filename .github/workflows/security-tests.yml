@@ -29,15 +29,36 @@ jobs:
           npm start &
           npx wait-on http://localhost:3000 --timeout 30000
 
+      # Fails if any dependency has a moderate-or-higher CVE.
+      # Remove "|| true" was intentional — vulnerabilities must be fixed, not silenced.
       - name: Dependency vulnerability scan
-        run: npm audit --audit-level=moderate || true
+        run: npm audit --audit-level=moderate
+
+      # Runs the Playwright security spec (e2e/security.spec.ts).
+      # The script is defined in the root package.json as:
+      #   "security:test": "npm run security:audit && npm run --workspace @hunty/web e2e -- e2e/security.spec.ts --project=chromium-desktop"
+      # Failures are real failures — "|| true" removed intentionally.
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/web
 
       - name: Run Playwright security tests
-        run: npm run security:test || true
+        run: npm run --workspace @hunty/web e2e -- e2e/security.spec.ts --project=chromium-desktop
 
+      - name: Upload Playwright security report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 30
+
+      # ZAP is advisory — it produces a report but does not block the build
+      # because ZAP false-positive rates require human triage before enforcement.
+      # Track ZAP findings in the uploaded artifact and burn them down over time.
       - name: OWASP ZAP baseline scan
         uses: zaproxy/action-baseline@v0.8.0
         with:
           target: "http://localhost:3000"
-        continue-on-error: true # prevents workflow failure if ZAP fails
+        continue-on-error: true # ZAP produces false positives; triage before enforcing
         # NOTE: The ZAP baseline expects a running server; we started it above.
