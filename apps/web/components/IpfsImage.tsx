@@ -10,7 +10,15 @@ import { logger } from '@/lib/logger';
  * The loader receives the original src, desired width, and optional quality.
  * It returns a URL that points to the optimized proxy.
  */
-export const ipfsImageLoader = ({ src, width, quality }: { src: string; width: number; quality?: number }) => {
+export const ipfsImageLoader = ({
+  src,
+  width,
+  quality,
+}: {
+  src: string;
+  width: number;
+  quality?: number;
+}) => {
   // Ensure the source URL is absolute; if it's a raw IPFS URI, convert it.
   let imageUrl = src;
   if (src.startsWith('ipfs://')) {
@@ -29,7 +37,7 @@ export const ipfsImageLoader = ({ src, width, quality }: { src: string; width: n
  * All other Image props are passed through.
  */
 export const IpfsImage: React.FC<ImageProps> = (props) => {
-  const { src, width, height, quality, alt = "", ...rest } = props;
+  const { src, width, height, quality, alt = '', ...rest } = props;
   // Ensure src is provided; Next.js Image requires it.
   if (!src) {
     logger.warn('IpfsImage: src prop is missing');

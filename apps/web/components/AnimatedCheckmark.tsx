@@ -1,15 +1,15 @@
-"use client"
+'use client';
 
-import { motion, useReducedMotion } from "framer-motion"
-import { Check, CheckCircle2 } from "lucide-react"
-import type { ReactNode } from "react"
+import { motion, useReducedMotion } from 'framer-motion';
+import { Check, CheckCircle2 } from 'lucide-react';
+import type { ReactNode } from 'react';
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
 
 interface AnimatedCheckmarkProps {
-  asCircle?: boolean
-  className?: string
-  size?: number
+  asCircle?: boolean;
+  className?: string;
+  size?: number;
 }
 
 export function AnimatedCheckmark({
@@ -17,19 +17,19 @@ export function AnimatedCheckmark({
   className,
   size = 16,
 }: AnimatedCheckmarkProps) {
-  const prefersReducedMotion = useReducedMotion()
+  const prefersReducedMotion = useReducedMotion();
 
   if (prefersReducedMotion) {
-    const Icon = asCircle ? CheckCircle2 : Check
-    return <Icon className={className} style={{ width: size, height: size }} />
+    const Icon = asCircle ? CheckCircle2 : Check;
+    return <Icon className={className} style={{ width: size, height: size }} />;
   }
 
   return (
     <motion.div
       initial={{ scale: 0, rotate: -15 }}
       animate={{ scale: 1, rotate: 0 }}
-      transition={{ type: "spring", stiffness: 400, damping: 20 }}
-      className={cn("flex items-center justify-center", className)}
+      transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+      className={cn('flex items-center justify-center', className)}
       style={{ width: size, height: size }}
     >
       {asCircle ? (
@@ -38,5 +38,5 @@ export function AnimatedCheckmark({
         <Check style={{ width: size, height: size }} />
       )}
     </motion.div>
-  )
+  );
 }

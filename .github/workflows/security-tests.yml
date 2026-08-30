@@ -2,7 +2,7 @@ name: Security Tests and Scans
 
 on:
   push:
-    branches: [main, "**"]
+    branches: [main, '**']
   pull_request:
     branches: [main]
 
@@ -41,6 +41,6 @@ jobs:
       - name: OWASP ZAP baseline scan
         uses: zaproxy/action-baseline@v0.8.0
         with:
-          target: "http://localhost:3000"
+          target: 'http://localhost:3000'
         continue-on-error: true # prevents workflow failure if ZAP fails
         # NOTE: The ZAP baseline expects a running server; we started it above.

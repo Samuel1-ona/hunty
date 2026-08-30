@@ -28,7 +28,7 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           working-directory: ${{ matrix.project }}
-          install-args: "--frozen-lockfile --ignore-scripts"
+          install-args: '--frozen-lockfile --ignore-scripts'
 
   self-check-mismatch-detection:
     name: Verify a lockfile mismatch fails the check
@@ -42,17 +42,27 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: "10.33.0"
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: pnpm
-          cache-dependency-path: ${{ matrix.project }}/pnpm-lock.yaml
+          node-version: '24'
+
+      - name: Enable corepack and install pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.33.0 --activate
+
+      - name: Set pnpm store path for caching
+        id: pnpm-store
+        run: echo "path=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Introduce a deliberate lockfile mismatch
         working-directory: ${{ matrix.project }}

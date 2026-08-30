@@ -5,6 +5,7 @@ This directory contains Playwright-based visual regression tests for Hunty.
 ## Overview
 
 Visual regression tests use Playwright's built-in screenshot comparison to catch unintended UI changes across:
+
 - Key pages: Home, Hunt Detail, Create Hunt, Creator Dashboard
 - Components: Header, HuntCard, LeaderboardTable, GameCompleteModal
 - Themes: Light and Dark mode
@@ -26,13 +27,14 @@ npx playwright test visual-regression --grep "Mobile"
 
 ## Test Structure
 
-| Test File | Description |
-|-----------|-------------|
+| Test File                   | Description                  |
+| --------------------------- | ---------------------------- |
 | `visual-regression.spec.ts` | Page and component snapshots |
 
 ## Snapshot Organization
 
 Snapshots are stored in `e2e/screenshots/` with paths structured as:
+
 ```
 e2e/screenshots/
 ├── visual-regression.spec.ts/
@@ -59,6 +61,7 @@ Baselines are committed to the repository. When intentional UI changes occur:
 ## Dynamic Content Masking
 
 The following elements are masked to prevent false-positive diffs:
+
 - Timestamp elements (`<time>`)
 - Wallet address displays (`#balance-pill`, `[data-testid='wallet-address']`)
 - Countdown timers (`[data-testid='hunt-countdown']`)

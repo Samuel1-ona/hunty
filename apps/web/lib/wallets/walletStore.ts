@@ -10,27 +10,27 @@
  * restore the session on the next visit.
  */
 
-import { create } from "zustand"
-import { persist, createJSONStorage } from "zustand/middleware"
-import type { WalletProvider } from "./types"
-import type { WalletStatus } from "@/lib/wallet"
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import type { WalletProvider } from './types';
+import type { WalletStatus } from '@/lib/wallet';
 
 export type WalletState = {
   /** Machine-readable status from the wallet state machine */
-  status: WalletStatus
+  status: WalletStatus;
   /** Whether a wallet is currently connected (derived from status) */
-  connected: boolean
+  connected: boolean;
   /** Full Stellar public key (empty string when disconnected) */
-  publicKey: string
+  publicKey: string;
   /** The provider that established the current connection */
-  provider: WalletProvider | null
+  provider: WalletProvider | null;
   /** The last provider the user explicitly connected with */
-  lastUsedProvider: WalletProvider | null
+  lastUsedProvider: WalletProvider | null;
   /** In-progress connection attempt (derived from status === "connecting") */
-  connecting: boolean
+  connecting: boolean;
   /** Last connection error message, if any */
-  error: string | null
-}
+  error: string | null;
+};
 
 export type WalletActions = {
   /**
@@ -38,26 +38,26 @@ export type WalletActions = {
    * Called by the WalletContext after every state machine transition.
    */
   syncFromMachine: (params: {
-    status: WalletStatus
-    publicKey: string
-    provider: WalletProvider | null
-    error: string | null
-  }) => void
+    status: WalletStatus;
+    publicKey: string;
+    provider: WalletProvider | null;
+    error: string | null;
+  }) => void;
   /** Override last-used provider (e.g., if session is restored externally) */
-  setLastUsedProvider: (provider: WalletProvider) => void
-}
+  setLastUsedProvider: (provider: WalletProvider) => void;
+};
 
-export type WalletStore = WalletState & WalletActions
+export type WalletStore = WalletState & WalletActions;
 
 const initialState: WalletState = {
-  status: "idle",
+  status: 'idle',
   connected: false,
-  publicKey: "",
+  publicKey: '',
   provider: null,
   lastUsedProvider: null,
   connecting: false,
   error: null,
-}
+};
 
 export const useWalletStore = create<WalletStore>()(
   persist(
@@ -67,22 +67,22 @@ export const useWalletStore = create<WalletStore>()(
       syncFromMachine: ({ status, publicKey, provider, error }) =>
         set((prev) => ({
           status,
-          connected: status === "connected",
+          connected: status === 'connected',
           publicKey,
           provider,
           // Only overwrite lastUsedProvider when a non-null provider is given.
           // This preserves the value across disconnect/error transitions.
           lastUsedProvider: provider ?? prev.lastUsedProvider,
-          connecting: status === "connecting",
+          connecting: status === 'connecting',
           error,
         })),
 
       setLastUsedProvider: (provider) => set({ lastUsedProvider: provider }),
     }),
     {
-      name: "hunty_wallet_store",
+      name: 'hunty_wallet_store',
       storage: createJSONStorage(() =>
-        typeof window !== "undefined" ? localStorage : memoryStorage()
+        typeof window !== 'undefined' ? localStorage : memoryStorage()
       ),
       // Only persist non-sensitive fields
       partialize: (state) => ({
@@ -90,17 +90,25 @@ export const useWalletStore = create<WalletStore>()(
       }),
     }
   )
-)
+);
 
 // Minimal in-memory storage for SSR safety
 function memoryStorage(): Storage {
-  const store = new Map<string, string>()
+  const store = new Map<string, string>();
   return {
     getItem: (k) => store.get(k) ?? null,
-    setItem: (k, v) => { store.set(k, v) },
-    removeItem: (k) => { store.delete(k) },
-    clear: () => { store.clear() },
-    get length() { return store.size },
+    setItem: (k, v) => {
+      store.set(k, v);
+    },
+    removeItem: (k) => {
+      store.delete(k);
+    },
+    clear: () => {
+      store.clear();
+    },
+    get length() {
+      return store.size;
+    },
     key: (i) => [...store.keys()][i] ?? null,
-  }
+  };
 }

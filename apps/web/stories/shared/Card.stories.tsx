@@ -1,6 +1,13 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite'
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@hunty/ui/web'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@hunty/ui/web';
 
 const meta = {
   title: 'Shared/Web/Card',
@@ -12,10 +19,10 @@ const meta = {
   parameters: {
     backgrounds: { default: 'light' },
   },
-} satisfies Meta<typeof Card>
+} satisfies Meta<typeof Card>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 const CardExample = (args: React.ComponentProps<typeof Card>) => (
   <Card {...args}>
@@ -30,15 +37,32 @@ const CardExample = (args: React.ComponentProps<typeof Card>) => (
       <span className="text-xs text-muted-foreground">Footer info</span>
     </CardFooter>
   </Card>
-)
+);
 
-export const Default: Story = { render: (args) => <CardExample {...args} />, args: { variant: 'default' } }
-export const Flat: Story = { render: (args) => <CardExample {...args} />, args: { variant: 'flat' } }
-export const Ghost: Story = { render: (args) => <CardExample {...args} />, args: { variant: 'ghost' } }
+export const Default: Story = {
+  render: (args) => <CardExample {...args} />,
+  args: { variant: 'default' },
+};
+export const Flat: Story = {
+  render: (args) => <CardExample {...args} />,
+  args: { variant: 'flat' },
+};
+export const Ghost: Story = {
+  render: (args) => <CardExample {...args} />,
+  args: { variant: 'ghost' },
+};
 export const Clickable: Story = {
   render: (args) => <CardExample {...args} />,
   args: { variant: 'default', onPress: () => alert('clicked') },
-}
+};
 
-export const DefaultDark: Story = { render: (args) => <CardExample {...args} />, args: { variant: 'default' }, parameters: { backgrounds: { default: 'dark' } } }
-export const FlatDark: Story = { render: (args) => <CardExample {...args} />, args: { variant: 'flat' }, parameters: { backgrounds: { default: 'dark' } } }
+export const DefaultDark: Story = {
+  render: (args) => <CardExample {...args} />,
+  args: { variant: 'default' },
+  parameters: { backgrounds: { default: 'dark' } },
+};
+export const FlatDark: Story = {
+  render: (args) => <CardExample {...args} />,
+  args: { variant: 'flat' },
+  parameters: { backgrounds: { default: 'dark' } },
+};

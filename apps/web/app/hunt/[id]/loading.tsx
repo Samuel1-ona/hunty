@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function HuntPageSkeleton() {
   return (
@@ -18,5 +18,5 @@ export default function HuntPageSkeleton() {
         <Skeleton className="h-40 w-full bg-white/10" />
       </main>
     </div>
-  )
+  );
 }

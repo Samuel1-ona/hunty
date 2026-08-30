@@ -7,13 +7,9 @@
  * All server-side only — never import in client components.
  */
 
-import { getDb } from "@/lib/db";
+import { getDb } from '@/lib/db';
 
-import type {
-  PaymasterConfigRecord,
-  PaymasterTxRecord,
-  PaymasterUserRecord,
-} from "./types";
+import type { PaymasterConfigRecord, PaymasterTxRecord, PaymasterUserRecord } from './types';
 
 // ─── Users (quota / budget) ────────────────────────────────────────────────
 
@@ -59,7 +55,7 @@ export async function incrementSponsorship(
   walletAddress: string,
   feeStroops: number,
   txHash: string,
-  innerTxHash?: string,
+  innerTxHash?: string
 ): Promise<PaymasterUserRecord> {
   const sql = getDb();
 
@@ -90,7 +86,7 @@ export async function incrementSponsorship(
  */
 export async function getTransactionHistory(
   walletAddress: string,
-  limit = 50,
+  limit = 50
 ): Promise<PaymasterTxRecord[]> {
   const sql = getDb();
   const rows = await sql`
@@ -167,19 +163,20 @@ export async function listUsers(): Promise<PaymasterUserRecord[]> {
  */
 export async function updateUserLimits(
   walletAddress: string,
-  limits: { maxSponsoredTx?: number; maxBudgetPerUser?: number },
+  limits: { maxSponsoredTx?: number; maxBudgetPerUser?: number }
 ): Promise<PaymasterUserRecord> {
   const sql = getDb();
 
   const sets: string[] = [];
   if (limits.maxSponsoredTx !== undefined) sets.push(`max_sponsored_tx = ${limits.maxSponsoredTx}`);
-  if (limits.maxBudgetPerUser !== undefined) sets.push(`max_budget_per_user = ${limits.maxBudgetPerUser}`);
+  if (limits.maxBudgetPerUser !== undefined)
+    sets.push(`max_budget_per_user = ${limits.maxBudgetPerUser}`);
 
-  if (sets.length === 0) throw new Error("No limits to update");
+  if (sets.length === 0) throw new Error('No limits to update');
 
   const [row] = await sql`
     UPDATE paymaster_users
-    SET ${sql(sets.join(", "))}, updated_at = NOW()
+    SET ${sql(sets.join(', '))}, updated_at = NOW()
     WHERE wallet_address = ${walletAddress}
     RETURNING *
   `;

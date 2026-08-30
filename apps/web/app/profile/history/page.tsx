@@ -1,30 +1,30 @@
-"use client"
+'use client';
 
-import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
-import { useContext, useEffect, useState } from "react"
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
+import { useContext, useEffect, useState } from 'react';
 
-import { Header } from "@/components/Header"
-import { HuntHistoryViewer } from "@/components/HuntHistoryViewer"
-import { Button } from "@hunty/ui"
-import { WalletContext } from "@/lib/context/WalletContext"
-import { getPlayerAttempts } from "@/lib/huntAttemptHistory"
-import type { HuntAttemptRecord } from "@/lib/types"
+import { Header } from '@/components/Header';
+import { HuntHistoryViewer } from '@/components/HuntHistoryViewer';
+import { Button } from '@/components/ui/button';
+import { WalletContext } from '@/lib/context/WalletContext';
+import { getPlayerAttempts } from '@/lib/huntAttemptHistory';
+import type { HuntAttemptRecord } from '@/lib/types';
 
 export default function HuntHistoryPage() {
-  const wallet = useContext(WalletContext)
-  const connected = wallet?.connected ?? false
-  const publicKey = wallet?.publicKey ?? ""
-  const [attempts, setAttempts] = useState<HuntAttemptRecord[]>([])
+  const wallet = useContext(WalletContext);
+  const connected = wallet?.connected ?? false;
+  const publicKey = wallet?.publicKey ?? '';
+  const [attempts, setAttempts] = useState<HuntAttemptRecord[]>([]);
 
   useEffect(() => {
     if (!connected || !publicKey) {
-      setAttempts([])
-      return
+      setAttempts([]);
+      return;
     }
 
-    setAttempts(getPlayerAttempts(publicKey))
-  }, [connected, publicKey])
+    setAttempts(getPlayerAttempts(publicKey));
+  }, [connected, publicKey]);
 
   return (
     <div className="min-h-screen bg-linear-to-tr from-blue-100 bg-purple-100 to-[#f9f9ff] pb-20">
@@ -33,7 +33,11 @@ export default function HuntHistoryPage() {
       <div className="max-w-[1100px] mx-auto px-6 sm:px-10 pt-4 pb-12 bg-white rounded-4xl">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <Button variant="ghost" asChild className="mb-4 w-fit px-0 text-slate-700 hover:text-slate-900">
+            <Button
+              variant="ghost"
+              asChild
+              className="mb-4 w-fit px-0 text-slate-700 hover:text-slate-900"
+            >
               <Link href="/profile">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to profile
@@ -57,5 +61,5 @@ export default function HuntHistoryPage() {
         )}
       </div>
     </div>
-  )
+  );
 }

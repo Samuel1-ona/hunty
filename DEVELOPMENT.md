@@ -13,7 +13,7 @@ Before we dive in, make sure you have these installed on your computer:
 - You'll need Node.js version 18 or higher
 - Check if you have it: `node --version` and `npm --version`
 - If not, grab it from [nodejs.org](https://nodejs.org/)
-**Node.js and pnpm**
+  **Node.js and pnpm**
 - We have standardized on **pnpm** (version 10+) as our package manager to ensure fast, deterministic, and space-efficient builds across our monorepo workspaces.
 - You'll need Node.js version 18 or higher and pnpm version 10 or higher.
 - Check if you have them: `node --version` and `pnpm --version`
@@ -402,8 +402,8 @@ We've all been there - something's not working and you're not sure why. Here are
 **Console.log** - The classic debugger
 
 ```tsx
-console.log("Current state:", state);
-console.log("Props received:", props);
+console.log('Current state:', state);
+console.log('Props received:', props);
 ```
 
 Just remember to remove these before committing!
@@ -425,6 +425,7 @@ Just remember to remove these before committing!
 We want the codebase to be clean, readable, and consistent. Here's how we do things:
 
 ### Data Fetching & State Management
+
 To ensure a seamless user experience, every query-backed view must explicitly handle loading, error, and empty states. We use a standardized QueryStateWrapper to manage this systematically and prevent layout shifts.
 
 When creating a new view that fetches data via `@tanstack/react-query`, always wrap your component logic like this:
@@ -444,8 +445,8 @@ export function DataBackedView() {
       skeleton={<GenericPageSkeleton />}
       emptyProps={{
         icon: <FileSearch className="w-10 h-10" />,
-        title: "No Data Found",
-        description: "There is currently nothing to display here."
+        title: 'No Data Found',
+        description: 'There is currently nothing to display here.',
       }}
     >
       {(data) => <YourDataComponent data={data} />}
@@ -453,8 +454,8 @@ export function DataBackedView() {
   );
 }
 ```
-This guarantees that errors offer a retry affordance, loading states use skeletons, and empty states match the app's design system.
 
+This guarantees that errors offer a retry affordance, loading states use skeletons, and empty states match the app's design system.
 
 ### Formatting
 
@@ -487,11 +488,11 @@ export function huntCard() {}
 ```tsx
 // Good
 const handleClick = () => {};
-const userName = "John";
+const userName = 'John';
 
 // Bad
 const HandleClick = () => {};
-const user_name = "John";
+const user_name = 'John';
 ```
 
 **Constants:** `UPPER_SNAKE_CASE`
@@ -499,7 +500,7 @@ const user_name = "John";
 ```tsx
 // Good
 const MAX_HUNTS = 10;
-const API_BASE_URL = "https://api.example.com";
+const API_BASE_URL = 'https://api.example.com';
 ```
 
 **Files:** Match the component/function name

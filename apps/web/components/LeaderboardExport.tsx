@@ -1,28 +1,28 @@
-"use client";
+'use client';
 
-import { Download, FileJson, Loader2 } from "lucide-react";
-import { useCallback, useState } from "react";
-import { toast } from "sonner";
+import { Download, FileJson, Loader2 } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { toast } from 'sonner';
 
-import { Button } from "@hunty/ui";
-import { Input } from "@/components/ui/input";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface LeaderboardExportProps {
   huntId: number;
 }
 
-type Format = "csv" | "json";
+type Format = 'csv' | 'json';
 
 export function LeaderboardExport({ huntId }: LeaderboardExportProps) {
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
   const [downloading, setDownloading] = useState<Format | null>(null);
 
   const buildUrl = useCallback(
     (format: Format) => {
       const params = new URLSearchParams({ format });
-      if (from) params.set("from", from);
-      if (to) params.set("to", to);
+      if (from) params.set('from', from);
+      if (to) params.set('to', to);
       return `/api/v1/hunts/${huntId}/leaderboard/export?${params.toString()}`;
     },
     [huntId, from, to]
@@ -32,25 +32,26 @@ export function LeaderboardExport({ huntId }: LeaderboardExportProps) {
     async (format: Format) => {
       setDownloading(format);
       try {
-        const res = await fetch(buildUrl(format), { method: "GET" });
+        const res = await fetch(buildUrl(format), { method: 'GET' });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error(body.error || "Export failed");
+          throw new Error(body.error || 'Export failed');
         }
 
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
+        const a = document.createElement('a');
         a.href = url;
-        a.download = res.headers.get("content-disposition")?.match(/filename="?([^"]+)"?/)?.[1]
-          ?? `hunt-${huntId}-leaderboard.${format}`;
+        a.download =
+          res.headers.get('content-disposition')?.match(/filename="?([^"]+)"?/)?.[1] ??
+          `hunt-${huntId}-leaderboard.${format}`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         toast.success(`Leaderboard exported as ${format.toUpperCase()}`);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Export failed");
+        toast.error(err instanceof Error ? err.message : 'Export failed');
       } finally {
         setDownloading(null);
       }
@@ -63,7 +64,8 @@ export function LeaderboardExport({ huntId }: LeaderboardExportProps) {
       <div className="mb-4">
         <h3 className="text-lg font-semibold text-slate-900">Export leaderboard data</h3>
         <p className="text-sm text-slate-600">
-          Download ranks, wallets, scores, and completion timestamps. Filter by date range (optional).
+          Download ranks, wallets, scores, and completion timestamps. Filter by date range
+          (optional).
         </p>
       </div>
 
@@ -89,24 +91,16 @@ export function LeaderboardExport({ huntId }: LeaderboardExportProps) {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button
-          variant="default"
-          onClick={() => download("csv")}
-          disabled={downloading !== null}
-        >
-          {downloading === "csv" ? (
+        <Button variant="default" onClick={() => download('csv')} disabled={downloading !== null}>
+          {downloading === 'csv' ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Download className="h-4 w-4" />
           )}
           <span>Export CSV</span>
         </Button>
-        <Button
-          variant="outline"
-          onClick={() => download("json")}
-          disabled={downloading !== null}
-        >
-          {downloading === "json" ? (
+        <Button variant="outline" onClick={() => download('json')} disabled={downloading !== null}>
+          {downloading === 'json' ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <FileJson className="h-4 w-4" />

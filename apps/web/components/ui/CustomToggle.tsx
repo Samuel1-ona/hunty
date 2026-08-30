@@ -1,9 +1,9 @@
-import { cva } from "class-variance-authority";
-import { motion } from "framer-motion";
-import { Check, X } from "lucide-react";
-import React, { useState } from "react";
+import { cva } from 'class-variance-authority';
+import { motion } from 'framer-motion';
+import { Check, X } from 'lucide-react';
+import React, { useState } from 'react';
 
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
 type CustomToggleProps = {
   initialValue?: boolean;
@@ -12,16 +12,17 @@ type CustomToggleProps = {
 };
 
 const trackVariants = cva(
-  "relative inline-flex items-center h-8 w-16 rounded-full transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2",
+  'relative inline-flex items-center h-8 w-16 rounded-full transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2',
   {
     variants: {
       checked: {
-        true: "bg-gradient-to-r from-green-500 to-green-600 shadow-lg shadow-green-200 focus:ring-green-500",
-        false: "bg-gradient-to-r from-red-500 to-red-600 shadow-lg shadow-red-200 focus:ring-red-500",
+        true: 'bg-gradient-to-r from-green-500 to-green-600 shadow-lg shadow-green-200 focus:ring-green-500',
+        false:
+          'bg-gradient-to-r from-red-500 to-red-600 shadow-lg shadow-red-200 focus:ring-red-500',
       },
       disabled: {
-        true: "opacity-50 cursor-not-allowed",
-        false: "cursor-pointer",
+        true: 'opacity-50 cursor-not-allowed',
+        false: 'cursor-pointer',
       },
     },
     defaultVariants: {
@@ -31,13 +32,9 @@ const trackVariants = cva(
   }
 );
 
-const springConfig = { type: "spring" as const, stiffness: 500, damping: 30 };
+const springConfig = { type: 'spring' as const, stiffness: 500, damping: 30 };
 
-const CustomToggle = ({
-  initialValue = false,
-  onChange,
-  disabled = false,
-}: CustomToggleProps) => {
+const CustomToggle = ({ initialValue = false, onChange, disabled = false }: CustomToggleProps) => {
   const [isToggled, setIsToggled] = useState(initialValue);
 
   const handleToggle = () => {
@@ -70,15 +67,15 @@ const CustomToggle = ({
       <div className="absolute inset-0 flex items-center justify-between px-2">
         <Check
           className={cn(
-            "h-4 w-4 text-white transition-opacity duration-200",
-            isToggled ? "opacity-100" : "opacity-40"
+            'h-4 w-4 text-white transition-opacity duration-200',
+            isToggled ? 'opacity-100' : 'opacity-40'
           )}
           strokeWidth={2}
         />
         <X
           className={cn(
-            "h-4 w-4 text-white transition-opacity duration-200",
-            !isToggled ? "opacity-100" : "opacity-40"
+            'h-4 w-4 text-white transition-opacity duration-200',
+            !isToggled ? 'opacity-100' : 'opacity-40'
           )}
           strokeWidth={2}
         />

@@ -8,21 +8,22 @@ This document outlines all End-to-End (E2E) tests covering critical user flows f
 
 All acceptance criteria have been implemented with comprehensive test coverage:
 
-| Criterion | Test File(s) | Coverage |
-|-----------|-------------|----------|
-| **Hunt Creation Flow (Happy Path)** | `hunt-creation.spec.ts` | ✓ Complete |
-| **Hunt Play & Completion Flow** | `game-loop.spec.ts`, `full-hunt-flow.spec.ts` | ✓ Complete |
-| **Wallet Connection Flow** | `wallet-connection.spec.ts` | ✓ Complete |
-| **Search & Filter Flow** | `search-filter.spec.ts` | ✓ Complete |
-| **Profile & Settings Flow** | `profile-and-settings.spec.ts` | ✓ Complete (NEW) |
-| **Error Recovery Flows** | `error-recovery.spec.ts` | ✓ Complete (NEW) |
-| **Mobile Viewport Tests** | `mobile-viewport.spec.ts` | ✓ Complete (NEW) |
+| Criterion                           | Test File(s)                                  | Coverage         |
+| ----------------------------------- | --------------------------------------------- | ---------------- |
+| **Hunt Creation Flow (Happy Path)** | `hunt-creation.spec.ts`                       | ✓ Complete       |
+| **Hunt Play & Completion Flow**     | `game-loop.spec.ts`, `full-hunt-flow.spec.ts` | ✓ Complete       |
+| **Wallet Connection Flow**          | `wallet-connection.spec.ts`                   | ✓ Complete       |
+| **Search & Filter Flow**            | `search-filter.spec.ts`                       | ✓ Complete       |
+| **Profile & Settings Flow**         | `profile-and-settings.spec.ts`                | ✓ Complete (NEW) |
+| **Error Recovery Flows**            | `error-recovery.spec.ts`                      | ✓ Complete (NEW) |
+| **Mobile Viewport Tests**           | `mobile-viewport.spec.ts`                     | ✓ Complete (NEW) |
 
 ---
 
 ## Test Files and Descriptions
 
 ### 1. Hunt Creation Flow Tests
+
 **File:** [hunt-creation.spec.ts](./e2e/hunt-creation.spec.ts)
 
 Tests the complete hunt creation journey:
@@ -39,6 +40,7 @@ Tests the complete hunt creation journey:
 ---
 
 ### 2. Hunt Play & Completion Flow Tests
+
 **File:** [game-loop.spec.ts](./e2e/game-loop.spec.ts)
 
 Tests the core game loop and player experience:
@@ -64,6 +66,7 @@ Tests the core game loop and player experience:
 ---
 
 ### 3. Wallet Connection Flow Tests
+
 **File:** [wallet-connection.spec.ts](./e2e/wallet-connection.spec.ts)
 
 Tests wallet integration and connection management:
@@ -78,6 +81,7 @@ Tests wallet integration and connection management:
 ---
 
 ### 4. Search & Filter Flow Tests
+
 **File:** [search-filter.spec.ts](./e2e/search-filter.spec.ts)
 
 Tests hunt discovery and filtering capabilities:
@@ -92,6 +96,7 @@ Tests hunt discovery and filtering capabilities:
 ---
 
 ### 5. Profile & Settings Flow Tests
+
 **File:** [profile-and-settings.spec.ts](./e2e/profile-and-settings.spec.ts) ⭐ NEW
 
 Tests user profile and settings functionality:
@@ -114,84 +119,101 @@ Tests user profile and settings functionality:
 ---
 
 ### 6. Error Recovery Flow Tests
+
 **File:** [error-recovery.spec.ts](./e2e/error-recovery.spec.ts) ⭐ NEW
 
 Tests error handling and recovery mechanisms:
 
 #### Hunt Creation Error Recovery
+
 - ✓ Validation error when hunt title is empty
 - ✓ Error when adding clue without answer code
 - ✓ Network error recovery when publishing hunt
 - ✓ Retry option when hunt activation fails
 
 #### Wallet Connection Error Recovery
+
 - ✓ Error display when wallet connection is denied
 - ✓ Recovery when wallet disconnects unexpectedly
 
 #### Hunt Play Error Recovery
+
 - ✓ Error message for wrong answer submission
 - ✓ Retry capability after incorrect answer
 - ✓ Network error handling during answer submission
 
 #### Navigation Error Recovery
+
 - ✓ 404 error handling with navigation back
 - ✓ Hunt data load failure recovery
 
 #### Search & Filter Error Recovery
+
 - ✓ Search API error handling
 - ✓ Clear filters option when no results found
 
 #### Form Validation
+
 - ✓ Invalid email format validation
 - ✓ Recovery from form submission timeout
 
 ---
 
 ### 7. Mobile Viewport Tests
+
 **File:** [mobile-viewport.spec.ts](./e2e/mobile-viewport.spec.ts) ⭐ NEW
 
 Tests responsive design across multiple mobile devices:
 
 #### Device Coverage
+
 - iPhone SE (375px) - small phone
-- iPhone 12 (390px) - standard phone  
+- iPhone 12 (390px) - standard phone
 - iPad (768px) - tablet
 
 #### Navigation & Layout
+
 - ✓ Responsive header on mobile
 - ✓ Mobile menu open/close functionality
 - ✓ Touch target sizing (44px minimum)
 
 #### Home Page Mobile
+
 - ✓ Responsive hunt card grid
 - ✓ Search input usability on mobile
 - ✓ Create Game button accessibility
 - ✓ Wallet button accessibility
 
 #### Hunt Creation Mobile
+
 - ✓ Form scrollability and usability
 - ✓ Add clue button functionality
 - ✓ No horizontal overflow on mobile
 - ✓ All inputs visible without overflow
 
 #### Dashboard Mobile
+
 - ✓ Responsive hunt cards
 - ✓ Button accessibility on mobile
 
 #### Hunt Play Mobile
+
 - ✓ Readable play interface
 - ✓ Large answer input for tapping
 - ✓ Submit button accessible with keyboard open
 
 #### Profile Mobile
+
 - ✓ Profile page readability
 - ✓ Wallet address readability/shortening
 
 #### Modals & Overlays
+
 - ✓ Wallet modal fits mobile screen
 - ✓ Modal close functionality
 
 #### Scrolling & Performance
+
 - ✓ Long content scrollability
 - ✓ Back/forward navigation
 - ✓ Image scaling on mobile
@@ -203,23 +225,33 @@ Tests responsive design across multiple mobile devices:
 ### 8. Additional Test Files
 
 #### Dark Mode Tests
+
 **File:** [dark-mode.spec.ts](./e2e/dark-mode.spec.ts)
+
 - Tests theme switching and persistence
 
 #### A11y Tests
+
 **File:** [a11y.spec.ts](./e2e/a11y.spec.ts)
+
 - Tests accessibility compliance
 
 #### Visual Regression Tests
+
 **File:** [visual-regression.spec.ts](./e2e/visual-regression.spec.ts)
+
 - Tests UI consistency across versions
 
 #### Full Hunt Flow
+
 **File:** [full-hunt-flow.spec.ts](./e2e/full-hunt-flow.spec.ts)
+
 - Complete creation → activation → play flow with two wallet identities
 
 #### Claim Reward Tests
+
 **File:** [claim-reward.spec.ts](./e2e/claim-reward.spec.ts)
+
 - Tests reward claiming functionality
 
 ---
@@ -227,16 +259,19 @@ Tests responsive design across multiple mobile devices:
 ## Running Tests
 
 ### Run All E2E Tests
+
 ```bash
 pnpm test:e2e
 ```
 
 ### Run Specific Test File
+
 ```bash
 pnpm test:e2e hunt-creation.spec.ts
 ```
 
 ### Run Tests for Specific Feature
+
 ```bash
 # Hunt Creation
 pnpm test:e2e hunt-creation.spec.ts
@@ -258,6 +293,7 @@ pnpm test:e2e mobile-viewport.spec.ts
 ```
 
 ### Run Tests on Specific Device
+
 ```bash
 # Desktop (MS Edge)
 pnpm exec playwright test --project=msedge
@@ -270,11 +306,13 @@ pnpm exec playwright test --project="Mobile Safari"
 ```
 
 ### Run Tests with UI Mode (Debug)
+
 ```bash
 pnpm exec playwright test --ui
 ```
 
 ### Run Tests in Debug Mode
+
 ```bash
 pnpm exec playwright test --debug
 ```
@@ -284,12 +322,13 @@ pnpm exec playwright test --debug
 ## Test Configuration
 
 ### Playwright Config
+
 **File:** [playwright.config.ts](./playwright.config.ts)
 
 - **Test Directory:** `./e2e`
 - **Parallel Execution:** Enabled
 - **Retries:** 2 (CI), 0 (local)
-- **Browsers:** 
+- **Browsers:**
   - Desktop MS Edge
   - Mobile Chrome (Pixel 5)
   - Mobile Safari (iPhone 12)
@@ -301,13 +340,16 @@ pnpm exec playwright test --debug
 ## Helper Utilities
 
 ### Mock Wallet Helpers
+
 **File:** [helpers/mock-wallet.ts](./e2e/helpers/mock-wallet.ts)
 
 #### Basic Helpers
+
 - `injectMockWallet(page)` - Inject mock Freighter wallet
 - `seedHuntData(page, options?)` - Seed hunt data into localStorage
 
 #### Error Simulation Helpers ⭐ NEW
+
 - `simulateWalletConnectionFailure(page)` - Simulate failed connection
 - `simulateWalletDisconnection(page)` - Simulate wallet disconnect
 - `mockApiErrorResponse(page, pattern, statusCode)` - Mock API errors
@@ -322,6 +364,7 @@ pnpm exec playwright test --debug
 ## Key Testing Patterns
 
 ### 1. Pre-test Setup
+
 ```typescript
 test.beforeEach(async ({ page }) => {
   await injectMockWallet(page);
@@ -330,26 +373,30 @@ test.beforeEach(async ({ page }) => {
 ```
 
 ### 2. Testing Navigation
+
 ```typescript
-await page.getByRole("button", { name: /create game/i }).click();
+await page.getByRole('button', { name: /create game/i }).click();
 await expect(page).toHaveURL(/\/hunty/);
 ```
 
 ### 3. Testing User Interactions
+
 ```typescript
-await page.getByPlaceholder("Title of the Hunt").fill("My Hunt");
-await expect(page.getByPlaceholder("Title of the Hunt")).toHaveValue("My Hunt");
+await page.getByPlaceholder('Title of the Hunt').fill('My Hunt');
+await expect(page.getByPlaceholder('Title of the Hunt')).toHaveValue('My Hunt');
 ```
 
 ### 4. Testing Error States
+
 ```typescript
-await page.route("**/api/**", (route) => route.abort());
+await page.route('**/api/**', (route) => route.abort());
 // Attempt action that will fail
-const errorMsg = page.locator("text=/error/i");
+const errorMsg = page.locator('text=/error/i');
 await expect(errorMsg).toBeVisible();
 ```
 
 ### 5. Testing Mobile Responsiveness
+
 ```typescript
 test.use({ viewport: { width: 390, height: 844 } }); // iPhone 12
 ```
@@ -359,6 +406,7 @@ test.use({ viewport: { width: 390, height: 844 } }); // iPhone 12
 ## Data Fixtures
 
 ### Seeded Hunt Data
+
 - **Hunt 100:** "E2E Test Hunt" (Active, 2 clues)
   - Clue 1: "What is 2+2?" → Answer: "4" (10 points)
   - Clue 2: "Capital of France?" → Answer: "paris" (20 points)
@@ -366,6 +414,7 @@ test.use({ viewport: { width: 390, height: 844 } }); // iPhone 12
   - Clue 3: "Color of the sky?" → Answer: "blue" (10 points)
 
 ### Mock Wallet
+
 - **Public Key:** `GBZXN7PIRZGNMHGA7MUUUF4GWPY5AYPV6LY4UV2GL6VJGIQRXFDNMADI`
 - **Supports:** Connection, disconnection, transaction signing
 
@@ -374,6 +423,7 @@ test.use({ viewport: { width: 390, height: 844 } }); // iPhone 12
 ## CI/CD Integration
 
 Tests are configured to run in CI with:
+
 - 2 retries per test
 - 1 worker process
 - GitHub reporter format
@@ -395,18 +445,22 @@ Tests are configured to run in CI with:
 ## Troubleshooting
 
 ### Tests Timeout
+
 - Increase timeout: `await expect(...).toBeVisible({ timeout: 30_000 })`
 - Check if element exists in DOM vs being hidden
 
 ### Mobile Tests Fail
+
 - Verify viewport dimensions match device
 - Ensure buttons/inputs are large enough (44px minimum)
 
 ### Wallet Tests Fail
+
 - Verify mock wallet is injected before navigation
 - Check localStorage for proper keys
 
 ### Navigation Issues
+
 - Use `waitUntil: 'domcontentloaded'` for page.goto()
 - Verify URL patterns in `toHaveURL()` expectations
 

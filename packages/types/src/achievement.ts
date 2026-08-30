@@ -6,31 +6,26 @@
  */
 
 export type AchievementId =
-  | "first_hunt_completed"
-  | "first_win"
-  | "five_wins"
-  | "ten_wins"
-  | "twenty_five_wins"
-  | "first_nft"
-  | "high_scorer"
-  | "speed_hunter"
-  | "veteran"
-  | "legend"
+  | 'first_hunt_completed'
+  | 'first_win'
+  | 'five_wins'
+  | 'ten_wins'
+  | 'twenty_five_wins'
+  | 'first_nft'
+  | 'high_scorer'
+  | 'speed_hunter'
+  | 'veteran'
+  | 'legend';
 
-export type AchievementRarity =
-  | "common"
-  | "uncommon"
-  | "rare"
-  | "epic"
-  | "legendary"
+export type AchievementRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
 export interface Achievement {
-  id: AchievementId
-  title: string
-  description: string
+  id: AchievementId;
+  title: string;
+  description: string;
   /** Emoji or icon identifier (platform-agnostic string). */
-  icon: string
-  rarity: AchievementRarity
+  icon: string;
+  rarity: AchievementRarity;
   /** Human-readable unlock condition. */
-  condition: string
+  condition: string;
 }

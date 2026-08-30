@@ -1,11 +1,14 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   addHunt,
   advanceHuntProgress,
+  advanceHuntProgress,
   archiveHunts,
   clearHuntProgress,
+  clearHuntProgress,
   deleteHunts,
+  gcHunt,
   gcHunt,
   getAllHunts,
   getAllHuntsIncludingPrivate,
@@ -17,27 +20,24 @@ import {
   getHuntProgress,
   getHuntsByCreator,
   getSpotlightHunts,
+  getWalletProgressKey,
   MAX_CLUES_PER_HUNT,
+  MAX_CLUES_PER_HUNT,
+  migrateGuestProgressToWallet,
   restoreHuntStoreSnapshot,
   saveClueLocally,
   saveCluesLocallyBatch,
   setLocalFeaturedHunt,
   startHuntProgress,
-  advanceHuntProgress,
-  clearHuntProgress,
-  gcHunt,
-  migrateGuestProgressToWallet,
-  getWalletProgressKey,
-  MAX_CLUES_PER_HUNT,
   takeHuntStoreSnapshot,
   updateClueAnswer,
   updateHuntEndTime,
   updateHuntPromotion,
   updateHuntStatus,
-} from "@/lib/huntStore";
-import type { Clue, StoredHunt } from "@/lib/types";
+} from '@/lib/huntStore';
+import type { Clue, StoredHunt } from '@/lib/types';
 
-describe("huntStore", () => {
+describe('huntStore', () => {
   beforeEach(() => {
     // Clear localStorage before each test
     localStorage.clear();
@@ -48,21 +48,21 @@ describe("huntStore", () => {
     localStorage.clear();
   });
 
-  describe("getAllHunts", () => {
-    it("returns only public active hunts", () => {
+  describe('getAllHunts', () => {
+    it('returns only public active hunts', () => {
       const hunts = getAllHunts();
       expect(Array.isArray(hunts)).toBe(true);
       expect(hunts.every((h) => !h.is_private)).toBe(true);
     });
 
-    it("filters out private hunts", () => {
+    it('filters out private hunts', () => {
       const hunt: StoredHunt = {
         id: 999,
-        title: "Private Hunt",
-        description: "Should not appear",
+        title: 'Private Hunt',
+        description: 'Should not appear',
         cluesCount: 0,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
         is_private: true,
       };
       addHunt(hunt);
@@ -70,14 +70,14 @@ describe("huntStore", () => {
       expect(hunts.find((h) => h.id === 999)).toBeUndefined();
     });
 
-    it("includes public active hunts", () => {
+    it('includes public active hunts', () => {
       const hunt: StoredHunt = {
         id: 998,
-        title: "Public Hunt",
-        description: "Should appear",
+        title: 'Public Hunt',
+        description: 'Should appear',
         cluesCount: 3,
-        status: "Active",
-        rewardType: "NFT",
+        status: 'Active',
+        rewardType: 'NFT',
         is_private: false,
       };
       addHunt(hunt);
@@ -86,15 +86,15 @@ describe("huntStore", () => {
     });
   });
 
-  describe("getAllHuntsIncludingPrivate", () => {
-    it("returns all hunts including private ones", () => {
+  describe('getAllHuntsIncludingPrivate', () => {
+    it('returns all hunts including private ones', () => {
       const hunt: StoredHunt = {
         id: 997,
-        title: "Private Hunt",
-        description: "Should appear here",
+        title: 'Private Hunt',
+        description: 'Should appear here',
         cluesCount: 2,
-        status: "Draft",
-        rewardType: "Both",
+        status: 'Draft',
+        rewardType: 'Both',
         is_private: true,
       };
       addHunt(hunt);
@@ -102,23 +102,23 @@ describe("huntStore", () => {
       expect(hunts.find((h) => h.id === 997)).toBeDefined();
     });
 
-    it("returns both public and private hunts", () => {
+    it('returns both public and private hunts', () => {
       const publicHunt: StoredHunt = {
         id: 996,
-        title: "Public",
-        description: "Public hunt",
+        title: 'Public',
+        description: 'Public hunt',
         cluesCount: 1,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
         is_private: false,
       };
       const privateHunt: StoredHunt = {
         id: 995,
-        title: "Private",
-        description: "Private hunt",
+        title: 'Private',
+        description: 'Private hunt',
         cluesCount: 1,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
         is_private: true,
       };
       addHunt(publicHunt);
@@ -129,20 +129,20 @@ describe("huntStore", () => {
     });
   });
 
-  describe("getCreatorHunts", () => {
-    it("returns all hunts for creator dashboard", () => {
+  describe('getCreatorHunts', () => {
+    it('returns all hunts for creator dashboard', () => {
       const hunts = getCreatorHunts();
       expect(Array.isArray(hunts)).toBe(true);
     });
 
-    it("includes draft hunts", () => {
+    it('includes draft hunts', () => {
       const hunt: StoredHunt = {
         id: 994,
-        title: "Draft Hunt",
-        description: "Draft",
+        title: 'Draft Hunt',
+        description: 'Draft',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       const hunts = getCreatorHunts();
@@ -150,101 +150,101 @@ describe("huntStore", () => {
     });
   });
 
-  describe("getHuntsByCreator", () => {
-    it("returns hunts for a creator", () => {
+  describe('getHuntsByCreator', () => {
+    it('returns hunts for a creator', () => {
       const hunts = getHuntsByCreator();
       expect(Array.isArray(hunts)).toBe(true);
     });
   });
 
-  describe("updateHuntStatus", () => {
-    it("updates hunt status from Draft to Active", () => {
+  describe('updateHuntStatus', () => {
+    it('updates hunt status from Draft to Active', () => {
       const hunt: StoredHunt = {
         id: 993,
-        title: "Test Hunt",
-        description: "Test",
+        title: 'Test Hunt',
+        description: 'Test',
         cluesCount: 1,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
-      updateHuntStatus(993, "Active");
+      updateHuntStatus(993, 'Active');
       const updated = getHuntById(993);
-      expect(updated?.status).toBe("Active");
+      expect(updated?.status).toBe('Active');
     });
 
-    it("updates hunt status from Active to Completed", () => {
+    it('updates hunt status from Active to Completed', () => {
       const hunt: StoredHunt = {
         id: 992,
-        title: "Test Hunt",
-        description: "Test",
+        title: 'Test Hunt',
+        description: 'Test',
         cluesCount: 1,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
-      updateHuntStatus(992, "Completed");
+      updateHuntStatus(992, 'Completed');
       const updated = getHuntById(992);
-      expect(updated?.status).toBe("Completed");
+      expect(updated?.status).toBe('Completed');
     });
 
-    it("does not affect other hunts when updating one", () => {
+    it('does not affect other hunts when updating one', () => {
       const hunt1: StoredHunt = {
         id: 991,
-        title: "Hunt 1",
-        description: "Test",
+        title: 'Hunt 1',
+        description: 'Test',
         cluesCount: 1,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       const hunt2: StoredHunt = {
         id: 990,
-        title: "Hunt 2",
-        description: "Test",
+        title: 'Hunt 2',
+        description: 'Test',
         cluesCount: 1,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt1);
       addHunt(hunt2);
-      updateHuntStatus(991, "Active");
+      updateHuntStatus(991, 'Active');
       const h1 = getHuntById(991);
       const h2 = getHuntById(990);
-      expect(h1?.status).toBe("Active");
-      expect(h2?.status).toBe("Draft");
+      expect(h1?.status).toBe('Active');
+      expect(h2?.status).toBe('Draft');
     });
   });
 
-  describe("getHuntById", () => {
-    it("returns a hunt by ID", () => {
+  describe('getHuntById', () => {
+    it('returns a hunt by ID', () => {
       const hunt: StoredHunt = {
         id: 989,
-        title: "Test Hunt",
-        description: "Test",
+        title: 'Test Hunt',
+        description: 'Test',
         cluesCount: 2,
-        status: "Active",
-        rewardType: "NFT",
+        status: 'Active',
+        rewardType: 'NFT',
       };
       addHunt(hunt);
       const found = getHuntById(989);
       expect(found).toEqual(expect.objectContaining(hunt));
     });
 
-    it("returns undefined for non-existent hunt", () => {
+    it('returns undefined for non-existent hunt', () => {
       const found = getHuntById(99999);
       expect(found).toBeUndefined();
     });
   });
 
-  describe("spotlight promotions", () => {
-    it("stores a promoted-until timestamp on a hunt", () => {
+  describe('spotlight promotions', () => {
+    it('stores a promoted-until timestamp on a hunt', () => {
       const hunt: StoredHunt = {
         id: 988,
-        title: "Spotlight Hunt",
-        description: "Featured on the arcade",
+        title: 'Spotlight Hunt',
+        description: 'Featured on the arcade',
         cluesCount: 2,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       const promotedUntil = Math.floor(Date.now() / 1000) + 3600;
@@ -254,24 +254,24 @@ describe("huntStore", () => {
       expect(getHuntById(988)?.promotedUntil).toBe(promotedUntil);
     });
 
-    it("returns only active promoted hunts in the spotlight list", () => {
+    it('returns only active promoted hunts in the spotlight list', () => {
       const promotedUntil = Math.floor(Date.now() / 1000) + 3600;
       addHunt({
         id: 987,
-        title: "Active Spotlight",
-        description: "Featured",
+        title: 'Active Spotlight',
+        description: 'Featured',
         cluesCount: 1,
-        status: "Active",
-        rewardType: "NFT",
+        status: 'Active',
+        rewardType: 'NFT',
         promotedUntil,
       });
       addHunt({
         id: 986,
-        title: "Expired Spotlight",
-        description: "Expired",
+        title: 'Expired Spotlight',
+        description: 'Expired',
         cluesCount: 1,
-        status: "Active",
-        rewardType: "NFT",
+        status: 'Active',
+        rewardType: 'NFT',
         promotedUntil: Math.floor(Date.now() / 1000) - 60,
       });
 
@@ -282,29 +282,29 @@ describe("huntStore", () => {
     });
   });
 
-  describe("addHunt", () => {
-    it("adds a new hunt to storage", () => {
+  describe('addHunt', () => {
+    it('adds a new hunt to storage', () => {
       const hunt: StoredHunt = {
         id: 988,
-        title: "New Hunt",
-        description: "New",
+        title: 'New Hunt',
+        description: 'New',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       const found = getHuntById(988);
       expect(found).toEqual(expect.objectContaining(hunt));
     });
 
-    it("does not add duplicate hunts with same ID", () => {
+    it('does not add duplicate hunts with same ID', () => {
       const hunt: StoredHunt = {
         id: 987,
-        title: "Hunt",
-        description: "Test",
+        title: 'Hunt',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       addHunt(hunt);
@@ -313,51 +313,51 @@ describe("huntStore", () => {
       expect(matches.length).toBe(1);
     });
 
-    it("persists hunt to localStorage", () => {
+    it('persists hunt to localStorage', () => {
       const hunt: StoredHunt = {
         id: 986,
-        title: "Persisted Hunt",
-        description: "Test",
+        title: 'Persisted Hunt',
+        description: 'Test',
         cluesCount: 1,
-        status: "Active",
-        rewardType: "Both",
+        status: 'Active',
+        rewardType: 'Both',
       };
       addHunt(hunt);
-      const stored = localStorage.getItem("hunty_hunts");
+      const stored = localStorage.getItem('hunty_hunts');
       expect(stored).toBeTruthy();
       const parsed = JSON.parse(stored!);
       expect(parsed.some((h: StoredHunt) => h.id === 986)).toBe(true);
     });
   });
 
-  describe("getHuntClues", () => {
-    it("returns clues for a specific hunt", () => {
+  describe('getHuntClues', () => {
+    it('returns clues for a specific hunt', () => {
       const clues = getHuntClues(1);
       expect(Array.isArray(clues)).toBe(true);
     });
 
-    it("returns empty array for hunt with no clues", () => {
+    it('returns empty array for hunt with no clues', () => {
       const clues = getHuntClues(99999);
       expect(clues).toEqual([]);
     });
 
-    it("filters clues by huntId", () => {
+    it('filters clues by huntId', () => {
       const clue1: Clue = {
         id: 1,
         huntId: 985,
-        question: "Q1",
-        answer: "A1",
+        question: 'Q1',
+        answer: 'A1',
         points: 10,
       };
       const clue2: Clue = {
         id: 2,
         huntId: 984,
-        question: "Q2",
-        answer: "A2",
+        question: 'Q2',
+        answer: 'A2',
         points: 20,
       };
       // Manually add to localStorage for testing
-      localStorage.setItem("hunty_clues", JSON.stringify([clue1, clue2]));
+      localStorage.setItem('hunty_clues', JSON.stringify([clue1, clue2]));
       const clues985 = getHuntClues(985);
       const clues984 = getHuntClues(984);
       expect(clues985.length).toBe(1);
@@ -367,69 +367,69 @@ describe("huntStore", () => {
     });
   });
 
-  describe("saveClueLocally", () => {
-    it("saves a new clue and increments cluesCount", () => {
+  describe('saveClueLocally', () => {
+    it('saves a new clue and increments cluesCount', () => {
       const hunt: StoredHunt = {
         id: 983,
-        title: "Hunt",
-        description: "Test",
+        title: 'Hunt',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       saveClueLocally({
         huntId: 983,
-        question: "What is 2+2?",
-        answer: "4",
+        question: 'What is 2+2?',
+        answer: '4',
         points: 10,
       });
       const updated = getHuntById(983);
       expect(updated?.cluesCount).toBe(1);
     });
 
-    it("persists clue to localStorage", () => {
+    it('persists clue to localStorage', () => {
       const hunt: StoredHunt = {
         id: 982,
-        title: "Hunt",
-        description: "Test",
+        title: 'Hunt',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       saveClueLocally({
         huntId: 982,
-        question: "Test question",
-        answer: "test answer",
+        question: 'Test question',
+        answer: 'test answer',
         points: 15,
       });
-      const stored = localStorage.getItem("hunty_clues");
+      const stored = localStorage.getItem('hunty_clues');
       expect(stored).toBeTruthy();
       const parsed = JSON.parse(stored!);
       expect(parsed.some((c: Clue) => c.huntId === 982)).toBe(true);
     });
 
-    it("increments clue ID correctly", () => {
+    it('increments clue ID correctly', () => {
       const hunt: StoredHunt = {
         id: 981,
-        title: "Hunt",
-        description: "Test",
+        title: 'Hunt',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       saveClueLocally({
         huntId: 981,
-        question: "Q1",
-        answer: "A1",
+        question: 'Q1',
+        answer: 'A1',
         points: 10,
       });
       saveClueLocally({
         huntId: 981,
-        question: "Q2",
-        answer: "A2",
+        question: 'Q2',
+        answer: 'A2',
         points: 20,
       });
       const clues = getHuntClues(981);
@@ -437,14 +437,14 @@ describe("huntStore", () => {
       expect(clues[0].id).not.toBe(clues[1].id);
     });
 
-    it("handles multiple clues for same hunt", () => {
+    it('handles multiple clues for same hunt', () => {
       const hunt: StoredHunt = {
         id: 980,
-        title: "Hunt",
-        description: "Test",
+        title: 'Hunt',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       for (let i = 0; i < 3; i++) {
@@ -462,21 +462,21 @@ describe("huntStore", () => {
     });
   });
 
-  describe("saveCluesLocallyBatch", () => {
-    it("saves multiple clues in one write and respects the hunt limit", () => {
+  describe('saveCluesLocallyBatch', () => {
+    it('saves multiple clues in one write and respects the hunt limit', () => {
       const hunt: StoredHunt = {
         id: 9790,
-        title: "Batch Hunt",
-        description: "Test",
+        title: 'Batch Hunt',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
 
       const ids = saveCluesLocallyBatch([
-        { huntId: 9790, question: "Q1", answer: "A1", points: 10 },
-        { huntId: 9790, question: "Q2", answer: "A2", points: 20 },
+        { huntId: 9790, question: 'Q1', answer: 'A1', points: 10 },
+        { huntId: 9790, question: 'Q2', answer: 'A2', points: 20 },
       ]);
 
       expect(ids).toHaveLength(2);
@@ -484,36 +484,36 @@ describe("huntStore", () => {
       expect(getHuntClues(9790)).toHaveLength(2);
     });
 
-    it("rejects invalid clues before storing anything", () => {
+    it('rejects invalid clues before storing anything', () => {
       const hunt: StoredHunt = {
         id: 9789,
-        title: "Batch Hunt",
-        description: "Test",
+        title: 'Batch Hunt',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
 
       expect(() =>
         saveCluesLocallyBatch([
-          { huntId: 9789, question: "Valid", answer: "A1", points: 10 },
-          { huntId: 9789, question: "", answer: "A2", points: 10 },
-        ]),
+          { huntId: 9789, question: 'Valid', answer: 'A1', points: 10 },
+          { huntId: 9789, question: '', answer: 'A2', points: 10 },
+        ])
       ).toThrow(/question is required/i);
 
       expect(getHuntById(9789)?.cluesCount).toBe(0);
       expect(getHuntClues(9789)).toHaveLength(0);
     });
 
-    it("enforces the per-hunt clue limit", () => {
+    it('enforces the per-hunt clue limit', () => {
       const hunt: StoredHunt = {
         id: 9788,
-        title: "Batch Hunt",
-        description: "Test",
+        title: 'Batch Hunt',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
 
@@ -528,68 +528,68 @@ describe("huntStore", () => {
 
       expect(() =>
         saveCluesLocallyBatch([
-          { huntId: 9788, question: "Overflow", answer: "A", points: 10 },
-          { huntId: 9788, question: "Overflow 2", answer: "B", points: 10 },
-        ]),
+          { huntId: 9788, question: 'Overflow', answer: 'A', points: 10 },
+          { huntId: 9788, question: 'Overflow 2', answer: 'B', points: 10 },
+        ])
       ).toThrow(/at most/i);
     });
   });
 
-  describe("getHunt", () => {
-    it("returns a hunt by string ID", () => {
+  describe('getHunt', () => {
+    it('returns a hunt by string ID', () => {
       const hunt: StoredHunt = {
         id: 979,
-        title: "Test Hunt",
-        description: "Test",
+        title: 'Test Hunt',
+        description: 'Test',
         cluesCount: 1,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
-      const found = getHunt("979");
+      const found = getHunt('979');
       expect(found).toEqual(hunt);
     });
 
-    it("returns undefined for non-existent string ID", () => {
-      const found = getHunt("99999");
+    it('returns undefined for non-existent string ID', () => {
+      const found = getHunt('99999');
       expect(found).toBeUndefined();
     });
 
-    it("converts string ID to number correctly", () => {
+    it('converts string ID to number correctly', () => {
       const hunt: StoredHunt = {
         id: 978,
-        title: "Test",
-        description: "Test",
+        title: 'Test',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
-      const found = getHunt("978");
+      const found = getHunt('978');
       expect(found?.id).toBe(978);
     });
   });
 
-  describe("getFeaturedHunts", () => {
-    it("returns featured hunts sorted by score", () => {
+  describe('getFeaturedHunts', () => {
+    it('returns featured hunts sorted by score', () => {
       const hunt1: StoredHunt = {
         id: 977,
-        title: "Hunt 1",
-        description: "Test",
+        title: 'Hunt 1',
+        description: 'Test',
         cluesCount: 5,
-        status: "Active",
-        rewardType: "Both",
+        status: 'Active',
+        rewardType: 'Both',
         is_private: false,
         startTime: Math.floor(Date.now() / 1000) - 86400,
         endTime: Math.floor(Date.now() / 1000) + 7 * 86400,
       };
       const hunt2: StoredHunt = {
         id: 976,
-        title: "Hunt 2",
-        description: "Test",
+        title: 'Hunt 2',
+        description: 'Test',
         cluesCount: 2,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
         is_private: false,
         startTime: Math.floor(Date.now() / 1000) - 86400,
         endTime: Math.floor(Date.now() / 1000) + 7 * 86400,
@@ -598,42 +598,38 @@ describe("huntStore", () => {
       addHunt(hunt2);
       const featured = getFeaturedHunts(2);
       expect(featured.length).toBeGreaterThan(0);
-      expect(featured[0].cluesCount).toBeGreaterThanOrEqual(
-        featured[1]?.cluesCount || 0,
-      );
+      expect(featured[0].cluesCount).toBeGreaterThanOrEqual(featured[1]?.cluesCount || 0);
     });
 
-    it("respects limit parameter", () => {
+    it('respects limit parameter', () => {
       const featured = getFeaturedHunts(1);
       expect(featured.length).toBeLessThanOrEqual(1);
     });
 
-    it("returns only active public hunts", () => {
+    it('returns only active public hunts', () => {
       const featured = getFeaturedHunts(10);
-      expect(
-        featured.every((h) => h.status === "Active" && !h.is_private),
-      ).toBe(true);
+      expect(featured.every((h) => h.status === 'Active' && !h.is_private)).toBe(true);
     });
 
-    it("prioritizes hunts with more clues", () => {
+    it('prioritizes hunts with more clues', () => {
       const hunt1: StoredHunt = {
         id: 975,
-        title: "Many Clues",
-        description: "Test",
+        title: 'Many Clues',
+        description: 'Test',
         cluesCount: 10,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
         is_private: false,
         startTime: Math.floor(Date.now() / 1000),
         endTime: Math.floor(Date.now() / 1000) + 86400,
       };
       const hunt2: StoredHunt = {
         id: 974,
-        title: "Few Clues",
-        description: "Test",
+        title: 'Few Clues',
+        description: 'Test',
         cluesCount: 1,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
         is_private: false,
         startTime: Math.floor(Date.now() / 1000),
         endTime: Math.floor(Date.now() / 1000) + 86400,
@@ -650,25 +646,25 @@ describe("huntStore", () => {
       }
     });
 
-    it("prioritizes Both reward type over single rewards", () => {
+    it('prioritizes Both reward type over single rewards', () => {
       const hunt1: StoredHunt = {
         id: 973,
-        title: "Both Rewards",
-        description: "Test",
+        title: 'Both Rewards',
+        description: 'Test',
         cluesCount: 3,
-        status: "Active",
-        rewardType: "Both",
+        status: 'Active',
+        rewardType: 'Both',
         is_private: false,
         startTime: Math.floor(Date.now() / 1000),
         endTime: Math.floor(Date.now() / 1000) + 86400,
       };
       const hunt2: StoredHunt = {
         id: 972,
-        title: "XLM Only",
-        description: "Test",
+        title: 'XLM Only',
+        description: 'Test',
         cluesCount: 3,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
         is_private: false,
         startTime: Math.floor(Date.now() / 1000),
         endTime: Math.floor(Date.now() / 1000) + 86400,
@@ -686,51 +682,51 @@ describe("huntStore", () => {
     });
   });
 
-  describe("localStorage persistence", () => {
-    it("recovers hunts from localStorage on read", () => {
+  describe('localStorage persistence', () => {
+    it('recovers hunts from localStorage on read', () => {
       const hunt: StoredHunt = {
         id: 971,
-        title: "Persistent Hunt",
-        description: "Test",
+        title: 'Persistent Hunt',
+        description: 'Test',
         cluesCount: 2,
-        status: "Active",
-        rewardType: "NFT",
+        status: 'Active',
+        rewardType: 'NFT',
       };
       addHunt(hunt);
-      const stored = localStorage.getItem("hunty_hunts");
+      const stored = localStorage.getItem('hunty_hunts');
       expect(stored).toBeTruthy();
       const found = getHuntById(971);
       expect(found).toEqual(expect.objectContaining(hunt));
     });
 
-    it("handles corrupted localStorage gracefully", () => {
-      localStorage.setItem("hunty_hunts", "invalid json {");
+    it('handles corrupted localStorage gracefully', () => {
+      localStorage.setItem('hunty_hunts', 'invalid json {');
       const hunts = getAllHuntsIncludingPrivate();
       expect(Array.isArray(hunts)).toBe(true);
     });
 
-    it("handles missing localStorage gracefully", () => {
-      localStorage.removeItem("hunty_hunts");
+    it('handles missing localStorage gracefully', () => {
+      localStorage.removeItem('hunty_hunts');
       const hunts = getAllHuntsIncludingPrivate();
       expect(Array.isArray(hunts)).toBe(true);
     });
   });
 
-  describe("edge cases", () => {
-    it("handles empty hunt list", () => {
-      localStorage.setItem("hunty_hunts", JSON.stringify([]));
+  describe('edge cases', () => {
+    it('handles empty hunt list', () => {
+      localStorage.setItem('hunty_hunts', JSON.stringify([]));
       const hunts = getAllHuntsIncludingPrivate();
       expect(Array.isArray(hunts)).toBe(true);
     });
 
-    it("handles hunt with missing optional fields", () => {
+    it('handles hunt with missing optional fields', () => {
       const hunt: StoredHunt = {
         id: 970,
-        title: "Minimal Hunt",
-        description: "Test",
+        title: 'Minimal Hunt',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       const found = getHuntById(970);
@@ -739,20 +735,20 @@ describe("huntStore", () => {
       expect(found?.endTime).toBeUndefined();
     });
 
-    it("handles clue with optional fields", () => {
+    it('handles clue with optional fields', () => {
       const hunt: StoredHunt = {
         id: 969,
-        title: "Hunt",
-        description: "Test",
+        title: 'Hunt',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       saveClueLocally({
         huntId: 969,
-        question: "Q",
-        answer: "A",
+        question: 'Q',
+        answer: 'A',
         points: 10,
       });
       const clues = getHuntClues(969);
@@ -761,15 +757,15 @@ describe("huntStore", () => {
     });
   });
 
-  describe("updateHuntEndTime", () => {
+  describe('updateHuntEndTime', () => {
     it("updates hunt's end time without losing other fields", () => {
       const hunt: StoredHunt = {
         id: 968,
-        title: "Time Hunt",
-        description: "Test",
+        title: 'Time Hunt',
+        description: 'Test',
         cluesCount: 5,
-        status: "Active",
-        rewardType: "Both",
+        status: 'Active',
+        rewardType: 'Both',
         rewardPool: 100,
         playerCount: 10,
       };
@@ -778,9 +774,9 @@ describe("huntStore", () => {
       updateHuntEndTime(968, newEndTime);
       const updated = getHuntById(968);
       expect(updated?.endTime).toBe(newEndTime);
-      expect(updated?.title).toBe("Time Hunt");
+      expect(updated?.title).toBe('Time Hunt');
       expect(updated?.cluesCount).toBe(5);
-      expect(updated?.status).toBe("Active");
+      expect(updated?.status).toBe('Active');
       expect(updated?.rewardPool).toBe(100);
       expect(updated?.playerCount).toBe(10);
     });
@@ -788,20 +784,20 @@ describe("huntStore", () => {
     it("only updates the specified hunt's end time", () => {
       const hunt1: StoredHunt = {
         id: 967,
-        title: "Hunt 1",
-        description: "Test",
+        title: 'Hunt 1',
+        description: 'Test',
         cluesCount: 1,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
         endTime: 1000,
       };
       const hunt2: StoredHunt = {
         id: 966,
-        title: "Hunt 2",
-        description: "Test",
+        title: 'Hunt 2',
+        description: 'Test',
         cluesCount: 1,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
         endTime: 2000,
       };
       addHunt(hunt1);
@@ -814,19 +810,19 @@ describe("huntStore", () => {
       expect(h2?.endTime).toBe(2000);
     });
 
-    it("persists end time update to localStorage", () => {
+    it('persists end time update to localStorage', () => {
       const hunt: StoredHunt = {
         id: 965,
-        title: "Hunt",
-        description: "Test",
+        title: 'Hunt',
+        description: 'Test',
         cluesCount: 1,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       const newEndTime = Math.floor(Date.now() / 1000) + 172800;
       updateHuntEndTime(965, newEndTime);
-      const stored = localStorage.getItem("hunty_hunts");
+      const stored = localStorage.getItem('hunty_hunts');
       expect(stored).toBeTruthy();
       const parsed = JSON.parse(stored!);
       const hunt965 = parsed.find((h: StoredHunt) => h.id === 965);
@@ -834,23 +830,23 @@ describe("huntStore", () => {
     });
   });
 
-  describe("deleteHunts", () => {
-    it("removes only the specified hunts", () => {
+  describe('deleteHunts', () => {
+    it('removes only the specified hunts', () => {
       const hunt1: StoredHunt = {
         id: 964,
-        title: "Hunt to Delete",
-        description: "Test",
+        title: 'Hunt to Delete',
+        description: 'Test',
         cluesCount: 2,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       const hunt2: StoredHunt = {
         id: 963,
-        title: "Hunt to Keep",
-        description: "Test",
+        title: 'Hunt to Keep',
+        description: 'Test',
         cluesCount: 1,
-        status: "Active",
-        rewardType: "NFT",
+        status: 'Active',
+        rewardType: 'NFT',
       };
       addHunt(hunt1);
       addHunt(hunt2);
@@ -859,33 +855,33 @@ describe("huntStore", () => {
       const kept = getHuntById(963);
       expect(deleted).toBeUndefined();
       expect(kept).toBeDefined();
-      expect(kept?.title).toBe("Hunt to Keep");
+      expect(kept?.title).toBe('Hunt to Keep');
     });
 
-    it("deletes multiple hunts by IDs", () => {
+    it('deletes multiple hunts by IDs', () => {
       const hunt1: StoredHunt = {
         id: 962,
-        title: "Delete 1",
-        description: "Test",
+        title: 'Delete 1',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       const hunt2: StoredHunt = {
         id: 961,
-        title: "Delete 2",
-        description: "Test",
+        title: 'Delete 2',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       const hunt3: StoredHunt = {
         id: 960,
-        title: "Keep",
-        description: "Test",
+        title: 'Keep',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt1);
       addHunt(hunt2);
@@ -896,26 +892,26 @@ describe("huntStore", () => {
       expect(getHuntById(960)).toBeDefined();
     });
 
-    it("also removes associated clues when deleting hunt", () => {
+    it('also removes associated clues when deleting hunt', () => {
       const hunt: StoredHunt = {
         id: 959,
-        title: "Hunt with Clues",
-        description: "Test",
+        title: 'Hunt with Clues',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       saveClueLocally({
         huntId: 959,
-        question: "Q1",
-        answer: "A1",
+        question: 'Q1',
+        answer: 'A1',
         points: 10,
       });
       saveClueLocally({
         huntId: 959,
-        question: "Q2",
-        answer: "A2",
+        question: 'Q2',
+        answer: 'A2',
         points: 20,
       });
       let clues = getHuntClues(959);
@@ -925,35 +921,35 @@ describe("huntStore", () => {
       expect(clues.length).toBe(0);
     });
 
-    it("does not affect clues of other hunts when deleting", () => {
+    it('does not affect clues of other hunts when deleting', () => {
       const hunt1: StoredHunt = {
         id: 958,
-        title: "Hunt to Delete",
-        description: "Test",
+        title: 'Hunt to Delete',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       const hunt2: StoredHunt = {
         id: 957,
-        title: "Hunt to Keep",
-        description: "Test",
+        title: 'Hunt to Keep',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt1);
       addHunt(hunt2);
       saveClueLocally({
         huntId: 958,
-        question: "Q1",
-        answer: "A1",
+        question: 'Q1',
+        answer: 'A1',
         points: 10,
       });
       saveClueLocally({
         huntId: 957,
-        question: "Q2",
-        answer: "A2",
+        question: 'Q2',
+        answer: 'A2',
         points: 20,
       });
       deleteHunts([958]);
@@ -962,31 +958,31 @@ describe("huntStore", () => {
       expect(clues957[0].huntId).toBe(957);
     });
 
-    it("persists deletion to localStorage", () => {
+    it('persists deletion to localStorage', () => {
       const hunt: StoredHunt = {
         id: 956,
-        title: "Hunt",
-        description: "Test",
+        title: 'Hunt',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       deleteHunts([956]);
-      const stored = localStorage.getItem("hunty_hunts");
+      const stored = localStorage.getItem('hunty_hunts');
       expect(stored).toBeTruthy();
       const parsed = JSON.parse(stored!);
       expect(parsed.find((h: StoredHunt) => h.id === 956)).toBeUndefined();
     });
 
-    it("handles empty deletion list gracefully", () => {
+    it('handles empty deletion list gracefully', () => {
       const hunt: StoredHunt = {
         id: 955,
-        title: "Hunt",
-        description: "Test",
+        title: 'Hunt',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       deleteHunts([]);
@@ -995,78 +991,78 @@ describe("huntStore", () => {
     });
   });
 
-  describe("archiveHunts", () => {
-    it("changes hunt status to Cancelled", () => {
+  describe('archiveHunts', () => {
+    it('changes hunt status to Cancelled', () => {
       const hunt: StoredHunt = {
         id: 954,
-        title: "Hunt to Archive",
-        description: "Test",
+        title: 'Hunt to Archive',
+        description: 'Test',
         cluesCount: 1,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       archiveHunts([954]);
       const archived = getHuntById(954);
-      expect(archived?.status).toBe("Cancelled");
+      expect(archived?.status).toBe('Cancelled');
     });
 
-    it("archives multiple hunts by IDs", () => {
+    it('archives multiple hunts by IDs', () => {
       const hunt1: StoredHunt = {
         id: 953,
-        title: "Hunt 1",
-        description: "Test",
+        title: 'Hunt 1',
+        description: 'Test',
         cluesCount: 0,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
       };
       const hunt2: StoredHunt = {
         id: 952,
-        title: "Hunt 2",
-        description: "Test",
+        title: 'Hunt 2',
+        description: 'Test',
         cluesCount: 0,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
       };
       addHunt(hunt1);
       addHunt(hunt2);
       archiveHunts([953, 952]);
-      expect(getHuntById(953)?.status).toBe("Cancelled");
-      expect(getHuntById(952)?.status).toBe("Cancelled");
+      expect(getHuntById(953)?.status).toBe('Cancelled');
+      expect(getHuntById(952)?.status).toBe('Cancelled');
     });
 
-    it("does not affect other hunts when archiving", () => {
+    it('does not affect other hunts when archiving', () => {
       const hunt1: StoredHunt = {
         id: 951,
-        title: "Archive",
-        description: "Test",
+        title: 'Archive',
+        description: 'Test',
         cluesCount: 0,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
       };
       const hunt2: StoredHunt = {
         id: 950,
-        title: "Keep",
-        description: "Test",
+        title: 'Keep',
+        description: 'Test',
         cluesCount: 0,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
       };
       addHunt(hunt1);
       addHunt(hunt2);
       archiveHunts([951]);
-      expect(getHuntById(951)?.status).toBe("Cancelled");
-      expect(getHuntById(950)?.status).toBe("Active");
+      expect(getHuntById(951)?.status).toBe('Cancelled');
+      expect(getHuntById(950)?.status).toBe('Active');
     });
 
-    it("preserves other fields when archiving", () => {
+    it('preserves other fields when archiving', () => {
       const hunt: StoredHunt = {
         id: 949,
-        title: "Complex Hunt",
-        description: "Detailed description",
+        title: 'Complex Hunt',
+        description: 'Detailed description',
         cluesCount: 5,
-        status: "Active",
-        rewardType: "Both",
+        status: 'Active',
+        rewardType: 'Both',
         rewardPool: 150,
         playerCount: 25,
         createdAt: Math.floor(Date.now() / 1000),
@@ -1074,114 +1070,112 @@ describe("huntStore", () => {
       addHunt(hunt);
       archiveHunts([949]);
       const archived = getHuntById(949);
-      expect(archived?.status).toBe("Cancelled");
-      expect(archived?.title).toBe("Complex Hunt");
+      expect(archived?.status).toBe('Cancelled');
+      expect(archived?.title).toBe('Complex Hunt');
       expect(archived?.cluesCount).toBe(5);
       expect(archived?.rewardPool).toBe(150);
       expect(archived?.playerCount).toBe(25);
     });
   });
 
-  describe("updateClueAnswer", () => {
+  describe('updateClueAnswer', () => {
     it("updates a clue's answer", () => {
       const hunt: StoredHunt = {
         id: 948,
-        title: "Hunt",
-        description: "Test",
+        title: 'Hunt',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       const clueId = saveClueLocally({
         huntId: 948,
-        question: "What is 2+2?",
-        answer: "4",
+        question: 'What is 2+2?',
+        answer: '4',
         points: 10,
       });
-      const updated = updateClueAnswer(948, clueId, "four");
+      const updated = updateClueAnswer(948, clueId, 'four');
       expect(updated).toBe(true);
       const clues = getHuntClues(948);
-      expect(clues[0].answer).toBe("four");
+      expect(clues[0].answer).toBe('four');
     });
 
-    it("returns false when clue does not exist", () => {
-      const result = updateClueAnswer(999, 999, "new answer");
+    it('returns false when clue does not exist', () => {
+      const result = updateClueAnswer(999, 999, 'new answer');
       expect(result).toBe(false);
     });
 
-    it("only updates the specified clue", () => {
+    it('only updates the specified clue', () => {
       const hunt: StoredHunt = {
         id: 947,
-        title: "Hunt",
-        description: "Test",
+        title: 'Hunt',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       const clueId1 = saveClueLocally({
         huntId: 947,
-        question: "Q1",
-        answer: "A1",
+        question: 'Q1',
+        answer: 'A1',
         points: 10,
       });
       const clueId2 = saveClueLocally({
         huntId: 947,
-        question: "Q2",
-        answer: "A2",
+        question: 'Q2',
+        answer: 'A2',
         points: 20,
       });
-      updateClueAnswer(947, clueId1, "Updated A1");
+      updateClueAnswer(947, clueId1, 'Updated A1');
       const clues = getHuntClues(947);
       const clue1 = clues.find((c) => c.id === clueId1);
       const clue2 = clues.find((c) => c.id === clueId2);
-      expect(clue1?.answer).toBe("Updated A1");
-      expect(clue2?.answer).toBe("A2");
+      expect(clue1?.answer).toBe('Updated A1');
+      expect(clue2?.answer).toBe('A2');
     });
 
-    it("persists clue answer update to localStorage", () => {
+    it('persists clue answer update to localStorage', () => {
       const hunt: StoredHunt = {
         id: 946,
-        title: "Hunt",
-        description: "Test",
+        title: 'Hunt',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       const clueId = saveClueLocally({
         huntId: 946,
-        question: "Q",
-        answer: "Old",
+        question: 'Q',
+        answer: 'Old',
         points: 10,
       });
-      updateClueAnswer(946, clueId, "New Answer");
-      const stored = localStorage.getItem("hunty_clues");
+      updateClueAnswer(946, clueId, 'New Answer');
+      const stored = localStorage.getItem('hunty_clues');
       expect(stored).toBeTruthy();
       const parsed = JSON.parse(stored!);
-      const clue = parsed.find(
-        (c: Clue) => c.huntId === 946 && c.id === clueId,
-      );
-      expect(clue?.answer).toBe("New Answer");
+      const clue = parsed.find((c: Clue) => c.huntId === 946 && c.id === clueId);
+      expect(clue?.answer).toBe('New Answer');
     });
   });
 
-  describe("snapshot and restore", () => {
-    it("takes snapshot of current hunts and clues", () => {
+  describe('snapshot and restore', () => {
+    it('takes snapshot of current hunts and clues', () => {
       const hunt: StoredHunt = {
         id: 945,
-        title: "Hunt",
-        description: "Test",
+        title: 'Hunt',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       saveClueLocally({
         huntId: 945,
-        question: "Q",
-        answer: "A",
+        question: 'Q',
+        answer: 'A',
         points: 10,
       });
       const snapshot = takeHuntStoreSnapshot();
@@ -1193,14 +1187,14 @@ describe("huntStore", () => {
       expect(snapshot.clues.some((c) => c.huntId === 945)).toBe(true);
     });
 
-    it("restores hunts and clues from snapshot", () => {
+    it('restores hunts and clues from snapshot', () => {
       const hunt1: StoredHunt = {
         id: 944,
-        title: "Hunt 1",
-        description: "Test",
+        title: 'Hunt 1',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt1);
       const snapshot = takeHuntStoreSnapshot();
@@ -1208,11 +1202,11 @@ describe("huntStore", () => {
       // Modify state
       const hunt2: StoredHunt = {
         id: 943,
-        title: "Hunt 2",
-        description: "Test",
+        title: 'Hunt 2',
+        description: 'Test',
         cluesCount: 0,
-        status: "Active",
-        rewardType: "NFT",
+        status: 'Active',
+        rewardType: 'NFT',
       };
       addHunt(hunt2);
       deleteHunts([944]);
@@ -1227,65 +1221,65 @@ describe("huntStore", () => {
       expect(getHuntById(943)).toBeUndefined();
     });
 
-    it("restores exact hunt state from snapshot", () => {
+    it('restores exact hunt state from snapshot', () => {
       const hunt: StoredHunt = {
         id: 942,
-        title: "Original Hunt",
-        description: "Original Description",
+        title: 'Original Hunt',
+        description: 'Original Description',
         cluesCount: 2,
-        status: "Active",
-        rewardType: "Both",
+        status: 'Active',
+        rewardType: 'Both',
         rewardPool: 100,
       };
       addHunt(hunt);
       const snapshot = takeHuntStoreSnapshot();
 
       // Modify hunt
-      updateHuntStatus(942, "Completed");
+      updateHuntStatus(942, 'Completed');
       updateHuntEndTime(942, 9999);
 
       // Restore
       restoreHuntStoreSnapshot(snapshot);
       const restored = getHuntById(942);
-      expect(restored?.status).toBe("Active");
-      expect(restored?.title).toBe("Original Hunt");
+      expect(restored?.status).toBe('Active');
+      expect(restored?.title).toBe('Original Hunt');
       expect(restored?.endTime).toBeUndefined();
     });
 
-    it("restores clues from snapshot", () => {
+    it('restores clues from snapshot', () => {
       const hunt: StoredHunt = {
         id: 941,
-        title: "Hunt",
-        description: "Test",
+        title: 'Hunt',
+        description: 'Test',
         cluesCount: 0,
-        status: "Draft",
-        rewardType: "XLM",
+        status: 'Draft',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       const clueId = saveClueLocally({
         huntId: 941,
-        question: "Original Q",
-        answer: "Original A",
+        question: 'Original Q',
+        answer: 'Original A',
         points: 10,
       });
       const snapshot = takeHuntStoreSnapshot();
 
       // Update clue
-      updateClueAnswer(941, clueId, "Modified A");
+      updateClueAnswer(941, clueId, 'Modified A');
 
       // Verify modification
       let clues = getHuntClues(941);
-      expect(clues[0].answer).toBe("Modified A");
+      expect(clues[0].answer).toBe('Modified A');
 
       // Restore
       restoreHuntStoreSnapshot(snapshot);
       clues = getHuntClues(941);
-      expect(clues[0].answer).toBe("Original A");
+      expect(clues[0].answer).toBe('Original A');
     });
   });
 
-  describe("hunt progress", () => {
-    it("creates and advances progress snapshots", () => {
+  describe('hunt progress', () => {
+    it('creates and advances progress snapshots', () => {
       const initial = startHuntProgress(9777);
       expect(initial.currentClueIndex).toBe(0);
       expect(getHuntProgress(9777).huntId).toBe(9777);
@@ -1299,12 +1293,12 @@ describe("huntStore", () => {
       expect(completed.completedAt).toBeDefined();
 
       clearHuntProgress(9777);
-      expect(localStorage.getItem("hunty_hunt_progress_9777")).toBeNull();
+      expect(localStorage.getItem('hunty_hunt_progress_9777')).toBeNull();
     });
 
-    it("migrates guest progress into a wallet-scoped key and stays idempotent", () => {
+    it('migrates guest progress into a wallet-scoped key and stays idempotent', () => {
       const guestProgress = startHuntProgress(8765);
-      const walletAddress = "GABC1234567890";
+      const walletAddress = 'GABC1234567890';
 
       const migrated = migrateGuestProgressToWallet(8765, walletAddress);
 
@@ -1313,7 +1307,7 @@ describe("huntStore", () => {
         currentClueIndex: guestProgress.currentClueIndex,
       });
       expect(localStorage.getItem(getWalletProgressKey(8765, walletAddress))).toBeTruthy();
-      expect(localStorage.getItem("hunty_hunt_progress_8765")).toBeNull();
+      expect(localStorage.getItem('hunty_hunt_progress_8765')).toBeNull();
 
       const duplicate = migrateGuestProgressToWallet(8765, walletAddress);
       expect(duplicate).toEqual(migrated);
@@ -1321,53 +1315,53 @@ describe("huntStore", () => {
     });
   });
 
-  describe("gcHunt", () => {
-    it("removes hunt-scoped storage only for cancelled hunts", () => {
+  describe('gcHunt', () => {
+    it('removes hunt-scoped storage only for cancelled hunts', () => {
       const hunt: StoredHunt = {
         id: 9776,
-        title: "Cancelled Hunt",
-        description: "Test",
+        title: 'Cancelled Hunt',
+        description: 'Test',
         cluesCount: 1,
-        status: "Cancelled",
-        rewardType: "XLM",
+        status: 'Cancelled',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
-      localStorage.setItem("hunt_clue_start_9776_1", "123");
-      localStorage.setItem("hunt_reward_claimed_9776", "true");
+      localStorage.setItem('hunt_clue_start_9776_1', '123');
+      localStorage.setItem('hunt_reward_claimed_9776', 'true');
 
       const result = gcHunt(9776);
       expect(result.removedKeys.length).toBeGreaterThan(0);
-      expect(localStorage.getItem("hunt_clue_start_9776_1")).toBeNull();
-      expect(localStorage.getItem("hunt_reward_claimed_9776")).toBeNull();
+      expect(localStorage.getItem('hunt_clue_start_9776_1')).toBeNull();
+      expect(localStorage.getItem('hunt_reward_claimed_9776')).toBeNull();
     });
 
-    it("does not remove data for active hunts", () => {
+    it('does not remove data for active hunts', () => {
       const hunt: StoredHunt = {
         id: 9775,
-        title: "Active Hunt",
-        description: "Test",
+        title: 'Active Hunt',
+        description: 'Test',
         cluesCount: 1,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
-      localStorage.setItem("hunt_clue_start_9775_1", "123");
+      localStorage.setItem('hunt_clue_start_9775_1', '123');
 
       const result = gcHunt(9775);
       expect(result.removedKeys).toHaveLength(0);
-      expect(localStorage.getItem("hunt_clue_start_9775_1")).toBe("123");
+      expect(localStorage.getItem('hunt_clue_start_9775_1')).toBe('123');
     });
   });
 
-  describe("setLocalFeaturedHunt", () => {
-    it("sets a hunt as featured", () => {
+  describe('setLocalFeaturedHunt', () => {
+    it('sets a hunt as featured', () => {
       const hunt: StoredHunt = {
         id: 940,
-        title: "Featured Hunt",
-        description: "Test",
+        title: 'Featured Hunt',
+        description: 'Test',
         cluesCount: 3,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       setLocalFeaturedHunt(940);
@@ -1375,22 +1369,22 @@ describe("huntStore", () => {
       expect(featured?.isFeaturedOfWeek).toBe(true);
     });
 
-    it("unsets previous featured hunt when setting new one", () => {
+    it('unsets previous featured hunt when setting new one', () => {
       const hunt1: StoredHunt = {
         id: 939,
-        title: "Featured 1",
-        description: "Test",
+        title: 'Featured 1',
+        description: 'Test',
         cluesCount: 1,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
       };
       const hunt2: StoredHunt = {
         id: 938,
-        title: "Featured 2",
-        description: "Test",
+        title: 'Featured 2',
+        description: 'Test',
         cluesCount: 1,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
       };
       addHunt(hunt1);
       addHunt(hunt2);
@@ -1403,14 +1397,14 @@ describe("huntStore", () => {
       expect(getHuntById(938)?.isFeaturedOfWeek).toBe(true);
     });
 
-    it("clears featured hunt when passed null", () => {
+    it('clears featured hunt when passed null', () => {
       const hunt: StoredHunt = {
         id: 937,
-        title: "Hunt",
-        description: "Test",
+        title: 'Hunt',
+        description: 'Test',
         cluesCount: 1,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       setLocalFeaturedHunt(937);
@@ -1420,18 +1414,18 @@ describe("huntStore", () => {
       expect(getHuntById(937)?.isFeaturedOfWeek).toBe(false);
     });
 
-    it("persists featured hunt setting to localStorage", () => {
+    it('persists featured hunt setting to localStorage', () => {
       const hunt: StoredHunt = {
         id: 936,
-        title: "Hunt",
-        description: "Test",
+        title: 'Hunt',
+        description: 'Test',
         cluesCount: 1,
-        status: "Active",
-        rewardType: "XLM",
+        status: 'Active',
+        rewardType: 'XLM',
       };
       addHunt(hunt);
       setLocalFeaturedHunt(936);
-      const stored = localStorage.getItem("hunty_hunts");
+      const stored = localStorage.getItem('hunty_hunts');
       expect(stored).toBeTruthy();
       const parsed = JSON.parse(stored!);
       const hunt936 = parsed.find((h: StoredHunt) => h.id === 936);

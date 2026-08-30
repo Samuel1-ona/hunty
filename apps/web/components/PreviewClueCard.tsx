@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 /**
  * PreviewClueCard (#581)
@@ -9,28 +9,28 @@
  * player experience.
  */
 
-import React, { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { CheckCircle2, Eye, EyeOff, Lightbulb, RotateCcw } from "lucide-react"
-import { Button } from "@hunty/ui"
-import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
-import { isValidClueAnswer } from "@/lib/clueAnswerValidation"
-import { matchesClueAnswer } from "@/lib/clueAnswerVerification"
-import type { Clue } from "@/lib/types"
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle2, Eye, EyeOff, Lightbulb, RotateCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import { isValidClueAnswer } from '@/lib/clueAnswerValidation';
+import { matchesClueAnswer } from '@/lib/clueAnswerVerification';
+import type { Clue } from '@/lib/types';
 
 interface PreviewClueCardProps {
-  clue: Clue
-  huntId: number
-  clueIndex: number
-  totalClues: number
-  isSolved: boolean
+  clue: Clue;
+  huntId: number;
+  clueIndex: number;
+  totalClues: number;
+  isSolved: boolean;
   /** Called when a correct answer is confirmed. */
-  onSolve: (answer: string) => void
+  onSolve: (answer: string) => void;
   /** Called when a wrong answer is submitted (for shake animation coordination). */
-  onWrongAnswer?: (answer: string) => void
+  onWrongAnswer?: (answer: string) => void;
   /** Called when the creator clicks "Reset" to undo their solved state. */
-  onReset?: () => void
+  onReset?: () => void;
 }
 
 const shakeVariants = {
@@ -39,13 +39,13 @@ const shakeVariants = {
     transition: { duration: 0.5 },
   },
   idle: { x: 0 },
-}
+};
 
 const DIFFICULTY_COLORS: Record<string, string> = {
-  Easy: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  Medium: "bg-amber-100 text-amber-700 border-amber-200",
-  Hard: "bg-red-100 text-red-700 border-red-200",
-}
+  Easy: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  Medium: 'bg-amber-100 text-amber-700 border-amber-200',
+  Hard: 'bg-red-100 text-red-700 border-red-200',
+};
 
 export function PreviewClueCard({
   clue,
@@ -57,52 +57,50 @@ export function PreviewClueCard({
   onWrongAnswer,
   onReset,
 }: PreviewClueCardProps) {
-  const [input, setInput] = useState("")
-  const [shake, setShake] = useState(false)
-  const [isChecking, setIsChecking] = useState(false)
-  const [showHint, setShowHint] = useState(false)
-  const [showAnswer, setShowAnswer] = useState(false)
-  const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null)
+  const [input, setInput] = useState('');
+  const [shake, setShake] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
+  const [showHint, setShowHint] = useState(false);
+  const [showAnswer, setShowAnswer] = useState(false);
+  const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
 
   const handleSubmit = async () => {
-    const trimmed = input.trim()
-    if (!isValidClueAnswer(trimmed)) return
+    const trimmed = input.trim();
+    if (!isValidClueAnswer(trimmed)) return;
 
-    setIsChecking(true)
-    setFeedback(null)
+    setIsChecking(true);
+    setFeedback(null);
 
     try {
-      const correct = await matchesClueAnswer(trimmed, clue, huntId)
+      const correct = await matchesClueAnswer(trimmed, clue, huntId);
       if (correct) {
-        setFeedback("correct")
+        setFeedback('correct');
         // Brief visual delay so the creator sees the success state
         setTimeout(() => {
-          onSolve(trimmed)
-          setInput("")
-          setFeedback(null)
-        }, 700)
+          onSolve(trimmed);
+          setInput('');
+          setFeedback(null);
+        }, 700);
       } else {
-        setFeedback("wrong")
-        setShake(true)
-        setTimeout(() => setShake(false), 600)
-        onWrongAnswer?.(trimmed)
+        setFeedback('wrong');
+        setShake(true);
+        setTimeout(() => setShake(false), 600);
+        onWrongAnswer?.(trimmed);
       }
     } finally {
-      setIsChecking(false)
+      setIsChecking(false);
     }
-  }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") handleSubmit()
-  }
+    if (e.key === 'Enter') handleSubmit();
+  };
 
   return (
     <div
       className={cn(
-        "rounded-3xl border bg-white shadow-lg transition-all duration-300 w-full max-w-sm mx-auto",
-        isSolved
-          ? "border-emerald-300 bg-emerald-50/50 shadow-emerald-100"
-          : "border-slate-200",
+        'rounded-3xl border bg-white shadow-lg transition-all duration-300 w-full max-w-sm mx-auto',
+        isSolved ? 'border-emerald-300 bg-emerald-50/50 shadow-emerald-100' : 'border-slate-200'
       )}
     >
       {/* Header */}
@@ -114,8 +112,8 @@ export function PreviewClueCard({
           {clue.difficulty && (
             <span
               className={cn(
-                "text-xs font-medium px-2 py-0.5 rounded-full border",
-                DIFFICULTY_COLORS[clue.difficulty] ?? "bg-slate-100 text-slate-600 border-slate-200",
+                'text-xs font-medium px-2 py-0.5 rounded-full border',
+                DIFFICULTY_COLORS[clue.difficulty] ?? 'bg-slate-100 text-slate-600 border-slate-200'
               )}
             >
               {clue.difficulty}
@@ -131,9 +129,7 @@ export function PreviewClueCard({
 
       {/* Question */}
       <div className="px-6 pb-4">
-        <p className="text-slate-800 text-base font-medium leading-relaxed">
-          {clue.question}
-        </p>
+        <p className="text-slate-800 text-base font-medium leading-relaxed">{clue.question}</p>
       </div>
 
       {/* Solved overlay */}
@@ -150,9 +146,7 @@ export function PreviewClueCard({
               <p className="text-sm font-semibold text-emerald-700">
                 Correct! +{clue.points ?? 0} pts
               </p>
-              <p className="text-xs text-emerald-600/80">
-                Preview only — no data saved
-              </p>
+              <p className="text-xs text-emerald-600/80">Preview only — no data saved</p>
             </div>
             {onReset && (
               <Button
@@ -172,29 +166,26 @@ export function PreviewClueCard({
       {/* Answer input */}
       {!isSolved && (
         <div className="px-6 pb-4 space-y-3">
-          <motion.div
-            animate={shake ? "shake" : "idle"}
-            variants={shakeVariants}
-          >
+          <motion.div animate={shake ? 'shake' : 'idle'} variants={shakeVariants}>
             <Input
               value={input}
               onChange={(e) => {
-                setInput(e.target.value)
-                setFeedback(null)
+                setInput(e.target.value);
+                setFeedback(null);
               }}
               onKeyDown={handleKeyDown}
               placeholder="Type your answer…"
               disabled={isChecking}
               className={cn(
-                "rounded-xl border-slate-200 focus-visible:ring-indigo-400",
-                feedback === "wrong" && "border-red-400 focus-visible:ring-red-300",
-                feedback === "correct" && "border-emerald-400",
+                'rounded-xl border-slate-200 focus-visible:ring-indigo-400',
+                feedback === 'wrong' && 'border-red-400 focus-visible:ring-red-300',
+                feedback === 'correct' && 'border-emerald-400'
               )}
               aria-label="Answer input"
             />
           </motion.div>
 
-          {feedback === "wrong" && (
+          {feedback === 'wrong' && (
             <p className="text-xs text-red-500 font-medium" role="alert">
               That&apos;s not quite right — try again!
             </p>
@@ -205,7 +196,7 @@ export function PreviewClueCard({
             disabled={isChecking || !isValidClueAnswer(input)}
             className="w-full bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-white rounded-xl disabled:opacity-50"
           >
-            {isChecking ? "Checking…" : "Submit Answer"}
+            {isChecking ? 'Checking…' : 'Submit Answer'}
           </Button>
         </div>
       )}
@@ -220,7 +211,7 @@ export function PreviewClueCard({
             className="text-xs gap-1.5 text-amber-700 border-amber-200 hover:bg-amber-50"
           >
             <Lightbulb className="w-3.5 h-3.5" />
-            {showHint ? "Hide Hint" : "Show Hint"}
+            {showHint ? 'Hide Hint' : 'Show Hint'}
           </Button>
         )}
         <Button
@@ -229,12 +220,8 @@ export function PreviewClueCard({
           onClick={() => setShowAnswer((v) => !v)}
           className="text-xs gap-1.5 text-slate-600 border-slate-200 hover:bg-slate-50"
         >
-          {showAnswer ? (
-            <EyeOff className="w-3.5 h-3.5" />
-          ) : (
-            <Eye className="w-3.5 h-3.5" />
-          )}
-          {showAnswer ? "Hide Answer" : "Reveal Answer"}
+          {showAnswer ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+          {showAnswer ? 'Hide Answer' : 'Reveal Answer'}
         </Button>
       </div>
 
@@ -243,7 +230,7 @@ export function PreviewClueCard({
         {showHint && clue.hint && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
+            animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
@@ -265,21 +252,17 @@ export function PreviewClueCard({
         {showAnswer && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
+            animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
             <div className="mx-6 mb-6 rounded-2xl bg-indigo-50 border border-indigo-200 px-4 py-3">
-              <p className="text-xs font-semibold text-indigo-700 mb-1">
-                Answer (creator only)
-              </p>
-              <p className="text-sm font-mono text-indigo-900 break-all">
-                {clue.answer}
-              </p>
+              <p className="text-xs font-semibold text-indigo-700 mb-1">Answer (creator only)</p>
+              <p className="text-sm font-mono text-indigo-900 break-all">{clue.answer}</p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }

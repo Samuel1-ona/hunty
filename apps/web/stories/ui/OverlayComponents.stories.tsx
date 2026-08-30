@@ -1,13 +1,13 @@
-import type { Meta, StoryObj } from "@storybook/nextjs-vite"
-import { useState } from "react"
-import CustomToggle from "@/components/ui/CustomToggle"
-import { Checkbox } from "@/components/ui/checkbox"
-import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { Textarea } from "@/components/ui/textarea"
-import { Skeleton } from "@/components/ui/skeleton"
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { useState } from 'react';
+import CustomToggle from '@/components/ui/CustomToggle';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function OverlayExamples() {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -19,7 +19,10 @@ function OverlayExamples() {
         <Skeleton className="h-4 w-48" />
         <Skeleton className="h-24 w-full max-w-md" />
       </div>
-      <button className="rounded-lg bg-slate-900 px-4 py-2 text-white" onClick={() => setOpen(true)}>
+      <button
+        className="rounded-lg bg-slate-900 px-4 py-2 text-white"
+        onClick={() => setOpen(true)}
+      >
         Open confirm dialog
       </button>
       <ConfirmDialog
@@ -31,16 +34,16 @@ function OverlayExamples() {
         onConfirm={() => undefined}
       />
     </div>
-  )
+  );
 }
 
 const meta = {
-  title: "UI/Controls And Feedback",
+  title: 'UI/Controls And Feedback',
   component: OverlayExamples,
-  tags: ["autodocs"],
-} satisfies Meta<typeof OverlayExamples>
+  tags: ['autodocs'],
+} satisfies Meta<typeof OverlayExamples>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {}
+export const Default: Story = {};

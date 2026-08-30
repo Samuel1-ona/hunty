@@ -1,8 +1,8 @@
-import { toast } from "sonner";
+import { toast } from 'sonner';
 
-import { announceSr } from "@/components/SrAnnouncer";
-import { mapContractError } from "@/lib/contracts/errors";
-import { settleWalletBalance } from "@/lib/wallet/balanceEvents";
+import { announceSr } from '@/components/SrAnnouncer';
+import { mapContractError } from '@/lib/contracts/errors';
+import { settleWalletBalance } from '@/lib/wallet/balanceEvents';
 
 // ─── Stage type ───────────────────────────────────────────────────────────────
 
@@ -14,10 +14,10 @@ import { settleWalletBalance } from "@/lib/wallet/balanceEvents";
  *   confirmed → transaction landed on-chain
  *   failed    → transaction rejected or errored
  */
-export type TxStage = "pending" | "approving" | "confirmed" | "failed";
+export type TxStage = 'pending' | 'approving' | 'confirmed' | 'failed';
 
 /** Call this inside your transaction function to advance the visible stage. */
-export type SetStageFn = (stage: Extract<TxStage, "pending" | "approving">) => void;
+export type SetStageFn = (stage: Extract<TxStage, 'pending' | 'approving'>) => void;
 
 // ─── Message config ───────────────────────────────────────────────────────────
 
@@ -31,9 +31,9 @@ export type TxToastMessages = {
 };
 
 const DEFAULTS: Required<TxToastMessages> = {
-  pending: "Pending — waiting for wallet…",
-  approving: "Approving — sign in your wallet…",
-  confirmed: "Confirmed!",
+  pending: 'Pending — waiting for wallet…',
+  approving: 'Approving — sign in your wallet…',
+  confirmed: 'Confirmed!',
 };
 
 /** Toast ids for in-flight transaction stages that should be cleared on disconnect. */
@@ -108,7 +108,7 @@ export async function withTransactionToast<T>(
   pendingToastIds.add(toastId);
 
   const setStage: SetStageFn = (stage) => {
-    if (stage === "approving") {
+    if (stage === 'approving') {
       announceSr(msgs.approving);
       // Update the same toast in-place so it doesn't flicker
       toast.loading(msgs.approving, { id: toastId });
@@ -155,10 +155,10 @@ export async function withTransactionToast<T>(
 
     if (mapped.isUserRejection) {
       // Yellow warning — user intentionally cancelled, not an error.
-      announceSr("Transaction cancelled");
+      announceSr('Transaction cancelled');
       toast.warning(mapped.message, { id: toastId });
     } else {
-      announceSr("Failed: " + mapped.message);
+      announceSr('Failed: ' + mapped.message);
       toast.error(mapped.message, { id: toastId });
     }
 

@@ -1,6 +1,7 @@
-/**
- * Email digest feature - Quick reference for developers
- */
+/\*\*
+
+- Email digest feature - Quick reference for developers
+  \*/
 
 // ────────────────────────────────────────────────────────────────────────────
 // SUBSCRIBE A PLAYER
@@ -10,9 +11,9 @@ import { upsertEmailPreference } from "@/lib/email"
 
 // Subscribe player to email digest
 const preference = await upsertEmailPreference(
-  "GPLAYER123XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-  "player@example.com",
-  true, // digestSubscribed
+"GPLAYER123XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+"player@example.com",
+true, // digestSubscribed
 )
 
 console.log(preference.digestSubscribed) // true
@@ -25,7 +26,7 @@ import { getEmailPreference } from "@/lib/email"
 
 const prefs = await getEmailPreference("GPLAYER123...")
 if (prefs) {
-  console.log(`${prefs.email} subscribed: ${prefs.digestSubscribed}`)
+console.log(`${prefs.email} subscribed: ${prefs.digestSubscribed}`)
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -37,16 +38,16 @@ import { generateDigestContent, createUnsubscribeToken } from "@/lib/email"
 const token = await createUnsubscribeToken("player-id-uuid")
 
 const digestContent = await generateDigestContent(
-  "player@example.com",
-  "GPLAYER123...",
-  token.token,
+"player@example.com",
+"GPLAYER123...",
+token.token,
 )
 
 if (digestContent) {
-  console.log(`Found ${digestContent.newHunts.length} new hunts`)
-  digestContent.newHunts.forEach((hunt) => {
-    console.log(`- ${hunt.title} (${hunt.category})`)
-  })
+console.log(`Found ${digestContent.newHunts.length} new hunts`)
+digestContent.newHunts.forEach((hunt) => {
+console.log(`- ${hunt.title} (${hunt.category})`)
+})
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -59,8 +60,8 @@ const players = await getAllSubscribedPlayers()
 const player = players[0]
 
 if (player) {
-  const success = await sendDigestToPlayer(player)
-  console.log(success ? "Email sent!" : "Failed to send")
+const success = await sendDigestToPlayer(player)
+console.log(success ? "Email sent!" : "Failed to send")
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -71,8 +72,8 @@ import { sendDigestBatch } from "@/lib/email"
 
 // Send to all players who haven't received one in 24 hours
 const result = await sendDigestBatch({
-  minHoursSinceLast: 24,
-  dryRun: false, // Set to true to simulate without sending
+minHoursSinceLast: 24,
+dryRun: false, // Set to true to simulate without sending
 })
 
 console.log(`Sent to ${result.sent} players`)
@@ -87,13 +88,13 @@ import { validateAndUseUnsubscribeToken } from "@/lib/email"
 
 // Process unsubscribe from email link
 const unsubscribeResult = await validateAndUseUnsubscribeToken(
-  "token-from-email-link",
+"token-from-email-link",
 )
 
 if (unsubscribeResult) {
-  console.log(`Unsubscribed: ${unsubscribeResult.email}`)
+console.log(`Unsubscribed: ${unsubscribeResult.email}`)
 } else {
-  console.log("Invalid or expired token")
+console.log("Invalid or expired token")
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -111,13 +112,13 @@ console.log(`Deleted ${deletedCount} expired tokens`)
 
 // Subscribe via API
 const subscribeRes = await fetch("/api/v1/email-preferences", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    walletAddress: "GPLAYER123...",
-    email: "player@example.com",
-    digestSubscribed: true,
-  }),
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({
+walletAddress: "GPLAYER123...",
+email: "player@example.com",
+digestSubscribed: true,
+}),
 })
 
 // Get preferences via API
@@ -126,8 +127,8 @@ const getRes = await fetch("/api/v1/email-preferences?wallet=GPLAYER123...")
 // Send digests via admin API
 const adminToken = process.env.ADMIN_API_TOKEN
 const sendRes = await fetch("/api/v1/email-digest/send?dryRun=true", {
-  method: "POST",
-  headers: { "X-Admin-Token": adminToken },
+method: "POST",
+headers: { "X-Admin-Token": adminToken },
 })
 
 // Unsubscribe via email link

@@ -5,10 +5,10 @@
 
 ## Prerequisites
 
-| Tool | Version |
-|---|---|
-| Node.js | >= 20 |
-| pnpm | 10.x (`npm install -g pnpm`) |
+| Tool    | Version                      |
+| ------- | ---------------------------- |
+| Node.js | >= 20                        |
+| pnpm    | 10.x (`npm install -g pnpm`) |
 
 ## Setup
 

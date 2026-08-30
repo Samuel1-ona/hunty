@@ -1,81 +1,75 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import { getSorobanNetworkType } from "@/lib/soroban/client"
-import { AlertTriangle, Globe } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { useEffect, useState } from 'react';
+import { getSorobanNetworkType } from '@/lib/soroban/client';
+import { AlertTriangle, Globe } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface NetworkIndicatorProps {
-  variant?: "badge" | "pill" | "corner"
-  showIcon?: boolean
-  className?: string
+  variant?: 'badge' | 'pill' | 'corner';
+  showIcon?: boolean;
+  className?: string;
 }
 
 /**
  * NetworkIndicator Component
  * Shows the current Stellar network (testnet/mainnet) in the UI
  */
-export function NetworkIndicator({ 
-  variant = "badge", 
+export function NetworkIndicator({
+  variant = 'badge',
   showIcon = true,
-  className 
+  className,
 }: NetworkIndicatorProps) {
-  const [networkType, setNetworkType] = useState<"testnet" | "mainnet">("testnet")
-  const [mounted, setMounted] = useState(false)
+  const [networkType, setNetworkType] = useState<'testnet' | 'mainnet'>('testnet');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true)
-    setNetworkType(getSorobanNetworkType())
+    setMounted(true);
+    setNetworkType(getSorobanNetworkType());
 
     // Listen for network changes
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "stellar_network_preference") {
-        setNetworkType(getSorobanNetworkType())
+      if (e.key === 'stellar_network_preference') {
+        setNetworkType(getSorobanNetworkType());
       }
-    }
+    };
 
-    window.addEventListener("storage", handleStorageChange)
-    return () => window.removeEventListener("storage", handleStorageChange)
-  }, [])
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   // Don't render on mainnet in production (no need to show)
-  const isProduction = process.env.NEXT_PUBLIC_ENVIRONMENT === "production"
-  if (!mounted || (isProduction && networkType === "mainnet")) {
-    return null
+  const isProduction = process.env.NEXT_PUBLIC_ENVIRONMENT === 'production';
+  if (!mounted || (isProduction && networkType === 'mainnet')) {
+    return null;
   }
 
-  const isTestnet = networkType === "testnet"
+  const isTestnet = networkType === 'testnet';
 
-  if (variant === "corner") {
+  if (variant === 'corner') {
     return (
-      <div
-        className={cn(
-          "fixed bottom-4 right-4 z-50 pointer-events-none",
-          className
-        )}
-      >
+      <div className={cn('fixed bottom-4 right-4 z-50 pointer-events-none', className)}>
         <div
           className={cn(
-            "px-3 py-2 rounded-lg border shadow-lg backdrop-blur-sm",
+            'px-3 py-2 rounded-lg border shadow-lg backdrop-blur-sm',
             isTestnet
-              ? "bg-yellow-50/90 dark:bg-yellow-900/80 border-yellow-300 dark:border-yellow-700"
-              : "bg-green-50/90 dark:bg-green-900/80 border-green-300 dark:border-green-700"
+              ? 'bg-yellow-50/90 dark:bg-yellow-900/80 border-yellow-300 dark:border-yellow-700'
+              : 'bg-green-50/90 dark:bg-green-900/80 border-green-300 dark:border-green-700'
           )}
         >
           <div className="flex items-center gap-2">
-            {showIcon && (
-              isTestnet ? (
+            {showIcon &&
+              (isTestnet ? (
                 <AlertTriangle className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
               ) : (
                 <Globe className="w-4 h-4 text-green-600 dark:text-green-400" />
-              )
-            )}
+              ))}
             <span
               className={cn(
-                "text-sm font-semibold uppercase tracking-wide",
+                'text-sm font-semibold uppercase tracking-wide',
                 isTestnet
-                  ? "text-yellow-800 dark:text-yellow-200"
-                  : "text-green-800 dark:text-green-200"
+                  ? 'text-yellow-800 dark:text-yellow-200'
+                  : 'text-green-800 dark:text-green-200'
               )}
             >
               {networkType}
@@ -83,55 +77,49 @@ export function NetworkIndicator({
           </div>
         </div>
       </div>
-    )
+    );
   }
 
-  if (variant === "pill") {
+  if (variant === 'pill') {
     return (
       <div
         className={cn(
-          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border",
+          'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border',
           isTestnet
-            ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700"
-            : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700",
+            ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700'
+            : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700',
           className
         )}
       >
         {showIcon && (
           <span
-            className={cn(
-              "w-1.5 h-1.5 rounded-full",
-              isTestnet ? "bg-yellow-500" : "bg-green-500"
-            )}
+            className={cn('w-1.5 h-1.5 rounded-full', isTestnet ? 'bg-yellow-500' : 'bg-green-500')}
           />
         )}
         {networkType.toUpperCase()}
       </div>
-    )
+    );
   }
 
   // Default badge variant
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium border",
+        'inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium border',
         isTestnet
-          ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800"
-          : "bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800",
+          ? 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
+          : 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800',
         className
       )}
     >
       {showIcon && (
         <span
-          className={cn(
-            "w-1.5 h-1.5 rounded-full",
-            isTestnet ? "bg-yellow-500" : "bg-green-500"
-          )}
+          className={cn('w-1.5 h-1.5 rounded-full', isTestnet ? 'bg-yellow-500' : 'bg-green-500')}
         />
       )}
       {networkType}
     </div>
-  )
+  );
 }
 
 /**
@@ -139,26 +127,26 @@ export function NetworkIndicator({
  * Displays a prominent warning when on testnet
  */
 export function TestnetWarning() {
-  const [networkType, setNetworkType] = useState<"testnet" | "mainnet">("testnet")
-  const [mounted, setMounted] = useState(false)
-  const [dismissed, setDismissed] = useState(false)
+  const [networkType, setNetworkType] = useState<'testnet' | 'mainnet'>('testnet');
+  const [mounted, setMounted] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    setMounted(true)
-    setNetworkType(getSorobanNetworkType())
+    setMounted(true);
+    setNetworkType(getSorobanNetworkType());
 
     // Check if warning was dismissed in this session
-    const isDismissed = sessionStorage.getItem("testnet_warning_dismissed") === "true"
-    setDismissed(isDismissed)
-  }, [])
+    const isDismissed = sessionStorage.getItem('testnet_warning_dismissed') === 'true';
+    setDismissed(isDismissed);
+  }, []);
 
   const handleDismiss = () => {
-    setDismissed(true)
-    sessionStorage.setItem("testnet_warning_dismissed", "true")
-  }
+    setDismissed(true);
+    sessionStorage.setItem('testnet_warning_dismissed', 'true');
+  };
 
-  if (!mounted || networkType === "mainnet" || dismissed) {
-    return null
+  if (!mounted || networkType === 'mainnet' || dismissed) {
+    return null;
   }
 
   return (
@@ -185,5 +173,5 @@ export function TestnetWarning() {
         </div>
       </div>
     </div>
-  )
+  );
 }

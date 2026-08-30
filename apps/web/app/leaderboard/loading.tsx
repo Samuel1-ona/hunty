@@ -1,4 +1,4 @@
-import { LeaderboardTableSkeleton } from "@/components/LoadingSkeletons"
+import { LeaderboardTableSkeleton } from '@/components/LoadingSkeletons';
 
 export default function LeaderboardLoading() {
   return (
@@ -15,5 +15,5 @@ export default function LeaderboardLoading() {
         </div>
       </div>
     </div>
-  )
+  );
 }

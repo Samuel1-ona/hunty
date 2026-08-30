@@ -1,6 +1,6 @@
-import { getAllHunts, getHuntById, type StoredHunt } from "@/lib/huntStore";
-import { logger } from "@/lib/logger";
-import { getHuntsWithRatings } from "@/lib/reviews";
+import { getAllHunts, getHuntById, type StoredHunt } from '@/lib/huntStore';
+import { logger } from '@/lib/logger';
+import { getHuntsWithRatings } from '@/lib/reviews';
 
 type CacheEntry<T> = {
   value: T;
@@ -49,9 +49,7 @@ function trackPotentialNPlusOne(queryName: string, requestId?: string) {
   queryCounter.set(key, count);
 
   if (count === 8) {
-    logger.warn(
-      `[n+1-detected] Query ${queryName} was called repeatedly in request ${requestId}.`
-    );
+    logger.warn(`[n+1-detected] Query ${queryName} was called repeatedly in request ${requestId}.`);
   }
 }
 
@@ -69,7 +67,7 @@ function buildHuntIndexes() {
 
   for (const hunt of hunts) {
     huntsById.set(hunt.id, hunt);
-    if (hunt.status === "Active" && !hunt.is_private) {
+    if (hunt.status === 'Active' && !hunt.is_private) {
       activePublicHunts.push(hunt);
     }
   }
@@ -83,9 +81,9 @@ export function getPublicHuntByIdOptimized(
   huntId: number,
   requestId?: string
 ): StoredHunt | undefined {
-  trackPotentialNPlusOne("getPublicHuntByIdOptimized", requestId);
+  trackPotentialNPlusOne('getPublicHuntByIdOptimized', requestId);
 
-  return withTimedQuery("getPublicHuntByIdOptimized", { huntId }, () => {
+  return withTimedQuery('getPublicHuntByIdOptimized', { huntId }, () => {
     const cacheKey = `hunt:${huntId}`;
     const cached = readCache<StoredHunt | undefined>(cacheKey);
     if (cached !== null) return cached;
@@ -115,31 +113,31 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
   const {
     cursor,
     limit,
-    status = "Active",
-    reward = "all",
-    difficulty = "all",
-    category = "all",
-    search = "",
-    sortBy = "newest",
-    ageClassification = "all",
-    tag = "",
+    status = 'Active',
+    reward = 'all',
+    difficulty = 'all',
+    category = 'all',
+    search = '',
+    sortBy = 'newest',
+    ageClassification = 'all',
+    tag = '',
     requestId,
   } = params;
-  trackPotentialNPlusOne("listPublicActiveHuntsByCursorOptimized", requestId);
+  trackPotentialNPlusOne('listPublicActiveHuntsByCursorOptimized', requestId);
 
   return withTimedQuery(
-    "listPublicActiveHuntsByCursorOptimized",
+    'listPublicActiveHuntsByCursorOptimized',
     { cursor, limit, status, reward, difficulty, category, search, sortBy, ageClassification, tag },
     () => {
-      const cacheKey = `active:${cursor ?? "start"}:${limit}:${status ?? "all"}:${reward ?? "all"}:${difficulty ?? "all"}:${category ?? "all"}:${search ?? ""}:${sortBy ?? "newest"}:${ageClassification ?? "all"}:${tag ?? ""}`;
+      const cacheKey = `active:${cursor ?? 'start'}:${limit}:${status ?? 'all'}:${reward ?? 'all'}:${difficulty ?? 'all'}:${category ?? 'all'}:${search ?? ''}:${sortBy ?? 'newest'}:${ageClassification ?? 'all'}:${tag ?? ''}`;
       const cached = readCache<{ data: StoredHunt[]; nextCursor: number | null; total: number }>(
         cacheKey
       );
       if (cached) return cached;
 
       // Feed categories (trending, new, nearby, featured) alter filtering and sorting
-      const FEED_CATEGORIES = ["trending", "new", "nearby", "featured"];
-      const isFeedCategory = FEED_CATEGORIES.includes(category ?? "");
+      const FEED_CATEGORIES = ['trending', 'new', 'nearby', 'featured'];
+      const isFeedCategory = FEED_CATEGORIES.includes(category ?? '');
 
       // Get all hunts (which already filters out private hunts)
       const allHunts = getAllHunts();
@@ -151,28 +149,28 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
         // "Active" -> match only Active
         // "Completed" -> match only Completed
         const matchesStatus =
-          status === "all" || !status
-            ? hunt.status === "Active" || hunt.status === "Completed"
+          status === 'all' || !status
+            ? hunt.status === 'Active' || hunt.status === 'Completed'
             : hunt.status === status;
 
         // Reward filter:
         const matchesReward =
-          reward === "all" || !reward
+          reward === 'all' || !reward
             ? true
             : hunt.rewardType === reward ||
-              (reward !== "Both" && hunt.rewardType === "Both") ||
-              (reward === "Both" && hunt.rewardType === "Both");
+              (reward !== 'Both' && hunt.rewardType === 'Both') ||
+              (reward === 'Both' && hunt.rewardType === 'Both');
 
         const matchesDifficulty =
-          difficulty === "all" || !difficulty
+          difficulty === 'all' || !difficulty
             ? true
-            : (hunt.difficulty ?? "Medium").toLowerCase() === difficulty.toLowerCase();
+            : (hunt.difficulty ?? 'Medium').toLowerCase() === difficulty.toLowerCase();
 
         // Feed categories bypass the hunt's own category filter
         const matchesCategory =
-          category === "all" || !category || isFeedCategory
+          category === 'all' || !category || isFeedCategory
             ? true
-            : (hunt.category ?? "General").toLowerCase() === category.toLowerCase();
+            : (hunt.category ?? 'General').toLowerCase() === category.toLowerCase();
 
         // Search filter:
         const matchesSearch =
@@ -185,9 +183,9 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
           !tag || (hunt.tags ?? []).some((huntTag) => huntTag.toLowerCase() === tag.toLowerCase());
 
         const matchesAgeClassification =
-          ageClassification === "all" ||
+          ageClassification === 'all' ||
           !ageClassification ||
-          (hunt.ageClassification ?? "all-ages") === ageClassification;
+          (hunt.ageClassification ?? 'all-ages') === ageClassification;
 
         return (
           matchesStatus &&
@@ -204,16 +202,16 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
       filteredHunts.sort((a, b) => {
         // Feed category sorting takes priority
         if (isFeedCategory) {
-          if (category === "trending") {
+          if (category === 'trending') {
             const aCount = a.playerCount ?? 0;
             const bCount = b.playerCount ?? 0;
             if (bCount !== aCount) return bCount - aCount;
             return b.cluesCount - a.cluesCount;
           }
-          if (category === "nearby") {
+          if (category === 'nearby') {
             return (b.startTime ?? 0) - (a.startTime ?? 0);
           }
-          if (category === "featured") {
+          if (category === 'featured') {
             const aFeatured = a.isFeaturedOfWeek ? 1 : 0;
             const bFeatured = b.isFeaturedOfWeek ? 1 : 0;
             if (bFeatured !== aFeatured) return bFeatured - aFeatured;
@@ -221,7 +219,7 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
           }
         }
 
-        if (sortBy === "rating-high") {
+        if (sortBy === 'rating-high') {
           const ratingA = a.averageRating ?? 0;
           const ratingB = b.averageRating ?? 0;
           if (ratingB !== ratingA) {
@@ -229,15 +227,15 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
           }
           return (b.startTime ?? 0) - (a.startTime ?? 0);
         }
-        if (sortBy === "newest") return (b.startTime ?? 0) - (a.startTime ?? 0);
-        if (sortBy === "oldest") return (a.startTime ?? 0) - (b.startTime ?? 0);
-        if (sortBy === "clues-high") return b.cluesCount - a.cluesCount;
-        if (sortBy === "clues-low") return a.cluesCount - b.cluesCount;
-        if (sortBy === "popular") return (b.playerCount ?? 0) - (a.playerCount ?? 0);
-        if (sortBy === "reward-high") return (b.rewardPool ?? 0) - (a.rewardPool ?? 0);
-        if (sortBy === "difficulty") {
+        if (sortBy === 'newest') return (b.startTime ?? 0) - (a.startTime ?? 0);
+        if (sortBy === 'oldest') return (a.startTime ?? 0) - (b.startTime ?? 0);
+        if (sortBy === 'clues-high') return b.cluesCount - a.cluesCount;
+        if (sortBy === 'clues-low') return a.cluesCount - b.cluesCount;
+        if (sortBy === 'popular') return (b.playerCount ?? 0) - (a.playerCount ?? 0);
+        if (sortBy === 'reward-high') return (b.rewardPool ?? 0) - (a.rewardPool ?? 0);
+        if (sortBy === 'difficulty') {
           const rank: Record<string, number> = { Easy: 1, Medium: 2, Hard: 3 };
-          return (rank[b.difficulty ?? "Medium"] ?? 2) - (rank[a.difficulty ?? "Medium"] ?? 2);
+          return (rank[b.difficulty ?? 'Medium'] ?? 2) - (rank[a.difficulty ?? 'Medium'] ?? 2);
         }
         return 0;
       });
@@ -262,4 +260,3 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
     }
   );
 }
- 

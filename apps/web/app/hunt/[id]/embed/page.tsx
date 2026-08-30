@@ -1,7 +1,7 @@
-import { notFound } from "next/navigation";
-import Link from "next/link";
-import { getHuntById } from "@/lib/huntStore";
-import type { HuntStatus } from "@/lib/types";
+import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import { getHuntById } from '@/lib/huntStore';
+import type { HuntStatus } from '@/lib/types';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -9,16 +9,16 @@ interface PageProps {
 
 function statusConfig(status: HuntStatus) {
   switch (status) {
-    case "Active":
-      return { label: "Live Now", dot: "bg-emerald-400", text: "text-emerald-600" };
-    case "Completed":
-      return { label: "Ended", dot: "bg-slate-400", text: "text-slate-500" };
-    case "Draft":
-      return { label: "Coming Soon", dot: "bg-amber-400", text: "text-amber-600" };
-    case "Cancelled":
-      return { label: "Cancelled", dot: "bg-red-400", text: "text-red-500" };
+    case 'Active':
+      return { label: 'Live Now', dot: 'bg-emerald-400', text: 'text-emerald-600' };
+    case 'Completed':
+      return { label: 'Ended', dot: 'bg-slate-400', text: 'text-slate-500' };
+    case 'Draft':
+      return { label: 'Coming Soon', dot: 'bg-amber-400', text: 'text-amber-600' };
+    case 'Cancelled':
+      return { label: 'Cancelled', dot: 'bg-red-400', text: 'text-red-500' };
     default:
-      return { label: status, dot: "bg-slate-400", text: "text-slate-500" };
+      return { label: status, dot: 'bg-slate-400', text: 'text-slate-500' };
   }
 }
 
@@ -36,23 +36,25 @@ export default async function EmbedPage({ params }: PageProps) {
   if (hunt.is_private) {
     return (
       <div className="embed-root private">
-        <div className="lock-icon" aria-hidden="true">🔒</div>
+        <div className="lock-icon" aria-hidden="true">
+          🔒
+        </div>
         <p className="private-msg">This hunt is private and cannot be embedded.</p>
         <style>{embedStyles}</style>
       </div>
     );
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hunty.app";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://hunty.app';
   const huntUrl = `${baseUrl}/hunt/${hunt.id}`;
   const { label, dot, text } = statusConfig(hunt.status as HuntStatus);
 
   const rewardLabel =
-    hunt.rewardType === "Both"
-      ? "XLM + NFT"
-      : hunt.rewardType === "XLM"
-      ? "XLM Reward"
-      : "NFT Reward";
+    hunt.rewardType === 'Both'
+      ? 'XLM + NFT'
+      : hunt.rewardType === 'XLM'
+        ? 'XLM Reward'
+        : 'NFT Reward';
 
   return (
     <>
@@ -66,11 +68,7 @@ export default async function EmbedPage({ params }: PageProps) {
         {/* Cover image strip */}
         {hunt.coverImageCid && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={hunt.coverImageCid}
-            alt={`${hunt.title} cover`}
-            className="cover"
-          />
+          <img src={hunt.coverImageCid} alt={`${hunt.title} cover`} className="cover" />
         )}
 
         <div className="body">
@@ -84,9 +82,7 @@ export default async function EmbedPage({ params }: PageProps) {
           <h1 className="title">{hunt.title}</h1>
 
           {/* Description */}
-          {hunt.description && (
-            <p className="description">{hunt.description}</p>
-          )}
+          {hunt.description && <p className="description">{hunt.description}</p>}
 
           {/* Meta row */}
           <div className="meta">
@@ -106,7 +102,7 @@ export default async function EmbedPage({ params }: PageProps) {
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 6v6l4 2" />
               </svg>
-              {hunt.cluesCount} {hunt.cluesCount === 1 ? "clue" : "clues"}
+              {hunt.cluesCount} {hunt.cluesCount === 1 ? 'clue' : 'clues'}
             </span>
             <span className="meta-item reward">
               <svg
@@ -136,7 +132,7 @@ export default async function EmbedPage({ params }: PageProps) {
             className="cta"
             aria-label={`Play ${hunt.title} on Hunty`}
           >
-            {hunt.status === "Active" ? "Play Hunt →" : "View Hunt →"}
+            {hunt.status === 'Active' ? 'Play Hunt →' : 'View Hunt →'}
           </a>
 
           {/* Powered by */}

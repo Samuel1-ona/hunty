@@ -1,19 +1,12 @@
-"use client";
+'use client';
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import {
-  ChevronDown,
-  ChevronRight,
-  HelpCircle,
-  ShieldCheck,
-  Smartphone,
-  X,
-} from "lucide-react";
-import { useEffect,useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { ChevronDown, ChevronRight, HelpCircle, ShieldCheck, Smartphone, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
-import { Button } from "@hunty/ui";
-import { cn } from "@/lib/utils";
-import type { WalletProvider } from "@/lib/walletAdapter";
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import type { WalletProvider } from '@/lib/walletAdapter';
 
 interface WalletBottomSheetProps {
   isOpen: boolean;
@@ -21,13 +14,8 @@ interface WalletBottomSheetProps {
   onConnect: (provider: WalletProvider) => Promise<{ error?: string }>;
 }
 
-export function WalletBottomSheet({
-  isOpen,
-  onClose,
-  onConnect,
-}: WalletBottomSheetProps) {
-  const [connectingProvider, setConnectingProvider] =
-    useState<WalletProvider | null>(null);
+export function WalletBottomSheet({ isOpen, onClose, onConnect }: WalletBottomSheetProps) {
+  const [connectingProvider, setConnectingProvider] = useState<WalletProvider | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showEducation, setShowEducation] = useState(false);
   const prefersReducedMotion = useReducedMotion();
@@ -35,12 +23,12 @@ export function WalletBottomSheet({
   // Lock scroll when open
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = "hidden";
+      document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = 'unset';
     }
     return () => {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = 'unset';
     };
   }, [isOpen]);
 
@@ -55,7 +43,7 @@ export function WalletBottomSheet({
         onClose();
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to connect");
+      setError(err instanceof Error ? err.message : 'Failed to connect');
     } finally {
       setConnectingProvider(null);
     }
@@ -70,22 +58,20 @@ export function WalletBottomSheet({
             initial={prefersReducedMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0 }}
-            transition={
-              prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }
-            }
+            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
             onClick={onClose}
             className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
           />
 
           {/* Bottom Sheet */}
           <motion.div
-            initial={prefersReducedMotion ? false : { y: "100%" }}
+            initial={prefersReducedMotion ? false : { y: '100%' }}
             animate={{ y: 0 }}
-            exit={prefersReducedMotion ? { y: "100%" } : { y: "100%" }}
+            exit={prefersReducedMotion ? { y: '100%' } : { y: '100%' }}
             transition={
               prefersReducedMotion
                 ? { duration: 0 }
-                : { type: "spring", damping: 25, stiffness: 200 }
+                : { type: 'spring', damping: 25, stiffness: 200 }
             }
             className="fixed bottom-0 left-0 right-0 z-50 flex max-h-[90vh] flex-col rounded-t-[2.5rem] bg-white p-6 shadow-2xl dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800"
           >
@@ -115,7 +101,7 @@ export function WalletBottomSheet({
             <div className="space-y-4 overflow-y-auto pb-8">
               {/* xBull Wallet */}
               <button
-                onClick={() => handleConnect("xbull")}
+                onClick={() => handleConnect('xbull')}
                 disabled={!!connectingProvider}
                 aria-label="Connect xBull wallet"
                 className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-orange-500 to-red-500 p-[1px] transition-all hover:scale-[1.02] active:scale-[0.98]"
@@ -138,7 +124,7 @@ export function WalletBottomSheet({
 
               {/* Lobstr Wallet */}
               <button
-                onClick={() => handleConnect("lobstr")}
+                onClick={() => handleConnect('lobstr')}
                 disabled={!!connectingProvider}
                 aria-label="Connect Lobstr wallet"
                 className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-500 p-[1px] transition-all hover:scale-[1.02] active:scale-[0.98]"
@@ -166,7 +152,7 @@ export function WalletBottomSheet({
                     <X className="h-4 w-4 shrink-0 mt-0.5" />
                     <span>{error}</span>
                   </div>
-                  {error.includes("not found") && (
+                  {error.includes('not found') && (
                     <div className="mt-2 flex gap-3">
                       <a
                         href="https://xbull.app"
@@ -191,11 +177,7 @@ export function WalletBottomSheet({
               <div className="mt-8 rounded-3xl bg-slate-50 dark:bg-slate-800/50 p-6 border border-slate-100 dark:border-slate-800">
                 <button
                   onClick={() => setShowEducation(!showEducation)}
-                  aria-label={
-                    showEducation
-                      ? "Hide wallet education"
-                      : "Show wallet education"
-                  }
+                  aria-label={showEducation ? 'Hide wallet education' : 'Show wallet education'}
                   className="flex w-full items-center justify-between"
                 >
                   <div className="flex items-center gap-3">
@@ -206,8 +188,8 @@ export function WalletBottomSheet({
                   </div>
                   <ChevronDown
                     className={cn(
-                      "h-5 w-5 text-slate-400 transition-transform",
-                      showEducation && "rotate-180",
+                      'h-5 w-5 text-slate-400 transition-transform',
+                      showEducation && 'rotate-180'
                     )}
                   />
                 </button>
@@ -215,20 +197,10 @@ export function WalletBottomSheet({
                 <AnimatePresence>
                   {showEducation && (
                     <motion.div
-                      initial={
-                        prefersReducedMotion ? false : { height: 0, opacity: 0 }
-                      }
-                      animate={
-                        prefersReducedMotion
-                          ? {}
-                          : { height: "auto", opacity: 1 }
-                      }
-                      exit={
-                        prefersReducedMotion ? {} : { height: 0, opacity: 0 }
-                      }
-                      transition={
-                        prefersReducedMotion ? { duration: 0 } : undefined
-                      }
+                      initial={prefersReducedMotion ? false : { height: 0, opacity: 0 }}
+                      animate={prefersReducedMotion ? {} : { height: 'auto', opacity: 1 }}
+                      exit={prefersReducedMotion ? {} : { height: 0, opacity: 0 }}
+                      transition={prefersReducedMotion ? { duration: 0 } : undefined}
                       className="overflow-hidden"
                     >
                       <div className="pt-6 space-y-6">
@@ -242,9 +214,8 @@ export function WalletBottomSheet({
                                 Why a wallet?
                               </h4>
                               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                                Hunty is decentralized. We don&apos;t store your
-                                keys or access your funds. Wallets act as your
-                                digital ID and vault.
+                                Hunty is decentralized. We don&apos;t store your keys or access your
+                                funds. Wallets act as your digital ID and vault.
                               </p>
                             </div>
                           </div>
@@ -262,26 +233,21 @@ export function WalletBottomSheet({
                                   <span className="font-bold text-slate-900 dark:text-white">
                                     1.
                                   </span>
-                                  <span>
-                                    Install xBull or Lobstr from the App Store.
-                                  </span>
+                                  <span>Install xBull or Lobstr from the App Store.</span>
                                 </div>
                                 <div className="flex gap-2">
                                   <span className="font-bold text-slate-900 dark:text-white">
                                     2.
                                   </span>
-                                  <span>
-                                    Create an account and save your Secret
-                                    Phrase safely.
-                                  </span>
+                                  <span>Create an account and save your Secret Phrase safely.</span>
                                 </div>
                                 <div className="flex gap-2">
                                   <span className="font-bold text-slate-900 dark:text-white">
                                     3.
                                   </span>
                                   <span>
-                                    Come back here and tap &ldquo;Connect&rdquo;
-                                    to link your account.
+                                    Come back here and tap &ldquo;Connect&rdquo; to link your
+                                    account.
                                   </span>
                                 </div>
                               </div>
@@ -291,9 +257,8 @@ export function WalletBottomSheet({
 
                         <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl p-4 border border-indigo-100 dark:border-indigo-900/30">
                           <p className="text-xs text-indigo-700 dark:text-indigo-300 leading-relaxed">
-                            <strong>Safe & Secure:</strong> Your private keys
-                            never leave your device. You only authorize specific
-                            actions like joining a hunt.
+                            <strong>Safe & Secure:</strong> Your private keys never leave your
+                            device. You only authorize specific actions like joining a hunt.
                           </p>
                         </div>
                       </div>
@@ -311,7 +276,7 @@ export function WalletBottomSheet({
                     transition={
                       prefersReducedMotion
                         ? { duration: 0 }
-                        : { repeat: Infinity, duration: 1, ease: "linear" }
+                        : { repeat: Infinity, duration: 1, ease: 'linear' }
                     }
                     className="h-10 w-10 border-4 border-indigo-500 border-t-transparent rounded-full"
                   />

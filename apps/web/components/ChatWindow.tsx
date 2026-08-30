@@ -1,16 +1,16 @@
-"use client"
+'use client';
 
-import { MessageSquare, Settings, X } from "lucide-react"
-import React, { useEffect, useRef,useState } from "react"
+import { MessageSquare, Settings, X } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 
-import { Button } from "@hunty/ui"
-import { Card, CardContent, CardHeader, CardTitle } from "@hunty/ui"
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from '@/components/ui/dropdown-menu';
 import {
   addChatMessage,
   deleteChatMessage,
@@ -20,16 +20,16 @@ import {
   reportMessage,
   toggleChatEnabled,
   unmutePlayer,
-} from "@/lib/chat"
-import type { ChatMessage as ChatMessageType } from "@/lib/types"
+} from '@/lib/chat';
+import type { ChatMessage as ChatMessageType } from '@/lib/types';
 
-import { ChatInput } from "./ChatInput"
-import { ChatMessage } from "./ChatMessage"
+import { ChatInput } from './ChatInput';
+import { ChatMessage } from './ChatMessage';
 
 interface ChatWindowProps {
-  huntId: number
-  currentUserAddress?: string
-  creatorAddress?: string
+  huntId: number;
+  currentUserAddress?: string;
+  creatorAddress?: string;
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
@@ -37,58 +37,58 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   currentUserAddress,
   creatorAddress,
 }) => {
-  const [isOpen, setIsOpen] = useState(false)
-  const [messages, setMessages] = useState<ChatMessageType[]>([])
-  const [settings, setSettings] = useState(() => getChatSettings(huntId))
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<ChatMessageType[]>([]);
+  const [settings, setSettings] = useState(() => getChatSettings(huntId));
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
     if (isOpen) {
-      setMessages(getChatMessages(huntId))
-      setSettings(getChatSettings(huntId))
+      setMessages(getChatMessages(huntId));
+      setSettings(getChatSettings(huntId));
     }
-  }, [huntId, isOpen])
+  }, [huntId, isOpen]);
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    scrollToBottom();
+  }, [messages]);
 
   const handleSendMessage = (content: string) => {
-    if (!currentUserAddress) return
+    if (!currentUserAddress) return;
     const newMessage = addChatMessage(huntId, {
       huntId,
       senderAddress: currentUserAddress,
       content,
       senderName: `${currentUserAddress.slice(0, 6)}...`,
-    })
-    setMessages(prev => [...prev, newMessage])
-  }
+    });
+    setMessages((prev) => [...prev, newMessage]);
+  };
 
   const handleDeleteMessage = (messageId: string) => {
-    deleteChatMessage(huntId, messageId)
-    setMessages(prev => prev.map(msg =>
-      msg.id === messageId ? { ...msg, isDeleted: true } : msg
-    ))
-  }
+    deleteChatMessage(huntId, messageId);
+    setMessages((prev) =>
+      prev.map((msg) => (msg.id === messageId ? { ...msg, isDeleted: true } : msg))
+    );
+  };
 
   const handleMutePlayer = (address: string) => {
-    const newMuted = mutePlayer(huntId, address)
-    setSettings(prev => ({ ...prev, mutedAddresses: newMuted }))
-  }
+    const newMuted = mutePlayer(huntId, address);
+    setSettings((prev) => ({ ...prev, mutedAddresses: newMuted }));
+  };
 
   const handleReportMessage = (messageId: string, reason: string) => {
-    if (!currentUserAddress) return
-    reportMessage(messageId, huntId, currentUserAddress, reason)
-  }
+    if (!currentUserAddress) return;
+    reportMessage(messageId, huntId, currentUserAddress, reason);
+  };
 
-  const isCreator = currentUserAddress === creatorAddress
-  const filteredMessages = messages.filter(msg =>
-    !settings.mutedAddresses.includes(msg.senderAddress)
-  )
+  const isCreator = currentUserAddress === creatorAddress;
+  const filteredMessages = messages.filter(
+    (msg) => !settings.mutedAddresses.includes(msg.senderAddress)
+  );
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
@@ -108,11 +108,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => {
-                      const newEnabled = toggleChatEnabled(huntId)
-                      setSettings(prev => ({ ...prev, isChatEnabled: newEnabled }))
-                    }}>
-                      {settings.isChatEnabled ? "Disable Chat" : "Enable Chat"}
+                    <DropdownMenuItem
+                      onClick={() => {
+                        const newEnabled = toggleChatEnabled(huntId);
+                        setSettings((prev) => ({ ...prev, isChatEnabled: newEnabled }));
+                      }}
+                    >
+                      {settings.isChatEnabled ? 'Disable Chat' : 'Enable Chat'}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -132,7 +134,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                       <p className="text-sm">No messages yet</p>
                     </div>
                   ) : (
-                    filteredMessages.map(msg => (
+                    filteredMessages.map((msg) => (
                       <ChatMessage
                         key={msg.id}
                         message={msg}
@@ -149,7 +151,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 <ChatInput
                   onSend={handleSendMessage}
                   disabled={!currentUserAddress}
-                  placeholder={currentUserAddress ? "Type a message..." : "Connect wallet to chat"}
+                  placeholder={currentUserAddress ? 'Type a message...' : 'Connect wallet to chat'}
                 />
               </>
             ) : (
@@ -169,5 +171,5 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         </Button>
       )}
     </div>
-  )
-}
+  );
+};

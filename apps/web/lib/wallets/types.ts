@@ -2,7 +2,7 @@
  * Wallet adapter types shared across all provider implementations.
  */
 
-export type WalletProvider = "freighter" | "albedo" | "rabet" | "xbull" | "lobstr"
+export type WalletProvider = 'freighter' | 'albedo' | 'rabet' | 'xbull' | 'lobstr';
 
 /**
  * Unified interface every wallet adapter must satisfy.
@@ -10,7 +10,7 @@ export type WalletProvider = "freighter" | "albedo" | "rabet" | "xbull" | "lobst
  * signTransaction(xdr) to sign a Stellar transaction envelope.
  */
 export type ActiveWalletAdapter = {
-  provider: WalletProvider
-  getPublicKey: () => Promise<string>
-  signTransaction: (xdr: string) => Promise<string>
-}
+  provider: WalletProvider;
+  getPublicKey: () => Promise<string>;
+  signTransaction: (xdr: string) => Promise<string>;
+};

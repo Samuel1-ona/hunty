@@ -1,11 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const walletAddress = "GPLAYER";
+const walletAddress = 'GPLAYER';
 
 function request(method: string, body?: unknown): Request {
-  return new Request("http://localhost/api/v1/notifications/preferences", {
+  return new Request('http://localhost/api/v1/notifications/preferences', {
     method,
-    headers: body ? { "content-type": "application/json" } : undefined,
+    headers: body ? { 'content-type': 'application/json' } : undefined,
     body: body ? JSON.stringify(body) : undefined,
   });
 }
@@ -16,14 +16,14 @@ function getRequest(wallet = walletAddress): Request {
   );
 }
 
-describe("/api/v1/notifications/preferences", () => {
+describe('/api/v1/notifications/preferences', () => {
   beforeEach(() => {
     delete process.env.DATABASE_URL;
     vi.resetModules();
   });
 
-  it("returns defaults for a wallet with no saved preferences", async () => {
-    const { GET } = await import("../route");
+  it('returns defaults for a wallet with no saved preferences', async () => {
+    const { GET } = await import('../route');
     const response = await GET(getRequest());
     const body = await response.json();
 
@@ -37,10 +37,10 @@ describe("/api/v1/notifications/preferences", () => {
     });
   });
 
-  it("persists independent category changes for the wallet", async () => {
-    const { GET, PUT } = await import("../route");
+  it('persists independent category changes for the wallet', async () => {
+    const { GET, PUT } = await import('../route');
     const response = await PUT(
-      request("PUT", {
+      request('PUT', {
         walletAddress,
         preferences: { huntEvents: false, social: false },
       })
@@ -59,16 +59,16 @@ describe("/api/v1/notifications/preferences", () => {
     expect(readBody.preferences.rewards).toBe(true);
   });
 
-  it("stores the global mute without changing category choices", async () => {
-    const { GET, PUT } = await import("../route");
+  it('stores the global mute without changing category choices', async () => {
+    const { GET, PUT } = await import('../route');
     await PUT(
-      request("PUT", {
+      request('PUT', {
         walletAddress,
         preferences: { rewards: false },
       })
     );
     await PUT(
-      request("PUT", {
+      request('PUT', {
         walletAddress,
         preferences: { enabled: false },
       })
@@ -81,22 +81,22 @@ describe("/api/v1/notifications/preferences", () => {
   });
 
   it("does not share one wallet's preferences with another wallet", async () => {
-    const { GET, PUT } = await import("../route");
+    const { GET, PUT } = await import('../route');
     await PUT(
-      request("PUT", {
+      request('PUT', {
         walletAddress,
         preferences: { social: false },
       })
     );
 
-    const response = await GET(getRequest("GOTHER"));
+    const response = await GET(getRequest('GOTHER'));
     const body = await response.json();
     expect(body.preferences.social).toBe(true);
   });
 
-  it("rejects writes without a wallet and preference document", async () => {
-    const { PUT } = await import("../route");
-    const response = await PUT(request("PUT", { preferences: { social: false } }));
+  it('rejects writes without a wallet and preference document', async () => {
+    const { PUT } = await import('../route');
+    const response = await PUT(request('PUT', { preferences: { social: false } }));
     expect(response.status).toBe(400);
   });
 });

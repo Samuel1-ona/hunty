@@ -1,4 +1,4 @@
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // Mirror mobile/lib/ipfs.ts for unit testing without RN deps
 const GATEWAYS = [
@@ -25,9 +25,7 @@ function resolveImageSrc(src: string, gatewayIndex = 0): string {
 
 describe('mobile IPFS image resolution', () => {
   it('resolves ipfs:// URIs to gateway URLs', () => {
-    expect(resolveImageSrc('ipfs://bafytest')).toBe(
-      'https://gateway.pinata.cloud/ipfs/bafytest'
-    );
+    expect(resolveImageSrc('ipfs://bafytest')).toBe('https://gateway.pinata.cloud/ipfs/bafytest');
   });
 
   it('resolves bare CIDs', () => {
@@ -40,8 +38,6 @@ describe('mobile IPFS image resolution', () => {
   });
 
   it('cycles gateways on fallback index', () => {
-    expect(resolveImageSrc('ipfs://cid', 1)).toBe(
-      'https://cloudflare-ipfs.com/ipfs/cid'
-    );
+    expect(resolveImageSrc('ipfs://cid', 1)).toBe('https://cloudflare-ipfs.com/ipfs/cid');
   });
 });

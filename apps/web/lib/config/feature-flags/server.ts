@@ -1,24 +1,24 @@
-import type { FeatureFlagKey, FeatureFlagMap, FeatureFlagValue } from "./definitions"
-import { FEATURE_FLAG_DEFINITIONS } from "./definitions"
-import { evaluateFlag } from "./evaluate"
+import type { FeatureFlagKey, FeatureFlagMap, FeatureFlagValue } from './definitions';
+import { FEATURE_FLAG_DEFINITIONS } from './definitions';
+import { evaluateFlag } from './evaluate';
 
 export function isFeatureEnabled(key: FeatureFlagKey): boolean {
-  return Boolean(evaluateFlag(key))
+  return Boolean(evaluateFlag(key));
 }
 
 export function getFeatureFlagValue<K extends FeatureFlagKey>(key: K): FeatureFlagMap[K] {
-  return evaluateFlag(key)
+  return evaluateFlag(key);
 }
 
 export function getAllFeatureFlags(
-  overrides?: Partial<Record<FeatureFlagKey, FeatureFlagValue>>,
+  overrides?: Partial<Record<FeatureFlagKey, FeatureFlagValue>>
 ): FeatureFlagMap {
-  const keys = Object.keys(FEATURE_FLAG_DEFINITIONS) as FeatureFlagKey[]
-  const result = {} as FeatureFlagMap
+  const keys = Object.keys(FEATURE_FLAG_DEFINITIONS) as FeatureFlagKey[];
+  const result = {} as FeatureFlagMap;
   for (const key of keys) {
-    result[key] = evaluateFlag(key, overrides)
+    result[key] = evaluateFlag(key, overrides);
   }
-  return result
+  return result;
 }
 
-export type { FeatureFlagKey, FeatureFlagMap, FeatureFlagValue }
+export type { FeatureFlagKey, FeatureFlagMap, FeatureFlagValue };

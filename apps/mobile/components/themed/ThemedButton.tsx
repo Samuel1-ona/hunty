@@ -28,13 +28,13 @@ interface ThemedButtonProps extends PressableProps {
 }
 
 type ThemeColors = {
-  primary: string
-  secondary: string
-  error: string
-  success: string
-  border: string
-  text: string
-}
+  primary: string;
+  secondary: string;
+  error: string;
+  success: string;
+  border: string;
+  text: string;
+};
 
 const variantStyles = {
   primary: (colors: ThemeColors) => ({

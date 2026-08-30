@@ -6,14 +6,11 @@ dist/
 
 # Dependencies
 node_modules/
-mobile/node_modules/
 
 # Generated files
 coverage/
 pnpm-lock.yaml
 package-lock.json
-mobile/pnpm-lock.yaml
-mobile/package-lock.json
 
 # Environment files
 .env*
@@ -21,8 +18,33 @@ mobile/package-lock.json
 
 # Static assets
 public/
-mobile/assets/
 
 # Test snapshots
 **/__snapshots__/
 e2e/screenshots/
+test-results/
+playwright-report/
+blob-report/
+
+# Misc
+.DS_Store
+*.pem
+*.tsbuildinfo
+next-env.d.ts
+
+# Turborepo
+.turbo/
+
+# Mutation testing
+mutation-report/
+.stryker-tmp/
+
+# Files with pre-existing syntax errors (Prettier cannot format)
+apps/mobile/app/font-scaling-test.tsx
+apps/web/app/api/push-tokens/route.ts
+apps/web/app/api/v1/seasons/\[id\]/battle-pass/route.ts
+apps/web/app/hunt/\[id\]/HuntChat.tsx
+apps/web/app/hunt/\[id\]/spectate/page.tsx
+apps/web/components/SpectatorLeaderboard.tsx
+apps/web/lib/api/adminAuth.test.ts
+apps/web/lib/collaborationDb.ts

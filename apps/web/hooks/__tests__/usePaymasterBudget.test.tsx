@@ -1,17 +1,17 @@
-import React from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, waitFor } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import React from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock("@/lib/paymaster/client", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/paymaster/client")>();
+vi.mock('@/lib/paymaster/client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/paymaster/client')>();
   return { ...actual, fetchPaymasterBudget: vi.fn() };
 });
 
-import { fetchPaymasterBudget, PaymasterBudgetError } from "@/lib/paymaster/client";
-import { usePaymasterBudget } from "@/hooks/usePaymasterBudget";
+import { usePaymasterBudget } from '@/hooks/usePaymasterBudget';
+import { fetchPaymasterBudget, PaymasterBudgetError } from '@/lib/paymaster/client';
 
-const ADDRESS = "GDQP2KPQGKIHYJGXNUIYOMHARUARCA7DJT5FO2FFOOKY3B2WSQHG4W37";
+const ADDRESS = 'GDQP2KPQGKIHYJGXNUIYOMHARUARCA7DJT5FO2FFOOKY3B2WSQHG4W37';
 
 const mockFetchBudget = vi.mocked(fetchPaymasterBudget);
 
@@ -47,16 +47,16 @@ beforeEach(() => {
   mockFetchBudget.mockResolvedValue(budget());
 });
 
-describe("usePaymasterBudget", () => {
-  it("stays idle with no connected address", () => {
-    const { result } = renderBudget("");
+describe('usePaymasterBudget', () => {
+  it('stays idle with no connected address', () => {
+    const { result } = renderBudget('');
 
     expect(result.current.isSponsored).toBe(false);
     expect(result.current.isLoading).toBe(false);
     expect(mockFetchBudget).not.toHaveBeenCalled();
   });
 
-  it("reports sponsorship coverage once loaded", async () => {
+  it('reports sponsorship coverage once loaded', async () => {
     const { result } = renderBudget();
 
     await waitFor(() => expect(result.current.isSponsored).toBe(true));
@@ -65,16 +65,14 @@ describe("usePaymasterBudget", () => {
     expect(result.current.error).toBeNull();
   });
 
-  it("defaults to not-sponsored while loading", () => {
+  it('defaults to not-sponsored while loading', () => {
     const { result } = renderBudget();
     expect(result.current.isSponsored).toBe(false);
     expect(result.current.isLoading).toBe(true);
   });
 
-  it("reports ineligible once the quota is exhausted", async () => {
-    mockFetchBudget.mockResolvedValue(
-      budget({ usedTx: 3, maxTx: 3, eligible: false }),
-    );
+  it('reports ineligible once the quota is exhausted', async () => {
+    mockFetchBudget.mockResolvedValue(budget({ usedTx: 3, maxTx: 3, eligible: false }));
 
     const { result } = renderBudget();
 
@@ -83,8 +81,8 @@ describe("usePaymasterBudget", () => {
     expect(result.current.remainingTx).toBe(0);
   });
 
-  it("falls back to not-sponsored (never throws) when the budget fetch fails", async () => {
-    mockFetchBudget.mockRejectedValue(new PaymasterBudgetError("network", "offline"));
+  it('falls back to not-sponsored (never throws) when the budget fetch fails', async () => {
+    mockFetchBudget.mockRejectedValue(new PaymasterBudgetError('network', 'offline'));
     vi.useFakeTimers();
     const { result } = renderBudget();
 

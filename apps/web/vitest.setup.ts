@@ -1,7 +1,7 @@
-import "@testing-library/jest-dom/vitest";
+import '@testing-library/jest-dom/vitest';
 
-import { cleanup } from "@testing-library/react";
-import { afterEach, vi } from "vitest";
+import { cleanup } from '@testing-library/react';
+import { afterEach, vi } from 'vitest';
 
 // Cleanup after each test
 afterEach(() => {
@@ -11,9 +11,9 @@ afterEach(() => {
 // The browser mocks below only make sense in a DOM environment (jsdom).
 // Guard against Node-environment test files (e.g. server-only unit tests)
 // that use @vitest-environment node and therefore have no `window`.
-if (typeof window !== "undefined") {
+if (typeof window !== 'undefined') {
   // Mock window.matchMedia for responsive component tests
-  Object.defineProperty(window, "matchMedia", {
+  Object.defineProperty(window, 'matchMedia', {
     writable: true,
     value: vi.fn().mockImplementation((query: string) => ({
       matches: false,
@@ -34,7 +34,7 @@ if (typeof window !== "undefined") {
     unobserve = vi.fn();
   }
 
-  Object.defineProperty(window, "IntersectionObserver", {
+  Object.defineProperty(window, 'IntersectionObserver', {
     writable: true,
     value: MockIntersectionObserver,
   });
@@ -46,7 +46,7 @@ if (typeof window !== "undefined") {
     unobserve = vi.fn();
   }
 
-  Object.defineProperty(window, "ResizeObserver", {
+  Object.defineProperty(window, 'ResizeObserver', {
     writable: true,
     value: MockResizeObserver,
   });

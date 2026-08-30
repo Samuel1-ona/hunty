@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   ArrowLeft,
@@ -8,12 +8,12 @@ import {
   ShieldQuestion,
   Trophy,
   Wallet,
-} from "lucide-react";
-import Link from "next/link";
-import { Header } from "@/components/Header";
-import { useState } from "react";
+} from 'lucide-react';
+import Link from 'next/link';
+import { Header } from '@/components/Header';
+import { useState } from 'react';
 
-import { Footer } from "@/components/Footer";
+import { Footer } from '@/components/Footer';
 
 interface FAQItem {
   question: string;
@@ -22,19 +22,19 @@ interface FAQItem {
 
 const walletIssues: FAQItem[] = [
   {
-    question: "How do I connect my wallet?",
+    question: 'How do I connect my wallet?',
     answer:
       'Click the "Connect Wallet" button in the top-right corner of the page. Select your preferred wallet provider (e.g. Freighter) from the modal that appears. Make sure your wallet extension is installed and unlocked before attempting to connect.',
   },
   {
     question: "My wallet won't connect. What should I do?",
     answer:
-      "First, ensure your wallet extension (e.g. Freighter) is installed and up to date. Try refreshing the page and attempting again. If the issue persists, try disconnecting from other dApps, clearing your browser cache, or switching to a different browser.",
+      'First, ensure your wallet extension (e.g. Freighter) is installed and up to date. Try refreshing the page and attempting again. If the issue persists, try disconnecting from other dApps, clearing your browser cache, or switching to a different browser.',
   },
   {
-    question: "How do I check my balance?",
+    question: 'How do I check my balance?',
     answer:
-      "Once your wallet is connected, your balance is displayed in the header next to the coin icon. This shows your current XLM balance available for use in hunts.",
+      'Once your wallet is connected, your balance is displayed in the header next to the coin icon. This shows your current XLM balance available for use in hunts.',
   },
   {
     question: "I sent funds but my balance hasn't updated.",
@@ -45,17 +45,17 @@ const walletIssues: FAQItem[] = [
 
 const gameIssues: FAQItem[] = [
   {
-    question: "How do I play a hunt?",
+    question: 'How do I play a hunt?',
     answer:
-      "Browse the active hunts on the Game Arcade (home page) and click on one that interests you. Each hunt has a series of clues to solve. Enter your answer for each clue in the input field and submit. Solve all clues to complete the hunt and claim your reward!",
+      'Browse the active hunts on the Game Arcade (home page) and click on one that interests you. Each hunt has a series of clues to solve. Enter your answer for each clue in the input field and submit. Solve all clues to complete the hunt and claim your reward!',
   },
   {
-    question: "What are hunt rewards?",
+    question: 'What are hunt rewards?',
     answer:
-      "Hunts can offer XLM (Stellar Lumens), NFTs, or both as rewards. The reward type is shown on each hunt card. Rewards are distributed to players who successfully complete the hunt.",
+      'Hunts can offer XLM (Stellar Lumens), NFTs, or both as rewards. The reward type is shown on each hunt card. Rewards are distributed to players who successfully complete the hunt.',
   },
   {
-    question: "How do I create my own hunt?",
+    question: 'How do I create my own hunt?',
     answer:
       'Click the "Create Game" button on the home page or navigate to /hunty. Fill in the hunt details including title, description, clues, and reward configuration. You can save it as a draft and activate it when ready.',
   },
@@ -65,7 +65,7 @@ const gameIssues: FAQItem[] = [
       "Make sure you're entering the complete game link in the correct format. The hunt may have been deactivated by its creator, or it may be a private hunt that requires a direct invitation link.",
   },
   {
-    question: "Can I edit a hunt after creating it?",
+    question: 'Can I edit a hunt after creating it?',
     answer:
       'Yes, you can edit hunts that are still in "Draft" status from your Dashboard. Once a hunt is activated, certain fields may be locked to ensure fairness for players who have already started.',
   },
@@ -73,32 +73,32 @@ const gameIssues: FAQItem[] = [
 
 const leaderboardIssues: FAQItem[] = [
   {
-    question: "How does the leaderboard work?",
+    question: 'How does the leaderboard work?',
     answer:
-      "The leaderboard ranks players based on their performance across hunts. Points are awarded for completing clues and finishing hunts. Faster completion times may earn bonus points.",
+      'The leaderboard ranks players based on their performance across hunts. Points are awarded for completing clues and finishing hunts. Faster completion times may earn bonus points.',
   },
   {
     question: "Why don't I see my score on the leaderboard?",
     answer:
-      "You need to have completed at least one hunt for your score to appear. Make sure your wallet is connected — scores are tied to your wallet address. It may also take a moment for scores to update after completing a hunt.",
+      'You need to have completed at least one hunt for your score to appear. Make sure your wallet is connected — scores are tied to your wallet address. It may also take a moment for scores to update after completing a hunt.',
   },
 ];
 
 const generalIssues: FAQItem[] = [
   {
-    question: "Is Hunty free to use?",
+    question: 'Is Hunty free to use?',
     answer:
-      "Browsing and playing hunts is free. Creating hunts that offer rewards requires funding the reward pool. Standard Stellar network fees apply for on-chain transactions.",
+      'Browsing and playing hunts is free. Creating hunts that offer rewards requires funding the reward pool. Standard Stellar network fees apply for on-chain transactions.',
   },
   {
-    question: "Which browsers are supported?",
+    question: 'Which browsers are supported?',
     answer:
-      "Hunty works best on the latest versions of Chrome, Firefox, Brave, and Edge. Make sure JavaScript is enabled and your wallet extension is compatible with your browser.",
+      'Hunty works best on the latest versions of Chrome, Firefox, Brave, and Edge. Make sure JavaScript is enabled and your wallet extension is compatible with your browser.',
   },
   {
-    question: "How do I report a bug or get further help?",
+    question: 'How do I report a bug or get further help?',
     answer:
-      "You can report issues on our GitHub repository at github.com/Samuel1-ona/hunty. For urgent help, reach out to the team through the channels listed on the repo.",
+      'You can report issues on our GitHub repository at github.com/Samuel1-ona/hunty. For urgent help, reach out to the team through the channels listed on the repo.',
   },
 ];
 
@@ -203,4 +203,3 @@ export default function HelpPage() {
     </div>
   );
 }
- 

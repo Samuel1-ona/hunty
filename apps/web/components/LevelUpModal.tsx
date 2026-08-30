@@ -1,21 +1,21 @@
-"use client"
+'use client';
 
-import confetti from "canvas-confetti"
-import { useReducedMotion } from "framer-motion"
-import { useEffect } from "react"
+import confetti from 'canvas-confetti';
+import { useReducedMotion } from 'framer-motion';
+import { useEffect } from 'react';
 
-import { Button } from "@hunty/ui"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { getLevelTierForXp } from "@/lib/level"
-import type { LevelTier } from "@/lib/level/config"
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { getLevelTierForXp } from '@/lib/level';
+import type { LevelTier } from '@/lib/level/config';
 
 interface LevelUpModalProps {
-  isOpen: boolean
-  onClose: () => void
-  oldLevel: number
-  newLevel: number
-  oldTier: LevelTier
-  newTier: LevelTier
+  isOpen: boolean;
+  onClose: () => void;
+  oldLevel: number;
+  newLevel: number;
+  oldTier: LevelTier;
+  newTier: LevelTier;
 }
 
 export function LevelUpModal({
@@ -26,7 +26,7 @@ export function LevelUpModal({
   oldTier,
   newTier,
 }: LevelUpModalProps) {
-  const prefersReducedMotion = useReducedMotion()
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     if (isOpen && !prefersReducedMotion) {
@@ -34,10 +34,10 @@ export function LevelUpModal({
         particleCount: 200,
         spread: 90,
         origin: { y: 0.5 },
-        colors: ["#FFD700", "#FFA500", "#FF69B4", "#00CED1"],
-      })
+        colors: ['#FFD700', '#FFA500', '#FF69B4', '#00CED1'],
+      });
     }
-  }, [isOpen, prefersReducedMotion])
+  }, [isOpen, prefersReducedMotion]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -91,5 +91,5 @@ export function LevelUpModal({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

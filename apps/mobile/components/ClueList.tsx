@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 
-import { ThemedCustomText,ThemedView } from './themed';
+import { ThemedCustomText, ThemedView } from './themed';
 
 interface Clue {
   id: number;

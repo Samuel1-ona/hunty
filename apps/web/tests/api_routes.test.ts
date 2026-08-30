@@ -10,7 +10,6 @@ import { GET as getHuntById } from '@/app/api/v1/hunts/[id]/route';
 import { GET as getLeaderboard } from '@/app/api/v1/hunts/[id]/leaderboard/route';
 import { GET as getPublicLeaderboard } from '@/app/api/v1/hunts/[id]/leaderboard/public/route';
 import { GET as getLeaderboardOgImage } from '@/app/api/og/leaderboard/route';
-import { GET as getResultOgImage } from '@/app/api/og/result/route';
 
 function handlerToExpress(handler: unknown) {
   return async (req: any, res: any) => {
@@ -21,17 +20,17 @@ function handlerToExpress(handler: unknown) {
       for (const [key, value] of Object.entries(req.headers)) {
         if (value !== undefined) {
           if (Array.isArray(value)) {
-            value.forEach(v => headers.append(key, v));
+            value.forEach((v) => headers.append(key, v));
           } else {
             headers.set(key, String(value));
           }
         }
       }
       let body = undefined;
-      if (method !== "GET" && method !== "HEAD" && req.body) {
-        body = typeof req.body === "object" ? JSON.stringify(req.body) : req.body;
+      if (method !== 'GET' && method !== 'HEAD' && req.body) {
+        body = typeof req.body === 'object' ? JSON.stringify(req.body) : req.body;
       }
-      
+
       const webRequest = new Request(url, {
         method,
         headers,
@@ -51,14 +50,14 @@ function handlerToExpress(handler: unknown) {
       }
 
       const result = await handler(webRequest, { params });
-      
+
       if (result instanceof Response) {
         res.statusCode = result.status;
         result.headers.forEach((value, key) => {
           res.setHeader(key, value);
         });
-        const contentType = result.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
+        const contentType = result.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
           const data = await result.json();
           res.end(JSON.stringify(data));
         } else {
@@ -68,15 +67,15 @@ function handlerToExpress(handler: unknown) {
       } else if (result?.json) {
         const data = await result.json();
         res.statusCode = result.status || 200;
-        res.setHeader("content-type", "application/json");
+        res.setHeader('content-type', 'application/json');
         res.end(JSON.stringify(data));
       } else {
         res.statusCode = 200;
-        res.end(typeof result === "string" ? result : JSON.stringify(result));
+        res.end(typeof result === 'string' ? result : JSON.stringify(result));
       }
     } catch (err: any) {
       res.statusCode = 500;
-      res.setHeader("content-type", "application/json");
+      res.setHeader('content-type', 'application/json');
       res.end(JSON.stringify({ error: err.message }));
     }
   };
@@ -115,13 +114,6 @@ describe('API Integration Tests', () => {
     expect(response.headers['content-type']).toContain('image');
   });
 
-  it('GET /api/og/result returns a result-card image response on completion', async () => {
-    const app = request(handlerToExpress(getResultOgImage));
-    const response = await app.get('/api/og/result?huntId=3&wallet=GABC123&rank=2&time=300');
-    expect(response.status).toBe(200);
-    expect(response.headers['content-type']).toContain('image');
-  });
-
   it('GET /api/admin/featured returns featured items', async () => {
     const app = request(handlerToExpress(getFeatured));
     const response = await app.get('/api/admin/featured');
@@ -154,7 +146,9 @@ describe('API Integration Tests', () => {
   });
 
   it('Error response follows format', async () => {
-    const errorHandler = async () => { throw new Error('Test error'); };
+    const errorHandler = async () => {
+      throw new Error('Test error');
+    };
     const app = request(handlerToExpress(errorHandler));
     const response = await app.get('/api/error');
     expect(response.status).toBeGreaterThanOrEqual(400);

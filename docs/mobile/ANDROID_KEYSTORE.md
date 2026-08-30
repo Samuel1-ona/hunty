@@ -134,6 +134,7 @@ Losing the upload keystore permanently blocks Play Store releases until Google m
 ### 6.1 Immediate Backups (Day 0)
 
 - [ ] Copy `hunty-upload-key.jks` to **at least three** independent locations:
+
   1. **Password manager** (e.g. 1Password, Bitwarden) — store the `.jks` as a file attachment alongside both passwords
   2. **Encrypted cloud storage** — upload to a private S3 bucket or equivalent with server-side encryption enabled; restrict access to the release team only
   3. **Offline cold storage** — copy to an encrypted USB drive stored in a physically secure location (e.g. office safe)

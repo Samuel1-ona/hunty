@@ -1,4 +1,4 @@
-import { DetailHeaderSkeleton, FormPageSkeletonLayout } from "@/components/LoadingSkeletons"
+import { DetailHeaderSkeleton, FormPageSkeletonLayout } from '@/components/LoadingSkeletons';
 
 export default function DashboardHuntDetailLoading() {
   return (
@@ -8,5 +8,5 @@ export default function DashboardHuntDetailLoading() {
         <FormPageSkeletonLayout />
       </div>
     </div>
-  )
+  );
 }

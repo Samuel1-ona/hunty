@@ -2,5 +2,5 @@
  * Level system exports
  */
 
-export * from "./config"
-export * from "./service"
+export * from './config';
+export * from './service';

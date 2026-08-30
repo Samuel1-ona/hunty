@@ -2,7 +2,7 @@ import { resolveImageSrc } from '@lib/ipfs';
 import { useTheme } from '@providers/ThemeProvider';
 import { Image } from 'expo-image';
 import React from 'react';
-import { Linking, Pressable,StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 interface ClueMarkdownRendererProps {
   text: string;
@@ -48,11 +48,11 @@ export function ClueMarkdownRenderer({ text }: ClueMarkdownRendererProps) {
 }
 
 type ThemeColors = {
-  primary: string
-  secondary: string
-  border: string
-  text: string
-}
+  primary: string;
+  secondary: string;
+  border: string;
+  text: string;
+};
 
 function renderFormattedText(text: string, key: number, colors: ThemeColors) {
   if (!text) return null;

@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { CheckCircle2, Heart,Loader2, Trophy } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { CheckCircle2, Heart, Loader2, Trophy } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 import {
   type ActivityEvent,
   anonymizeAddress,
   getRecentActivity,
-} from "@/lib/contracts/activityFeed"
-import { logger } from "@/lib/logger";
-import { cn } from "@/lib/utils";
+} from '@/lib/contracts/activityFeed';
+import { logger } from '@/lib/logger';
+import { cn } from '@/lib/utils';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 function relativeTime(timestampSeconds: number): string {
   const diffSeconds = Math.floor(Date.now() / 1000) - timestampSeconds;
-  if (diffSeconds < 60) return "just now";
+  if (diffSeconds < 60) return 'just now';
   const diffMinutes = Math.floor(diffSeconds / 60);
   if (diffMinutes < 60) return `${diffMinutes}m ago`;
   const diffHours = Math.floor(diffMinutes / 60);
@@ -38,26 +38,26 @@ function ActivityItem({
   event: ActivityEvent;
   prefersReducedMotion: boolean;
 }) {
-  const isCompleted = event.type === "HuntCompleted";
-  const isSponsored = event.type === "HuntSponsored";
+  const isCompleted = event.type === 'HuntCompleted';
+  const isSponsored = event.type === 'HuntSponsored';
 
   return (
     <motion.div
       initial={prefersReducedMotion ? false : { opacity: 0, y: -12 }}
       animate={prefersReducedMotion ? {} : { opacity: 1, y: 0 }}
       exit={prefersReducedMotion ? {} : { opacity: 0, y: 12 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
       className="flex items-center gap-3 py-2.5 px-4 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-md transition-shadow backdrop-blur-sm"
     >
       {/* Icon */}
       <div
         className={cn(
-          "shrink-0 rounded-full p-1.5",
+          'shrink-0 rounded-full p-1.5',
           isCompleted
-            ? "bg-gradient-to-br from-[#39A437] to-[#194F0C] text-white"
+            ? 'bg-gradient-to-br from-[#39A437] to-[#194F0C] text-white'
             : isSponsored
-              ? "bg-gradient-to-br from-pink-500 to-pink-700 text-white"
-              : "bg-gradient-to-br from-[#3737A4] to-[#0C0C4F] text-white",
+              ? 'bg-gradient-to-br from-pink-500 to-pink-700 text-white'
+              : 'bg-gradient-to-br from-[#3737A4] to-[#0C0C4F] text-white'
         )}
       >
         {isCompleted ? (
@@ -74,8 +74,8 @@ function ActivityItem({
         <p className="text-sm text-slate-800 dark:text-slate-200 truncate">
           <span className="font-semibold text-[#3737A4] dark:text-blue-400">
             {anonymizeAddress(event.address)}
-          </span>{" "}
-          {isCompleted ? "completed" : isSponsored ? "sponsored" : "solved a clue in"}{" "}
+          </span>{' '}
+          {isCompleted ? 'completed' : isSponsored ? 'sponsored' : 'solved a clue in'}{' '}
           <span className="font-medium text-slate-700 dark:text-slate-300 italic">
             {event.huntTitle}
           </span>
@@ -137,12 +137,11 @@ export function GlobalActivityFeed({
 
         if (hasRenderedRef.current) {
           newEvents
-            .filter((evt) => evt.type === "HuntCompleted")
+            .filter((evt) => evt.type === 'HuntCompleted')
             .forEach((evt) => {
-              toast.success(
-                `${anonymizeAddress(evt.address)} completed ${evt.huntTitle}!`,
-                { duration: 4000 },
-              );
+              toast.success(`${anonymizeAddress(evt.address)} completed ${evt.huntTitle}!`, {
+                duration: 4000,
+              });
             });
         }
 
@@ -152,10 +151,10 @@ export function GlobalActivityFeed({
       }
     } catch (err) {
       if (isMountedRef.current) {
-        setError("Unable to load activity feed.");
+        setError('Unable to load activity feed.');
         // Keep stale events visible on error
       }
-      logger.error("[GlobalActivityFeed] fetch error:", err);
+      logger.error('[GlobalActivityFeed] fetch error:', err);
     } finally {
       if (isMountedRef.current) {
         setLoading(false);
@@ -176,10 +175,7 @@ export function GlobalActivityFeed({
   }, [fetchActivity, pollIntervalMs]);
 
   return (
-    <section
-      aria-label="Global Activity Feed"
-      className="w-full max-w-2xl mx-auto"
-    >
+    <section aria-label="Global Activity Feed" className="w-full max-w-2xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-2 mb-3 px-1">
         <span className="relative flex h-2.5 w-2.5">
@@ -189,12 +185,8 @@ export function GlobalActivityFeed({
         <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 tracking-wide uppercase">
           Live Activity
         </h2>
-        {loading && (
-          <Loader2 className="w-3.5 h-3.5 text-slate-400 animate-spin ml-1" />
-        )}
-        {error && (
-          <span className="text-[11px] text-red-400 ml-auto">{error}</span>
-        )}
+        {loading && <Loader2 className="w-3.5 h-3.5 text-slate-400 animate-spin ml-1" />}
+        {error && <span className="text-[11px] text-red-400 ml-auto">{error}</span>}
       </div>
 
       {/* Feed */}
@@ -227,6 +219,3 @@ export function GlobalActivityFeed({
     </section>
   );
 }
-
-
-

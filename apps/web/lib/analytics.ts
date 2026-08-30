@@ -12,10 +12,10 @@
  * end-users.
  */
 
-import crypto from "crypto";
+import crypto from 'crypto';
 
-import { getDb } from "@/lib/db";
-import { logger } from "@/lib/logger";
+import { getDb } from '@/lib/db';
+import { logger } from '@/lib/logger';
 
 // ─── Hunt view analytics ──────────────────────────────────────────────────────
 
@@ -25,8 +25,8 @@ export type HuntViewStats = {
 };
 
 export function hashHuntId(huntId: number): string {
-  const secret = process.env.HUNT_VIEW_ANALYTICS_SECRET || "hunty-analytics-secret";
-  return crypto.createHmac("sha256", secret).update(String(huntId)).digest("hex");
+  const secret = process.env.HUNT_VIEW_ANALYTICS_SECRET || 'hunty-analytics-secret';
+  return crypto.createHmac('sha256', secret).update(String(huntId)).digest('hex');
 }
 
 /**
@@ -50,16 +50,16 @@ export async function recordHuntView(huntId: number): Promise<HuntViewStats> {
     if (process.env.HUNT_VIEW_ANALYTICS_ENDPOINT) {
       const endpoint = process.env.HUNT_VIEW_ANALYTICS_ENDPOINT;
       const payload = {
-        event: "hunt_view",
+        event: 'hunt_view',
         huntIdHash: hashHuntId(huntId),
-        source: "hunt_detail_page",
+        source: 'hunt_detail_page',
         timestamp: new Date().toISOString(),
       };
       try {
         await fetch(endpoint, {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
             ...(process.env.HUNT_VIEW_ANALYTICS_KEY
               ? { Authorization: `Bearer ${process.env.HUNT_VIEW_ANALYTICS_KEY}` }
               : {}),
@@ -67,13 +67,13 @@ export async function recordHuntView(huntId: number): Promise<HuntViewStats> {
           body: JSON.stringify(payload),
         });
       } catch (error) {
-        logger.warn("Failed to forward hunt view analytics", error);
+        logger.warn('Failed to forward hunt view analytics', error);
       }
     }
 
     return { huntId, views };
   } catch (err) {
-    logger.error("[analytics] recordHuntView DB error:", err);
+    logger.error('[analytics] recordHuntView DB error:', err);
     return { huntId, views: 0 };
   }
 }
@@ -86,7 +86,7 @@ export async function getHuntViewCount(huntId: number): Promise<number> {
     `;
     return rows[0]?.views ?? 0;
   } catch (err) {
-    logger.error("[analytics] getHuntViewCount DB error:", err);
+    logger.error('[analytics] getHuntViewCount DB error:', err);
     return 0;
   }
 }
@@ -99,7 +99,7 @@ export async function getAllHuntViewCounts(): Promise<HuntViewStats[]> {
     `;
     return rows.map((r) => ({ huntId: r.hunt_id, views: r.views }));
   } catch (err) {
-    logger.error("[analytics] getAllHuntViewCounts DB error:", err);
+    logger.error('[analytics] getAllHuntViewCounts DB error:', err);
     return [];
   }
 }
@@ -132,8 +132,8 @@ export async function recordHintUsage(
   wallet: string
 ): Promise<void> {
   try {
-    const secret = process.env.HUNT_VIEW_ANALYTICS_SECRET || "hunty-analytics-secret";
-    const walletHash = crypto.createHmac("sha256", secret).update(wallet).digest("hex");
+    const secret = process.env.HUNT_VIEW_ANALYTICS_SECRET || 'hunty-analytics-secret';
+    const walletHash = crypto.createHmac('sha256', secret).update(wallet).digest('hex');
 
     const sql = getDb();
     await sql`
@@ -144,7 +144,7 @@ export async function recordHintUsage(
     // Optional external analytics forwarding
     if (process.env.HUNT_VIEW_ANALYTICS_ENDPOINT) {
       const payload = {
-        event: "hint_used",
+        event: 'hint_used',
         huntIdHash: hashHuntId(huntId),
         clueId,
         hintIndex,
@@ -152,9 +152,9 @@ export async function recordHintUsage(
       };
       try {
         await fetch(process.env.HUNT_VIEW_ANALYTICS_ENDPOINT, {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
             ...(process.env.HUNT_VIEW_ANALYTICS_KEY
               ? { Authorization: `Bearer ${process.env.HUNT_VIEW_ANALYTICS_KEY}` }
               : {}),
@@ -162,11 +162,11 @@ export async function recordHintUsage(
           body: JSON.stringify(payload),
         });
       } catch (error) {
-        logger.warn("Failed to forward hint usage analytics", error);
+        logger.warn('Failed to forward hint usage analytics', error);
       }
     }
   } catch (err) {
-    logger.error("[analytics] recordHintUsage DB error:", err);
+    logger.error('[analytics] recordHintUsage DB error:', err);
   }
 }
 
@@ -197,7 +197,7 @@ export async function getHintUsageStats(huntId: number): Promise<HintUsageStats[
       totalReveals: Number(r.total_reveals),
     }));
   } catch (err) {
-    logger.error("[analytics] getHintUsageStats DB error:", err);
+    logger.error('[analytics] getHintUsageStats DB error:', err);
     return [];
   }
 }

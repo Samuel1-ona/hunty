@@ -1,30 +1,26 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
+import { useEffect, useState } from 'react';
 
-let setMessage: (msg: string) => void = () => {}
+let setMessage: (msg: string) => void = () => {};
 
 export function announceSr(message: string) {
-  setMessage(message)
+  setMessage(message);
 }
 
 export function SrAnnouncer() {
-  const [message, setMessageState] = useState("")
+  const [message, setMessageState] = useState('');
 
   useEffect(() => {
-    setMessage = setMessageState
+    setMessage = setMessageState;
     return () => {
-      setMessage = () => {}
-    }
-  }, [])
+      setMessage = () => {};
+    };
+  }, []);
 
   return (
-    <div
-      aria-live="polite"
-      aria-atomic="true"
-      className="sr-only"
-    >
+    <div aria-live="polite" aria-atomic="true" className="sr-only">
       {message}
     </div>
-  )
+  );
 }

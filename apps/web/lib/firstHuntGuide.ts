@@ -1,10 +1,10 @@
-import { logger } from "@/lib/logger";
+import { logger } from '@/lib/logger';
 
-export const FIRST_HUNT_GUIDE_STORAGE_KEY = "hunty-first-hunt-guide";
-export const FIRST_HUNT_GUIDE_EVENT = "hunty:first-hunt-guide";
-export const OPEN_WALLET_EVENT = "hunty:open-wallet";
+export const FIRST_HUNT_GUIDE_STORAGE_KEY = 'hunty-first-hunt-guide';
+export const FIRST_HUNT_GUIDE_EVENT = 'hunty:first-hunt-guide';
+export const OPEN_WALLET_EVENT = 'hunty:open-wallet';
 
-export const FIRST_HUNT_STEP_IDS = ["connect", "join", "solve", "claim"] as const;
+export const FIRST_HUNT_STEP_IDS = ['connect', 'join', 'solve', 'claim'] as const;
 
 export type FirstHuntStepId = (typeof FIRST_HUNT_STEP_IDS)[number];
 
@@ -17,28 +17,28 @@ export interface FirstHuntStepDefinition {
 
 export const FIRST_HUNT_STEPS: readonly FirstHuntStepDefinition[] = [
   {
-    id: "connect",
-    title: "Connect wallet",
-    description: "Link a Stellar wallet so you can join hunts and receive rewards.",
-    href: "/",
+    id: 'connect',
+    title: 'Connect wallet',
+    description: 'Link a Stellar wallet so you can join hunts and receive rewards.',
+    href: '/',
   },
   {
-    id: "join",
-    title: "Join a hunt",
-    description: "Register for an active scavenger hunt from the arcade.",
-    href: "/#discovery-arcade",
+    id: 'join',
+    title: 'Join a hunt',
+    description: 'Register for an active scavenger hunt from the arcade.',
+    href: '/#discovery-arcade',
   },
   {
-    id: "solve",
-    title: "Solve a clue",
-    description: "Unlock your first clue and start scoring points.",
-    href: "/#discovery-arcade",
+    id: 'solve',
+    title: 'Solve a clue',
+    description: 'Unlock your first clue and start scoring points.',
+    href: '/#discovery-arcade',
   },
   {
-    id: "claim",
-    title: "Claim your reward",
-    description: "Collect XLM or an NFT after you finish the hunt.",
-    href: "/profile",
+    id: 'claim',
+    title: 'Claim your reward',
+    description: 'Collect XLM or an NFT after you finish the hunt.',
+    href: '/profile',
   },
 ];
 
@@ -76,9 +76,9 @@ const EMPTY_COMPLETED: Record<FirstHuntStepId, boolean> = {
 /** Later steps imply earlier ones so a returning player is not sent backwards. */
 const STEP_PREREQUISITES: Record<FirstHuntStepId, FirstHuntStepId[]> = {
   connect: [],
-  join: ["connect"],
-  solve: ["connect", "join"],
-  claim: ["connect", "join", "solve"],
+  join: ['connect'],
+  solve: ['connect', 'join'],
+  claim: ['connect', 'join', 'solve'],
 };
 
 export function getDefaultFirstHuntGuideState(): FirstHuntGuideState {
@@ -93,7 +93,7 @@ export function getDefaultFirstHuntGuideState(): FirstHuntGuideState {
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 export function isFirstHuntStepId(value: unknown): value is FirstHuntStepId {
@@ -112,7 +112,7 @@ export function normalizeFirstHuntGuideState(raw: unknown): FirstHuntGuideState 
   }
 
   const huntId =
-    typeof raw.huntId === "number" && Number.isFinite(raw.huntId) && raw.huntId > 0
+    typeof raw.huntId === 'number' && Number.isFinite(raw.huntId) && raw.huntId > 0
       ? raw.huntId
       : null;
 
@@ -122,17 +122,17 @@ export function normalizeFirstHuntGuideState(raw: unknown): FirstHuntGuideState 
     collapsed: raw.collapsed === true,
     completed,
     huntId,
-    updatedAt: typeof raw.updatedAt === "number" ? raw.updatedAt : 0,
+    updatedAt: typeof raw.updatedAt === 'number' ? raw.updatedAt : 0,
   };
 }
 
 function emitGuideChange(state: FirstHuntGuideState): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent(FIRST_HUNT_GUIDE_EVENT, { detail: state }));
 }
 
 export function loadFirstHuntGuideState(): FirstHuntGuideState {
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return getDefaultFirstHuntGuideState();
   }
 
@@ -154,7 +154,7 @@ export function saveFirstHuntGuideState(state: FirstHuntGuideState): FirstHuntGu
     updatedAt: Date.now(),
   };
 
-  if (typeof window !== "undefined") {
+  if (typeof window !== 'undefined') {
     try {
       window.localStorage.setItem(FIRST_HUNT_GUIDE_STORAGE_KEY, JSON.stringify(next));
     } catch (error) {
@@ -181,8 +181,7 @@ function withImpliedSteps(
 
 export function getFirstHuntProgress(state: FirstHuntGuideState): FirstHuntProgress {
   const completedCount = FIRST_HUNT_STEP_IDS.filter((step) => state.completed[step]).length;
-  const nextStep =
-    FIRST_HUNT_STEPS.find((step) => !state.completed[step.id]) ?? null;
+  const nextStep = FIRST_HUNT_STEPS.find((step) => !state.completed[step.id]) ?? null;
 
   return {
     completedCount,
@@ -235,9 +234,7 @@ export function setFirstHuntGuideCollapsed(collapsed: boolean): FirstHuntGuideSt
   });
 }
 
-export function applyKnownFirstHuntProgress(
-  known: FirstHuntKnownProgress
-): FirstHuntGuideState {
+export function applyKnownFirstHuntProgress(known: FirstHuntKnownProgress): FirstHuntGuideState {
   const current = loadFirstHuntGuideState();
   const completed = { ...current.completed };
 
@@ -254,7 +251,7 @@ export function applyKnownFirstHuntProgress(
 }
 
 function readStorageKeys(): string[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === 'undefined') return [];
   const keys: string[] = [];
   for (let index = 0; index < window.localStorage.length; index += 1) {
     const key = window.localStorage.key(index);
@@ -272,9 +269,9 @@ function parseHuntIdFromKey(key: string, prefix: string): number | null {
 }
 
 function hasWalletAddressInStore(): boolean {
-  if (typeof window === "undefined") return false;
+  if (typeof window === 'undefined') return false;
   try {
-    const raw = window.localStorage.getItem("hunty-wallet");
+    const raw = window.localStorage.getItem('hunty-wallet');
     if (!raw) return false;
     const parsed = JSON.parse(raw) as { state?: { walletAddress?: string } };
     return Boolean(parsed?.state?.walletAddress);
@@ -289,18 +286,17 @@ function hasWalletAddressInStore(): boolean {
  */
 export function inferFirstHuntProgressFromStorage(playerAddress?: string): FirstHuntKnownProgress {
   const known: FirstHuntKnownProgress = {};
-  if (typeof window === "undefined") return known;
+  if (typeof window === 'undefined') return known;
 
   const keys = readStorageKeys();
-  const normalizedAddress = playerAddress?.trim() ?? "";
+  const normalizedAddress = playerAddress?.trim() ?? '';
 
   if (normalizedAddress || hasWalletAddressInStore()) {
     known.connected = true;
   }
 
   const joinedFromAttempts = keys.some(
-    (key) =>
-      key.startsWith("hunty_active_attempt_") || key.startsWith("hunty_hunt_attempts_")
+    (key) => key.startsWith('hunty_active_attempt_') || key.startsWith('hunty_hunt_attempts_')
   );
   if (joinedFromAttempts) {
     known.joined = true;
@@ -309,15 +305,15 @@ export function inferFirstHuntProgressFromStorage(playerAddress?: string): First
   let inferredHuntId: number | null = null;
 
   for (const key of keys) {
-    if (key.startsWith("hunt_completed_")) {
+    if (key.startsWith('hunt_completed_')) {
       known.solved = true;
       known.joined = true;
-      inferredHuntId = inferredHuntId ?? parseHuntIdFromKey(key, "hunt_completed_");
+      inferredHuntId = inferredHuntId ?? parseHuntIdFromKey(key, 'hunt_completed_');
     }
-    if (key.startsWith("hunt_clue_solved_")) {
+    if (key.startsWith('hunt_clue_solved_')) {
       known.solved = true;
       known.joined = true;
-      inferredHuntId = inferredHuntId ?? parseHuntIdFromKey(key, "hunt_clue_solved_");
+      inferredHuntId = inferredHuntId ?? parseHuntIdFromKey(key, 'hunt_clue_solved_');
     }
   }
 
@@ -332,13 +328,12 @@ export function inferFirstHuntProgressFromStorage(playerAddress?: string): First
         }>;
         if (Array.isArray(attempts) && attempts.length > 0) {
           known.joined = true;
-          const completed = attempts.find((attempt) => attempt.status === "completed");
+          const completed = attempts.find((attempt) => attempt.status === 'completed');
           const withClues = attempts.find((attempt) => (attempt.clues?.length ?? 0) > 0);
           if (completed || withClues) {
             known.solved = true;
           }
-          inferredHuntId =
-            inferredHuntId ?? completed?.huntId ?? attempts[0]?.huntId ?? null;
+          inferredHuntId = inferredHuntId ?? completed?.huntId ?? attempts[0]?.huntId ?? null;
         }
       }
     } catch {
@@ -359,15 +354,12 @@ export function hydrateFirstHuntGuide(playerAddress?: string): FirstHuntGuideSta
 }
 
 export function requestWalletConnect(): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent(OPEN_WALLET_EVENT));
 }
 
-export function getFirstHuntStepHref(
-  step: FirstHuntStepDefinition,
-  huntId: number | null
-): string {
-  if ((step.id === "solve" || step.id === "claim" || step.id === "join") && huntId) {
+export function getFirstHuntStepHref(step: FirstHuntStepDefinition, huntId: number | null): string {
+  if ((step.id === 'solve' || step.id === 'claim' || step.id === 'join') && huntId) {
     return `/hunt/${huntId}`;
   }
   return step.href;

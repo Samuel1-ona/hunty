@@ -1,6 +1,6 @@
-"use client"
+'use client';
 
-import { LiveHuntCountdown } from "@/components/LiveHuntCountdown"
+import { LiveHuntCountdown } from '@/components/LiveHuntCountdown';
 
 /** Back-compat wrapper — prefer LiveHuntCountdown for full start/end + warnings. */
 export function HuntCountdown({
@@ -8,15 +8,9 @@ export function HuntCountdown({
   startTime,
   onExpire,
 }: {
-  endTime: number
-  startTime?: number
-  onExpire?: () => void
+  endTime: number;
+  startTime?: number;
+  onExpire?: () => void;
 }) {
-  return (
-    <LiveHuntCountdown
-      endTime={endTime}
-      startTime={startTime}
-      onExpire={onExpire}
-    />
-  )
+  return <LiveHuntCountdown endTime={endTime} startTime={startTime} onExpire={onExpire} />;
 }

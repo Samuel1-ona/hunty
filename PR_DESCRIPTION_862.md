@@ -39,12 +39,12 @@ From the issue:
 
 ## Acceptance Criteria
 
-| Criterion | Status |
-|-----------|--------|
-| A shared Zod-validation helper wraps API handlers | ✅ `withValidation()` in `apps/web/lib/api/withValidation.ts` |
-| Every route validates body, query params, and path params | ✅ All 41 routes covered |
-| Validation failures return a consistent 400 with field-level errors | ✅ `{ error, code: "VALIDATION_ERROR", details: { fieldErrors } }` |
-| Schemas are shared with the client where possible via `@hunty/types` | ✅ All schemas exported from `@hunty/types/api-schemas` |
+| Criterion                                                            | Status                                                             |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| A shared Zod-validation helper wraps API handlers                    | ✅ `withValidation()` in `apps/web/lib/api/withValidation.ts`      |
+| Every route validates body, query params, and path params            | ✅ All 41 routes covered                                           |
+| Validation failures return a consistent 400 with field-level errors  | ✅ `{ error, code: "VALIDATION_ERROR", details: { fieldErrors } }` |
+| Schemas are shared with the client where possible via `@hunty/types` | ✅ All schemas exported from `@hunty/types/api-schemas`            |
 
 ---
 
@@ -56,7 +56,7 @@ Single source of truth for every API request shape. Clients can import the same
 schemas for form validation, reducing duplication:
 
 ```ts
-import { huntReviewBodySchema } from "@hunty/types/api-schemas"
+import { huntReviewBodySchema } from '@hunty/types/api-schemas';
 // Use in React Hook Form, or server-side with withValidation
 ```
 
@@ -70,7 +70,7 @@ valueSchema)`, etc.).
 export function withValidation<TBody, TQuery, TParams>(
   config: { body?: ZodSchema; query?: ZodSchema; params?: ZodSchema },
   handler: (req, context, { body, query, params }) => Promise<NextResponse>
-): RouteHandler
+): RouteHandler;
 ```
 
 - Wraps `withErrorHandling` so all errors normalise to the standard
@@ -97,48 +97,50 @@ export function withValidation<TBody, TQuery, TParams>(
 ## Files Changed
 
 ### New files
-| File | Purpose |
-|------|---------|
-| `packages/types/src/api-schemas.ts` | All route Zod schemas, exported from `@hunty/types/api-schemas` |
-| `apps/web/lib/api/withValidation.ts` | Generic validation wrapper for route handlers |
+
+| File                                 | Purpose                                                         |
+| ------------------------------------ | --------------------------------------------------------------- |
+| `packages/types/src/api-schemas.ts`  | All route Zod schemas, exported from `@hunty/types/api-schemas` |
+| `apps/web/lib/api/withValidation.ts` | Generic validation wrapper for route handlers                   |
 
 ### Modified infrastructure
-| File | Change |
-|------|--------|
+
+| File                          | Change                                                         |
+| ----------------------------- | -------------------------------------------------------------- |
 | `packages/types/package.json` | Add `./api-schemas` export entry; add `zod` to devDependencies |
-| `apps/web/lib/api/index.ts` | Re-export `withValidation` |
+| `apps/web/lib/api/index.ts`   | Re-export `withValidation`                                     |
 
 ### Routes migrated to `withValidation` (27 files)
 
-| Route | Methods validated |
-|-------|-------------------|
-| `api/admin/moderation` | `POST` body (discriminated union: approve/reject/flag) |
-| `api/admin/anti-cheat` | `GET` query, `POST` body (discriminated union: ban/unban/updateConfig) |
-| `api/admin/featured` | `POST` body |
-| `api/analytics/hint-usage` | `POST` body, `GET` query |
-| `api/analytics/hunt-view` | `POST` body |
-| `api/analytics/performance` | `POST` body |
-| `api/moderation/submit` | `POST` body |
-| `api/moderation/sync` | `POST` body |
-| `api/notifications/complete` | `POST` body |
-| `api/push/send` | `POST` body |
-| `api/push-tokens` | `POST` body, `DELETE` body |
-| `api/paymaster/sponsor` | `POST` body |
-| `api/paymaster/admin/config` | `POST` body |
-| `api/v1/tags` | `POST` body, `GET` query |
-| `api/v1/hunts/bulk` | `POST` body |
-| `api/v1/hunts/[id]/archive` | `POST` body + path params |
-| `api/v1/hunts/[id]/delete` | `POST` body + path params |
-| `api/v1/hunts/[id]/collaborators` | `POST` body (discriminated union: 6 actions) + path params |
-| `api/v1/hunts/[id]/progress` | `GET` query, `POST` body + path params |
-| `api/v1/hunts/[id]/complete` | `POST` body + path params |
-| `api/v1/hunts/[id]/reviews` | `POST` body + path params |
-| `api/v1/hunts/[id]/reviews/[reviewId]/moderate` | `POST` body + path params |
-| `api/v1/seasons` | `POST` body |
-| `api/v1/seasons/[id]` | `PATCH` body, `POST` body (archive) + path params |
-| `api/v1/seasons/badges` | `POST` body |
-| `api/v1/drafts` | `GET` query, `POST` body |
-| `api/v1/drafts/[draftId]` | `PATCH` body + path params |
+| Route                                           | Methods validated                                                      |
+| ----------------------------------------------- | ---------------------------------------------------------------------- |
+| `api/admin/moderation`                          | `POST` body (discriminated union: approve/reject/flag)                 |
+| `api/admin/anti-cheat`                          | `GET` query, `POST` body (discriminated union: ban/unban/updateConfig) |
+| `api/admin/featured`                            | `POST` body                                                            |
+| `api/analytics/hint-usage`                      | `POST` body, `GET` query                                               |
+| `api/analytics/hunt-view`                       | `POST` body                                                            |
+| `api/analytics/performance`                     | `POST` body                                                            |
+| `api/moderation/submit`                         | `POST` body                                                            |
+| `api/moderation/sync`                           | `POST` body                                                            |
+| `api/notifications/complete`                    | `POST` body                                                            |
+| `api/push/send`                                 | `POST` body                                                            |
+| `api/push-tokens`                               | `POST` body, `DELETE` body                                             |
+| `api/paymaster/sponsor`                         | `POST` body                                                            |
+| `api/paymaster/admin/config`                    | `POST` body                                                            |
+| `api/v1/tags`                                   | `POST` body, `GET` query                                               |
+| `api/v1/hunts/bulk`                             | `POST` body                                                            |
+| `api/v1/hunts/[id]/archive`                     | `POST` body + path params                                              |
+| `api/v1/hunts/[id]/delete`                      | `POST` body + path params                                              |
+| `api/v1/hunts/[id]/collaborators`               | `POST` body (discriminated union: 6 actions) + path params             |
+| `api/v1/hunts/[id]/progress`                    | `GET` query, `POST` body + path params                                 |
+| `api/v1/hunts/[id]/complete`                    | `POST` body + path params                                              |
+| `api/v1/hunts/[id]/reviews`                     | `POST` body + path params                                              |
+| `api/v1/hunts/[id]/reviews/[reviewId]/moderate` | `POST` body + path params                                              |
+| `api/v1/seasons`                                | `POST` body                                                            |
+| `api/v1/seasons/[id]`                           | `PATCH` body, `POST` body (archive) + path params                      |
+| `api/v1/seasons/badges`                         | `POST` body                                                            |
+| `api/v1/drafts`                                 | `GET` query, `POST` body                                               |
+| `api/v1/drafts/[draftId]`                       | `PATCH` body + path params                                             |
 
 ### Routes already validated (left unchanged, 14 files)
 
@@ -178,6 +180,7 @@ HTTP 400 Bad Request
 ```
 
 Malformed JSON body:
+
 ```json
 HTTP 400 Bad Request
 {

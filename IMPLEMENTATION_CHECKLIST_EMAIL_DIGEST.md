@@ -7,11 +7,13 @@ All components have been created and integrated for the email digest feature.
 ## Files Created
 
 ### Database (1 file)
+
 - [x] `apps/web/lib/db/migrations/010_create_email_digest_tables.sql`
   - 3 tables: player_email_preferences, email_digest_sends, email_unsubscribe_tokens
   - Proper indexes for performance
 
 ### Backend Services (5 files in `apps/web/lib/email/`)
+
 - [x] `types.ts` - TypeScript interfaces for email features
 - [x] `dbStore.ts` - Database operations (CRUD for preferences, sends, tokens)
 - [x] `digestService.ts` - Digest content generation and hunt selection
@@ -19,23 +21,28 @@ All components have been created and integrated for the email digest feature.
 - [x] `index.ts` - Public API exports
 
 ### API Endpoints (3 endpoints)
+
 - [x] `apps/web/app/api/v1/email-preferences/route.ts`
+
   - GET - Retrieve player preferences
   - POST - Subscribe/update preferences
 
 - [x] `apps/web/app/api/v1/email-digest/unsubscribe/route.ts`
+
   - GET - Handle unsubscribe from email link
 
 - [x] `apps/web/app/api/v1/email-digest/send/route.ts`
   - POST - Admin endpoint to trigger digest sends
 
 ### Email Template (1 file)
+
 - [x] `apps/web/components/emails/EmailDigest.tsx`
   - Professional, responsive design
   - Includes unsubscribe link
   - Personalized content
 
 ### Documentation (6 files)
+
 - [x] `docs/EMAIL_DIGEST_IMPLEMENTATION.md` - Complete implementation guide
 - [x] `docs/EMAIL_DIGEST_QUICK_REFERENCE.md` - Code examples
 - [x] `FEATURE_EMAIL_DIGEST_SUMMARY.md` - Project overview
@@ -46,27 +53,31 @@ All components have been created and integrated for the email digest feature.
 ## Pre-Deployment Checklist
 
 ### Environment Setup
+
 - [ ] Set `RESEND_API_KEY` environment variable
 - [ ] Set `ADMIN_API_TOKEN` environment variable
 - [ ] Optional: Set `NEXT_PUBLIC_APP_URL` (or use default)
 
 ### Database
+
 - [ ] Run migration on PostgreSQL database:
   ```bash
   psql $DATABASE_URL < apps/web/lib/db/migrations/010_create_email_digest_tables.sql
   ```
 - [ ] Verify tables created:
   ```sql
-  SELECT tablename FROM pg_tables 
+  SELECT tablename FROM pg_tables
   WHERE tablename LIKE 'player_email%' OR tablename LIKE 'email%';
   ```
 
 ### Code Verification
+
 - [ ] No TypeScript errors: `pnpm typecheck`
 - [ ] No ESLint errors: `pnpm lint`
 - [ ] All imports resolve correctly
 
 ### Testing
+
 - [ ] Run verification script:
   ```bash
   chmod +x verify-email-digest.sh
@@ -79,18 +90,21 @@ All components have been created and integrated for the email digest feature.
 ## Deployment Checklist
 
 ### Pre-Deployment
+
 - [ ] Code reviewed and approved
 - [ ] All tests passing
 - [ ] Verification script runs successfully
 - [ ] Team members notified
 
 ### During Deployment
+
 - [ ] Deploy code (standard Next.js deployment)
 - [ ] Verify environment variables set
 - [ ] Monitor application logs during and after deployment
 - [ ] Check database connection health
 
 ### Post-Deployment
+
 - [ ] Run verification script in production
 - [ ] Test subscription endpoint with real email
 - [ ] Test unsubscribe flow
@@ -98,10 +112,12 @@ All components have been created and integrated for the email digest feature.
 - [ ] Set up cron job for digest sends:
   ```json
   {
-    "crons": [{
-      "path": "/api/v1/email-digest/send",
-      "schedule": "0 9 * * *"
-    }]
+    "crons": [
+      {
+        "path": "/api/v1/email-digest/send",
+        "schedule": "0 9 * * *"
+      }
+    ]
   }
   ```
 - [ ] Document in team wiki/runbooks
@@ -110,6 +126,7 @@ All components have been created and integrated for the email digest feature.
 ## Verification Tests
 
 ### Manual Tests (5 min)
+
 ```bash
 # 1. Subscribe a player
 curl -X POST http://localhost:3000/api/v1/email-preferences \
@@ -130,6 +147,7 @@ curl "http://localhost:3000/api/v1/email-digest/unsubscribe?token=invalid"
 ```
 
 ### Automated Tests
+
 - [ ] Run `verify-email-digest.sh`
 - [ ] Run unit tests: `pnpm test`
 - [ ] Run E2E tests: `pnpm test:e2e`
@@ -137,12 +155,15 @@ curl "http://localhost:3000/api/v1/email-digest/unsubscribe?token=invalid"
 ## Feature Verification
 
 ### Acceptance Criteria
+
 - [x] Players can opt into a digest
+
   - Email preferences endpoint allows subscription
   - Database stores preferences
   - Can update subscription status
 
 - [x] Content is based on categories they have played
+
   - Digest service analyzes completion history
   - Infers interested categories from completed hunts
   - Selects new hunts matching those categories
@@ -168,11 +189,13 @@ curl "http://localhost:3000/api/v1/email-digest/unsubscribe?token=invalid"
 ## Team Communication
 
 - [ ] Send announcement to team
+
   - Link to documentation
   - Quick start guide
   - Support contacts
 
 - [ ] Schedule training/demo
+
   - Show API endpoints
   - Demo subscription flow
   - Q&A about feature
@@ -185,12 +208,14 @@ curl "http://localhost:3000/api/v1/email-digest/unsubscribe?token=invalid"
 ## Monitoring Setup
 
 - [ ] Configure alerts for:
+
   - Failed digest sends
   - High unsubscribe rates
   - Email bounce rates
   - API errors
 
 - [ ] Create dashboard for metrics:
+
   - Total subscribers
   - Weekly active subscribers
   - Send success rate
@@ -207,11 +232,13 @@ curl "http://localhost:3000/api/v1/email-digest/unsubscribe?token=invalid"
 If critical issues discovered:
 
 1. **Immediate (< 5 min):**
+
    - Stop digest sends
    - Disable cron job
    - Revert API endpoints if necessary
 
 2. **Short-term (< 30 min):**
+
    - Identify root cause
    - Apply fix or rollback code
    - Re-enable with constraints
@@ -224,6 +251,7 @@ If critical issues discovered:
 ## Success Metrics
 
 Track these after deployment:
+
 - Number of subscribed players
 - Daily active digest receivers
 - Email open rate
@@ -235,6 +263,7 @@ Track these after deployment:
 ## Future Work
 
 Priority enhancements:
+
 1. Subscription frequency control (daily/weekly/monthly)
 2. Content personalization (difficulty, speed-based)
 3. A/B testing for subject lines

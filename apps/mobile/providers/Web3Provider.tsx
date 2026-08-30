@@ -1,6 +1,6 @@
 import { useWalletSecurity } from '@providers/WalletSecurityProvider';
 import { registerPushToken, unregisterPushToken } from '@services/notifications/tokenRegistry';
-import { clearSession,loadSession, saveSession } from '@services/walletSession';
+import { clearSession, loadSession, saveSession } from '@services/walletSession';
 import { useWalletStore } from '@store/useStore';
 import SignClient from '@walletconnect/sign-client';
 import Constants from 'expo-constants';

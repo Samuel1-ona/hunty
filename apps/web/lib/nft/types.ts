@@ -13,8 +13,8 @@
  * number (booleans are serialised as strings for broad marketplace compat).
  */
 export interface NftAttribute {
-  trait_type: string
-  value: string | number
+  trait_type: string;
+  value: string | number;
 }
 
 // ─── Core Metadata Object ─────────────────────────────────────────────────────
@@ -34,61 +34,61 @@ export interface NftAttribute {
  */
 export interface NftMetadata {
   /** Human-readable name of the NFT, e.g. "Hunty Trophy — Hunt #42 · 1st Place" */
-  name: string
+  name: string;
   /** Human-readable description summarising the hunt and completion event */
-  description: string
+  description: string;
   /** ipfs:// URI for the NFT artwork image */
-  image: string
+  image: string;
   /** Array of typed trait objects; must contain difficulty, completion_time, rank */
-  attributes: NftAttribute[]
+  attributes: NftAttribute[];
   /** ISO-8601 timestamp — when the reward was earned (Hunty extension field) */
-  earned_at?: string
+  earned_at?: string;
   /** Optional link back to the hunt page (Hunty extension field) */
-  external_url?: string
+  external_url?: string;
 }
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 
 export interface ValidationFieldError {
   /** Dot-path of the failing field, e.g. "attributes.difficulty" */
-  field: string
+  field: string;
   /** Human-readable description of the violated constraint */
-  message: string
+  message: string;
 }
 
 export interface ValidationResult {
-  valid: boolean
-  errors: ValidationFieldError[]
+  valid: boolean;
+  errors: ValidationFieldError[];
 }
 
 // ─── Builder Inputs ───────────────────────────────────────────────────────────
 
 export interface NftMetadataBuildInput {
   /** Human-readable NFT name */
-  name: string
+  name: string;
   /** Human-readable description */
-  description: string
+  description: string;
   /** Bare CID or ipfs:// URI for the NFT image */
-  imageCid: string
+  imageCid: string;
   /** Hunt difficulty level */
-  difficulty: "Easy" | "Medium" | "Hard" | "Unrated"
+  difficulty: 'Easy' | 'Medium' | 'Hard' | 'Unrated';
   /** Player's total completion time in whole seconds; omit if unavailable */
-  completionTimeSeconds?: number
+  completionTimeSeconds?: number;
   /** Player's final leaderboard rank (1 = first place) */
-  rank: number
+  rank: number;
   /** Optional hunt name stored as an extra attribute */
-  huntName?: string
+  huntName?: string;
   /** ISO-8601 timestamp when the reward was earned */
-  earnedAt?: string
+  earnedAt?: string;
   /** Optional link back to the hunt page */
-  externalUrl?: string
+  externalUrl?: string;
 }
 
 // ─── Upload Result ────────────────────────────────────────────────────────────
 
 export interface MetadataUploadResult {
   /** ipfs:// URI pointing to the uploaded metadata JSON */
-  metadataUri: string
+  metadataUri: string;
   /** Raw CID returned by the IPFS proxy */
-  cid: string
+  cid: string;
 }

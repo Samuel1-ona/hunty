@@ -1,33 +1,33 @@
-"use client"
+'use client';
 
-import { useQuery } from "@tanstack/react-query"
-import { ArrowRight, Award, Sparkles, Trophy, User } from "lucide-react"
+import { useQuery } from '@tanstack/react-query';
+import { ArrowRight, Award, Sparkles, Trophy, User } from 'lucide-react';
 
-import { HuntCoverImage } from "@/components/HuntCoverImage"
-import { Button } from "@hunty/ui"
-import { Skeleton } from "@/components/ui/skeleton"
-import { getAllHunts } from "@/lib/huntStore"
-import { cn } from "@/lib/utils"
+import { HuntCoverImage } from '@/components/HuntCoverImage';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { getAllHunts } from '@/lib/huntStore';
+import { cn } from '@/lib/utils';
 
 export function HuntOfTheWeekBanner() {
   // 1. Fetch the server-side featured hunt ID
   const { data: featuredData, isLoading: isLoadingFeatured } = useQuery({
-    queryKey: ["featuredHuntId"],
+    queryKey: ['featuredHuntId'],
     queryFn: async () => {
-      const res = await fetch("/api/admin/featured")
-      if (!res.ok) return { featuredHuntId: null }
-      return res.json() as Promise<{ featuredHuntId: number | null }>
-    }
-  })
+      const res = await fetch('/api/admin/featured');
+      if (!res.ok) return { featuredHuntId: null };
+      return res.json() as Promise<{ featuredHuntId: number | null }>;
+    },
+  });
 
   // 2. Fetch all hunts from local store
   const { data: hunts = [], isLoading: isLoadingHunts } = useQuery({
-    queryKey: ["activeHunts"],
+    queryKey: ['activeHunts'],
     queryFn: async () => getAllHunts(),
-  })
+  });
 
-  const featuredHuntId = featuredData?.featuredHuntId ?? null
-  const isLoading = isLoadingFeatured || isLoadingHunts
+  const featuredHuntId = featuredData?.featuredHuntId ?? null;
+  const isLoading = isLoadingFeatured || isLoadingHunts;
 
   if (isLoading) {
     return (
@@ -45,19 +45,19 @@ export function HuntOfTheWeekBanner() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   // Find the featured hunt in active hunts (only active ones are featured in Arcade)
-  const featuredHunt = hunts.find(h => h.id === featuredHuntId && h.status === "Active")
+  const featuredHunt = hunts.find((h) => h.id === featuredHuntId && h.status === 'Active');
 
   // Gracefully hide if no featured hunt is set or found
-  if (!featuredHunt) return null
+  if (!featuredHunt) return null;
 
   // Format creator email or display "Community Pick"
-  const creatorDisplay = featuredHunt.creatorEmail 
-    ? featuredHunt.creatorEmail.split("@")[0] 
-    : "Hunty Team"
+  const creatorDisplay = featuredHunt.creatorEmail
+    ? featuredHunt.creatorEmail.split('@')[0]
+    : 'Hunty Team';
 
   return (
     <div className="w-full rounded-3xl overflow-hidden mb-10 border border-amber-300/40 dark:border-amber-500/20 bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-indigo-500/10 dark:from-amber-900/10 dark:via-rose-950/10 dark:to-slate-900/30 shadow-xl relative backdrop-blur-md">
@@ -106,17 +106,19 @@ export function HuntOfTheWeekBanner() {
           {/* Stats & Creator Row */}
           <div className="flex flex-wrap items-center gap-3 mb-6">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-900/30 px-3 py-1 text-xs font-bold text-[#3737A4] dark:text-blue-400 border border-blue-100/50 dark:border-blue-900/40">
-              {featuredHunt.cluesCount} {featuredHunt.cluesCount === 1 ? "Clue" : "Clues"}
+              {featuredHunt.cluesCount} {featuredHunt.cluesCount === 1 ? 'Clue' : 'Clues'}
             </span>
 
-            <span className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold border",
-              featuredHunt.rewardType === "XLM" 
-                ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-100/50 dark:border-green-900/40" 
-                : featuredHunt.rewardType === "NFT" 
-                  ? "bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-100/50 dark:border-purple-900/40" 
-                  : "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-100/50 dark:border-amber-900/40"
-            )}>
+            <span
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold border',
+                featuredHunt.rewardType === 'XLM'
+                  ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-100/50 dark:border-green-900/40'
+                  : featuredHunt.rewardType === 'NFT'
+                    ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-100/50 dark:border-purple-900/40'
+                    : 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-100/50 dark:border-amber-900/40'
+              )}
+            >
               <Award className="h-3.5 w-3.5" />
               {featuredHunt.rewardType} Prize
             </span>
@@ -132,7 +134,7 @@ export function HuntOfTheWeekBanner() {
             <Button
               className="bg-gradient-to-r from-amber-500 via-rose-500 to-[#3737A4] hover:opacity-95 text-slate-950 font-black px-8 py-6 rounded-2xl text-base md:text-lg flex items-center gap-2.5 shadow-lg border border-amber-300/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
               onClick={() => {
-                window.location.href = `/hunt/${featuredHunt.id}`
+                window.location.href = `/hunt/${featuredHunt.id}`;
               }}
             >
               Play Featured Hunt
@@ -142,5 +144,5 @@ export function HuntOfTheWeekBanner() {
         </div>
       </div>
     </div>
-  )
+  );
 }

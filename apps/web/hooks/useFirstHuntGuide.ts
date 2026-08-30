@@ -1,12 +1,15 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { useWallet } from "@/lib/context/WalletContext";
+import { useWallet } from '@/lib/context/WalletContext';
 import {
   applyKnownFirstHuntProgress,
   dismissFirstHuntGuide,
   FIRST_HUNT_GUIDE_EVENT,
+  type FirstHuntGuideState,
+  type FirstHuntProgress,
+  type FirstHuntStepId,
   getDefaultFirstHuntGuideState,
   getFirstHuntProgress,
   hydrateFirstHuntGuide,
@@ -14,10 +17,7 @@ import {
   markFirstHuntStep,
   restoreFirstHuntGuide,
   setFirstHuntGuideCollapsed,
-  type FirstHuntGuideState,
-  type FirstHuntProgress,
-  type FirstHuntStepId,
-} from "@/lib/firstHuntGuide";
+} from '@/lib/firstHuntGuide';
 
 export interface UseFirstHuntGuideResult {
   state: FirstHuntGuideState;
@@ -47,7 +47,7 @@ export function useFirstHuntGuide(): UseFirstHuntGuideResult {
   }, [connected]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
 
     const handleChange = (event: Event) => {
       const custom = event as CustomEvent<FirstHuntGuideState>;

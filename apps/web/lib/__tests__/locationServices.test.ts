@@ -15,7 +15,7 @@ describe('locationServices', () => {
   it('flags a position inside the geofence radius', () => {
     const distanceMeters = getDistanceMeters(
       { latitude: 40.7484, longitude: -73.9857 },
-      { latitude: 40.74845, longitude: -73.98575 },
+      { latitude: 40.74845, longitude: -73.98575 }
     );
 
     expect(distanceMeters).toBeGreaterThan(0);

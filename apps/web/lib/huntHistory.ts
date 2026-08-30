@@ -1,20 +1,20 @@
-import type { HuntStatus, StoredHunt } from "@/lib/types";
+import type { HuntStatus, StoredHunt } from '@/lib/types';
 
-export const HUNT_HISTORY_PAGE_SIZE = 20;
+export const HUNT_HISTORY_PAGE_SIZE = 10;
 
 export const HUNT_HISTORY_STATUS_FILTERS = [
-  "all",
-  "active",
-  "completed",
-  "draft",
-  "cancelled",
+  'all',
+  'active',
+  'completed',
+  'draft',
+  'cancelled',
 ] as const;
 
 export const HUNT_HISTORY_SORT_OPTIONS = [
-  "newest",
-  "oldest",
-  "most-players",
-  "highest-reward",
+  'newest',
+  'oldest',
+  'most-players',
+  'highest-reward',
 ] as const;
 
 export type HuntHistoryStatusFilter = (typeof HUNT_HISTORY_STATUS_FILTERS)[number];
@@ -38,27 +38,27 @@ export type HuntHistoryView = {
   endItem: number;
 };
 
-const STATUS_FILTER_TO_HUNT_STATUS: Record<Exclude<HuntHistoryStatusFilter, "all">, HuntStatus> = {
-  active: "Active",
-  completed: "Completed",
-  draft: "Draft",
-  cancelled: "Cancelled",
+const STATUS_FILTER_TO_HUNT_STATUS: Record<Exclude<HuntHistoryStatusFilter, 'all'>, HuntStatus> = {
+  active: 'Active',
+  completed: 'Completed',
+  draft: 'Draft',
+  cancelled: 'Cancelled',
 };
 
 export function parseHuntHistoryStatusFilter(value?: string | null): HuntHistoryStatusFilter {
-  if (!value) return "all";
+  if (!value) return 'all';
 
   return HUNT_HISTORY_STATUS_FILTERS.includes(value as HuntHistoryStatusFilter)
     ? (value as HuntHistoryStatusFilter)
-    : "all";
+    : 'all';
 }
 
 export function parseHuntHistorySortOption(value?: string | null): HuntHistorySortOption {
-  if (!value) return "newest";
+  if (!value) return 'newest';
 
   return HUNT_HISTORY_SORT_OPTIONS.includes(value as HuntHistorySortOption)
     ? (value as HuntHistorySortOption)
-    : "newest";
+    : 'newest';
 }
 
 export function parseHuntHistoryPage(value?: string | null): number {
@@ -73,16 +73,16 @@ export function buildHuntHistoryQuery(options: {
 }): string {
   const params = new URLSearchParams();
 
-  if (options.status !== "all") {
-    params.set("status", options.status);
+  if (options.status !== 'all') {
+    params.set('status', options.status);
   }
 
-  if (options.sort !== "newest") {
-    params.set("sort", options.sort);
+  if (options.sort !== 'newest') {
+    params.set('sort', options.sort);
   }
 
   if (options.page > 1) {
-    params.set("page", String(options.page));
+    params.set('page', String(options.page));
   }
 
   return params.toString();
@@ -116,7 +116,7 @@ export function getHuntHistoryView(
 }
 
 function filterHuntsByStatus(hunts: StoredHunt[], status: HuntHistoryStatusFilter): StoredHunt[] {
-  if (status === "all") return hunts;
+  if (status === 'all') return hunts;
 
   return hunts.filter((hunt) => hunt.status === STATUS_FILTER_TO_HUNT_STATUS[status]);
 }
@@ -126,46 +126,46 @@ function sortHunts(hunts: StoredHunt[], sort: HuntHistorySortOption): StoredHunt
 }
 
 function compareHunts(left: StoredHunt, right: StoredHunt, sort: HuntHistorySortOption): number {
-  if (sort === "oldest") {
-    return compareNumbers(getSortTimestamp(left), getSortTimestamp(right), "asc");
+  if (sort === 'oldest') {
+    return compareNumbers(getSortTimestamp(left), getSortTimestamp(right), 'asc');
   }
 
-  if (sort === "most-players") {
-    const playersComparison = compareNumbers(left.playerCount ?? 0, right.playerCount ?? 0, "desc");
+  if (sort === 'most-players') {
+    const playersComparison = compareNumbers(left.playerCount ?? 0, right.playerCount ?? 0, 'desc');
     return playersComparison !== 0
       ? playersComparison
-      : compareNumbers(getSortTimestamp(left), getSortTimestamp(right), "desc");
+      : compareNumbers(getSortTimestamp(left), getSortTimestamp(right), 'desc');
   }
 
-  if (sort === "highest-reward") {
-    const rewardComparison = compareNumbers(left.rewardPool ?? 0, right.rewardPool ?? 0, "desc");
+  if (sort === 'highest-reward') {
+    const rewardComparison = compareNumbers(left.rewardPool ?? 0, right.rewardPool ?? 0, 'desc');
 
     if (rewardComparison !== 0) return rewardComparison;
 
     const rewardTypeComparison = compareNumbers(
       getRewardTypeWeight(left.rewardType),
       getRewardTypeWeight(right.rewardType),
-      "desc"
+      'desc'
     );
 
     return rewardTypeComparison !== 0
       ? rewardTypeComparison
-      : compareNumbers(getSortTimestamp(left), getSortTimestamp(right), "desc");
+      : compareNumbers(getSortTimestamp(left), getSortTimestamp(right), 'desc');
   }
 
-  return compareNumbers(getSortTimestamp(left), getSortTimestamp(right), "desc");
+  return compareNumbers(getSortTimestamp(left), getSortTimestamp(right), 'desc');
 }
 
-function compareNumbers(left: number, right: number, direction: "asc" | "desc"): number {
-  return direction === "asc" ? left - right : right - left;
+function compareNumbers(left: number, right: number, direction: 'asc' | 'desc'): number {
+  return direction === 'asc' ? left - right : right - left;
 }
 
 function getSortTimestamp(hunt: StoredHunt): number {
   return hunt.createdAt ?? hunt.startTime ?? hunt.endTime ?? hunt.id;
 }
 
-function getRewardTypeWeight(rewardType: StoredHunt["rewardType"]): number {
-  if (rewardType === "Both") return 2;
-  if (rewardType === "NFT") return 1;
+function getRewardTypeWeight(rewardType: StoredHunt['rewardType']): number {
+  if (rewardType === 'Both') return 2;
+  if (rewardType === 'NFT') return 1;
   return 0;
 }

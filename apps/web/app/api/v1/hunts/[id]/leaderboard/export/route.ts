@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
-import { get_hunt_leaderboard, get_hunt_fastest_players } from "@/lib/contracts/hunt";
-import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
-import { ValidationError } from "@/lib/api/errors";
-import { withErrorHandling } from "@/lib/api/withErrorHandling";
+import { NextResponse } from 'next/server';
+import { get_hunt_leaderboard, get_hunt_fastest_players } from '@/lib/contracts/hunt';
+import { rateLimit, getIP, rateLimitResponse } from '@/lib/rate-limit';
+import { ValidationError } from '@/lib/api/errors';
+import { withErrorHandling } from '@/lib/api/withErrorHandling';
 
 /**
  * GET /api/v1/hunts/[id]/leaderboard/export
@@ -31,15 +31,15 @@ export const GET = withErrorHandling<{ params: Promise<{ id: string }> }>(
     const huntId = parseInt(id, 10);
 
     if (Number.isNaN(huntId)) {
-      throw new ValidationError("Invalid hunt ID", { id });
+      throw new ValidationError('Invalid hunt ID', { id });
     }
 
     const { searchParams } = new URL(req.url);
-    const format = (searchParams.get("format") || "csv").toLowerCase();
-    const fromParam = searchParams.get("from");
-    const toParam = searchParams.get("to");
+    const format = (searchParams.get('format') || 'csv').toLowerCase();
+    const fromParam = searchParams.get('from');
+    const toParam = searchParams.get('to');
 
-    if (format !== "csv" && format !== "json") {
+    if (format !== 'csv' && format !== 'json') {
       throw new ValidationError("Invalid format. Use 'csv' or 'json'.", { format });
     }
 
@@ -49,18 +49,18 @@ export const GET = withErrorHandling<{ params: Promise<{ id: string }> }>(
     try {
       if (fromParam) {
         const from = Date.parse(fromParam);
-        if (Number.isNaN(from)) throw new Error("invalid");
+        if (Number.isNaN(from)) throw new Error('invalid');
         fromMs = from;
       }
       if (toParam) {
         const to = Date.parse(toParam);
-        if (Number.isNaN(to)) throw new Error("invalid");
+        if (Number.isNaN(to)) throw new Error('invalid');
         // Inclusive end-of-day: add 24h when only a date was provided.
         toMs = /^\d{4}-\d{2}-\d{2}$/.test(toParam) ? to + 24 * 60 * 60 * 1000 - 1 : to;
       }
     } catch {
       throw new ValidationError(
-        "Invalid date range. Use ISO 8601 dates (e.g. 2026-01-01 or 2026-01-01T00:00:00Z).",
+        'Invalid date range. Use ISO 8601 dates (e.g. 2026-01-01 or 2026-01-01T00:00:00Z).',
         { from: fromParam, to: toParam }
       );
     }
@@ -73,7 +73,7 @@ export const GET = withErrorHandling<{ params: Promise<{ id: string }> }>(
     // Map wallet -> completion time (ms) from fastest players data when available.
     const completionTimeByWallet = new Map<string, number>();
     for (const entry of fastest) {
-      if (entry.address && typeof entry.completionTimeSeconds === "number") {
+      if (entry.address && typeof entry.completionTimeSeconds === 'number') {
         // Completion time is a duration in seconds; we treat the fastest
         // completion row timestamp (when provided by the indexer) as the
         // completion moment. Fall back to the duration as the "time" field.
@@ -116,14 +116,14 @@ export const GET = withErrorHandling<{ params: Promise<{ id: string }> }>(
       },
     };
 
-    if (format === "json") {
+    if (format === 'json') {
       return NextResponse.json(
         { aggregation, rows },
         {
           status: 200,
           headers: {
-            "content-type": "application/json",
-            "content-disposition": `attachment; filename="hunt-${huntId}-leaderboard.json"`,
+            'content-type': 'application/json',
+            'content-disposition': `attachment; filename="hunt-${huntId}-leaderboard.json"`,
           },
         }
       );
@@ -133,8 +133,8 @@ export const GET = withErrorHandling<{ params: Promise<{ id: string }> }>(
     return new NextResponse(csv, {
       status: 200,
       headers: {
-        "content-type": "text/csv; charset=utf-8",
-        "content-disposition": `attachment; filename="hunt-${huntId}-leaderboard.csv"`,
+        'content-type': 'text/csv; charset=utf-8',
+        'content-disposition': `attachment; filename="hunt-${huntId}-leaderboard.csv"`,
       },
     });
   }
@@ -157,7 +157,7 @@ function csvEscape(value: string | number): string {
 }
 
 function toCsv(rows: ExportRow[], aggregation: Record<string, unknown>): string {
-  const header = ["rank", "wallet", "score", "time", "date"].join(",");
+  const header = ['rank', 'wallet', 'score', 'time', 'date'].join(',');
   const body = rows.map((row) =>
     [
       csvEscape(row.rank),
@@ -165,7 +165,7 @@ function toCsv(rows: ExportRow[], aggregation: Record<string, unknown>): string 
       csvEscape(row.score),
       csvEscape(row.time),
       csvEscape(row.date),
-    ].join(",")
+    ].join(',')
   );
 
   const aggLines = [
@@ -176,10 +176,9 @@ function toCsv(rows: ExportRow[], aggregation: Record<string, unknown>): string 
     `# averageScore,${csvEscape(aggregation.averageScore as number)}`,
     `# highestScore,${csvEscape(aggregation.highestScore as number)}`,
     `# lowestScore,${csvEscape(aggregation.lowestScore as number)}`,
-    `# filterFrom,${csvEscape((aggregation.filter as { from: string | null }).from ?? "")}`,
-    `# filterTo,${csvEscape((aggregation.filter as { to: string | null }).to ?? "")}`,
+    `# filterFrom,${csvEscape((aggregation.filter as { from: string | null }).from ?? '')}`,
+    `# filterTo,${csvEscape((aggregation.filter as { to: string | null }).to ?? '')}`,
   ];
 
-  return [...aggLines, header, ...body].join("\n");
+  return [...aggLines, header, ...body].join('\n');
 }
- 

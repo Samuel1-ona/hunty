@@ -11,10 +11,10 @@
  * review reader, so it can be imported from either environment.
  */
 
-import type { HuntReview, StoredHunt } from "./types";
+import type { HuntReview, StoredHunt } from './types';
 
 /** localStorage key used for reviews on the client. */
-export const REVIEWS_STORAGE_KEY = "hunty_reviews";
+export const REVIEWS_STORAGE_KEY = 'hunty_reviews';
 
 /**
  * Reads reviews in a browser-safe way. On the server this returns an empty
@@ -22,7 +22,7 @@ export const REVIEWS_STORAGE_KEY = "hunty_reviews";
  * `readReviewsSync` from `lib/reviews.ts` instead.
  */
 export function readClientReviews(): HuntReview[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(REVIEWS_STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
@@ -84,4 +84,3 @@ export function applyRatingsToHunts(hunts: StoredHunt[], reviews: HuntReview[]):
 export function getHuntsWithClientRatings(hunts: StoredHunt[]): StoredHunt[] {
   return applyRatingsToHunts(hunts, readClientReviews());
 }
- 

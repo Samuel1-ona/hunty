@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js with pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: '22'
+          node-version: '24'
       - name: Validate Maestro E2E baseline
         working-directory: apps/mobile
         run: npm run test:e2e:validate

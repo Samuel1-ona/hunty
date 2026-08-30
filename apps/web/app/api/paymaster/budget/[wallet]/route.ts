@@ -16,26 +16,23 @@
  *   }
  */
 
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
 
-import { NotFoundError } from "@/lib/api/errors";
-import { withErrorHandling } from "@/lib/api/withErrorHandling";
-import { getPaymasterConfig } from "@/lib/paymaster/config";
-import { ensureUser, getConfigValue } from "@/lib/paymaster/db";
-import {
-  CONFIG_KEYS,
-  type BudgetInfo,
-} from "@/lib/paymaster/types";
-import { parseNumericConfig } from "@/lib/paymaster/config";
+import { NotFoundError } from '@/lib/api/errors';
+import { withErrorHandling } from '@/lib/api/withErrorHandling';
+import { getPaymasterConfig } from '@/lib/paymaster/config';
+import { ensureUser, getConfigValue } from '@/lib/paymaster/db';
+import { CONFIG_KEYS, type BudgetInfo } from '@/lib/paymaster/types';
+import { parseNumericConfig } from '@/lib/paymaster/config';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export const GET = withErrorHandling(
   async (_request: Request, { params }: { params: Promise<{ wallet: string }> }) => {
     const { wallet } = await params;
 
-    if (!wallet.startsWith("G") || wallet.length !== 56) {
-      throw new NotFoundError("Invalid wallet address");
+    if (!wallet.startsWith('G') || wallet.length !== 56) {
+      throw new NotFoundError('Invalid wallet address');
     }
 
     // Ensure the user is tracked (creates row with defaults if new).
@@ -49,9 +46,7 @@ export const GET = withErrorHandling(
     const maxTx = parseNumericConfig(maxTxOverride, defaults.maxSponsoredTx);
     const maxBudget = parseNumericConfig(maxBudgetOverride, defaults.maxBudgetPerUserStroops);
 
-    const eligible =
-      user.sponsored_tx_count < maxTx &&
-      user.total_budget_sponsored < maxBudget;
+    const eligible = user.sponsored_tx_count < maxTx && user.total_budget_sponsored < maxBudget;
 
     const info: BudgetInfo = {
       walletAddress: wallet,
@@ -63,5 +58,5 @@ export const GET = withErrorHandling(
     };
 
     return NextResponse.json(info);
-  },
+  }
 );

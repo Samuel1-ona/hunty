@@ -1,78 +1,78 @@
-"use client"
+'use client';
 
-import { ArrowLeft, Download, RotateCcw, Trophy } from "lucide-react"
-import Link from "next/link"
-import { useEffect, useRef, useState } from "react"
+import { ArrowLeft, Download, RotateCcw, Trophy } from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
 
-import { AchievementCertificate } from "@/components/AchievementCertificate"
-import { Button } from "@hunty/ui"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@hunty/ui"
-import { get_hunt_fastest_players } from "@/lib/contracts/hunt"
-import { formatISOString } from "@/lib/dateUtils"
-import { downloadElementAsImage } from "@/lib/downloadAsImage"
+import { AchievementCertificate } from '@/components/AchievementCertificate';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { get_hunt_fastest_players } from '@/lib/contracts/hunt';
+import { formatISOString } from '@/lib/dateUtils';
+import { downloadElementAsImage } from '@/lib/downloadAsImage';
 import {
   compareAttemptWithLeaderboard,
   formatDuration,
   prepareHuntReattempt,
-} from "@/lib/huntAttemptHistory"
-import { logger } from "@/lib/logger"
-import type { HuntAttemptRecord, HuntAttemptTimeComparison } from "@/lib/types"
+} from '@/lib/huntAttemptHistory';
+import { logger } from '@/lib/logger';
+import type { HuntAttemptRecord, HuntAttemptTimeComparison } from '@/lib/types';
 
 interface HuntReplayDetailProps {
-  attempt: HuntAttemptRecord
-  playerAddress: string
+  attempt: HuntAttemptRecord;
+  playerAddress: string;
 }
 
 export function HuntReplayDetail({ attempt, playerAddress }: HuntReplayDetailProps) {
-  const certificateRef = useRef<HTMLDivElement>(null)
-  const [isDownloading, setIsDownloading] = useState(false)
-  const [comparison, setComparison] = useState<HuntAttemptTimeComparison | null>(null)
-  const [comparisonError, setComparisonError] = useState<string | null>(null)
+  const certificateRef = useRef<HTMLDivElement>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [comparison, setComparison] = useState<HuntAttemptTimeComparison | null>(null);
+  const [comparisonError, setComparisonError] = useState<string | null>(null);
 
   useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
 
     const loadComparison = async () => {
       try {
-        const fastestPlayers = await get_hunt_fastest_players(attempt.huntId)
+        const fastestPlayers = await get_hunt_fastest_players(attempt.huntId);
         if (!cancelled) {
-          setComparison(compareAttemptWithLeaderboard(attempt, fastestPlayers))
-          setComparisonError(null)
+          setComparison(compareAttemptWithLeaderboard(attempt, fastestPlayers));
+          setComparisonError(null);
         }
       } catch (error) {
-        logger.error("Failed to load hunt time comparison:", error)
+        logger.error('Failed to load hunt time comparison:', error);
         if (!cancelled) {
-          setComparisonError("Could not load player time comparison.")
+          setComparisonError('Could not load player time comparison.');
         }
       }
-    }
+    };
 
-    loadComparison()
+    loadComparison();
     return () => {
-      cancelled = true
-    }
-  }, [attempt])
+      cancelled = true;
+    };
+  }, [attempt]);
 
   const handleDownloadCertificate = async () => {
-    if (!certificateRef.current || attempt.status !== "completed") return
+    if (!certificateRef.current || attempt.status !== 'completed') return;
 
-    setIsDownloading(true)
+    setIsDownloading(true);
     try {
       await downloadElementAsImage(certificateRef.current, {
         filename: `hunty-certificate-${attempt.huntId}-attempt-${attempt.attemptNumber}.png`,
-      })
+      });
     } catch (error) {
-      logger.error("Failed to download completion certificate:", error)
+      logger.error('Failed to download completion certificate:', error);
     } finally {
-      setIsDownloading(false)
+      setIsDownloading(false);
     }
-  }
+  };
 
   const handleReattempt = () => {
-    prepareHuntReattempt(playerAddress, attempt.huntId)
-  }
+    prepareHuntReattempt(playerAddress, attempt.huntId);
+  };
 
-  const isCompleted = attempt.status === "completed"
+  const isCompleted = attempt.status === 'completed';
 
   return (
     <div className="space-y-8">
@@ -93,7 +93,7 @@ export function HuntReplayDetail({ attempt, playerAddress }: HuntReplayDetailPro
               onClick={handleDownloadCertificate}
             >
               <Download className="mr-2 h-4 w-4" />
-              {isDownloading ? "Preparing..." : "Download certificate"}
+              {isDownloading ? 'Preparing...' : 'Download certificate'}
             </Button>
           )}
           <Button asChild className="rounded-full bg-indigo-600 hover:bg-indigo-700">
@@ -110,11 +110,11 @@ export function HuntReplayDetail({ attempt, playerAddress }: HuntReplayDetailPro
           <CardTitle className="text-2xl font-bold text-slate-900">{attempt.huntTitle}</CardTitle>
           <CardDescription>
             Attempt #{attempt.attemptNumber} · Started {formatISOString(attempt.startedAt)}
-            {attempt.completedAt ? ` · Ended ${formatISOString(attempt.completedAt)}` : ""}
+            {attempt.completedAt ? ` · Ended ${formatISOString(attempt.completedAt)}` : ''}
           </CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <SummaryTile label="Status" value={isCompleted ? "Completed" : "Abandoned"} />
+          <SummaryTile label="Status" value={isCompleted ? 'Completed' : 'Abandoned'} />
           <SummaryTile label="Total time" value={formatDuration(attempt.totalTimeSeconds)} />
           <SummaryTile label="Points earned" value={String(attempt.totalPoints)} />
         </CardContent>
@@ -130,20 +130,14 @@ export function HuntReplayDetail({ attempt, playerAddress }: HuntReplayDetailPro
         ) : comparison ? (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             <ComparisonCard label="Your time" value={comparison.playerTimeLabel} highlight />
-            <ComparisonCard
-              label="Fastest player"
-              value={comparison.fastestTimeLabel ?? "—"}
-            />
-            <ComparisonCard
-              label="Average time"
-              value={comparison.averageTimeLabel ?? "—"}
-            />
+            <ComparisonCard label="Fastest player" value={comparison.fastestTimeLabel ?? '—'} />
+            <ComparisonCard label="Average time" value={comparison.averageTimeLabel ?? '—'} />
             <ComparisonCard
               label="Your rank"
               value={
                 comparison.rankAmongFastest
                   ? `#${comparison.rankAmongFastest} of ${comparison.totalComparedPlayers + 1}`
-                  : "—"
+                  : '—'
               }
             />
           </div>
@@ -208,7 +202,7 @@ export function HuntReplayDetail({ attempt, playerAddress }: HuntReplayDetailPro
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function SummaryTile({ label, value }: { label: string; value: string }) {
@@ -217,7 +211,7 @@ function SummaryTile({ label, value }: { label: string; value: string }) {
       <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
       <p className="mt-1 text-lg font-semibold text-slate-900">{value}</p>
     </div>
-  )
+  );
 }
 
 function ComparisonCard({
@@ -225,22 +219,22 @@ function ComparisonCard({
   value,
   highlight = false,
 }: {
-  label: string
-  value: string
-  highlight?: boolean
+  label: string;
+  value: string;
+  highlight?: boolean;
 }) {
   return (
     <div
       className={`rounded-2xl border px-4 py-4 ${
-        highlight
-          ? "border-indigo-200 bg-indigo-50"
-          : "border-slate-200 bg-white"
+        highlight ? 'border-indigo-200 bg-indigo-50' : 'border-slate-200 bg-white'
       }`}
     >
       <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-      <p className={`mt-1 text-xl font-semibold ${highlight ? "text-indigo-700" : "text-slate-900"}`}>
+      <p
+        className={`mt-1 text-xl font-semibold ${highlight ? 'text-indigo-700' : 'text-slate-900'}`}
+      >
         {value}
       </p>
     </div>
-  )
+  );
 }

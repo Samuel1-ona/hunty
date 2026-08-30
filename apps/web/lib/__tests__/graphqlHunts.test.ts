@@ -1,4 +1,4 @@
-import { beforeEach,describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
@@ -63,7 +63,7 @@ describe('GraphQL hunts fetch', () => {
     expect(hunts[0].title).toBe('Graph Hunt');
     expect(mockFetch).toHaveBeenCalledWith(
       'https://indexer.hunty.app/graphql',
-      expect.objectContaining({ method: 'POST' }),
+      expect.objectContaining({ method: 'POST' })
     );
   });
 

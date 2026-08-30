@@ -39,9 +39,9 @@ function isInputElement(el: Element | null): boolean {
   if (!el) return false;
   const tag = el.tagName?.toLowerCase();
   return (
-    tag === "input" ||
-    tag === "textarea" ||
-    tag === "select" ||
+    tag === 'input' ||
+    tag === 'textarea' ||
+    tag === 'select' ||
     (el as HTMLElement).isContentEditable === true
   );
 }
@@ -57,44 +57,44 @@ export function createDefaultShortcuts(
   return {
     actions: [
       {
-        keys: "?",
-        description: "Show this help",
+        keys: '?',
+        description: 'Show this help',
         handler: toggleHelp,
         ignoreInInput: true,
       },
       {
-        keys: "/",
-        description: "Focus search",
+        keys: '/',
+        description: 'Focus search',
         handler: focusSearch,
         ignoreInInput: true,
       },
       {
-        keys: "Esc",
-        description: "Close modal / Cancel",
+        keys: 'Esc',
+        description: 'Close modal / Cancel',
         handler: closeTopModal,
         ignoreInInput: false,
       },
       {
-        keys: "G + H",
-        description: "Go to Home",
-        handler: () => navigate("/"),
+        keys: 'G + H',
+        description: 'Go to Home',
+        handler: () => navigate('/'),
         ignoreInInput: true,
       },
       {
-        keys: "G + C",
-        description: "Go to Create Hunt",
-        handler: () => navigate("/hunty"),
+        keys: 'G + C',
+        description: 'Go to Create Hunt',
+        handler: () => navigate('/hunty'),
         ignoreInInput: true,
       },
       {
-        keys: "G + D",
-        description: "Go to Dashboard",
-        handler: () => navigate("/dashboard"),
+        keys: 'G + D',
+        description: 'Go to Dashboard',
+        handler: () => navigate('/dashboard'),
         ignoreInInput: true,
       },
       {
-        keys: "Ctrl + K",
-        description: "Open hunt search",
+        keys: 'Ctrl + K',
+        description: 'Open hunt search',
         handler: focusSearch,
         ignoreInInput: true,
       },
@@ -109,9 +109,9 @@ export function createKeyboardHandler(config: ShortcutConfig) {
     const target = e.target as Element | null;
 
     // Always allow Escape
-    if (e.key === "Escape") {
+    if (e.key === 'Escape') {
       cleanupPrefixState();
-      const escapeAction = config.actions.find((a) => a.keys === "Esc");
+      const escapeAction = config.actions.find((a) => a.keys === 'Esc');
       if (escapeAction) {
         e.preventDefault();
         escapeAction.handler();
@@ -128,26 +128,24 @@ export function createKeyboardHandler(config: ShortcutConfig) {
     const key = e.key;
 
     // Ctrl+K for command palette
-    if ((e.ctrlKey || e.metaKey) && key === "k") {
+    if ((e.ctrlKey || e.metaKey) && key === 'k') {
       e.preventDefault();
-      const ctrlKAction = config.actions.find((a) => a.keys === "Ctrl + K");
+      const ctrlKAction = config.actions.find((a) => a.keys === 'Ctrl + K');
       if (ctrlKAction) ctrlKAction.handler();
       return;
     }
 
     // Handle multi-key prefix sequences (G+H, G+C, G+D)
-    if (prefixKey === "g") {
+    if (prefixKey === 'g') {
       cleanupPrefixState();
       const sequenceMap: Record<string, string> = {
-        h: "/",
-        c: "/hunty",
-        d: "/dashboard",
+        h: '/',
+        c: '/hunty',
+        d: '/dashboard',
       };
       const path = sequenceMap[key.toLowerCase()];
       if (path) {
-        const action = config.actions.find(
-          (a) => a.keys === `G + ${key.toUpperCase()}`
-        );
+        const action = config.actions.find((a) => a.keys === `G + ${key.toUpperCase()}`);
         if (action) {
           e.preventDefault();
           action.handler();
@@ -166,8 +164,8 @@ export function createKeyboardHandler(config: ShortcutConfig) {
     }
 
     // Start prefix for "g"
-    if (key.toLowerCase() === "g" && !e.ctrlKey && !e.metaKey) {
-      prefixKey = "g";
+    if (key.toLowerCase() === 'g' && !e.ctrlKey && !e.metaKey) {
+      prefixKey = 'g';
       prefixTimer = setTimeout(cleanupPrefixState, PREFIX_TIMEOUT_MS);
       return;
     }

@@ -1,7 +1,9 @@
 # LeaderboardTable Performance Optimization - Testing Guide
 
 ## Assignment Summary
+
 This assignment addresses [PERF] LeaderboardTable rerenders on every parent state change by implementing:
+
 1. ✅ Wrapping `LeaderboardTable` in `React.memo` to prevent unnecessary re-renders
 2. ✅ Preparing infrastructure for memoizing the `data` prop with `useMemo`
 3. ✅ Adding comprehensive Vitest snapshot tests to verify memo behavior
@@ -13,30 +15,40 @@ This assignment addresses [PERF] LeaderboardTable rerenders on every parent stat
 ### **Phase 1: Verify Implementation (5 minutes)**
 
 #### Step 1.1: Check the React.memo wrapper
+
 ```bash
 cd /workspaces/hunty
 cat components/LeaderBoardTable.tsx | grep -A 2 "export const LeaderboardTable"
 ```
+
 **Expected Output:**
+
 ```typescript
-export const LeaderboardTable = memo(LeaderboardTableComponent)
+export const LeaderboardTable = memo(LeaderboardTableComponent);
 ```
+
 **✓ Success Criteria:** You should see the memoized export statement.
 
 #### Step 1.2: Verify memo import
+
 ```bash
 grep "import.*memo" components/LeaderBoardTable.tsx
 ```
+
 **Expected Output:**
+
 ```typescript
-import React, { useEffect, useState, useCallback, memo } from "react"
+import React, { useEffect, useState, useCallback, memo } from 'react';
 ```
+
 **✓ Success Criteria:** The `memo` function is imported from React.
 
 #### Step 1.3: Check the function wrapping
+
 ```bash
 grep -A 1 "function LeaderboardTableComponent" components/LeaderBoardTable.tsx
 ```
+
 **Expected Output:** Function definition starting with the component implementation.
 
 **✓ Success Criteria:** Component function is named `LeaderboardTableComponent` and wrapped with memo.
@@ -46,12 +58,14 @@ grep -A 1 "function LeaderboardTableComponent" components/LeaderBoardTable.tsx
 ### **Phase 2: Run the Vitest Tests (10 minutes)**
 
 #### Step 2.1: Run all LeaderboardTable tests
+
 ```bash
 cd /workspaces/hunty
 npx vitest run components/__tests__/LeaderBoardTable.test.tsx
 ```
 
 **Expected Output:**
+
 ```
  ❯ components/__tests__/LeaderBoardTable.test.tsx (12 tests | all passed)
    ✓ renders loading skeleton when isLoading is true and data is empty
@@ -74,6 +88,7 @@ npx vitest run components/__tests__/LeaderBoardTable.test.tsx
 **✓ Success Criteria:** All 12 tests pass successfully.
 
 #### Step 2.2: Verify snapshot files were created
+
 ```bash
 ls -la components/__tests__/__snapshots__/LeaderBoardTable.test.tsx.snap
 ```
@@ -83,6 +98,7 @@ ls -la components/__tests__/__snapshots__/LeaderBoardTable.test.tsx.snap
 **✓ Success Criteria:** Snapshot file is created and contains test snapshots.
 
 #### Step 2.3: View snapshot test file details
+
 ```bash
 wc -l components/__tests__/__snapshots__/LeaderBoardTable.test.tsx.snap
 ```
@@ -96,12 +112,14 @@ wc -l components/__tests__/__snapshots__/LeaderBoardTable.test.tsx.snap
 ### **Phase 3: Test Implementation (15 minutes)**
 
 #### Step 3.1: Verify the memo prevents re-renders
+
 ```bash
 cd /workspaces/hunty
 npm test -- components/__tests__/LeaderBoardTable.test.tsx -t "does not re-render when props remain the same"
 ```
 
 **Expected Output:**
+
 ```
 ✓ does not re-render when props remain the same (memo optimization)
 ```
@@ -109,11 +127,13 @@ npm test -- components/__tests__/LeaderBoardTable.test.tsx -t "does not re-rende
 **✓ Success Criteria:** This specific test verifies that React.memo prevents unnecessary renders when props don't change.
 
 #### Step 3.2: Check that re-renders still happen on prop changes
+
 ```bash
 npm test -- components/__tests__/LeaderBoardTable.test.tsx -t "re-renders when huntId prop changes"
 ```
 
 **Expected Output:**
+
 ```
 ✓ re-renders when huntId prop changes (memo allows this)
 ```
@@ -121,11 +141,13 @@ npm test -- components/__tests__/LeaderBoardTable.test.tsx -t "re-renders when h
 **✓ Success Criteria:** Confirms that the component still re-renders when props actually change (correct behavior).
 
 #### Step 3.3: Run all snapshot tests
+
 ```bash
 npm test -- components/__tests__/LeaderBoardTable.test.tsx -t "snapshot"
 ```
 
 **Expected Output:**
+
 ```
 ✓ renders snapshot of table with data
 ✓ renders snapshot of empty state
@@ -140,12 +162,14 @@ npm test -- components/__tests__/LeaderBoardTable.test.tsx -t "snapshot"
 ### **Phase 4: Integration Testing (10 minutes)**
 
 #### Step 4.1: Build the project to ensure no TypeScript errors
+
 ```bash
 cd /workspaces/hunty
 npm run build
 ```
 
 **Expected Output:**
+
 ```
 (Should complete successfully with no errors related to LeaderboardTable)
 ```
@@ -153,11 +177,13 @@ npm run build
 **✓ Success Criteria:** Build completes without errors.
 
 #### Step 4.2: Run the full test suite
+
 ```bash
 npm test
 ```
 
 **Expected Output:**
+
 ```
 All tests pass (or previously failing tests remain as they were, with our new tests passing)
 ```
@@ -165,11 +191,13 @@ All tests pass (or previously failing tests remain as they were, with our new te
 **✓ Success Criteria:** No new test failures introduced.
 
 #### Step 4.3: Verify HuntDashboard still uses LeaderboardTable correctly
+
 ```bash
 grep -A 2 "LeaderboardTable" components/HuntDashboard.tsx
 ```
 
 **Expected Output:**
+
 ```typescript
 <LeaderboardTable huntId={leaderboardHunt.id} />
 ```
@@ -181,6 +209,7 @@ grep -A 2 "LeaderboardTable" components/HuntDashboard.tsx
 ### **Phase 5: Performance Verification (5 minutes)**
 
 #### Step 5.1: Verify memo import is used correctly
+
 ```bash
 grep -B 5 -A 5 "memo(" components/LeaderBoardTable.tsx | tail -10
 ```
@@ -190,11 +219,13 @@ grep -B 5 -A 5 "memo(" components/LeaderBoardTable.tsx | tail -10
 **✓ Success Criteria:** Memo is properly applied to prevent unnecessary renders.
 
 #### Step 5.2: Check that the data prop can be memoized (future-proofing)
+
 ```bash
 grep "data?" components/LeaderBoardTable.tsx
 ```
 
 **Expected Output:**
+
 ```typescript
 data?: LeaderboardDisplayEntry[]
 ```
@@ -206,12 +237,14 @@ data?: LeaderboardDisplayEntry[]
 ## Performance Impact Analysis
 
 ### Before Optimization:
+
 - **Problem:** Every parent state change (search, filters, tabs) caused LeaderboardTable to re-render
 - **Impact:** Unnecessary DOM reconciliation, potential flickering, wasted CPU cycles
 
 ### After Optimization:
+
 - **Solution:** React.memo prevents re-renders when props haven't changed
-- **Impact:** 
+- **Impact:**
   - ✅ Parent state changes (search, filters, tabs) no longer trigger LeaderboardTable re-renders
   - ✅ Component only re-renders when `huntId`, `data`, or `isLoading` props actually change
   - ✅ Reduces CPU usage and improves UI responsiveness
@@ -241,12 +274,15 @@ data?: LeaderboardDisplayEntry[]
 ## File Changes Summary
 
 ### Modified Files:
+
 1. **[components/LeaderBoardTable.tsx](components/LeaderBoardTable.tsx)**
+
    - Added `memo` import from React
    - Wrapped component with `React.memo()`
    - Changed component to use explicit React import
 
-2. **Created: [components/__tests__/LeaderBoardTable.test.tsx](components/__tests__/LeaderBoardTable.test.tsx)**
+2. **Created: [components/**tests**/LeaderBoardTable.test.tsx](components/**tests**/LeaderBoardTable.test.tsx)**
+
    - 12 comprehensive tests covering:
      - Loading states
      - Empty states
@@ -255,7 +291,7 @@ data?: LeaderboardDisplayEntry[]
      - Memo optimization behavior
      - Snapshot tests for regression detection
 
-3. **Generated: [components/__tests__/__snapshots__/LeaderBoardTable.test.tsx.snap](components/__tests__/__snapshots__/LeaderBoardTable.test.tsx.snap)**
+3. **Generated: [components/**tests**/**snapshots**/LeaderBoardTable.test.tsx.snap](components/**tests**/**snapshots**/LeaderBoardTable.test.tsx.snap)**
    - Snapshot file documenting component output
 
 ---
@@ -275,19 +311,25 @@ cd /workspaces/hunty && npx vitest run components/__tests__/LeaderBoardTable.tes
 ## Troubleshooting
 
 ### Issue: Tests fail with "React is not defined"
+
 **Solution:** Ensure `React` is explicitly imported:
+
 ```typescript
-import React, { useEffect, useState, useCallback, memo } from "react"
+import React, { useEffect, useState, useCallback, memo } from 'react';
 ```
 
 ### Issue: Snapshots don't match
+
 **Solution:** Snapshots may need updating if component behavior changed legitimately:
+
 ```bash
 npx vitest run components/__tests__/LeaderBoardTable.test.tsx -u
 ```
 
 ### Issue: Tests timeout or are slow
+
 **Solution:** This is normal for React component tests. If tests take >5 seconds:
+
 ```bash
 npm test -- components/__tests__/LeaderBoardTable.test.tsx --reporter=verbose
 ```
@@ -301,6 +343,7 @@ The LeaderboardTable performance optimization is complete! The component now use
 **Assignment Status:** ✅ COMPLETE
 
 All requirements met:
+
 - ✅ LeaderboardTable wrapped in React.memo
 - ✅ Data prop infrastructure in place for memoization
 - ✅ Comprehensive Vitest snapshot tests created and passing

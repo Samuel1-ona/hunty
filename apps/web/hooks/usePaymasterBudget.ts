@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useContext, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from '@tanstack/react-query';
+import { useContext, useMemo } from 'react';
 
-import { WalletContext } from "@/lib/context/WalletContext";
-import { fetchPaymasterBudget, PaymasterBudgetError } from "@/lib/paymaster/client";
-import { queryCachePolicy, queryKeys } from "@/lib/queryKeys";
-import type { BudgetInfo } from "@/lib/paymaster/types";
+import { WalletContext } from '@/lib/context/WalletContext';
+import { fetchPaymasterBudget, PaymasterBudgetError } from '@/lib/paymaster/client';
+import type { BudgetInfo } from '@/lib/paymaster/types';
+import { queryCachePolicy, queryKeys } from '@/lib/queryKeys';
 
 /** A bad address is not worth retrying; anything else transient is. */
 function shouldRetry(failureCount: number, error: unknown): boolean {
-  if (error instanceof PaymasterBudgetError && error.kind === "invalid-address") return false;
+  if (error instanceof PaymasterBudgetError && error.kind === 'invalid-address') return false;
   return failureCount < 2;
 }
 
@@ -58,8 +58,8 @@ export type PaymasterBudgetState = {
  */
 export function usePaymasterBudget(options: { address?: string } = {}): PaymasterBudgetState {
   const wallet = useContext(WalletContext);
-  const contextAddress = wallet?.connected ? wallet.publicKey : "";
-  const address = options.address ?? contextAddress ?? "";
+  const contextAddress = wallet?.connected ? wallet.publicKey : '';
+  const address = options.address ?? contextAddress ?? '';
   const enabled = address.length > 0;
 
   const budgetKey = useMemo(() => queryKeys.paymaster.budget(address), [address]);

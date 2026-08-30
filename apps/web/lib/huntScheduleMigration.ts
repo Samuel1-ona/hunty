@@ -1,5 +1,5 @@
-import type { StoredHunt } from "@/lib/types"
-import { normalizeHuntStatus } from "@/lib/huntStatus"
+import type { StoredHunt } from '@/lib/types';
+import { normalizeHuntStatus } from '@/lib/huntStatus';
 
 /**
  * Brings a legacy (pre-scheduling) hunt record up to date with the newer
@@ -14,10 +14,10 @@ import { normalizeHuntStatus } from "@/lib/huntStatus"
 export function migrateHuntScheduleFields(hunt: StoredHunt): StoredHunt {
   return {
     ...hunt,
-    status: normalizeHuntStatus(hunt.status) as StoredHunt["status"],
-  }
+    status: normalizeHuntStatus(hunt.status) as StoredHunt['status'],
+  };
 }
 
 export function migrateHuntScheduleFieldsInCollection(hunts: StoredHunt[]): StoredHunt[] {
-  return hunts.map((hunt) => migrateHuntScheduleFields(hunt))
+  return hunts.map((hunt) => migrateHuntScheduleFields(hunt));
 }

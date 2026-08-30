@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from "@storybook/nextjs-vite"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Form,
   FormControl,
@@ -10,20 +10,20 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Button } from "@hunty/ui"
+} from '@/components/ui/form';
+import { Button } from '@/components/ui/button';
 
 const schema = z.object({
-  huntName: z.string().min(3, "Hunt name must be at least 3 characters."),
-})
+  huntName: z.string().min(3, 'Hunt name must be at least 3 characters.'),
+});
 
 function ExampleForm() {
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
-      huntName: "",
+      huntName: '',
     },
-  })
+  });
 
   return (
     <Form {...form}>
@@ -43,16 +43,16 @@ function ExampleForm() {
         <Button type="submit">Save Draft</Button>
       </form>
     </Form>
-  )
+  );
 }
 
 const meta = {
-  title: "UI/Form",
+  title: 'UI/Form',
   component: ExampleForm,
-  tags: ["autodocs"],
-} satisfies Meta<typeof ExampleForm>
+  tags: ['autodocs'],
+} satisfies Meta<typeof ExampleForm>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {}
+export const Default: Story = {};

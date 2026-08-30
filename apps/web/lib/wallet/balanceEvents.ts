@@ -14,43 +14,41 @@
  * hooks through the call site.
  */
 
-import { logger } from "@/lib/logger"
+import { logger } from '@/lib/logger';
 
 export type WalletBalanceDelta = {
   /** Signed change in XLM to apply immediately, e.g. `-2.5` for a 2.5 XLM spend. */
-  xlmDelta?: number
+  xlmDelta?: number;
   /** Signed change in owned NFT count, e.g. `+1` after a successful mint. */
-  nftDelta?: number
-}
+  nftDelta?: number;
+};
 
 export type WalletBalanceEvent =
-  | ({ type: "optimistic" } & WalletBalanceDelta)
-  | { type: "settled" }
+  | ({ type: 'optimistic' } & WalletBalanceDelta)
+  | { type: 'settled' };
 
-export type WalletBalanceEventListener = (event: WalletBalanceEvent) => void
+export type WalletBalanceEventListener = (event: WalletBalanceEvent) => void;
 
-const listeners = new Set<WalletBalanceEventListener>()
+const listeners = new Set<WalletBalanceEventListener>();
 
 function emit(event: WalletBalanceEvent): void {
   for (const listener of listeners) {
     try {
-      listener(event)
+      listener(event);
     } catch (error) {
       // One misbehaving subscriber must not stop the others from updating, and
       // must never propagate back into the transaction that triggered it.
-      logger.error("Wallet balance listener threw:", error)
+      logger.error('Wallet balance listener threw:', error);
     }
   }
 }
 
 /** Subscribes to balance events. Returns an unsubscribe function. */
-export function subscribeToWalletBalanceEvents(
-  listener: WalletBalanceEventListener,
-): () => void {
-  listeners.add(listener)
+export function subscribeToWalletBalanceEvents(listener: WalletBalanceEventListener): () => void {
+  listeners.add(listener);
   return () => {
-    listeners.delete(listener)
-  }
+    listeners.delete(listener);
+  };
 }
 
 /**
@@ -60,9 +58,9 @@ export function subscribeToWalletBalanceEvents(
  * state — subscribers also self-reconcile on a timer as a safety net.
  */
 export function predictWalletBalanceChange(delta: WalletBalanceDelta): void {
-  const { xlmDelta = 0, nftDelta = 0 } = delta
-  if (xlmDelta === 0 && nftDelta === 0) return
-  emit({ type: "optimistic", xlmDelta, nftDelta })
+  const { xlmDelta = 0, nftDelta = 0 } = delta;
+  if (xlmDelta === 0 && nftDelta === 0) return;
+  emit({ type: 'optimistic', xlmDelta, nftDelta });
 }
 
 /**
@@ -71,10 +69,10 @@ export function predictWalletBalanceChange(delta: WalletBalanceDelta): void {
  * simply pulls a fresh balance ahead of the next poll tick.
  */
 export function settleWalletBalance(): void {
-  emit({ type: "settled" })
+  emit({ type: 'settled' });
 }
 
 /** Test helper — drops every subscriber. Not used by application code. */
 export function resetWalletBalanceListeners(): void {
-  listeners.clear()
+  listeners.clear();
 }

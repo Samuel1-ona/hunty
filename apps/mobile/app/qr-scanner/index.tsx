@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Button, StyleSheet, Text,View } from 'react-native';
+import { Button, StyleSheet, Text, View } from 'react-native';
 
 import QRCodeScanner from '../../components/QRCodeScanner';
 import { addScanEntry } from '../../utils/scanHistory';

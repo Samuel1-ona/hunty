@@ -2,9 +2,9 @@
  * Sentry Edge runtime initialisation (middleware, edge API routes).
  * Loaded automatically by @sentry/nextjs via next.config.ts instrumentation.
  */
-import * as Sentry from "@sentry/nextjs"
+import * as Sentry from '@sentry/nextjs';
 
-import { scrubSentryEvent } from "@/lib/sentry/scrub"
+import { scrubSentryEvent } from '@/lib/sentry/scrub';
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -17,4 +17,4 @@ Sentry.init({
   tracesSampleRate: 0.05,
 
   beforeSend: scrubSentryEvent,
-})
+});

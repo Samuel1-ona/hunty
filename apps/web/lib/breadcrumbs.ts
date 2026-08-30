@@ -7,27 +7,27 @@
  */
 export const ROUTE_LABELS: Record<string, string> = {
   // Top-level
-  hunts: "Hunts",
-  create: "Create Hunt",
-  play: "Play",
-  rewards: "Rewards",
-  leaderboard: "Leaderboard",
-  dashboard: "Dashboard",
-  profile: "Profile",
-  settings: "Settings",
-  community: "Community",
+  hunts: 'Hunts',
+  create: 'Create Hunt',
+  play: 'Play',
+  rewards: 'Rewards',
+  leaderboard: 'Leaderboard',
+  dashboard: 'Dashboard',
+  profile: 'Profile',
+  settings: 'Settings',
+  community: 'Community',
   // Nested
-  edit: "Edit",
-  preview: "Preview",
-  clues: "Clues",
-  nft: "NFT",
-  claim: "Claim Reward",
-  mint: "Mint",
-  complete: "Complete",
-  progress: "Progress",
-  wallet: "Wallet",
-  analytics: "Analytics",
-  templates: "Templates",
+  edit: 'Edit',
+  preview: 'Preview',
+  clues: 'Clues',
+  nft: 'NFT',
+  claim: 'Claim Reward',
+  mint: 'Mint',
+  complete: 'Complete',
+  progress: 'Progress',
+  wallet: 'Wallet',
+  analytics: 'Analytics',
+  templates: 'Templates',
 };
 
 /**
@@ -37,19 +37,12 @@ export const ROUTE_LABELS: Record<string, string> = {
  *
  * In a real app, wire this to your data store / API.
  */
-export type DynamicLabelResolver = (
-  segment: string,
-  fullPath: string
-) => string | null;
+export type DynamicLabelResolver = (segment: string, fullPath: string) => string | null;
 
 /** Default resolver — replace with real data lookups in production. */
 export const defaultResolver: DynamicLabelResolver = (segment) => {
   // UUID-shaped segments → "Hunt #abc123"
-  if (
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      segment
-    )
-  ) {
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(segment)) {
     return `Hunt #${segment.slice(0, 6)}`;
   }
   return null;
@@ -74,13 +67,11 @@ export function generateBreadcrumbs(
   customLabels: Record<string, string> = {},
   resolver: DynamicLabelResolver = defaultResolver
 ): BreadcrumbItem[] {
-  const segments = pathname.split("/").filter(Boolean);
+  const segments = pathname.split('/').filter(Boolean);
 
-  const crumbs: BreadcrumbItem[] = [
-    { label: "Home", href: "/", isCurrent: false },
-  ];
+  const crumbs: BreadcrumbItem[] = [{ label: 'Home', href: '/', isCurrent: false }];
 
-  let cumulativePath = "";
+  let cumulativePath = '';
 
   segments.forEach((segment, index) => {
     cumulativePath += `/${segment}`;
@@ -93,9 +84,7 @@ export function generateBreadcrumbs(
       ROUTE_LABELS[segment] ??
       resolver(segment, cumulativePath) ??
       // Humanise slugs: "my-hunt-title" → "My Hunt Title"
-      segment
-        .replace(/-/g, " ")
-        .replace(/\b\w/g, (c) => c.toUpperCase());
+      segment.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
     crumbs.push({ label, href: cumulativePath, isCurrent });
   });

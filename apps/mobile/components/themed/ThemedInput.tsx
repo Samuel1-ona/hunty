@@ -1,4 +1,4 @@
-import { MAX_FONT_SCALE,normalizeFont } from '@config/fontScaling';
+import { MAX_FONT_SCALE, normalizeFont } from '@config/fontScaling';
 import { useTheme } from '@providers/ThemeProvider';
 import React from 'react';
 import {

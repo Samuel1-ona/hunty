@@ -7,13 +7,13 @@
 
 This is a pnpm + Turborepo monorepo:
 
-| Workspace | Purpose | Key contents |
-|---|---|---|
-| `apps/web` | Next.js web application | `app/` (App Router pages + API routes), `lib/` (domain logic), `components/` |
-| `apps/mobile` | Mobile client | `lib/`, `store/`, `services/`, GraphQL queries |
-| `packages/types` | **Shared types — single source of truth** (`@hunty/types`) | `clue.ts`, `hunt.ts`, `achievement.ts`, `api-schemas.ts`, `guards.ts` |
-| `packages/config` | Shared configuration (`@hunty/config`) | lint/tsconfig presets |
-| `packages/ui` | Shared UI components (`@hunty/ui`) | `hooks/`, `native/`, `tokens/` |
+| Workspace         | Purpose                                                    | Key contents                                                                 |
+| ----------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `apps/web`        | Next.js web application                                    | `app/` (App Router pages + API routes), `lib/` (domain logic), `components/` |
+| `apps/mobile`     | Mobile client                                              | `lib/`, `store/`, `services/`, GraphQL queries                               |
+| `packages/types`  | **Shared types — single source of truth** (`@hunty/types`) | `clue.ts`, `hunt.ts`, `achievement.ts`, `api-schemas.ts`, `guards.ts`        |
+| `packages/config` | Shared configuration (`@hunty/config`)                     | lint/tsconfig presets                                                        |
+| `packages/ui`     | Shared UI components (`@hunty/ui`)                         | `hooks/`, `native/`, `tokens/`                                               |
 
 **Who owns shared types:** `packages/types` is the only place where cross-app
 types live. Both apps import them via `@hunty/types` (e.g. `api-schemas.ts`

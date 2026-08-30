@@ -1,4 +1,4 @@
-import type { ClueDifficulty, HuntDifficulty } from "./types";
+import type { ClueDifficulty, HuntDifficulty } from './types';
 
 // Scoring configuration types
 export interface ScoringWeights {
@@ -112,8 +112,8 @@ export function calculateStreakBonus(
  * @param multipliers Difficulty multipliers from config
  */
 export function calculateDifficultyMultiplier(
-  difficulty: ClueDifficulty | HuntDifficulty = "Medium",
-  multipliers: ScoringWeights["difficultyMultiplier"] = DEFAULT_SCORING_WEIGHTS.difficultyMultiplier
+  difficulty: ClueDifficulty | HuntDifficulty = 'Medium',
+  multipliers: ScoringWeights['difficultyMultiplier'] = DEFAULT_SCORING_WEIGHTS.difficultyMultiplier
 ): number {
   return multipliers[difficulty] || 1;
 }
@@ -163,4 +163,3 @@ export function calculateCluePoints(
     newStreak: currentStreak + 1,
   };
 }
- 

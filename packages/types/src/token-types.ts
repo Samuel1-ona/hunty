@@ -3,5 +3,5 @@
  * The actual token values live in packages/ui.
  */
 
-export type ColorToken = string
-export type SpacingToken = number | string
+export type ColorToken = string;
+export type SpacingToken = number | string;

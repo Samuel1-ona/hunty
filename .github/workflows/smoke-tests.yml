@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       deployment_url:
-        description: "Deployment URL to smoke test"
+        description: 'Deployment URL to smoke test'
         required: true
         type: string
 

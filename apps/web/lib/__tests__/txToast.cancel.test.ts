@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock("sonner", () => ({
+vi.mock('sonner', () => ({
   toast: {
-    loading: vi.fn(() => "toast-id"),
+    loading: vi.fn(() => 'toast-id'),
     success: vi.fn(),
     error: vi.fn(),
     warning: vi.fn(),
@@ -10,33 +10,33 @@ vi.mock("sonner", () => ({
   },
 }));
 
-vi.mock("@/components/SrAnnouncer", () => ({ announceSr: vi.fn() }));
-vi.mock("@/lib/contracts/errors", () => ({
+vi.mock('@/components/SrAnnouncer', () => ({ announceSr: vi.fn() }));
+vi.mock('@/lib/contracts/errors', () => ({
   mapContractError: (error: unknown) => ({
-    message: error instanceof Error ? error.message : "failed",
+    message: error instanceof Error ? error.message : 'failed',
     isUserRejection: false,
   }),
 }));
 
-import { toast } from "sonner";
+import { toast } from 'sonner';
 
 import {
   cancelPendingTransactions,
   getDisconnectGeneration,
   withTransactionToast,
-} from "@/lib/txToast";
+} from '@/lib/txToast';
 import {
   resetWalletBalanceListeners,
   subscribeToWalletBalanceEvents,
-} from "@/lib/wallet/balanceEvents";
+} from '@/lib/wallet/balanceEvents';
 
-describe("cancelPendingTransactions", () => {
+describe('cancelPendingTransactions', () => {
   beforeEach(() => {
     resetWalletBalanceListeners();
     vi.clearAllMocks();
   });
 
-  it("dismisses pending toasts and settles wallet balance", async () => {
+  it('dismisses pending toasts and settles wallet balance', async () => {
     const events: string[] = [];
     subscribeToWalletBalanceEvents((event) => events.push(event.type));
 
@@ -55,10 +55,10 @@ describe("cancelPendingTransactions", () => {
 
     expect(toast.dismiss).toHaveBeenCalled();
     expect(getDisconnectGeneration()).toBe(generationBefore + 1);
-    expect(events).toContain("settled");
+    expect(events).toContain('settled');
 
-    resolveTx("ok");
-    await expect(txPromise).resolves.toBe("ok");
+    resolveTx('ok');
+    await expect(txPromise).resolves.toBe('ok');
 
     // Success toast must not fire after disconnect cancelled the pending stage.
     expect(toast.success).not.toHaveBeenCalled();

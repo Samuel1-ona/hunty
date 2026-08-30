@@ -23,7 +23,6 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "perf:budget": "node scripts/check-performance-budgets.mjs",
-    "perf:budget:update": "node scripts/update-bundle-budgets.mjs",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "clean": "rm -rf .next"

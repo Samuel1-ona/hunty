@@ -8,14 +8,14 @@
  * `/api/ipfs` route (which requires an active Next.js server).
  */
 
-import { logger } from "@/lib/logger"
+import { logger } from '@/lib/logger';
 
-import { IpfsUploadError,MetadataValidationError } from "./errors"
-import { validateNftMetadata } from "./metadataValidator"
-import type { MetadataUploadResult,NftMetadata } from "./types"
+import { IpfsUploadError, MetadataValidationError } from './errors';
+import { validateNftMetadata } from './metadataValidator';
+import type { MetadataUploadResult, NftMetadata } from './types';
 
 /** Warn when serialised metadata exceeds this threshold (100 KB). */
-const UPLOAD_WARN_BYTES = 100 * 1024
+const UPLOAD_WARN_BYTES = 100 * 1024;
 
 /**
  * Uploads a validated `NftMetadata` object to IPFS.
@@ -38,53 +38,53 @@ export async function uploadNftMetadata(
   walletAddress: string
 ): Promise<MetadataUploadResult> {
   // Step 1: Validate
-  const result = validateNftMetadata(metadata)
+  const result = validateNftMetadata(metadata);
   if (!result.valid) {
-    logger.error("NFT metadata validation failed before upload:", result.errors)
-    throw new MetadataValidationError(result.errors)
+    logger.error('NFT metadata validation failed before upload:', result.errors);
+    throw new MetadataValidationError(result.errors);
   }
 
   // Step 2: Serialise deterministically (sorted keys for stable CIDs)
-  const json = deterministicJson(metadata)
-  const encoded = new TextEncoder().encode(json)
+  const json = deterministicJson(metadata);
+  const encoded = new TextEncoder().encode(json);
 
   // Step 3: Warn on large payloads
   if (encoded.byteLength > UPLOAD_WARN_BYTES) {
     logger.warn(
       `NFT metadata payload is large (${encoded.byteLength} bytes). Consider reducing attribute count or description length.`
-    )
+    );
   }
 
   // Step 4: Build a File blob and POST to the IPFS proxy
-  const file = new File([encoded], "metadata.json", { type: "application/json" })
-  const formData = new FormData()
-  formData.append("file", file)
+  const file = new File([encoded], 'metadata.json', { type: 'application/json' });
+  const formData = new FormData();
+  formData.append('file', file);
 
-  const res = await fetch("/api/ipfs", {
-    method: "POST",
+  const res = await fetch('/api/ipfs', {
+    method: 'POST',
     headers: {
-      "x-wallet-address": walletAddress,
+      'x-wallet-address': walletAddress,
     },
     body: formData,
-  })
+  });
 
   if (!res.ok) {
-    const body = await res.text().catch(() => res.statusText)
-    logger.error(`IPFS metadata upload failed — HTTP ${res.status}:`, body)
-    throw new IpfsUploadError(res.status, body)
+    const body = await res.text().catch(() => res.statusText);
+    logger.error(`IPFS metadata upload failed — HTTP ${res.status}:`, body);
+    throw new IpfsUploadError(res.status, body);
   }
 
-  const data = (await res.json().catch(() => null)) as { cid?: string } | null
-  const cid = data?.cid?.trim()
+  const data = (await res.json().catch(() => null)) as { cid?: string } | null;
+  const cid = data?.cid?.trim();
   if (!cid) {
-    throw new IpfsUploadError(200, "IPFS proxy response did not include a CID")
+    throw new IpfsUploadError(200, 'IPFS proxy response did not include a CID');
   }
 
   // Step 5: Return URI + CID
   return {
     metadataUri: `ipfs://${cid}`,
     cid,
-  }
+  };
 }
 
 /**
@@ -93,19 +93,19 @@ export async function uploadNftMetadata(
  * metadata twice yields the same CID.
  */
 function deterministicJson(value: unknown): string {
-  return JSON.stringify(sortKeys(value), null, 0)
+  return JSON.stringify(sortKeys(value), null, 0);
 }
 
 function sortKeys(value: unknown): unknown {
   if (Array.isArray(value)) {
-    return value.map(sortKeys)
+    return value.map(sortKeys);
   }
-  if (value !== null && typeof value === "object") {
-    const sorted: Record<string, unknown> = {}
+  if (value !== null && typeof value === 'object') {
+    const sorted: Record<string, unknown> = {};
     for (const key of Object.keys(value as object).sort()) {
-      sorted[key] = sortKeys((value as Record<string, unknown>)[key])
+      sorted[key] = sortKeys((value as Record<string, unknown>)[key]);
     }
-    return sorted
+    return sorted;
   }
-  return value
+  return value;
 }

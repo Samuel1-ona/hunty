@@ -1,5 +1,5 @@
-import { HuntPageSkeletonLayout } from "@/components/LoadingSkeletons"
+import { HuntPageSkeletonLayout } from '@/components/LoadingSkeletons';
 
 export default function HuntPreviewLoading() {
-  return <HuntPageSkeletonLayout />
+  return <HuntPageSkeletonLayout />;
 }

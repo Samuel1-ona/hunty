@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
-import { use } from "react";
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
+import { use } from 'react';
 
-import { Header } from "@/components/Header";
-import { PlayerProfileView, ProfilePageHeading } from "@/components/PlayerProfileView";
-import { Button } from "@hunty/ui";
+import { Header } from '@/components/Header';
+import { PlayerProfileView, ProfilePageHeading } from '@/components/PlayerProfileView';
+import { Button } from '@/components/ui/button';
 
 interface PublicProfilePageProps {
   params: Promise<{ address: string }>;
@@ -20,7 +20,7 @@ interface PublicProfilePageProps {
  */
 export default function PublicProfilePage({ params }: PublicProfilePageProps) {
   const { address } = use(params);
-  const decodedAddress = decodeURIComponent(address ?? "").trim();
+  const decodedAddress = decodeURIComponent(address ?? '').trim();
 
   return (
     <div className="min-h-screen bg-linear-to-tr from-blue-100 bg-purple-100 to-[#f9f9ff] pb-20">
@@ -49,4 +49,3 @@ export default function PublicProfilePage({ params }: PublicProfilePageProps) {
     </div>
   );
 }
- 

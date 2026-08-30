@@ -25,45 +25,44 @@ export async function fetchPlayerNfts(address: string): Promise<NftReward[]> {
   return [
     {
       id: 1,
-      name: "Golden Compass",
+      name: 'Golden Compass',
       description:
-        "A legendary artifact awarded to those who uncover all secret murals in the City Secrets hunt.",
-      imageUri: "/static-images/nft1.png",
-      earnedAt: "2026-02-10T15:16:00Z",
+        'A legendary artifact awarded to those who uncover all secret murals in the City Secrets hunt.',
+      imageUri: '/static-images/nft1.png',
+      earnedAt: '2026-02-10T15:16:00Z',
       claimed: true,
-      huntName: "City Secrets",
+      huntName: 'City Secrets',
       attributes: [
-        { trait_type: "Rarity", value: "Legendary" },
-        { trait_type: "Type", value: "Utility" },
+        { trait_type: 'Rarity', value: 'Legendary' },
+        { trait_type: 'Type', value: 'Utility' },
       ],
     },
     {
       id: 2,
-      name: "Explorer Trophy",
+      name: 'Explorer Trophy',
       description:
-        "Granted for successfully completing the Office Onboarding challenge within the time limit.",
-      imageUri: "/static-images/nft2.png",
-      earnedAt: "2026-02-20T11:26:00Z",
+        'Granted for successfully completing the Office Onboarding challenge within the time limit.',
+      imageUri: '/static-images/nft2.png',
+      earnedAt: '2026-02-20T11:26:00Z',
       claimed: false,
-      huntName: "Office Onboarding",
+      huntName: 'Office Onboarding',
       attributes: [
-        { trait_type: "Rarity", value: "Rare" },
-        { trait_type: "Level", value: "5" },
+        { trait_type: 'Rarity', value: 'Rare' },
+        { trait_type: 'Level', value: '5' },
       ],
     },
     {
       id: 3,
-      name: "Soroban Sage",
+      name: 'Soroban Sage',
       description:
-        "Awarded to players who demonstrate exceptional knowledge of smart contract riddles.",
-      imageUri:
-        "ipfs://QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-      earnedAt: "2026-03-05T09:45:00Z",
+        'Awarded to players who demonstrate exceptional knowledge of smart contract riddles.',
+      imageUri: 'ipfs://QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG',
+      earnedAt: '2026-03-05T09:45:00Z',
       claimed: true,
-      huntName: "Stellar Developer Hunt",
+      huntName: 'Stellar Developer Hunt',
       attributes: [
-        { trait_type: "Rarity", value: "Epic" },
-        { trait_type: "Skill", value: "Contracting" },
+        { trait_type: 'Rarity', value: 'Epic' },
+        { trait_type: 'Skill', value: 'Contracting' },
       ],
     },
   ];
@@ -84,24 +83,20 @@ export function sortByRarity(nfts: NftReward[]): NftReward[] {
     Common: 1,
   };
   return [...nfts].sort((a, b) => {
-    const aRarity = a.attributes.find((a) => a.trait_type === "Rarity")?.value ?? "Common";
-    const bRarity = b.attributes.find((a) => a.trait_type === "Rarity")?.value ?? "Common";
+    const aRarity = a.attributes.find((a) => a.trait_type === 'Rarity')?.value ?? 'Common';
+    const bRarity = b.attributes.find((a) => a.trait_type === 'Rarity')?.value ?? 'Common';
     return (rarityOrder[bRarity] ?? 0) - (rarityOrder[aRarity] ?? 0);
   });
 }
 
 /** Filter NFTs by hunt name (or all). */
 export function filterByHunt(nfts: NftReward[], hunt: string | null): NftReward[] {
-  if (!hunt || hunt === "All") return nfts;
+  if (!hunt || hunt === 'All') return nfts;
   return nfts.filter((n) => n.huntName === hunt);
 }
 
 /** Filter NFTs by date range (ISO strings). */
-export function filterByDate(
-  nfts: NftReward[],
-  start?: string,
-  end?: string,
-): NftReward[] {
+export function filterByDate(nfts: NftReward[], start?: string, end?: string): NftReward[] {
   return nfts.filter((n) => {
     const earned = new Date(n.earnedAt).getTime();
     const afterStart = start ? earned >= new Date(start).getTime() : true;

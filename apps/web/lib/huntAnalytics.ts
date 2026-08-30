@@ -16,9 +16,8 @@
  * end-users.
  */
 
-import { getCached, invalidate, setCached } from "@/lib/analyticsCache";
-import { getDb } from "@/lib/db";
-import { logger } from "@/lib/logger";
+import { getDb } from '@/lib/db';
+import { logger } from '@/lib/logger';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -37,7 +36,7 @@ export interface ClueDropOffEntry {
 
 export interface DemographicsEntry {
   /** Coarse device category derived from User-Agent. */
-  deviceType: "mobile" | "desktop" | "tablet" | "unknown";
+  deviceType: 'mobile' | 'desktop' | 'tablet' | 'unknown';
   count: number;
 }
 
@@ -72,11 +71,11 @@ export interface HuntAnalyticsResponse extends HuntAnalyticsRecord {
 // ─── Event payloads accepted by the POST endpoint ─────────────────────────────
 
 export type AnalyticsEventType =
-  | "view"
-  | "start"
-  | "completion"
-  | "clue_attempt"
-  | "clue_completion";
+  | 'view'
+  | 'start'
+  | 'completion'
+  | 'clue_attempt'
+  | 'clue_completion';
 
 export interface BaseAnalyticsEvent {
   type: AnalyticsEventType;
@@ -86,29 +85,29 @@ export interface BaseAnalyticsEvent {
 }
 
 export interface ViewEvent extends BaseAnalyticsEvent {
-  type: "view";
+  type: 'view';
   /** Coarse device type. */
-  deviceType?: DemographicsEntry["deviceType"];
+  deviceType?: DemographicsEntry['deviceType'];
 }
 
 export interface StartEvent extends BaseAnalyticsEvent {
-  type: "start";
+  type: 'start';
 }
 
 export interface CompletionEvent extends BaseAnalyticsEvent {
-  type: "completion";
+  type: 'completion';
   /** Total time in seconds for the full hunt. */
   totalTimeSeconds: number;
 }
 
 export interface ClueAttemptEvent extends BaseAnalyticsEvent {
-  type: "clue_attempt";
+  type: 'clue_attempt';
   clueIndex: number;
   clueLabel?: string;
 }
 
 export interface ClueCompletionEvent extends BaseAnalyticsEvent {
-  type: "clue_completion";
+  type: 'clue_completion';
   clueIndex: number;
   clueLabel?: string;
   timeTakenSeconds: number;
@@ -143,7 +142,7 @@ function todayISO(): string {
 
 function upsertTimeSeries(
   series: TimeSeriesPoint[],
-  field: keyof Omit<TimeSeriesPoint, "date">,
+  field: keyof Omit<TimeSeriesPoint, 'date'>,
   date: string = todayISO()
 ): TimeSeriesPoint[] {
   const idx = series.findIndex((p) => p.date === date);
@@ -157,7 +156,7 @@ function upsertTimeSeries(
 
 function upsertDemographic(
   demographics: DemographicsEntry[],
-  deviceType: DemographicsEntry["deviceType"]
+  deviceType: DemographicsEntry['deviceType']
 ): DemographicsEntry[] {
   const idx = demographics.findIndex((d) => d.deviceType === deviceType);
   if (idx === -1) return [...demographics, { deviceType, count: 1 }];
@@ -289,8 +288,6 @@ async function writeRecord(rec: HuntAnalyticsRecord): Promise<void> {
 /**
  * Record a single analytics event for a hunt.
  * This is the only write path — all event types funnel through here.
- * The cache entry for the hunt is invalidated after a successful write so
- * that subsequent reads always reflect the latest state.
  */
 export async function recordAnalyticsEvent(event: AnalyticsEvent): Promise<void> {
   try {
@@ -298,30 +295,30 @@ export async function recordAnalyticsEvent(event: AnalyticsEvent): Promise<void>
     const date = event.timestamp ? event.timestamp.slice(0, 10) : todayISO();
 
     switch (event.type) {
-      case "view": {
+      case 'view': {
         rec.views += 1;
-        rec.timeSeries = upsertTimeSeries(rec.timeSeries, "views", date);
+        rec.timeSeries = upsertTimeSeries(rec.timeSeries, 'views', date);
         if (event.deviceType) {
           rec.demographics = upsertDemographic(rec.demographics, event.deviceType);
         }
         break;
       }
-      case "start": {
+      case 'start': {
         rec.starts += 1;
-        rec.timeSeries = upsertTimeSeries(rec.timeSeries, "starts", date);
+        rec.timeSeries = upsertTimeSeries(rec.timeSeries, 'starts', date);
         break;
       }
-      case "completion": {
+      case 'completion': {
         rec.completions += 1;
         rec.totalCompletionTimeSeconds += event.totalTimeSeconds;
-        rec.timeSeries = upsertTimeSeries(rec.timeSeries, "completions", date);
+        rec.timeSeries = upsertTimeSeries(rec.timeSeries, 'completions', date);
         break;
       }
-      case "clue_attempt": {
+      case 'clue_attempt': {
         rec.clueDropOff = upsertClueAttempt(rec.clueDropOff, event.clueIndex, event.clueLabel);
         break;
       }
-      case "clue_completion": {
+      case 'clue_completion': {
         rec.clueDropOff = upsertClueCompletion(
           rec.clueDropOff,
           event.clueIndex,
@@ -334,29 +331,20 @@ export async function recordAnalyticsEvent(event: AnalyticsEvent): Promise<void>
 
     rec.updatedAt = new Date().toISOString();
     await writeRecord(rec);
-    // Evict so the next read fetches the freshly-written row and re-populates
-    // the cache rather than serving stale data.
-    await invalidate(event.huntId);
   } catch (err) {
-    logger.warn("[huntAnalytics] failed to persist analytics event", err);
+    logger.warn('[huntAnalytics] failed to persist analytics event', err);
   }
 }
 
 /**
  * Return the full analytics record for one hunt, enriched with derived metrics.
- * Reads from cache first; on miss fetches from DB and populates the cache.
  */
 export async function getHuntAnalytics(huntId: number): Promise<HuntAnalyticsResponse> {
   try {
-    const cached = await getCached(huntId);
-    if (cached) return cached;
-
     const rec = await readRecord(huntId);
-    const response = enrichRecord(rec);
-    await setCached(huntId, response);
-    return response;
+    return enrichRecord(rec);
   } catch (err) {
-    logger.error("[huntAnalytics] getHuntAnalytics DB error:", err);
+    logger.error('[huntAnalytics] getHuntAnalytics DB error:', err);
     return enrichRecord(emptyRecord(huntId));
   }
 }
@@ -400,7 +388,7 @@ export async function getAllHuntAnalytics(): Promise<HuntAnalyticsResponse[]> {
       })
     );
   } catch (err) {
-    logger.error("[huntAnalytics] getAllHuntAnalytics DB error:", err);
+    logger.error('[huntAnalytics] getAllHuntAnalytics DB error:', err);
     return [];
   }
 }
@@ -416,7 +404,7 @@ function enrichRecord(rec: HuntAnalyticsRecord): HuntAnalyticsResponse {
 
 function csvEscape(value: string | number): string {
   const str = String(value);
-  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
     return `"${str.replace(/"/g, '""')}"`;
   }
   return str;
@@ -430,19 +418,19 @@ export function buildAnalyticsCsv(analytics: HuntAnalyticsResponse): string {
   const lines: string[] = [];
 
   // Summary section
-  lines.push("# Summary");
-  lines.push("Metric,Value");
+  lines.push('# Summary');
+  lines.push('Metric,Value');
   lines.push(`Hunt ID,${csvEscape(analytics.huntId)}`);
   lines.push(`Views,${csvEscape(analytics.views)}`);
   lines.push(`Starts,${csvEscape(analytics.starts)}`);
   lines.push(`Completions,${csvEscape(analytics.completions)}`);
   lines.push(`Completion Rate (%),${csvEscape(analytics.completionRate)}`);
-  lines.push(`Avg Completion Time (s),${csvEscape(analytics.avgCompletionTimeSeconds ?? "N/A")}`);
-  lines.push("");
+  lines.push(`Avg Completion Time (s),${csvEscape(analytics.avgCompletionTimeSeconds ?? 'N/A')}`);
+  lines.push('');
 
   // Time-series section
-  lines.push("# Daily Activity");
-  lines.push("Date,Views,Starts,Completions");
+  lines.push('# Daily Activity');
+  lines.push('Date,Views,Starts,Completions');
   for (const point of analytics.timeSeries) {
     lines.push(
       [
@@ -450,21 +438,21 @@ export function buildAnalyticsCsv(analytics: HuntAnalyticsResponse): string {
         csvEscape(point.views),
         csvEscape(point.starts),
         csvEscape(point.completions),
-      ].join(",")
+      ].join(',')
     );
   }
-  lines.push("");
+  lines.push('');
 
   // Clue drop-off section
-  lines.push("# Clue Drop-off");
-  lines.push("Clue,Attempts,Completions,Drop-off Rate (%),Avg Time (s)");
+  lines.push('# Clue Drop-off');
+  lines.push('Clue,Attempts,Completions,Drop-off Rate (%),Avg Time (s)');
   for (const clue of analytics.clueDropOff) {
     const dropOffRate =
       clue.attempts > 0
         ? Math.round(((clue.attempts - clue.completions) / clue.attempts) * 100)
         : 0;
     const avgTime =
-      clue.completions > 0 ? Math.round(clue.totalTimeSeconds / clue.completions) : "N/A";
+      clue.completions > 0 ? Math.round(clue.totalTimeSeconds / clue.completions) : 'N/A';
     lines.push(
       [
         csvEscape(clue.label),
@@ -472,17 +460,17 @@ export function buildAnalyticsCsv(analytics: HuntAnalyticsResponse): string {
         csvEscape(clue.completions),
         csvEscape(dropOffRate),
         csvEscape(avgTime),
-      ].join(",")
+      ].join(',')
     );
   }
-  lines.push("");
+  lines.push('');
 
   // Demographics section
-  lines.push("# Player Demographics");
-  lines.push("Device Type,Count");
+  lines.push('# Player Demographics');
+  lines.push('Device Type,Count');
   for (const demo of analytics.demographics) {
-    lines.push([csvEscape(demo.deviceType), csvEscape(demo.count)].join(","));
+    lines.push([csvEscape(demo.deviceType), csvEscape(demo.count)].join(','));
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }

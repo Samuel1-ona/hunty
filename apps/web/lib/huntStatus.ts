@@ -1,4 +1,10 @@
-export type HuntLifecycleStatus = "Draft" | "Scheduled" | "Active" | "Ended" | "Completed" | "Cancelled"
+export type HuntLifecycleStatus =
+  | 'Draft'
+  | 'Scheduled'
+  | 'Active'
+  | 'Ended'
+  | 'Completed'
+  | 'Cancelled';
 
 /**
  * Normalizes a status string to the app's canonical, capitalized form.
@@ -8,35 +14,25 @@ export type HuntLifecycleStatus = "Draft" | "Scheduled" | "Active" | "Ended" | "
  * scheduling states ("Scheduled" / "Ended").
  */
 export function normalizeHuntStatus(status?: string): HuntLifecycleStatus {
-  const value = status?.toLowerCase()
+  const value = status?.toLowerCase();
   switch (value) {
-    case "scheduled":
-      return "Scheduled"
-    case "active":
-      return "Active"
-    case "ended":
-      return "Ended"
-    case "completed":
-      return "Completed"
-    case "cancelled":
-      return "Cancelled"
-    case "draft":
-      return "Draft"
+    case 'scheduled':
+      return 'Scheduled';
+    case 'active':
+      return 'Active';
+    case 'ended':
+      return 'Ended';
+    case 'completed':
+      return 'Completed';
+    case 'cancelled':
+      return 'Cancelled';
+    case 'draft':
+      return 'Draft';
     default:
-      return (status as HuntLifecycleStatus) ?? "Draft"
+      return (status as HuntLifecycleStatus) ?? 'Draft';
   }
 }
 
 export function getDisplayHuntStatus(status?: string): string {
-  return normalizeHuntStatus(status)
-}
-
-/**
- * True once a hunt has finished running — either the scheduler transitioned
- * it to "Ended" or a creator/admin marked it "Completed". Used to gate the
- * permanent results page and its indexing behavior.
- */
-export function isHuntEnded(status?: string): boolean {
-  const normalized = normalizeHuntStatus(status)
-  return normalized === "Ended" || normalized === "Completed"
+  return normalizeHuntStatus(status);
 }

@@ -6,9 +6,9 @@
  * metadataValidator and metadataUploader for those steps.
  */
 
-import { extractCID } from "@/lib/ipfs"
+import { extractCID } from '@/lib/ipfs';
 
-import type { NftAttribute,NftMetadata, NftMetadataBuildInput } from "./types"
+import type { NftAttribute, NftMetadata, NftMetadataBuildInput } from './types';
 
 /**
  * Normalises any image input (bare CID, ipfs:// URI, or https gateway URL)
@@ -20,14 +20,14 @@ import type { NftAttribute,NftMetadata, NftMetadataBuildInput } from "./types"
  * Any other value is returned as-is (callers should treat this as invalid).
  */
 function normaliseImageUri(imageCid: string): string {
-  if (imageCid.startsWith("ipfs://")) return imageCid
-  const cid = extractCID(imageCid)
-  if (cid) return `ipfs://${cid}`
+  if (imageCid.startsWith('ipfs://')) return imageCid;
+  const cid = extractCID(imageCid);
+  if (cid) return `ipfs://${cid}`;
   // Bare CID heuristic (CIDv0 = Qm..., CIDv1 = bafy...)
-  if (imageCid.startsWith("Qm") || imageCid.startsWith("bafy")) {
-    return `ipfs://${imageCid}`
+  if (imageCid.startsWith('Qm') || imageCid.startsWith('bafy')) {
+    return `ipfs://${imageCid}`;
   }
-  return imageCid
+  return imageCid;
 }
 
 /**
@@ -50,23 +50,23 @@ export function buildNftMetadata(input: NftMetadataBuildInput): NftMetadata {
     huntName,
     earnedAt,
     externalUrl,
-  } = input
+  } = input;
 
   const attributes: NftAttribute[] = [
-    { trait_type: "difficulty", value: difficulty },
-    { trait_type: "rank", value: rank },
-  ]
+    { trait_type: 'difficulty', value: difficulty },
+    { trait_type: 'rank', value: rank },
+  ];
 
   // completion_time is omitted when unavailable (undefined), but included for 0
   if (completionTimeSeconds !== undefined) {
     attributes.splice(1, 0, {
-      trait_type: "completion_time",
+      trait_type: 'completion_time',
       value: completionTimeSeconds,
-    })
+    });
   }
 
   if (huntName) {
-    attributes.push({ trait_type: "hunt_name", value: huntName })
+    attributes.push({ trait_type: 'hunt_name', value: huntName });
   }
 
   const metadata: NftMetadata = {
@@ -74,10 +74,10 @@ export function buildNftMetadata(input: NftMetadataBuildInput): NftMetadata {
     description,
     image: normaliseImageUri(imageCid),
     attributes,
-  }
+  };
 
-  if (earnedAt) metadata.earned_at = earnedAt
-  if (externalUrl) metadata.external_url = externalUrl
+  if (earnedAt) metadata.earned_at = earnedAt;
+  if (externalUrl) metadata.external_url = externalUrl;
 
-  return metadata
+  return metadata;
 }

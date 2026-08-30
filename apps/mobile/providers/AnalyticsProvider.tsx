@@ -16,7 +16,7 @@ import {
 } from '@services/analytics';
 import { useWalletStore } from '@store/useStore';
 import { usePathname } from 'expo-router';
-import React, { createContext, useCallback,useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 // ───────────────────────────────────────────────────────────
 // Context

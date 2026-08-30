@@ -5,11 +5,8 @@
  * Docs: https://docs.freighter.app/
  */
 
-import {
-  getAddress,
-  signTransaction as freighterSignTransaction,
-} from "@stellar/freighter-api"
-import type { ActiveWalletAdapter } from "./types"
+import { getAddress, signTransaction as freighterSignTransaction } from '@stellar/freighter-api';
+import type { ActiveWalletAdapter } from './types';
 
 /**
  * Fetch the connected Freighter account's public key.
@@ -17,10 +14,10 @@ import type { ActiveWalletAdapter } from "./types"
  * returns an empty address.
  */
 export async function getFreighterPublicKey(): Promise<string> {
-  const { address, error } = await getAddress()
-  if (error) throw new Error(String(error))
-  if (!address) throw new Error("Freighter wallet not available")
-  return address
+  const { address, error } = await getAddress();
+  if (error) throw new Error(String(error));
+  if (!address) throw new Error('Freighter wallet not available');
+  return address;
 }
 
 /**
@@ -28,10 +25,10 @@ export async function getFreighterPublicKey(): Promise<string> {
  * Returns the signed transaction XDR string.
  */
 export async function signWithFreighter(xdr: string): Promise<string> {
-  const result = await freighterSignTransaction(xdr)
-  if (result.error) throw new Error(String(result.error))
-  if (!result.signedTxXdr) throw new Error("Freighter cannot sign transaction")
-  return result.signedTxXdr
+  const result = await freighterSignTransaction(xdr);
+  if (result.error) throw new Error(String(result.error));
+  if (!result.signedTxXdr) throw new Error('Freighter cannot sign transaction');
+  return result.signedTxXdr;
 }
 
 /**
@@ -39,8 +36,8 @@ export async function signWithFreighter(xdr: string): Promise<string> {
  */
 export function createFreighterAdapter(): ActiveWalletAdapter {
   return {
-    provider: "freighter",
+    provider: 'freighter',
     getPublicKey: getFreighterPublicKey,
     signTransaction: signWithFreighter,
-  }
+  };
 }

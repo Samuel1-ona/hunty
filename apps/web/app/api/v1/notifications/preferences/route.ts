@@ -1,17 +1,17 @@
-import { NextResponse } from "next/server";
-
-import {
-  getStoredNotificationPreferences,
-  saveNotificationPreferences,
-} from "@/lib/notifications/notificationPreferencesStore";
-import { withValidation } from "@/lib/api/withValidation";
 import {
   notificationPreferencesBodySchema,
   notificationPreferencesQuerySchema,
-} from "@hunty/types/api-schemas";
+} from '@hunty/types/api-schemas';
+import { NextResponse } from 'next/server';
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+import { withValidation } from '@/lib/api/withValidation';
+import {
+  getStoredNotificationPreferences,
+  saveNotificationPreferences,
+} from '@/lib/notifications/notificationPreferencesStore';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/v1/notifications/preferences?walletAddress=...

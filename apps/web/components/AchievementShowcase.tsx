@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import type { AchievementId } from "@hunty/types";
-import { Pin, PinOff } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import type { AchievementId } from '@hunty/types';
+import { Pin, PinOff } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ACHIEVEMENTS, RARITY_BORDER_COLORS, RARITY_COLORS } from "@/lib/achievements/config";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ACHIEVEMENTS, RARITY_BORDER_COLORS, RARITY_COLORS } from '@/lib/achievements/config';
 import {
   type AchievementProgressStats,
   getAchievementProgress,
   getAllAchievementsWithStatus,
-} from "@/lib/achievements/service";
-import { logger } from "@/lib/logger";
-import { cn } from "@/lib/utils";
+} from '@/lib/achievements/service';
+import { logger } from '@/lib/logger';
+import { cn } from '@/lib/utils';
 
 interface AchievementShowcaseProps {
   playerAddress: string;
@@ -58,16 +58,16 @@ export function AchievementShowcase({
       .then((data) => {
         if (data) setPinned(data.pinned);
       })
-      .catch((error) => logger.error("Failed to load pinned achievements:", error));
+      .catch((error) => logger.error('Failed to load pinned achievements:', error));
   }, [playerAddress]);
 
   async function persistPinned(nextPinned: AchievementId[]): Promise<boolean> {
     setIsSaving(true);
     try {
       const ownerSecret = localStorage.getItem(ownerSecretKey(playerAddress)) ?? undefined;
-      const response = await fetch("/api/v1/achievements/showcase", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/v1/achievements/showcase', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ address: playerAddress, pinned: nextPinned, ownerSecret }),
       });
       if (!response.ok) return false;
@@ -77,7 +77,7 @@ export function AchievementShowcase({
       setPinned(data.pinned);
       return true;
     } catch (error) {
-      logger.error("Failed to save pinned achievements:", error);
+      logger.error('Failed to save pinned achievements:', error);
       return false;
     } finally {
       setIsSaving(false);
@@ -105,8 +105,8 @@ export function AchievementShowcase({
           <CardTitle>Achievement Showcase</CardTitle>
           <CardDescription>
             {isOwnProfile
-              ? "Pin up to three earned achievements to your public profile."
-              : "Highlighted achievements"}
+              ? 'Pin up to three earned achievements to your public profile.'
+              : 'Highlighted achievements'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -116,7 +116,7 @@ export function AchievementShowcase({
                 <div
                   key={achievement.id}
                   className={cn(
-                    "rounded-xl border-2 bg-gradient-to-br p-4 text-white",
+                    'rounded-xl border-2 bg-gradient-to-br p-4 text-white',
                     RARITY_COLORS[achievement.rarity],
                     RARITY_BORDER_COLORS[achievement.rarity]
                   )}
@@ -145,10 +145,10 @@ export function AchievementShowcase({
                       <TooltipTrigger asChild>
                         <div
                           className={cn(
-                            "relative flex min-h-36 flex-col items-center justify-center rounded-xl border-2 p-3 text-center",
+                            'relative flex min-h-36 flex-col items-center justify-center rounded-xl border-2 p-3 text-center',
                             achievement.earned
                               ? `bg-gradient-to-br ${RARITY_COLORS[achievement.rarity]} ${RARITY_BORDER_COLORS[achievement.rarity]} text-white`
-                              : "border-slate-300 bg-slate-100 text-slate-500 opacity-70"
+                              : 'border-slate-300 bg-slate-100 text-slate-500 opacity-70'
                           )}
                         >
                           {isOwnProfile && achievement.earned && (

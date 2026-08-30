@@ -1,6 +1,6 @@
 import { useTheme } from '@providers/ThemeProvider';
 import React from 'react';
-import { StyleSheet,Text, TextProps } from 'react-native';
+import { StyleSheet, Text, TextProps } from 'react-native';
 
 type TextVariant = 'h1' | 'h2' | 'h3' | 'body' | 'caption' | 'label';
 type TextColor = 'text' | 'primary' | 'secondary' | 'error' | 'success' | 'warning' | 'info';

@@ -6,15 +6,15 @@
  * and the web app.
  */
 
-import { getDb } from "@/lib/db";
-import { logger } from "@/lib/logger";
+import { getDb } from '@/lib/db';
+import { logger } from '@/lib/logger';
 
 import {
   DEFAULT_NOTIFICATION_PREFERENCES,
   normalizeNotificationPreferences,
   type NotificationPreferences,
   type NotificationPreferencesPatch,
-} from "./types";
+} from './types';
 
 const memoryStore = new Map<string, NotificationPreferences>();
 
@@ -49,7 +49,7 @@ export async function getStoredNotificationPreferences(
     if (!row || row.preferences == null) return clonePreferences(fallback);
 
     const stored =
-      typeof row.preferences === "string"
+      typeof row.preferences === 'string'
         ? (JSON.parse(row.preferences) as NotificationPreferencesPatch)
         : (row.preferences as NotificationPreferencesPatch);
     const preferences = normalizeNotificationPreferences(stored);
@@ -59,7 +59,7 @@ export async function getStoredNotificationPreferences(
     // Do not make the settings screen unusable during a transient database
     // outage. The caller receives the last known local process value and the
     // next successful request will read the canonical database copy.
-    logger.warn("Failed to read notification preferences from database", error);
+    logger.warn('Failed to read notification preferences from database', error);
     return clonePreferences(fallback);
   }
 }
@@ -85,7 +85,7 @@ export async function saveNotificationPreferences(
         updated_at = NOW()
     `;
   } catch (error) {
-    logger.warn("Failed to persist notification preferences to database", error);
+    logger.warn('Failed to persist notification preferences to database', error);
     // Keep the in-memory copy so a temporary outage does not discard the
     // user's change. The API still returns the normalized value.
   }

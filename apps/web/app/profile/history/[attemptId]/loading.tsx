@@ -1,4 +1,4 @@
-import { DetailHeaderSkeleton, ProfileHistorySkeleton } from "@/components/LoadingSkeletons"
+import { DetailHeaderSkeleton, ProfileHistorySkeleton } from '@/components/LoadingSkeletons';
 
 export default function ProfileHistoryAttemptLoading() {
   return (
@@ -8,5 +8,5 @@ export default function ProfileHistoryAttemptLoading() {
         <ProfileHistorySkeleton count={3} />
       </div>
     </div>
-  )
+  );
 }

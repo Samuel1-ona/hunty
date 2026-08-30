@@ -12,28 +12,28 @@
  */
 
 /** Canonical Stellar public key: 56 chars, starts with G, base32 alphabet. */
-const STELLAR_PUBLIC_KEY_PATTERN = /^G[A-Z2-7]{55}$/
+const STELLAR_PUBLIC_KEY_PATTERN = /^G[A-Z2-7]{55}$/;
 
 /** Passphrase of the public network. Mirrors `MAINNET_NETWORK_PASSPHRASE`. */
-const MAINNET_NETWORK_PASSPHRASE = "Public Global Stellar Network ; September 2015"
+const MAINNET_NETWORK_PASSPHRASE = 'Public Global Stellar Network ; September 2015';
 
 /** Passphrase of the test network. Mirrors `TESTNET_CONFIG.networkPassphrase`. */
-const TESTNET_NETWORK_PASSPHRASE = "Test SDF Network ; September 2015"
+const TESTNET_NETWORK_PASSPHRASE = 'Test SDF Network ; September 2015';
 
 /** Grid is 5x5 and mirrored down the middle, so 3 columns carry the entropy. */
-const IDENTICON_GRID = 5
+const IDENTICON_GRID = 5;
 
 export function isStellarAddress(address: string): boolean {
-  return STELLAR_PUBLIC_KEY_PATTERN.test(address)
+  return STELLAR_PUBLIC_KEY_PATTERN.test(address);
 }
 
 export interface TruncateAddressOptions {
   /** Characters kept at the start. Default 4. */
-  lead?: number
+  lead?: number;
   /** Characters kept at the end. Default 4. */
-  tail?: number
+  tail?: number;
   /** Text between the two halves. Default "...". */
-  separator?: string
+  separator?: string;
 }
 
 /**
@@ -44,18 +44,18 @@ export interface TruncateAddressOptions {
  */
 export function truncateAddress(
   address: string,
-  { lead = 4, tail = 4, separator = "..." }: TruncateAddressOptions = {},
+  { lead = 4, tail = 4, separator = '...' }: TruncateAddressOptions = {}
 ): string {
-  if (!address) return ""
+  if (!address) return '';
 
-  const head = Math.max(0, Math.trunc(lead))
-  const foot = Math.max(0, Math.trunc(tail))
+  const head = Math.max(0, Math.trunc(lead));
+  const foot = Math.max(0, Math.trunc(tail));
 
-  if (address.length <= head + foot + separator.length) return address
+  if (address.length <= head + foot + separator.length) return address;
 
   // slice(-0) returns the whole string, so an empty tail needs its own branch.
-  const end = foot === 0 ? "" : address.slice(-foot)
-  return `${address.slice(0, head)}${separator}${end}`
+  const end = foot === 0 ? '' : address.slice(-foot);
+  return `${address.slice(0, head)}${separator}${end}`;
 }
 
 /**
@@ -66,17 +66,18 @@ export function truncateAddress(
  * non-mainnet passphrase — an account link has to point at the network the
  * account actually exists on to be useful for verification.
  */
-export function getStellarNetworkSlug(): "public" | "testnet" | "futurenet" {
-  const passphrase = process.env.NEXT_PUBLIC_SOROBAN_NETWORK_PASSPHRASE ?? TESTNET_NETWORK_PASSPHRASE
+export function getStellarNetworkSlug(): 'public' | 'testnet' | 'futurenet' {
+  const passphrase =
+    process.env.NEXT_PUBLIC_SOROBAN_NETWORK_PASSPHRASE ?? TESTNET_NETWORK_PASSPHRASE;
 
-  if (passphrase === MAINNET_NETWORK_PASSPHRASE) return "public"
-  if (passphrase === TESTNET_NETWORK_PASSPHRASE) return "testnet"
-  return "futurenet"
+  if (passphrase === MAINNET_NETWORK_PASSPHRASE) return 'public';
+  if (passphrase === TESTNET_NETWORK_PASSPHRASE) return 'testnet';
+  return 'futurenet';
 }
 
 /** Public stellar.expert page for an account, for verifying an address. */
 export function getStellarAccountExplorerUrl(address: string): string {
-  return `https://stellar.expert/explorer/${getStellarNetworkSlug()}/account/${encodeURIComponent(address)}`
+  return `https://stellar.expert/explorer/${getStellarNetworkSlug()}/account/${encodeURIComponent(address)}`;
 }
 
 /**
@@ -84,21 +85,21 @@ export function getStellarAccountExplorerUrl(address: string): string {
  * identicon for an address must never change between sessions or devices.
  */
 export function hashAddress(address: string): number {
-  let hash = 0x811c9dc5
+  let hash = 0x811c9dc5;
   for (let i = 0; i < address.length; i++) {
-    hash ^= address.charCodeAt(i)
-    hash = Math.imul(hash, 0x01000193) >>> 0
+    hash ^= address.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
   }
-  return hash >>> 0
+  return hash >>> 0;
 }
 
 export interface IdenticonSpec {
   /** Row-major grid of filled cells, `size * size` long. */
-  cells: boolean[]
+  cells: boolean[];
   /** Width and height of the grid in cells. */
-  size: number
-  foreground: string
-  background: string
+  size: number;
+  foreground: string;
+  background: string;
 }
 
 /**
@@ -107,22 +108,22 @@ export interface IdenticonSpec {
  * is what makes the result read as a face/emblem rather than as noise.
  */
 export function getIdenticonSpec(address: string): IdenticonSpec {
-  const hash = hashAddress(address ?? "")
-  const hue = hash % 360
+  const hash = hashAddress(address ?? '');
+  const hue = hash % 360;
 
-  const cells = new Array<boolean>(IDENTICON_GRID * IDENTICON_GRID).fill(false)
-  const columns = Math.ceil(IDENTICON_GRID / 2)
+  const cells = new Array<boolean>(IDENTICON_GRID * IDENTICON_GRID).fill(false);
+  const columns = Math.ceil(IDENTICON_GRID / 2);
 
   // Re-mix per cell instead of consuming one bit at a time: 32 bits of hash
   // would not cover a larger grid, and re-mixing keeps this size-independent.
-  let bits = hash
+  let bits = hash;
   for (let row = 0; row < IDENTICON_GRID; row++) {
     for (let column = 0; column < columns; column++) {
-      bits = (Math.imul(bits, 0x01000193) ^ (row * 31 + column)) >>> 0
-      const filled = ((bits >>> 8) & 1) === 1
+      bits = (Math.imul(bits, 0x01000193) ^ (row * 31 + column)) >>> 0;
+      const filled = ((bits >>> 8) & 1) === 1;
 
-      cells[row * IDENTICON_GRID + column] = filled
-      cells[row * IDENTICON_GRID + (IDENTICON_GRID - 1 - column)] = filled
+      cells[row * IDENTICON_GRID + column] = filled;
+      cells[row * IDENTICON_GRID + (IDENTICON_GRID - 1 - column)] = filled;
     }
   }
 
@@ -131,5 +132,5 @@ export function getIdenticonSpec(address: string): IdenticonSpec {
     size: IDENTICON_GRID,
     foreground: `hsl(${hue} 68% 46%)`,
     background: `hsl(${(hue + 42) % 360} 62% 92%)`,
-  }
+  };
 }

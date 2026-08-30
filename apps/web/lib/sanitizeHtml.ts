@@ -1,7 +1,7 @@
-import DOMPurify from "isomorphic-dompurify";
+import DOMPurify from 'isomorphic-dompurify';
 
 export function sanitizeHtml(html: string) {
-  if (!html) return "";
+  if (!html) return '';
   return DOMPurify.sanitize(html);
 }
 

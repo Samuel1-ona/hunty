@@ -8,22 +8,18 @@
  * @module paymaster
  */
 
-import * as Sentry from "@sentry/nextjs";
+import * as Sentry from '@sentry/nextjs';
 import {
   FeeBumpTransaction,
   Keypair,
   Networks,
   Transaction,
   TransactionBuilder,
-} from "@stellar/stellar-sdk";
+} from '@stellar/stellar-sdk';
 
-import { getPaymasterConfig, parseNumericConfig } from "./paymaster/config";
-import {
-  ensureUser,
-  getConfigValue,
-  incrementSponsorship,
-} from "./paymaster/db";
-import { CONFIG_KEYS, type SponsorResponse } from "./paymaster/types";
+import { getPaymasterConfig, parseNumericConfig } from './paymaster/config';
+import { ensureUser, getConfigValue, incrementSponsorship } from './paymaster/db';
+import { CONFIG_KEYS, type SponsorResponse } from './paymaster/types';
 
 // ─── Singleton instance ────────────────────────────────────────────────────
 
@@ -40,13 +36,13 @@ export function getPaymaster(): StellarPaymaster {
     const secret = process.env.PAYMASTER_SECRET;
     if (!secret) {
       throw new Error(
-        "PAYMASTER_SECRET environment variable is not set. " +
-          "The paymaster service cannot start without a funded Stellar keypair.",
+        'PAYMASTER_SECRET environment variable is not set. ' +
+          'The paymaster service cannot start without a funded Stellar keypair.'
       );
     }
     _instance = new StellarPaymaster(
       secret,
-      process.env.NEXT_PUBLIC_SOROBAN_NETWORK_PASSPHRASE ?? Networks.TESTNET,
+      process.env.NEXT_PUBLIC_SOROBAN_NETWORK_PASSPHRASE ?? Networks.TESTNET
     );
   }
   return _instance;
@@ -90,10 +86,7 @@ export class StellarPaymaster {
    * @param walletAddress - Stellar G-address of the user.
    * @returns A {@link SponsorResponse} indicating whether the tx was sponsored.
    */
-  async sponsorTransaction(
-    txXdr: string,
-    walletAddress: string,
-  ): Promise<SponsorResponse> {
+  async sponsorTransaction(txXdr: string, walletAddress: string): Promise<SponsorResponse> {
     // ── 1. Determine effective limits ────────────────────────────────
     const maxSponsoredTx = await this._getEffectiveMaxTx();
     const maxBudgetPerUser = await this._getEffectiveMaxBudget();
@@ -128,7 +121,7 @@ export class StellarPaymaster {
       if (parsed instanceof FeeBumpTransaction) {
         return {
           sponsored: false,
-          reason: "Expected a standard transaction XDR, not a fee-bump.",
+          reason: 'Expected a standard transaction XDR, not a fee-bump.',
           remainingTx: maxSponsoredTx - sponsored_tx_count,
           remainingBudget: Math.max(0, maxBudgetPerUser - total_budget_sponsored),
         };
@@ -136,12 +129,12 @@ export class StellarPaymaster {
       userTx = parsed;
     } catch (err) {
       Sentry.captureException(err, {
-        tags: { source: "paymaster" },
+        tags: { source: 'paymaster' },
         extra: { walletAddress },
       });
       return {
         sponsored: false,
-        reason: "Invalid transaction XDR.",
+        reason: 'Invalid transaction XDR.',
         remainingTx: maxSponsoredTx - sponsored_tx_count,
         remainingBudget: Math.max(0, maxBudgetPerUser - total_budget_sponsored),
       };
@@ -168,7 +161,7 @@ export class StellarPaymaster {
         this.paymasterKey,
         String(feeStroops),
         userTx,
-        this.network,
+        this.network
       );
 
       feeBumpTx.sign(this.paymasterKey);
@@ -177,7 +170,7 @@ export class StellarPaymaster {
       // ── 6. Persist the sponsorship increment ───────────────────────
       // The inner tx hash is available before submission; the outer
       // (fee-bump) hash can be provided later via a confirmation call.
-      const innerHash = userTx.hash().toString("hex");
+      const innerHash = userTx.hash().toString('hex');
       await incrementSponsorship(walletAddress, feeStroops, innerHash);
 
       return {
@@ -188,12 +181,12 @@ export class StellarPaymaster {
       };
     } catch (err) {
       Sentry.captureException(err, {
-        tags: { source: "paymaster" },
+        tags: { source: 'paymaster' },
         extra: { walletAddress, feeStroops },
       });
       return {
         sponsored: false,
-        reason: "Failed to create fee-bump transaction. Please try again.",
+        reason: 'Failed to create fee-bump transaction. Please try again.',
         remainingTx: maxSponsoredTx - sponsored_tx_count,
         remainingBudget: Math.max(0, maxBudgetPerUser - total_budget_sponsored),
       };
@@ -208,7 +201,7 @@ export class StellarPaymaster {
     const userTx = TransactionBuilder.fromXDR(userTxXdr, this.network);
 
     if (userTx instanceof FeeBumpTransaction) {
-      throw new Error("Expected a standard transaction XDR, received a fee-bump transaction.");
+      throw new Error('Expected a standard transaction XDR, received a fee-bump transaction.');
     }
 
     const fee = maxFee ?? 100_000; // default 0.01 XLM
@@ -216,7 +209,7 @@ export class StellarPaymaster {
       this.paymasterKey,
       String(fee),
       userTx,
-      this.network,
+      this.network
     );
 
     feeBumpTx.sign(this.paymasterKey);

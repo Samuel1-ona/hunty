@@ -1,17 +1,16 @@
-"use client";
+'use client';
 
-import { Wallet } from "lucide-react";
-import Link from "next/link";
+import { Wallet } from 'lucide-react';
+import Link from 'next/link';
 
-import { AchievementShowcase } from "@/components/AchievementShowcase";
-import { HuntCompletionTimeline } from "@/components/HuntCompletionTimeline";
-import { ProfileHighlightBadge, ProfileStatsDashboard } from "@/components/ProfileStatsDashboard";
-import { Button } from "@hunty/ui";
-import { Card } from "@hunty/ui";
-import { WalletAddress } from "@/components/WalletAddress";
-import { WalletIdenticon } from "@/components/WalletIdenticon";
-import { usePlayerProfileStats } from "@/hooks/usePlayerProfileStats";
-import { shortenAddress } from "@/lib/context/WalletContext";
+import { HuntCompletionTimeline } from '@/components/HuntCompletionTimeline';
+import { ProfileHighlightBadge, ProfileStatsDashboard } from '@/components/ProfileStatsDashboard';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { WalletAddress } from '@/components/WalletAddress';
+import { WalletIdenticon } from '@/components/WalletIdenticon';
+import { usePlayerProfileStats } from '@/hooks/usePlayerProfileStats';
+import { shortenAddress } from '@/lib/context/WalletContext';
 
 interface PlayerProfileViewProps {
   /** Stellar address whose profile is being viewed. Empty = no player. */
@@ -48,7 +47,7 @@ export function PlayerProfileView({ address, isOwnProfile = false }: PlayerProfi
 
           <div className="flex min-w-0 flex-col gap-1">
             <span className="text-xs uppercase tracking-wide text-slate-500">
-              {isOwnProfile ? "Your profile" : "Hunter profile"}
+              {isOwnProfile ? 'Your profile' : 'Hunter profile'}
             </span>
             {hasAddress ? (
               <WalletAddress
@@ -92,18 +91,6 @@ export function PlayerProfileView({ address, isOwnProfile = false }: PlayerProfi
         >
           {error}
         </div>
-      )}
-
-      {hasAddress && (
-        <AchievementShowcase
-          playerAddress={address}
-          stats={{
-            totalHuntsCompleted: stats.totalHuntsCompleted,
-            totalHuntsWon: stats.firstPlaceFinishes,
-            totalNftsEarned: stats.nftsWon,
-          }}
-          isOwnProfile={isOwnProfile}
-        />
       )}
 
       {/* ── Aggregated statistics ───────────────────────────────────────── */}

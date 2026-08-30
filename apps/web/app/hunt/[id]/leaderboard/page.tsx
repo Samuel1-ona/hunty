@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { LeaderboardSharePage } from "@/components/LeaderboardSharePage";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import { useEffect, useState } from 'react';
+import { LeaderboardSharePage } from '@/components/LeaderboardSharePage';
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
-import { Header } from "@/components/Header";
-import { LeaderboardTable } from "@/components/LeaderBoardTable";
-import { Button } from "@hunty/ui";
-import { getHuntById } from "@/lib/huntStore";
-import type { StoredHunt } from "@/lib/types";
+import { Header } from '@/components/Header';
+import { LeaderboardTable } from '@/components/LeaderBoardTable';
+import { Button } from '@/components/ui/button';
+import { getHuntById } from '@/lib/huntStore';
+import type { StoredHunt } from '@/lib/types';
 
 interface LeaderboardPageProps {
   params: Promise<{ id: string }>;

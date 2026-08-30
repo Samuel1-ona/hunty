@@ -10,21 +10,20 @@ export async function sha256Hex(input: string): Promise<string> {
   // Browser environment (Web Crypto)
   const g = globalThis as GlobalWithCrypto;
   if (g.crypto?.subtle) {
-    const hashBuffer = await g.crypto.subtle.digest("SHA-256", data);
+    const hashBuffer = await g.crypto.subtle.digest('SHA-256', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
   }
 
   // Node fallback
   try {
     // dynamic import to avoid bundler/node resolution issues in browsers
-    const nodeCrypto = "node:crypto";
+    const nodeCrypto = 'node:crypto';
     const { createHash } = (await import(
       /* webpackIgnore: true */ nodeCrypto
-    )) as typeof import("node:crypto");
-    return createHash("sha256").update(data).digest("hex");
+    )) as typeof import('node:crypto');
+    return createHash('sha256').update(data).digest('hex');
   } catch {
-    throw new Error("No crypto available for sha256 hashing");
+    throw new Error('No crypto available for sha256 hashing');
   }
 }
- 

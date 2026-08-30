@@ -1,5 +1,5 @@
 import { Link } from 'expo-router';
-import { Button, StyleSheet,Text, View } from 'react-native';
+import { Button, StyleSheet, Text, View } from 'react-native';
 
 export default function HomeScreen() {
   return (

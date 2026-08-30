@@ -3,7 +3,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import React, { useCallback,useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   cleanupPrefixState,
@@ -17,9 +17,7 @@ interface KeyboardShortcutsProviderProps {
   children: React.ReactNode;
 }
 
-export default function KeyboardShortcutsProvider({
-  children,
-}: KeyboardShortcutsProviderProps) {
+export default function KeyboardShortcutsProvider({ children }: KeyboardShortcutsProviderProps) {
   const router = useRouter();
   const searchBarRef = useRef<SearchBarHandle>(null);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -51,12 +49,7 @@ export default function KeyboardShortcutsProvider({
 
   // Set up global keyboard listener
   useEffect(() => {
-    const config = createDefaultShortcuts(
-      navigate,
-      focusSearch,
-      closeTopModal,
-      toggleHelp
-    );
+    const config = createDefaultShortcuts(navigate, focusSearch, closeTopModal, toggleHelp);
 
     const handler = createKeyboardHandler(config);
     document.addEventListener('keydown', handler);

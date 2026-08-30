@@ -7,26 +7,26 @@ app's `lib/`.
 
 ## What's here
 
-| Module | Contents |
-| --- | --- |
-| `hunt.ts` | `StoredHunt`, `HuntInfo`, `HuntDraft`, `HuntStatus`, `HuntCategory`, `HuntDifficulty` |
-| `clue.ts` | `Clue`, `ClueInfo`, `ClueRow`, `ClueDifficulty` |
-| `player.ts` | `PlayerProgress`, `PlayerStats`, `PlayerHuntProgress`, `HuntProgressStatus` |
-| `reward.ts` | `Reward`, `RewardType`, `RewardReceipt`, `RewardHistoryEntry` |
-| `achievement.ts` | `Achievement`, `AchievementId`, `AchievementRarity` |
-| `guards.ts` | Type guards (`isStoredHunt`, `isClue`, …) and assertions (`assertStoredHunt`, …) |
-| `schemas.ts` | Zod schemas for runtime validation |
+| Module           | Contents                                                                              |
+| ---------------- | ------------------------------------------------------------------------------------- |
+| `hunt.ts`        | `StoredHunt`, `HuntInfo`, `HuntDraft`, `HuntStatus`, `HuntCategory`, `HuntDifficulty` |
+| `clue.ts`        | `Clue`, `ClueInfo`, `ClueRow`, `ClueDifficulty`                                       |
+| `player.ts`      | `PlayerProgress`, `PlayerStats`, `PlayerHuntProgress`, `HuntProgressStatus`           |
+| `reward.ts`      | `Reward`, `RewardType`, `RewardReceipt`, `RewardHistoryEntry`                         |
+| `achievement.ts` | `Achievement`, `AchievementId`, `AchievementRarity`                                   |
+| `guards.ts`      | Type guards (`isStoredHunt`, `isClue`, …) and assertions (`assertStoredHunt`, …)      |
+| `schemas.ts`     | Zod schemas for runtime validation                                                    |
 
 ## Usage
 
 ```ts
 // Types + dependency-free runtime guards
-import { StoredHunt, isStoredHunt, assertClue } from "@hunty/types"
+import { StoredHunt, isStoredHunt, assertClue } from '@hunty/types';
 
 // Zod schemas (opt-in — pulls in `zod`)
-import { storedHuntSchema } from "@hunty/types/schemas"
+import { storedHuntSchema } from '@hunty/types/schemas';
 
-const hunt = storedHuntSchema.parse(await res.json())
+const hunt = storedHuntSchema.parse(await res.json());
 ```
 
 The main entry (`@hunty/types`) is **dependency-free** so it is safe to import

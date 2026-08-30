@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server"
-import { readReviews } from "@/lib/reviews"
+import { NextResponse } from 'next/server';
+import { readReviews } from '@/lib/reviews';
 
 /**
  * GET /api/v1/hunts/[id]/ratings
@@ -11,22 +11,17 @@ import { readReviews } from "@/lib/reviews"
  *
  * Returns { averageRating: null, reviewCount: 0 } when no reviews exist yet.
  */
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await params
-    const huntId = parseInt(id, 10)
+    const { id } = await params;
+    const huntId = parseInt(id, 10);
 
     if (isNaN(huntId)) {
-      return NextResponse.json({ error: "Invalid hunt ID" }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid hunt ID' }, { status: 400 });
     }
 
-    const allReviews = await readReviews()
-    const huntReviews = allReviews.filter(
-      (r) => r.huntId === huntId && !r.moderated
-    )
+    const allReviews = await readReviews();
+    const huntReviews = allReviews.filter((r) => r.huntId === huntId && !r.moderated);
 
     if (huntReviews.length === 0) {
       return NextResponse.json({
@@ -34,29 +29,27 @@ export async function GET(
         averageRating: null,
         reviewCount: 0,
         distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-      })
+      });
     }
 
-    const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
-    let ratingSum = 0
+    const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    let ratingSum = 0;
 
     for (const review of huntReviews) {
-      ratingSum += review.rating
-      distribution[review.rating] = (distribution[review.rating] ?? 0) + 1
+      ratingSum += review.rating;
+      distribution[review.rating] = (distribution[review.rating] ?? 0) + 1;
     }
 
-    const averageRating =
-      Math.round((ratingSum / huntReviews.length) * 10) / 10
+    const averageRating = Math.round((ratingSum / huntReviews.length) * 10) / 10;
 
     return NextResponse.json({
       huntId,
       averageRating,
       reviewCount: huntReviews.length,
       distribution,
-    })
+    });
   } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : "Failed to retrieve ratings"
-    return NextResponse.json({ error: message }, { status: 500 })
+    const message = error instanceof Error ? error.message : 'Failed to retrieve ratings';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

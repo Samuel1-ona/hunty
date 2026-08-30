@@ -6,12 +6,12 @@ design tokens**, **web (React / Next.js) components**, and **native (React Nativ
 
 ## Export paths
 
-| Import | Source | Description |
-| --- | --- | --- |
-| `@hunty/ui` | `src/index.ts` | Design tokens + web components (default) |
+| Import             | Source                | Description                                     |
+| ------------------ | --------------------- | ----------------------------------------------- |
+| `@hunty/ui`        | `src/index.ts`        | Design tokens + web components (default)        |
 | `@hunty/ui/tokens` | `src/tokens/index.ts` | Colors, typography, spacing (platform-agnostic) |
-| `@hunty/ui/web` | `src/web/index.ts` | React / Next.js components |
-| `@hunty/ui/native` | `src/native/index.ts` | React Native type exports only |
+| `@hunty/ui/web`    | `src/web/index.ts`    | React / Next.js components                      |
+| `@hunty/ui/native` | `src/native/index.ts` | React Native type exports only                  |
 
 ### `@hunty/ui/tokens`
 
@@ -27,9 +27,9 @@ properties in `apps/web/app/globals.css`:
 React components imported directly or from the root:
 
 ```tsx
-import { Button, Card, Badge, EmptyState } from "@hunty/ui/web"
+import { Button, Card, Badge, EmptyState } from '@hunty/ui/web';
 // or
-import { Button } from "@hunty/ui"
+import { Button } from '@hunty/ui';
 ```
 
 Components: `Button`, `Card` (plus `CardHeader`, `CardTitle`, `CardDescription`,
@@ -43,16 +43,16 @@ dependencies into web builds. Actual native component implementations live in
 `apps/mobile/components`.
 
 ```ts
-import type { ButtonProps } from "@hunty/ui/native"
+import type { ButtonProps } from '@hunty/ui/native';
 ```
 
 ## Scripts
 
-| Script | Description |
-| --- | --- |
+| Script      | Description                       |
+| ----------- | --------------------------------- |
 | `typecheck` | Run TypeScript in `--noEmit` mode |
-| `lint` | ESLint (zero warnings) |
-| `test` | Run Vitest |
+| `lint`      | ESLint (zero warnings)            |
+| `test`      | Run Vitest                        |
 
 ## Dependencies
 

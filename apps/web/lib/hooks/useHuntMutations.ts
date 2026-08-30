@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   addHunt,
   takeHuntStoreSnapshot,
   restoreHuntStoreSnapshot,
   updateHuntStatus,
-} from "@/lib/huntStore";
-import type { StoredHunt } from "@/lib/types";
-import { queryKeys } from "@/lib/queryKeys";
+} from '@/lib/huntStore';
+import type { StoredHunt } from '@/lib/types';
+import { queryKeys } from '@/lib/queryKeys';
 
 export function useCreateHuntMutation() {
   const queryClient = useQueryClient();
@@ -43,17 +43,14 @@ export function useActivateHuntMutation() {
 
   return useMutation({
     mutationFn: async (huntId: number) => {
-      updateHuntStatus(huntId, "Active");
-      // Best-effort: notify the creator's followers that a new hunt dropped.
-      // Runs server-side so it can reach every follower; failures are ignored.
-      fetch(`/api/v1/hunts/${huntId}/notify-followers`, { method: "POST" }).catch(() => {});
+      updateHuntStatus(huntId, 'Active');
       return huntId;
     },
     onMutate: async (huntId) => {
       const snapshot = takeHuntStoreSnapshot();
       await queryClient.cancelQueries({ queryKey: queryKeys.hunts.active() });
       queryClient.setQueryData<StoredHunt[]>(queryKeys.hunts.active(), (existing = []) =>
-        existing.map((hunt) => (hunt.id === huntId ? { ...hunt, status: "Active" } : hunt))
+        existing.map((hunt) => (hunt.id === huntId ? { ...hunt, status: 'Active' } : hunt))
       );
       return { snapshot };
     },
@@ -75,4 +72,3 @@ export function useActivateHuntMutation() {
     },
   });
 }
- 

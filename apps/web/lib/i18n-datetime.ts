@@ -13,19 +13,19 @@
 // ---------------------------------------------------------------------------
 
 export interface CountdownUnits {
-  d: string /** unit label for days    (e.g. "d" / "j" / "d") */
-  h: string /** unit label for hours   (e.g. "h" / "h" / "h") */
-  m: string /** unit label for minutes (e.g. "m" / "m" / "m") */
-  s: string /** unit label for seconds (e.g. "s" / "s" / "s") */
+  d: string /** unit label for days    (e.g. "d" / "j" / "d") */;
+  h: string /** unit label for hours   (e.g. "h" / "h" / "h") */;
+  m: string /** unit label for minutes (e.g. "m" / "m" / "m") */;
+  s: string /** unit label for seconds (e.g. "s" / "s" / "s") */;
 }
 
 /** English fallback used when no locale messages are supplied. */
 export const DEFAULT_COUNTDOWN_UNITS: CountdownUnits = {
-  d: "d",
-  h: "h",
-  m: "m",
-  s: "s",
-}
+  d: 'd',
+  h: 'h',
+  m: 'm',
+  s: 's',
+};
 
 // ---------------------------------------------------------------------------
 // Date / time formatters
@@ -38,56 +38,48 @@ export const DEFAULT_COUNTDOWN_UNITS: CountdownUnits = {
 export function formatTimestampI18n(
   unixSeconds: number,
   locale?: string,
-  timeZone?: string,
+  timeZone?: string
 ): string {
-  const date = new Date(unixSeconds * 1000)
+  const date = new Date(unixSeconds * 1000);
   return new Intl.DateTimeFormat(locale, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
     ...(timeZone ? { timeZone } : {}),
-  }).format(date)
+  }).format(date);
 }
 
 /**
  * Format a Unix timestamp (seconds) into a short locale date string.
  * Example: "Feb 10, 2026" (en) / "10 feb 2026" (es)
  */
-export function formatDateI18n(
-  unixSeconds: number,
-  locale?: string,
-  timeZone?: string,
-): string {
-  const date = new Date(unixSeconds * 1000)
+export function formatDateI18n(unixSeconds: number, locale?: string, timeZone?: string): string {
+  const date = new Date(unixSeconds * 1000);
   return new Intl.DateTimeFormat(locale, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
     ...(timeZone ? { timeZone } : {}),
-  }).format(date)
+  }).format(date);
 }
 
 /**
  * Format an ISO 8601 string into a readable locale date + time string.
  * Returns the original string unchanged if it cannot be parsed.
  */
-export function formatISOStringI18n(
-  isoString: string,
-  locale?: string,
-  timeZone?: string,
-): string {
-  const date = new Date(isoString)
-  if (isNaN(date.getTime())) return isoString
+export function formatISOStringI18n(isoString: string, locale?: string, timeZone?: string): string {
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return isoString;
   return new Intl.DateTimeFormat(locale, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
     ...(timeZone ? { timeZone } : {}),
-  }).format(date)
+  }).format(date);
 }
 
 /**
@@ -98,29 +90,29 @@ export function formatISOStringI18n(
 export function formatTimestampWithTimezoneI18n(
   unixSeconds: number,
   locale?: string,
-  timeZone?: string,
+  timeZone?: string
 ): string {
-  const date = new Date(unixSeconds * 1000)
+  const date = new Date(unixSeconds * 1000);
   const opts: Intl.DateTimeFormatOptions = {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZoneName: "short",
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
     ...(timeZone ? { timeZone } : {}),
-  }
-  const fmt = new Intl.DateTimeFormat(locale, opts)
+  };
+  const fmt = new Intl.DateTimeFormat(locale, opts);
   // Build a clean string: use formatToParts to avoid duplicate TZ appending.
-  const parts = fmt.formatToParts(date)
-  const tzPart = parts.find((p) => p.type === "timeZoneName")?.value ?? ""
+  const parts = fmt.formatToParts(date);
+  const tzPart = parts.find((p) => p.type === 'timeZoneName')?.value ?? '';
   const withoutTz = parts
-    .filter((p) => p.type !== "timeZoneName")
+    .filter((p) => p.type !== 'timeZoneName')
     .map((p) => p.value)
-    .join("")
-    .replace(/,\s*$/, "") // strip trailing comma/space before the missing TZ
-    .trim()
-  return tzPart ? `${withoutTz} ${tzPart}` : withoutTz
+    .join('')
+    .replace(/,\s*$/, '') // strip trailing comma/space before the missing TZ
+    .trim();
+  return tzPart ? `${withoutTz} ${tzPart}` : withoutTz;
 }
 
 // ---------------------------------------------------------------------------
@@ -134,9 +126,9 @@ export function formatTimestampWithTimezoneI18n(
 export function formatNumberI18n(
   value: number,
   locale?: string,
-  opts?: Intl.NumberFormatOptions,
+  opts?: Intl.NumberFormatOptions
 ): string {
-  return new Intl.NumberFormat(locale, opts).format(value)
+  return new Intl.NumberFormat(locale, opts).format(value);
 }
 
 // ---------------------------------------------------------------------------
@@ -157,21 +149,19 @@ export function formatNumberI18n(
  */
 export function buildCountdownLabel(
   parts: { days: number; hours: number; minutes: number; seconds: number },
-  units: CountdownUnits = DEFAULT_COUNTDOWN_UNITS,
+  units: CountdownUnits = DEFAULT_COUNTDOWN_UNITS
 ): string {
-  const { days, hours, minutes, seconds } = parts
-  const segments: string[] = []
+  const { days, hours, minutes, seconds } = parts;
+  const segments: string[] = [];
 
   if (days > 0) {
-    segments.push(`${days}${units.d}`)
+    segments.push(`${days}${units.d}`);
   }
-  segments.push(
-    `${hours.toString().padStart(days > 0 ? 2 : 1, "0")}${units.h}`,
-  )
-  segments.push(`${minutes.toString().padStart(2, "0")}${units.m}`)
-  segments.push(`${seconds.toString().padStart(2, "0")}${units.s}`)
+  segments.push(`${hours.toString().padStart(days > 0 ? 2 : 1, '0')}${units.h}`);
+  segments.push(`${minutes.toString().padStart(2, '0')}${units.m}`);
+  segments.push(`${seconds.toString().padStart(2, '0')}${units.s}`);
 
-  return segments.join(" ")
+  return segments.join(' ');
 }
 
 // ---------------------------------------------------------------------------
@@ -185,9 +175,6 @@ export function buildCountdownLabel(
  *
  * Returns 0 when the deadline has passed.
  */
-export function getRemainingSeconds(
-  targetUnixSeconds: number,
-  nowUnixSeconds: number,
-): number {
-  return Math.max(0, Math.floor(targetUnixSeconds) - Math.floor(nowUnixSeconds))
+export function getRemainingSeconds(targetUnixSeconds: number, nowUnixSeconds: number): number {
+  return Math.max(0, Math.floor(targetUnixSeconds) - Math.floor(nowUnixSeconds));
 }

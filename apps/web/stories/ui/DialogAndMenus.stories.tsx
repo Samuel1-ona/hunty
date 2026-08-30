@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from "@storybook/nextjs-vite"
-import { useState } from "react"
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -7,18 +7,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Button } from "@hunty/ui"
+} from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
 
 function DialogAndMenusExample() {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
 
   return (
     <div className="flex flex-wrap items-center gap-4">
@@ -29,7 +29,9 @@ function DialogAndMenusExample() {
         <DialogContent showCloseButton>
           <DialogHeader>
             <DialogTitle>Creator spotlight purchase</DialogTitle>
-            <DialogDescription>Confirm the 1 XLM spotlight placement for the next 24 hours.</DialogDescription>
+            <DialogDescription>
+              Confirm the 1 XLM spotlight placement for the next 24 hours.
+            </DialogDescription>
           </DialogHeader>
         </DialogContent>
       </Dialog>
@@ -37,7 +39,9 @@ function DialogAndMenusExample() {
       <div className="w-56">
         <DropdownMenu>
           <DropdownMenuTrigger>
-            <Button variant="outline" className="w-full">Open menu</Button>
+            <Button variant="outline" className="w-full">
+              Open menu
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem>Duplicate Hunt</DropdownMenuItem>
@@ -55,16 +59,16 @@ function DialogAndMenusExample() {
         </Tooltip>
       </TooltipProvider>
     </div>
-  )
+  );
 }
 
 const meta = {
-  title: "UI/Dialog And Menus",
+  title: 'UI/Dialog And Menus',
   component: DialogAndMenusExample,
-  tags: ["autodocs"],
-} satisfies Meta<typeof DialogAndMenusExample>
+  tags: ['autodocs'],
+} satisfies Meta<typeof DialogAndMenusExample>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {}
+export const Default: Story = {};

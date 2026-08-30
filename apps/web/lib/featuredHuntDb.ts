@@ -12,9 +12,9 @@
  * convert them into a proper HTTP 500 response.
  */
 
-import { getDb } from "@/lib/db";
+import { getDb } from '@/lib/db';
 
-const SETTINGS_KEY = "featured_hunt_id";
+const SETTINGS_KEY = 'featured_hunt_id';
 
 /**
  * Read the current featured hunt ID from the database.
@@ -32,7 +32,7 @@ export async function readFeaturedId(): Promise<number | null> {
   `;
   if (rows.length === 0) return null;
   const raw = rows[0].value;
-  if (raw === null || raw === "") return null;
+  if (raw === null || raw === '') return null;
   const parsed = parseInt(raw, 10);
   return Number.isFinite(parsed) ? parsed : null;
 }

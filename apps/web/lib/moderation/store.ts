@@ -1,17 +1,17 @@
-import * as Sentry from "@sentry/nextjs";
-import { randomUUID } from "crypto";
+import * as Sentry from '@sentry/nextjs';
+import { randomUUID } from 'crypto';
 
-import { getDb } from "@/lib/db";
-import { logger } from "@/lib/logger";
-import type { StoredHunt } from "@/lib/types";
+import { getDb } from '@/lib/db';
+import { logger } from '@/lib/logger';
+import type { StoredHunt } from '@/lib/types';
 
-import { scanHuntContent } from "./autoFlag";
+import { scanHuntContent } from './autoFlag';
 import type {
   ContentPolicyViolation,
   CreatorModerationNotification,
   ModerationDecision,
   ModerationSubmission,
-} from "./types";
+} from './types';
 
 // ── DB helper functions ──────────────────────────────────────────────────────
 
@@ -54,9 +54,9 @@ async function getQueue(): Promise<ModerationSubmission[]> {
       creatorEmail: row.creator_email ?? undefined,
     }));
   } catch (err) {
-    logger.error("Failed to read moderation queue from DB:", err);
+    logger.error('Failed to read moderation queue from DB:', err);
     Sentry.captureException(err instanceof Error ? err : new Error(String(err)), {
-      tags: { source: "moderationStore", operation: "getQueue" },
+      tags: { source: 'moderationStore', operation: 'getQueue' },
     });
     return [];
   }
@@ -70,7 +70,7 @@ async function getNotifications(): Promise<CreatorModerationNotification[]> {
         id: string;
         hunt_id: number;
         hunt_title: string;
-        action: "approved" | "rejected";
+        action: 'approved' | 'rejected';
         reason: string | null;
         creator_email: string | null;
         created_at: Date;
@@ -94,9 +94,9 @@ async function getNotifications(): Promise<CreatorModerationNotification[]> {
       read: row.read,
     }));
   } catch (err) {
-    logger.error("Failed to read moderation notifications from DB:", err);
+    logger.error('Failed to read moderation notifications from DB:', err);
     Sentry.captureException(err instanceof Error ? err : new Error(String(err)), {
-      tags: { source: "moderationStore", operation: "getNotifications" },
+      tags: { source: 'moderationStore', operation: 'getNotifications' },
     });
     return [];
   }
@@ -106,7 +106,7 @@ async function getNotifications(): Promise<CreatorModerationNotification[]> {
 
 export function getPendingSubmissions(): Promise<ModerationSubmission[]> {
   return getQueue().then((queue) =>
-    queue.filter((s) => s.status === "pending").sort((a, b) => a.submittedAt - b.submittedAt)
+    queue.filter((s) => s.status === 'pending').sort((a, b) => a.submittedAt - b.submittedAt)
   );
 }
 
@@ -159,14 +159,14 @@ export async function getSubmissionByHuntId(
       creatorEmail: row.creator_email ?? undefined,
     };
   } catch (err) {
-    logger.error("Failed to getSubmissionByHuntId from DB:", err);
+    logger.error('Failed to getSubmissionByHuntId from DB:', err);
     return undefined;
   }
 }
 
 export async function submitHuntForModeration(hunt: StoredHunt): Promise<ModerationSubmission> {
   const existing = await getSubmissionByHuntId(hunt.id);
-  if (existing && existing.status === "pending") {
+  if (existing && existing.status === 'pending') {
     return existing;
   }
 
@@ -175,7 +175,7 @@ export async function submitHuntForModeration(hunt: StoredHunt): Promise<Moderat
     id: randomUUID(),
     huntId: hunt.id,
     hunt,
-    status: "pending",
+    status: 'pending',
     submittedAt: Date.now(),
     autoFlags,
     policyViolations,
@@ -201,9 +201,9 @@ export async function submitHuntForModeration(hunt: StoredHunt): Promise<Moderat
       )
     `;
   } catch (err) {
-    logger.error("Failed to insert moderation submission:", err);
+    logger.error('Failed to insert moderation submission:', err);
     Sentry.captureException(err instanceof Error ? err : new Error(String(err)), {
-      tags: { source: "moderationStore", operation: "submitHuntForModeration" },
+      tags: { source: 'moderationStore', operation: 'submitHuntForModeration' },
     });
   }
 
@@ -213,7 +213,7 @@ export async function submitHuntForModeration(hunt: StoredHunt): Promise<Moderat
 async function appendCreatorNotification(input: {
   huntId: number;
   huntTitle: string;
-  action: "approved" | "rejected";
+  action: 'approved' | 'rejected';
   reason?: string;
   creatorEmail?: string;
 }): Promise<CreatorModerationNotification> {
@@ -246,9 +246,9 @@ async function appendCreatorNotification(input: {
       )
     `;
   } catch (err) {
-    logger.error("Failed to insert moderation notification:", err);
+    logger.error('Failed to insert moderation notification:', err);
     Sentry.captureException(err instanceof Error ? err : new Error(String(err)), {
-      tags: { source: "moderationStore", operation: "appendCreatorNotification" },
+      tags: { source: 'moderationStore', operation: 'appendCreatorNotification' },
     });
   }
 
@@ -257,7 +257,7 @@ async function appendCreatorNotification(input: {
 
 export async function approveSubmission(
   submissionId: string,
-  reviewedBy = "admin"
+  reviewedBy = 'admin'
 ): Promise<ModerationSubmission | null> {
   try {
     const sql = getDb();
@@ -305,15 +305,15 @@ export async function approveSubmission(
     await appendCreatorNotification({
       huntId: result.huntId,
       huntTitle: result.hunt.title,
-      action: "approved",
+      action: 'approved',
       creatorEmail: result.creatorEmail,
     });
 
     return result;
   } catch (err) {
-    logger.error("Failed to approveSubmission:", err);
+    logger.error('Failed to approveSubmission:', err);
     Sentry.captureException(err instanceof Error ? err : new Error(String(err)), {
-      tags: { source: "moderationStore", operation: "approveSubmission" },
+      tags: { source: 'moderationStore', operation: 'approveSubmission' },
     });
     return null;
   }
@@ -323,7 +323,7 @@ export async function rejectSubmission(
   submissionId: string,
   reason: string,
   policyViolations: ContentPolicyViolation[] = [],
-  reviewedBy = "admin"
+  reviewedBy = 'admin'
 ): Promise<ModerationSubmission | null> {
   try {
     const sql = getDb();
@@ -375,16 +375,16 @@ export async function rejectSubmission(
     await appendCreatorNotification({
       huntId: result.huntId,
       huntTitle: result.hunt.title,
-      action: "rejected",
+      action: 'rejected',
       reason,
       creatorEmail: result.creatorEmail,
     });
 
     return result;
   } catch (err) {
-    logger.error("Failed to rejectSubmission:", err);
+    logger.error('Failed to rejectSubmission:', err);
     Sentry.captureException(err instanceof Error ? err : new Error(String(err)), {
-      tags: { source: "moderationStore", operation: "rejectSubmission" },
+      tags: { source: 'moderationStore', operation: 'rejectSubmission' },
     });
     return null;
   }
@@ -437,7 +437,7 @@ export async function flagContentPolicyViolation(
       creatorEmail: row.creator_email ?? undefined,
     };
   } catch (err) {
-    logger.error("Failed to flagContentPolicyViolation:", err);
+    logger.error('Failed to flagContentPolicyViolation:', err);
     return null;
   }
 }
@@ -464,7 +464,7 @@ export async function markNotificationRead(notificationId: string): Promise<bool
     `;
     return rows.length > 0;
   } catch (err) {
-    logger.error("Failed to markNotificationRead:", err);
+    logger.error('Failed to markNotificationRead:', err);
     return false;
   }
 }
@@ -500,7 +500,7 @@ export async function getModerationStatusForHunts(
     }
     return result;
   } catch (err) {
-    logger.error("Failed to getModerationStatusForHunts:", err);
+    logger.error('Failed to getModerationStatusForHunts:', err);
     return {};
   }
 }
@@ -512,6 +512,6 @@ export async function __resetModerationStoreForTests(): Promise<void> {
     await sql`DELETE FROM moderation_queue`;
     await sql`DELETE FROM moderation_notifications`;
   } catch (err) {
-    logger.error("Failed to reset moderation store for tests:", err);
+    logger.error('Failed to reset moderation store for tests:', err);
   }
 }

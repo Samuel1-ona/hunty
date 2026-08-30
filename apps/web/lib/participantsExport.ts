@@ -13,7 +13,7 @@
 export interface ParticipantRow {
   rank: number;
   wallet: string;
-  alias: string | "";
+  alias: string | '';
   score: number;
   completionTime: string;
   joinedAt: string;
@@ -34,7 +34,7 @@ export function csvEscape(value: string | number): string {
 
 /** Yield-safe CSV header for the participants export. */
 export function participantsCsvHeader(): string {
-  return "rank,wallet,alias,score,completion_time,joined_at";
+  return 'rank,wallet,alias,score,completion_time,joined_at';
 }
 
 /** Serialize one participant row as a CSV line. */
@@ -46,7 +46,7 @@ export function participantToCsvLine(row: ParticipantRow): string {
     csvEscape(row.score),
     csvEscape(row.completionTime),
     csvEscape(row.joinedAt),
-  ].join(",");
+  ].join(',');
 }
 
 /**
@@ -57,7 +57,7 @@ export function participantToCsvLine(row: ParticipantRow): string {
 export function streamParticipantsCsv(
   total: number,
   chunkSize: number,
-  rowSource: (offset: number, limit: number) => Promise<ParticipantRow[]>,
+  rowSource: (offset: number, limit: number) => Promise<ParticipantRow[]>
 ): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
   let offset = 0;
@@ -66,7 +66,7 @@ export function streamParticipantsCsv(
   return new ReadableStream<Uint8Array>({
     async pull(controller) {
       if (!headerSent) {
-        controller.enqueue(encoder.encode(participantsCsvHeader() + "\n"));
+        controller.enqueue(encoder.encode(participantsCsvHeader() + '\n'));
         headerSent = true;
         return;
       }
@@ -79,7 +79,7 @@ export function streamParticipantsCsv(
         controller.close();
         return;
       }
-      const text = rows.map(participantToCsvLine).join("\n") + "\n";
+      const text = rows.map(participantToCsvLine).join('\n') + '\n';
       controller.enqueue(encoder.encode(text));
       offset += rows.length;
     },
@@ -102,12 +102,11 @@ export async function collectParticipantRows(
       joinedAt?: number;
       privacy?: ExportPrivacyOptions;
     }>
-  >,
+  >
 ): Promise<ParticipantRow[]> {
-
   const completionTimeByWallet = new Map<string, number>();
   for (const entry of fastest) {
-    if (entry.address && typeof entry.completionTimeSeconds === "number") {
+    if (entry.address && typeof entry.completionTimeSeconds === 'number') {
       completionTimeByWallet.set(entry.address, entry.completionTimeSeconds * 1000);
     }
   }
@@ -123,12 +122,11 @@ export async function collectParticipantRows(
     if (participant?.privacy?.shareResults === false) continue;
     rank += 1;
     const completionMs =
-      completionTimeByWallet.get(entry.address) ??
-      (participant?.completedAt ?? Date.now());
+      completionTimeByWallet.get(entry.address) ?? participant?.completedAt ?? Date.now();
     rows.push({
       rank,
       wallet: entry.address,
-      alias: participant?.alias ?? "",
+      alias: participant?.alias ?? '',
       score: entry.points,
       completionTime: new Date(completionMs).toISOString(),
       joinedAt: new Date(participant?.joinedAt ?? completionMs).toISOString(),

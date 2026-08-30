@@ -15,10 +15,7 @@ export const POST = withValidation(
       from: 'Hunty <onboarding@resend.dev>', // Replace with your verified domain in production
       to: [creatorEmail],
       subject: 'Your hunt was just completed 🎉',
-      react: <HuntCompletionEmail
-        huntName={huntName}
-        completionTime={completionTime}
-      />,
+      react: <HuntCompletionEmail huntName={huntName} completionTime={completionTime} />,
     });
 
     return NextResponse.json(data);

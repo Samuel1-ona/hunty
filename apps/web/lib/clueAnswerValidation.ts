@@ -6,11 +6,11 @@ import {
   normalizeAnswerForMatch,
   type AnswerStrictness,
   type FuzzyMatchResult,
-} from "./fuzzyAnswer"
+} from './fuzzyAnswer';
 
 export const EMPTY_ANSWER_ERROR = 'Answer cannot be empty';
 
-export type { AnswerStrictness, FuzzyMatchResult }
+export type { AnswerStrictness, FuzzyMatchResult };
 
 /** Returns true when the answer has non-whitespace content after trim. */
 export function isValidClueAnswer(value: string): boolean {
@@ -48,15 +48,15 @@ export function validateClueAnswerFuzzy(
     alternatives?: string[];
     strictness?: AnswerStrictness;
     useCommonAliases?: boolean;
-  },
+  }
 ): FuzzyMatchResult {
   if (!isValidClueAnswer(candidate)) {
-    return { matched: false, normalizedCandidate: "" };
+    return { matched: false, normalizedCandidate: '' };
   }
   return matchAnswerFuzzy(candidate, {
     answer,
     alternatives: options?.alternatives,
-    strictness: options?.strictness ?? "normal",
+    strictness: options?.strictness ?? 'normal',
     useCommonAliases: options?.useCommonAliases,
   });
 }
@@ -68,12 +68,12 @@ export function isClueAnswerCorrect(
     alternatives?: string[];
     strictness?: AnswerStrictness;
     useCommonAliases?: boolean;
-  },
+  }
 ): boolean {
   return isAnswerCorrectFuzzy(candidate, {
     answer,
     alternatives: options?.alternatives,
-    strictness: options?.strictness ?? "normal",
+    strictness: options?.strictness ?? 'normal',
     useCommonAliases: options?.useCommonAliases,
   });
 }

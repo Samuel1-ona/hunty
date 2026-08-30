@@ -1,4 +1,4 @@
-import { type ModalConfig,useModalStore } from '@store/modalStore';
+import { type ModalConfig, useModalStore } from '@store/modalStore';
 
 export function useModal() {
   const { openModal, closeModal, closeAllModals, modals } = useModalStore();

@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 import {
   createContext,
@@ -8,7 +8,7 @@ import {
   useEffect,
   useMemo,
   useState,
-} from "react"
+} from 'react';
 
 import {
   type Server,
@@ -16,68 +16,61 @@ import {
   getSorobanNetworkPassphrase,
   getSorobanRpcOptimizer,
   getSorobanRpcUrl,
-} from "./client"
+} from './client';
 
-export type SorobanConnectionStatus =
-  | "idle"
-  | "connecting"
-  | "connected"
-  | "error"
+export type SorobanConnectionStatus = 'idle' | 'connecting' | 'connected' | 'error';
 
 export type SorobanContextValue = {
   /** Valid Server instance for Soroban RPC (same API as soroban-client). */
-  server: Server | null
+  server: Server | null;
   /** Network passphrase (e.g. Futurenet / Testnet). */
-  networkPassphrase: string
+  networkPassphrase: string;
   /** RPC URL in use. */
-  rpcUrl: string
+  rpcUrl: string;
   /** Connection state after init test. */
-  connectionStatus: SorobanConnectionStatus
+  connectionStatus: SorobanConnectionStatus;
   /** Set when connection test fails. */
-  connectionError: Error | null
+  connectionError: Error | null;
   /** Re-run the network connection test. */
-  reconnect: () => Promise<void>
-}
+  reconnect: () => Promise<void>;
+};
 
-const SorobanContext = createContext<SorobanContextValue | null>(null)
+const SorobanContext = createContext<SorobanContextValue | null>(null);
 
 export function SorobanProvider({ children }: { children: ReactNode }) {
-  const [server, setServer] = useState<Server | null>(null)
-  const [networkPassphrase] = useState(() => getSorobanNetworkPassphrase())
-  const [rpcUrl] = useState(() => getSorobanRpcUrl())
-  const [connectionStatus, setConnectionStatus] =
-    useState<SorobanConnectionStatus>("idle")
-  const [connectionError, setConnectionError] = useState<Error | null>(null)
+  const [server, setServer] = useState<Server | null>(null);
+  const [networkPassphrase] = useState(() => getSorobanNetworkPassphrase());
+  const [rpcUrl] = useState(() => getSorobanRpcUrl());
+  const [connectionStatus, setConnectionStatus] = useState<SorobanConnectionStatus>('idle');
+  const [connectionError, setConnectionError] = useState<Error | null>(null);
 
   const runConnectionTest = useCallback(async () => {
-    setConnectionStatus("connecting")
-    setConnectionError(null)
-    const s = createSorobanServer()
-    getSorobanRpcOptimizer()
-    setServer(s)
+    setConnectionStatus('connecting');
+    setConnectionError(null);
+    const s = createSorobanServer();
+    getSorobanRpcOptimizer();
+    setServer(s);
     try {
-      const health = await s.getHealth()
-      if (health?.status === "healthy") {
-        setConnectionStatus("connected")
+      const health = await s.getHealth();
+      if (health?.status === 'healthy') {
+        setConnectionStatus('connected');
       } else {
-        setConnectionStatus("error")
+        setConnectionStatus('error');
         setConnectionError(
           new Error(
-            `RPC health check returned: ${(health as { status?: string })?.status ?? "unknown"}`
+            `RPC health check returned: ${(health as { status?: string })?.status ?? 'unknown'}`
           )
-        )
+        );
       }
     } catch (err) {
-      setConnectionStatus("error")
-      setConnectionError(
-        err instanceof Error ? err : new Error(String(err))
-      )
+      setConnectionStatus('error');
+      setConnectionError(err instanceof Error ? err : new Error(String(err)));
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    runConnectionTest()
-  }, [runConnectionTest])
+    runConnectionTest();
+  }, [runConnectionTest]);
 
   const value = useMemo<SorobanContextValue>(
     () => ({
@@ -88,19 +81,10 @@ export function SorobanProvider({ children }: { children: ReactNode }) {
       connectionError,
       reconnect: runConnectionTest,
     }),
-    [
-      server,
-      networkPassphrase,
-      rpcUrl,
-      connectionStatus,
-      connectionError,
-      runConnectionTest,
-    ]
-  )
+    [server, networkPassphrase, rpcUrl, connectionStatus, connectionError, runConnectionTest]
+  );
 
-  return (
-    <SorobanContext.Provider value={value}>{children}</SorobanContext.Provider>
-  )
+  return <SorobanContext.Provider value={value}>{children}</SorobanContext.Provider>;
 }
 
 /**
@@ -109,9 +93,9 @@ export function SorobanProvider({ children }: { children: ReactNode }) {
  * and connection state after the init connection test.
  */
 export function useSoroban(): SorobanContextValue {
-  const ctx = useContext(SorobanContext)
+  const ctx = useContext(SorobanContext);
   if (ctx == null) {
-    throw new Error("useSoroban must be used within a SorobanProvider")
+    throw new Error('useSoroban must be used within a SorobanProvider');
   }
-  return ctx
+  return ctx;
 }

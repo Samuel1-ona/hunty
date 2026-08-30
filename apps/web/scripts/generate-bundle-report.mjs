@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 const projectRoot = process.cwd();
-const manifestPath = join(projectRoot, ".next", "build-manifest.json");
+const manifestPath = join(projectRoot, '.next', 'build-manifest.json');
 
 /**
  * Generates a markdown bundle-size report for PR comments.
@@ -17,10 +17,10 @@ function bytesToKb(bytes) {
 
 function getBuildManifest() {
   if (!existsSync(manifestPath)) {
-    console.error("build-manifest.json not found. Run `npm run build` first.");
+    console.error('build-manifest.json not found. Run `npm run build` first.');
     process.exit(1);
   }
-  return JSON.parse(readFileSync(manifestPath, "utf8"));
+  return JSON.parse(readFileSync(manifestPath, 'utf8'));
 }
 
 function analyzePageBundles(manifest) {
@@ -30,13 +30,13 @@ function analyzePageBundles(manifest) {
   for (const [page, chunks] of Object.entries(pages)) {
     let totalSize = 0;
     for (const chunk of chunks) {
-      const chunkPath = join(projectRoot, ".next", chunk);
+      const chunkPath = join(projectRoot, '.next', chunk);
       if (existsSync(chunkPath)) {
         totalSize += statSync(chunkPath).size;
       }
     }
     results.push({
-      page: page === "/" ? "/ (home)" : page,
+      page: page === '/' ? '/ (home)' : page,
       sizeKb: bytesToKb(totalSize),
       chunks: chunks.length,
     });
@@ -49,15 +49,15 @@ function analyzeInitialJs(manifest) {
   const pages = manifest.pages ?? {};
   const rootFiles = [
     ...new Set([
-      ...(pages["/"] ?? []),
-      ...(pages["/_app"] ?? []),
+      ...(pages['/'] ?? []),
+      ...(pages['/_app'] ?? []),
       ...(manifest.rootMainFiles ?? []),
     ]),
-  ].filter((f) => f.endsWith(".js"));
+  ].filter((f) => f.endsWith('.js'));
 
   let totalBytes = 0;
   for (const file of rootFiles) {
-    const abs = join(projectRoot, ".next", file);
+    const abs = join(projectRoot, '.next', file);
     if (existsSync(abs)) totalBytes += statSync(abs).size;
   }
 
@@ -65,9 +65,9 @@ function analyzeInitialJs(manifest) {
 }
 
 function formatBadge(value, good, poor) {
-  if (value <= good) return "🟢";
-  if (value <= poor) return "🟡";
-  return "🔴";
+  if (value <= good) return '🟢';
+  if (value <= poor) return '🟡';
+  return '🔴';
 }
 
 function main() {
@@ -84,8 +84,8 @@ function main() {
   };
 
   const lines = [];
-  lines.push("## Bundle Size Report");
-  lines.push("");
+  lines.push('## Bundle Size Report');
+  lines.push('');
   lines.push(`| Metric | Value | Budget (good / poor) | Status |`);
   lines.push(`|--------|-------|---------------------|--------|`);
   lines.push(
@@ -94,11 +94,11 @@ function main() {
   lines.push(
     `| Max page JS | ${maxJs} KB | ${BUDGETS.totalJsKb.good} KB / ${BUDGETS.totalJsKb.poor} KB | ${formatBadge(maxJs, BUDGETS.totalJsKb.good, BUDGETS.totalJsKb.poor)} |`
   );
-  lines.push("");
-  lines.push("### Page Details");
-  lines.push("");
-  lines.push("| Page | JS Size (KB) | Chunks | Status |");
-  lines.push("|------|-------------|--------|--------|");
+  lines.push('');
+  lines.push('### Page Details');
+  lines.push('');
+  lines.push('| Page | JS Size (KB) | Chunks | Status |');
+  lines.push('|------|-------------|--------|--------|');
 
   for (const { page, sizeKb, chunks } of pages) {
     const jsStatus = formatBadge(sizeKb, BUDGETS.totalJsKb.good, BUDGETS.totalJsKb.poor);
@@ -106,9 +106,9 @@ function main() {
     lines.push(`| ${page} | ${sizeKb} | ${chunks} | JS: ${jsStatus} Chunks: ${chunkStatus} |`);
   }
 
-  const report = lines.join("\n");
-  const outPath = join(projectRoot, "bundle-report.md");
-  writeFileSync(outPath, report, "utf8");
+  const report = lines.join('\n');
+  const outPath = join(projectRoot, 'bundle-report.md');
+  writeFileSync(outPath, report, 'utf8');
   console.log(report);
   console.log(`\nReport written to ${outPath}`);
 }

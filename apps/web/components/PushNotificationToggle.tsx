@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 /**
  * PushNotificationToggle
@@ -8,42 +8,39 @@
  * feedback when the browser blocks notifications.
  */
 
-import React from "react"
-import { Bell, BellOff, Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
-import { usePushNotifications } from "@/hooks/usePushNotifications"
-import { cn } from "@/lib/utils"
+import React from 'react';
+import { Bell, BellOff, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { cn } from '@/lib/utils';
 
 interface PushNotificationToggleProps {
-  walletAddress: string | null
-  className?: string
+  walletAddress: string | null;
+  className?: string;
 }
 
-export function PushNotificationToggle({
-  walletAddress,
-  className,
-}: PushNotificationToggleProps) {
+export function PushNotificationToggle({ walletAddress, className }: PushNotificationToggleProps) {
   const { state, isSupported, isSubscribed, enable, disable, error } =
-    usePushNotifications(walletAddress)
+    usePushNotifications(walletAddress);
 
   if (!isSupported) {
     return (
       <div
         className={cn(
-          "flex items-center gap-2 text-sm text-slate-400 dark:text-slate-500",
+          'flex items-center gap-2 text-sm text-slate-400 dark:text-slate-500',
           className
         )}
       >
         <BellOff className="w-4 h-4 shrink-0" />
         <span>Push notifications are not supported by this browser.</span>
       </div>
-    )
+    );
   }
 
-  const isLoading = state === "checking" || state === "loading"
-  const isDenied = state === "denied"
+  const isLoading = state === 'checking' || state === 'loading';
+  const isDenied = state === 'denied';
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn('space-y-2', className)}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {isSubscribed ? (
@@ -57,10 +54,10 @@ export function PushNotificationToggle({
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
               {isSubscribed
-                ? "Receiving push notifications on this device"
+                ? 'Receiving push notifications on this device'
                 : isDenied
-                ? "Permission blocked — update in browser settings"
-                : "Get notified even when the tab is closed"}
+                  ? 'Permission blocked — update in browser settings'
+                  : 'Get notified even when the tab is closed'}
             </p>
           </div>
         </div>
@@ -71,16 +68,16 @@ export function PushNotificationToggle({
           disabled={isLoading || isDenied || !walletAddress}
           role="switch"
           aria-checked={isSubscribed}
-          aria-label={isSubscribed ? "Disable push notifications" : "Enable push notifications"}
+          aria-label={isSubscribed ? 'Disable push notifications' : 'Enable push notifications'}
           className={cn(
-            "relative w-10 h-5 rounded-full transition-colors shrink-0 ml-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3737A4]",
+            'relative w-10 h-5 rounded-full transition-colors shrink-0 ml-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3737A4]',
             isSubscribed
-              ? "bg-[#3737A4]"
+              ? 'bg-[#3737A4]'
               : isDenied
-              ? "bg-slate-200 dark:bg-slate-700 cursor-not-allowed"
-              : "bg-slate-300 dark:bg-slate-600",
-            isLoading && "opacity-60 cursor-wait",
-            !walletAddress && "opacity-50 cursor-not-allowed"
+                ? 'bg-slate-200 dark:bg-slate-700 cursor-not-allowed'
+                : 'bg-slate-300 dark:bg-slate-600',
+            isLoading && 'opacity-60 cursor-wait',
+            !walletAddress && 'opacity-50 cursor-not-allowed'
           )}
         >
           {isLoading ? (
@@ -88,8 +85,8 @@ export function PushNotificationToggle({
           ) : (
             <span
               className={cn(
-                "absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform",
-                isSubscribed && "translate-x-5"
+                'absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform',
+                isSubscribed && 'translate-x-5'
               )}
             />
           )}
@@ -108,8 +105,8 @@ export function PushNotificationToggle({
         <div className="flex items-start gap-1.5 text-xs text-amber-600 dark:text-amber-400 pl-6">
           <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
           <span>
-            Open browser settings → Site permissions → Notifications and allow
-            Hunty to send notifications.
+            Open browser settings → Site permissions → Notifications and allow Hunty to send
+            notifications.
           </span>
         </div>
       )}
@@ -127,5 +124,5 @@ export function PushNotificationToggle({
         </div>
       )}
     </div>
-  )
+  );
 }

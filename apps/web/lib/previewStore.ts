@@ -6,36 +6,36 @@
  * No data is persisted — every navigation to the preview page starts fresh.
  */
 
-import type { Clue, StoredHunt } from "@/lib/types"
-import { getHuntById, getHuntClues } from "@/lib/huntStore"
+import type { Clue, StoredHunt } from '@/lib/types';
+import { getHuntById, getHuntClues } from '@/lib/huntStore';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface PreviewClueState {
-  clue: Clue
+  clue: Clue;
   /** Whether the creator has solved this clue in the preview session. */
-  solved: boolean
+  solved: boolean;
   /** Most recent answer attempt (for feedback display). */
-  lastAttempt?: string
+  lastAttempt?: string;
   /** Whether the last attempt was correct. */
-  lastAttemptCorrect?: boolean
+  lastAttemptCorrect?: boolean;
 }
 
 export interface PreviewSession {
-  huntId: number
-  hunt: StoredHunt
-  clues: PreviewClueState[]
+  huntId: number;
+  hunt: StoredHunt;
+  clues: PreviewClueState[];
   /** Index of the currently displayed clue. */
-  currentClueIndex: number
+  currentClueIndex: number;
   /** Total points accumulated during preview. */
-  totalPoints: number
+  totalPoints: number;
   /** Whether the preview is complete (all clues solved). */
-  isComplete: boolean
+  isComplete: boolean;
   /** ISO timestamp when the preview session started. */
-  startedAt: string
+  startedAt: string;
 }
 
-export type PreviewViewport = "mobile" | "tablet" | "desktop"
+export type PreviewViewport = 'mobile' | 'tablet' | 'desktop';
 
 // ─── Session creation ─────────────────────────────────────────────────────────
 
@@ -44,10 +44,10 @@ export type PreviewViewport = "mobile" | "tablet" | "desktop"
  * Returns null when the hunt or its clues are not found in local storage.
  */
 export function createPreviewSession(huntId: number): PreviewSession | null {
-  const hunt = getHuntById(huntId)
-  if (!hunt) return null
+  const hunt = getHuntById(huntId);
+  if (!hunt) return null;
 
-  const clues = getHuntClues(huntId)
+  const clues = getHuntClues(huntId);
 
   return {
     huntId,
@@ -57,7 +57,7 @@ export function createPreviewSession(huntId: number): PreviewSession | null {
     totalPoints: 0,
     isComplete: false,
     startedAt: new Date().toISOString(),
-  }
+  };
 }
 
 // ─── Session manipulation (pure functions, no side effects) ──────────────────
@@ -66,25 +66,25 @@ export function createPreviewSession(huntId: number): PreviewSession | null {
 export function advancePreviewSession(
   session: PreviewSession,
   clueIndex: number,
-  answer: string,
+  answer: string
 ): PreviewSession {
   const updatedClues = session.clues.map((cs, i) => {
-    if (i !== clueIndex) return cs
-    const pointsAwarded = cs.clue.points ?? 0
+    if (i !== clueIndex) return cs;
+    const pointsAwarded = cs.clue.points ?? 0;
     return {
       ...cs,
       solved: true,
       lastAttempt: answer,
       lastAttemptCorrect: true,
       pointsAwarded,
-    }
-  })
+    };
+  });
 
-  const pointsAwarded = session.clues[clueIndex]?.clue.points ?? 0
-  const totalPoints = session.totalPoints + pointsAwarded
+  const pointsAwarded = session.clues[clueIndex]?.clue.points ?? 0;
+  const totalPoints = session.totalPoints + pointsAwarded;
 
-  const nextIndex = Math.min(clueIndex + 1, session.clues.length - 1)
-  const isComplete = clueIndex >= session.clues.length - 1
+  const nextIndex = Math.min(clueIndex + 1, session.clues.length - 1);
+  const isComplete = clueIndex >= session.clues.length - 1;
 
   return {
     ...session,
@@ -92,25 +92,25 @@ export function advancePreviewSession(
     currentClueIndex: isComplete ? clueIndex : nextIndex,
     totalPoints,
     isComplete,
-  }
+  };
 }
 
 /** Record a wrong answer attempt without advancing. */
 export function recordWrongAttempt(
   session: PreviewSession,
   clueIndex: number,
-  answer: string,
+  answer: string
 ): PreviewSession {
   const updatedClues = session.clues.map((cs, i) => {
-    if (i !== clueIndex) return cs
+    if (i !== clueIndex) return cs;
     return {
       ...cs,
       lastAttempt: answer,
       lastAttemptCorrect: false,
-    }
-  })
+    };
+  });
 
-  return { ...session, clues: updatedClues }
+  return { ...session, clues: updatedClues };
 }
 
 /** Reset the session back to the beginning. */
@@ -125,7 +125,7 @@ export function resetPreviewSession(session: PreviewSession): PreviewSession {
     totalPoints: 0,
     isComplete: false,
     startedAt: new Date().toISOString(),
-  }
+  };
 }
 
 // ─── Share link helpers ───────────────────────────────────────────────────────
@@ -133,9 +133,8 @@ export function resetPreviewSession(session: PreviewSession): PreviewSession {
 /** Builds the absolute preview URL for sharing with collaborators. */
 export function buildPreviewUrl(huntId: number, baseUrl?: string): string {
   const base =
-    baseUrl ??
-    (typeof window !== "undefined" ? window.location.origin : "https://hunty.app")
-  return `${base}/hunt/${huntId}/preview`
+    baseUrl ?? (typeof window !== 'undefined' ? window.location.origin : 'https://hunty.app');
+  return `${base}/hunt/${huntId}/preview`;
 }
 
 /**
@@ -143,26 +142,26 @@ export function buildPreviewUrl(huntId: number, baseUrl?: string): string {
  * No-ops on non-browser environments.
  */
 export async function copyPreviewUrlToClipboard(huntId: number): Promise<boolean> {
-  if (typeof navigator === "undefined" || !navigator.clipboard) return false
+  if (typeof navigator === 'undefined' || !navigator.clipboard) return false;
   try {
-    const url = buildPreviewUrl(huntId)
-    await navigator.clipboard.writeText(url)
-    return true
+    const url = buildPreviewUrl(huntId);
+    await navigator.clipboard.writeText(url);
+    return true;
   } catch {
-    return false
+    return false;
   }
 }
 
 // ─── Viewport helpers ─────────────────────────────────────────────────────────
 
 export const VIEWPORT_LABELS: Record<PreviewViewport, string> = {
-  mobile: "Mobile (375px)",
-  tablet: "Tablet (768px)",
-  desktop: "Desktop (full)",
-}
+  mobile: 'Mobile (375px)',
+  tablet: 'Tablet (768px)',
+  desktop: 'Desktop (full)',
+};
 
 export const VIEWPORT_WIDTHS: Record<PreviewViewport, number | null> = {
   mobile: 375,
   tablet: 768,
   desktop: null,
-}
+};

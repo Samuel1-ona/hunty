@@ -1,7 +1,7 @@
-"use client"
+'use client';
 
-import { BarChart3, Calendar, Filter, Star, TrendingUp, Users } from "lucide-react"
-import { useMemo, useState } from "react"
+import { BarChart3, Calendar, Filter, Star, TrendingUp, Users } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import {
   Bar,
   BarChart,
@@ -13,96 +13,100 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts"
+} from 'recharts';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@hunty/ui"
-import { StarRating } from "@/components/StarRating"
-import type { StoredHunt } from "@/lib/types"
-import { cn } from "@/lib/utils"
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { StarRating } from '@/components/StarRating';
+import type { StoredHunt } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 interface CreatorAnalyticsProps {
-  hunts: StoredHunt[]
+  hunts: StoredHunt[];
 }
 
-type DateRange = "7d" | "30d" | "90d" | "all"
+type DateRange = '7d' | '30d' | '90d' | 'all';
 
 const DATE_RANGE_LABELS: Record<DateRange, string> = {
-  "7d": "Last 7 days",
-  "30d": "Last 30 days",
-  "90d": "Last 90 days",
-  all: "All time",
-}
+  '7d': 'Last 7 days',
+  '30d': 'Last 30 days',
+  '90d': 'Last 90 days',
+  all: 'All time',
+};
 
 function generateCompletionData(hunts: StoredHunt[], days: number) {
-  const now = new Date()
-  const data = []
-  
+  const now = new Date();
+  const data = [];
+
   for (let i = days - 1; i >= 0; i--) {
-    const date = new Date(now)
-    date.setDate(date.getDate() - i)
-    const dateStr = date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
-    
+    const date = new Date(now);
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
     // Simulate completions based on hunt activity
-    const activeHunts = hunts.filter(h => h.status === "Active" || h.status === "Completed")
-    const baseCount = activeHunts.length * 2
-    const completions = Math.floor(Math.random() * (baseCount + 5))
-    
+    const activeHunts = hunts.filter((h) => h.status === 'Active' || h.status === 'Completed');
+    const baseCount = activeHunts.length * 2;
+    const completions = Math.floor(Math.random() * (baseCount + 5));
+
     data.push({
       date: dateStr,
       completions,
       players: Math.floor(completions * (0.8 + Math.random() * 0.4)),
-    })
+    });
   }
-  
-  return data
+
+  return data;
 }
 
 function generateDropOffData(hunts: StoredHunt[]) {
-  const totalClues = hunts.reduce((sum, h) => sum + h.cluesCount, 0) || 10
-  const clueCount = Math.min(totalClues, 8)
-  
+  const totalClues = hunts.reduce((sum, h) => sum + h.cluesCount, 0) || 10;
+  const clueCount = Math.min(totalClues, 8);
+
   return Array.from({ length: clueCount }, (_, i) => ({
     clue: `Clue ${i + 1}`,
-    dropOff: Math.max(5, 100 - (i * 12) - Math.floor(Math.random() * 15)),
-    completions: Math.max(10, 100 - (i * 15) - Math.floor(Math.random() * 20)),
-  }))
+    dropOff: Math.max(5, 100 - i * 12 - Math.floor(Math.random() * 15)),
+    completions: Math.max(10, 100 - i * 15 - Math.floor(Math.random() * 20)),
+  }));
 }
 
 function generateRetentionData() {
   return [
-    { stage: "Started", players: 100 },
-    { stage: "Clue 2", players: 78 },
-    { stage: "Clue 3", players: 62 },
-    { stage: "Clue 4", players: 45 },
-    { stage: "Completed", players: 32 },
-  ]
+    { stage: 'Started', players: 100 },
+    { stage: 'Clue 2', players: 78 },
+    { stage: 'Clue 3', players: 62 },
+    { stage: 'Clue 4', players: 45 },
+    { stage: 'Completed', players: 32 },
+  ];
 }
 
 export function CreatorAnalytics({ hunts }: CreatorAnalyticsProps) {
-  const [dateRange, setDateRange] = useState<DateRange>("30d")
-  
+  const [dateRange, setDateRange] = useState<DateRange>('30d');
+
   const days = useMemo(() => {
     switch (dateRange) {
-      case "7d": return 7
-      case "30d": return 30
-      case "90d": return 90
-      case "all": return 90
+      case '7d':
+        return 7;
+      case '30d':
+        return 30;
+      case '90d':
+        return 90;
+      case 'all':
+        return 90;
     }
-  }, [dateRange])
-  
-  const completionData = useMemo(() => generateCompletionData(hunts, days), [hunts, days])
-  const dropOffData = useMemo(() => generateDropOffData(hunts), [hunts])
-  const retentionData = useMemo(() => generateRetentionData(), [])
-  
-  const totalCompletions = completionData.reduce((sum, d) => sum + d.completions, 0)
-  const totalPlayers = completionData.reduce((sum, d) => sum + d.players, 0)
-  const activeHunts = hunts.filter(h => h.status === "Active").length
-  const completedHunts = hunts.filter(h => h.status === "Completed").length
+  }, [dateRange]);
+
+  const completionData = useMemo(() => generateCompletionData(hunts, days), [hunts, days]);
+  const dropOffData = useMemo(() => generateDropOffData(hunts), [hunts]);
+  const retentionData = useMemo(() => generateRetentionData(), []);
+
+  const totalCompletions = completionData.reduce((sum, d) => sum + d.completions, 0);
+  const totalPlayers = completionData.reduce((sum, d) => sum + d.players, 0);
+  const activeHunts = hunts.filter((h) => h.status === 'Active').length;
+  const completedHunts = hunts.filter((h) => h.status === 'Completed').length;
 
   // ─── Ratings aggregation ─────────────────────────────────────────────────
   const huntsWithRatings = hunts.filter(
     (h) => h.averageRating !== undefined && h.averageRating !== null && h.averageRating > 0
-  )
+  );
   const overallAverageRating =
     huntsWithRatings.length > 0
       ? Math.round(
@@ -110,22 +114,20 @@ export function CreatorAnalytics({ hunts }: CreatorAnalyticsProps) {
             huntsWithRatings.length) *
             10
         ) / 10
-      : null
-  const totalReviews = hunts.reduce((sum, h) => sum + (h.reviewCount ?? 0), 0)
+      : null;
+  const totalReviews = hunts.reduce((sum, h) => sum + (h.reviewCount ?? 0), 0);
 
   return (
     <div className="space-y-6">
       {/* Header with date range filter */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Analytics Overview
-          </h2>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Analytics Overview</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Track your hunt performance and player engagement
           </p>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-slate-500" />
           <div className="flex rounded-lg border border-slate-200 dark:border-white/10 overflow-hidden">
@@ -134,10 +136,10 @@ export function CreatorAnalytics({ hunts }: CreatorAnalyticsProps) {
                 key={range}
                 onClick={() => setDateRange(range)}
                 className={cn(
-                  "px-3 py-1.5 text-xs font-medium transition-colors",
+                  'px-3 py-1.5 text-xs font-medium transition-colors',
                   dateRange === range
-                    ? "bg-[#3737A4] text-white"
-                    : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    ? 'bg-[#3737A4] text-white'
+                    : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                 )}
               >
                 {DATE_RANGE_LABELS[range]}
@@ -156,13 +158,15 @@ export function CreatorAnalytics({ hunts }: CreatorAnalyticsProps) {
                 <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">{totalCompletions}</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                  {totalCompletions}
+                </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">Total Completions</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="border-slate-200 dark:border-white/10">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -176,7 +180,7 @@ export function CreatorAnalytics({ hunts }: CreatorAnalyticsProps) {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="border-slate-200 dark:border-white/10">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -190,7 +194,7 @@ export function CreatorAnalytics({ hunts }: CreatorAnalyticsProps) {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="border-slate-200 dark:border-white/10">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -198,7 +202,9 @@ export function CreatorAnalytics({ hunts }: CreatorAnalyticsProps) {
                 <BarChart3 className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">{completedHunts}</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                  {completedHunts}
+                </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">Completed Hunts</p>
               </div>
             </div>
@@ -213,7 +219,7 @@ export function CreatorAnalytics({ hunts }: CreatorAnalyticsProps) {
               </div>
               <div>
                 <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                  {overallAverageRating !== null ? overallAverageRating.toFixed(1) : "—"}
+                  {overallAverageRating !== null ? overallAverageRating.toFixed(1) : '—'}
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   Avg Rating
@@ -240,34 +246,38 @@ export function CreatorAnalytics({ hunts }: CreatorAnalyticsProps) {
             <div className="h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={completionData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:stroke-slate-700" />
-                  <XAxis 
-                    dataKey="date" 
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="#e2e8f0"
+                    className="dark:stroke-slate-700"
+                  />
+                  <XAxis
+                    dataKey="date"
                     tick={{ fontSize: 11, fill: '#94a3b8' }}
                     interval="preserveStartEnd"
                   />
                   <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1e293b', 
-                      border: 'none', 
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1e293b',
+                      border: 'none',
                       borderRadius: '8px',
-                      color: '#f1f5f9'
+                      color: '#f1f5f9',
                     }}
                   />
                   <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="completions" 
-                    stroke="#3737A4" 
+                  <Line
+                    type="monotone"
+                    dataKey="completions"
+                    stroke="#3737A4"
                     strokeWidth={2}
                     dot={false}
                     name="Completions"
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="players" 
-                    stroke="#39A437" 
+                  <Line
+                    type="monotone"
+                    dataKey="players"
+                    stroke="#39A437"
                     strokeWidth={2}
                     dot={false}
                     name="Players"
@@ -289,20 +299,29 @@ export function CreatorAnalytics({ hunts }: CreatorAnalyticsProps) {
             <div className="h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={dropOffData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:stroke-slate-700" />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="#e2e8f0"
+                    className="dark:stroke-slate-700"
+                  />
                   <XAxis dataKey="clue" tick={{ fontSize: 11, fill: '#94a3b8' }} />
                   <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1e293b', 
-                      border: 'none', 
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1e293b',
+                      border: 'none',
                       borderRadius: '8px',
-                      color: '#f1f5f9'
+                      color: '#f1f5f9',
                     }}
                   />
                   <Legend />
                   <Bar dataKey="dropOff" fill="#E3225C" name="Drop-off %" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="completions" fill="#39A437" name="Completions %" radius={[4, 4, 0, 0]} />
+                  <Bar
+                    dataKey="completions"
+                    fill="#39A437"
+                    name="Completions %"
+                    radius={[4, 4, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -320,9 +339,9 @@ export function CreatorAnalytics({ hunts }: CreatorAnalyticsProps) {
         <CardContent>
           <div className="space-y-3">
             {retentionData.map((stage, index) => {
-              const width = (stage.players / retentionData[0].players) * 100
-              const isLast = index === retentionData.length - 1
-              
+              const width = (stage.players / retentionData[0].players) * 100;
+              const isLast = index === retentionData.length - 1;
+
               return (
                 <div key={stage.stage} className="flex items-center gap-4">
                   <span className="w-24 text-sm text-slate-600 dark:text-slate-400 text-right">
@@ -331,10 +350,10 @@ export function CreatorAnalytics({ hunts }: CreatorAnalyticsProps) {
                   <div className="flex-1 h-8 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden">
                     <div
                       className={cn(
-                        "h-full rounded-lg transition-all duration-500",
-                        isLast 
-                          ? "bg-gradient-to-r from-[#39A437] to-[#194F0C]"
-                          : "bg-gradient-to-r from-[#3737A4] to-[#0C0C4F]"
+                        'h-full rounded-lg transition-all duration-500',
+                        isLast
+                          ? 'bg-gradient-to-r from-[#39A437] to-[#194F0C]'
+                          : 'bg-gradient-to-r from-[#3737A4] to-[#0C0C4F]'
                       )}
                       style={{ width: `${width}%` }}
                     />
@@ -343,7 +362,7 @@ export function CreatorAnalytics({ hunts }: CreatorAnalyticsProps) {
                     {stage.players}%
                   </span>
                 </div>
-              )
+              );
             })}
           </div>
         </CardContent>
@@ -393,12 +412,12 @@ export function CreatorAnalytics({ hunts }: CreatorAnalyticsProps) {
                       <td className="py-3 pr-4">
                         <span
                           className={cn(
-                            "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                            hunt.status === "Active"
-                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                              : hunt.status === "Completed"
-                              ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-                              : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                            'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                            hunt.status === 'Active'
+                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                              : hunt.status === 'Completed'
+                                ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
                           )}
                         >
                           {hunt.status}
@@ -427,5 +446,5 @@ export function CreatorAnalytics({ hunts }: CreatorAnalyticsProps) {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

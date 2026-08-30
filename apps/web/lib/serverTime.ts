@@ -4,38 +4,38 @@
 
 export interface ServerTimeSnapshot {
   /** Authoritative server Unix time in milliseconds. */
-  serverNowMs: number
+  serverNowMs: number;
   /** Client Date.now() when the snapshot was taken. */
-  clientNowMs: number
+  clientNowMs: number;
   /** serverNowMs - clientNowMs */
-  offsetMs: number
+  offsetMs: number;
 }
 
-let cachedOffsetMs = 0
-let lastSyncedAt = 0
-const SYNC_TTL_MS = 60_000
+let cachedOffsetMs = 0;
+let lastSyncedAt = 0;
+const SYNC_TTL_MS = 60_000;
 
 export function getCachedTimeOffsetMs(): number {
-  return cachedOffsetMs
+  return cachedOffsetMs;
 }
 
 export function setCachedTimeOffsetMs(offsetMs: number): void {
-  cachedOffsetMs = offsetMs
-  lastSyncedAt = Date.now()
+  cachedOffsetMs = offsetMs;
+  lastSyncedAt = Date.now();
 }
 
 /** Approximate authoritative now using the last known offset. */
 export function getServerSyncedNowMs(): number {
-  return Date.now() + cachedOffsetMs
+  return Date.now() + cachedOffsetMs;
 }
 
 /** Unix seconds using server-synced clock. */
 export function getServerSyncedNowSeconds(): number {
-  return Math.floor(getServerSyncedNowMs() / 1000)
+  return Math.floor(getServerSyncedNowMs() / 1000);
 }
 
 export function isTimeSyncStale(ttlMs = SYNC_TTL_MS): boolean {
-  return Date.now() - lastSyncedAt > ttlMs
+  return Date.now() - lastSyncedAt > ttlMs;
 }
 
 /**
@@ -44,66 +44,62 @@ export function isTimeSyncStale(ttlMs = SYNC_TTL_MS): boolean {
  */
 export function computeOffsetFromServerPayload(
   payload: { serverNowMs?: number; serverTimestamp?: number; timestamp?: string },
-  clientNowMs = Date.now(),
+  clientNowMs = Date.now()
 ): ServerTimeSnapshot {
-  let serverNowMs: number | undefined = payload.serverNowMs
+  let serverNowMs: number | undefined = payload.serverNowMs;
 
-  if (serverNowMs == null && typeof payload.serverTimestamp === "number") {
+  if (serverNowMs == null && typeof payload.serverTimestamp === 'number') {
     // Heuristic: values < 1e12 are seconds
     serverNowMs =
-      payload.serverTimestamp < 1e12
-        ? payload.serverTimestamp * 1000
-        : payload.serverTimestamp
+      payload.serverTimestamp < 1e12 ? payload.serverTimestamp * 1000 : payload.serverTimestamp;
   }
 
   if (serverNowMs == null && payload.timestamp) {
-    const parsed = Date.parse(payload.timestamp)
-    if (!Number.isNaN(parsed)) serverNowMs = parsed
+    const parsed = Date.parse(payload.timestamp);
+    if (!Number.isNaN(parsed)) serverNowMs = parsed;
   }
 
   if (serverNowMs == null) {
-    serverNowMs = clientNowMs
+    serverNowMs = clientNowMs;
   }
 
-  const offsetMs = serverNowMs - clientNowMs
-  setCachedTimeOffsetMs(offsetMs)
-  return { serverNowMs, clientNowMs, offsetMs }
+  const offsetMs = serverNowMs - clientNowMs;
+  setCachedTimeOffsetMs(offsetMs);
+  return { serverNowMs, clientNowMs, offsetMs };
 }
 
 /**
  * Fetch /api/v1/time (or fallback /api/health) and cache the offset.
  */
-export async function syncServerTime(
-  fetchImpl: typeof fetch = fetch,
-): Promise<ServerTimeSnapshot> {
-  const clientBefore = Date.now()
+export async function syncServerTime(fetchImpl: typeof fetch = fetch): Promise<ServerTimeSnapshot> {
+  const clientBefore = Date.now();
   try {
-    const res = await fetchImpl("/api/v1/time", { cache: "no-store" })
-    const clientAfter = Date.now()
-    const clientNowMs = Math.floor((clientBefore + clientAfter) / 2)
+    const res = await fetchImpl('/api/v1/time', { cache: 'no-store' });
+    const clientAfter = Date.now();
+    const clientNowMs = Math.floor((clientBefore + clientAfter) / 2);
     if (res.ok) {
       const body = (await res.json()) as {
-        serverNowMs?: number
-        serverTimestamp?: number
-        timestamp?: string
-      }
-      return computeOffsetFromServerPayload(body, clientNowMs)
+        serverNowMs?: number;
+        serverTimestamp?: number;
+        timestamp?: string;
+      };
+      return computeOffsetFromServerPayload(body, clientNowMs);
     }
   } catch {
     // fall through to health
   }
 
   try {
-    const res = await fetchImpl("/api/health", { cache: "no-store" })
-    const clientAfter = Date.now()
-    const clientNowMs = Math.floor((clientBefore + clientAfter) / 2)
+    const res = await fetchImpl('/api/health', { cache: 'no-store' });
+    const clientAfter = Date.now();
+    const clientNowMs = Math.floor((clientBefore + clientAfter) / 2);
     if (res.ok) {
-      const body = (await res.json()) as { timestamp?: string }
-      return computeOffsetFromServerPayload(body, clientNowMs)
+      const body = (await res.json()) as { timestamp?: string };
+      return computeOffsetFromServerPayload(body, clientNowMs);
     }
   } catch {
     // ignore
   }
 
-  return computeOffsetFromServerPayload({}, Date.now())
+  return computeOffsetFromServerPayload({}, Date.now());
 }

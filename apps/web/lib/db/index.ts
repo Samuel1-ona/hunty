@@ -12,7 +12,7 @@
  * runtime failure.
  */
 
-import postgres from "postgres";
+import postgres from 'postgres';
 
 let _sql: ReturnType<typeof postgres> | null = null;
 
@@ -22,8 +22,8 @@ function getDb(): ReturnType<typeof postgres> {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error(
-      "DATABASE_URL environment variable is not set. " +
-        "Please configure it with your PostgreSQL connection string."
+      'DATABASE_URL environment variable is not set. ' +
+        'Please configure it with your PostgreSQL connection string.'
     );
   }
 

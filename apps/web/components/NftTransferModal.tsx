@@ -1,34 +1,30 @@
-"use client"
+'use client';
 
-import { AlertCircle, CheckCircle2, Loader2,Send } from "lucide-react"
-import React, { useState } from "react"
+import { AlertCircle, CheckCircle2, Loader2, Send } from 'lucide-react';
+import React, { useState } from 'react';
 
-import { Button } from "@hunty/ui"
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import {
-  isValidStellarAddress,
-  transferNft,
-  type TransferResult,
-} from "@/lib/nft/transfer"
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { isValidStellarAddress, transferNft, type TransferResult } from '@/lib/nft/transfer';
 
-import type { NftRewardDetail } from "./NftDetailModal"
+import type { NftRewardDetail } from './NftDetailModal';
 
 interface NftTransferModalProps {
-  nft: NftRewardDetail | null
-  senderAddress: string
-  isOpen: boolean
-  onClose: () => void
-  onTransferComplete?: (result: TransferResult) => void
+  nft: NftRewardDetail | null;
+  senderAddress: string;
+  isOpen: boolean;
+  onClose: () => void;
+  onTransferComplete?: (result: TransferResult) => void;
 }
 
-type TransferStep = "input" | "confirm" | "processing" | "success" | "error"
+type TransferStep = 'input' | 'confirm' | 'processing' | 'success' | 'error';
 
 export function NftTransferModal({
   nft,
@@ -37,56 +33,56 @@ export function NftTransferModal({
   onClose,
   onTransferComplete,
 }: NftTransferModalProps) {
-  const [recipient, setRecipient] = useState("")
-  const [memo, setMemo] = useState("")
-  const [step, setStep] = useState<TransferStep>("input")
-  const [error, setError] = useState("")
-  const [result, setResult] = useState<TransferResult | null>(null)
+  const [recipient, setRecipient] = useState('');
+  const [memo, setMemo] = useState('');
+  const [step, setStep] = useState<TransferStep>('input');
+  const [error, setError] = useState('');
+  const [result, setResult] = useState<TransferResult | null>(null);
 
-  if (!nft) return null
+  if (!nft) return null;
 
-  const recipientValid = recipient.length > 0 && isValidStellarAddress(recipient)
-  const isSelf = recipient === senderAddress
+  const recipientValid = recipient.length > 0 && isValidStellarAddress(recipient);
+  const isSelf = recipient === senderAddress;
 
   const handleConfirm = () => {
     if (!recipientValid) {
-      setError("Please enter a valid Stellar address")
-      return
+      setError('Please enter a valid Stellar address');
+      return;
     }
     if (isSelf) {
-      setError("Cannot transfer to yourself")
-      return
+      setError('Cannot transfer to yourself');
+      return;
     }
-    setError("")
-    setStep("confirm")
-  }
+    setError('');
+    setStep('confirm');
+  };
 
   const handleTransfer = async () => {
-    setStep("processing")
+    setStep('processing');
     try {
       const transferResult = await transferNft({
         nftId: nft.id,
         recipientAddress: recipient,
         senderAddress,
         memo: memo || undefined,
-      })
-      setResult(transferResult)
-      setStep("success")
-      onTransferComplete?.(transferResult)
+      });
+      setResult(transferResult);
+      setStep('success');
+      onTransferComplete?.(transferResult);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Transfer failed")
-      setStep("error")
+      setError(err instanceof Error ? err.message : 'Transfer failed');
+      setStep('error');
     }
-  }
+  };
 
   const handleClose = () => {
-    setRecipient("")
-    setMemo("")
-    setStep("input")
-    setError("")
-    setResult(null)
-    onClose()
-  }
+    setRecipient('');
+    setMemo('');
+    setStep('input');
+    setError('');
+    setResult(null);
+    onClose();
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -94,19 +90,19 @@ export function NftTransferModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Send className="w-5 h-5 text-indigo-600" />
-            {step === "success" ? "Transfer Complete" : `Transfer "${nft.name}"`}
+            {step === 'success' ? 'Transfer Complete' : `Transfer "${nft.name}"`}
           </DialogTitle>
           <DialogDescription>
-            {step === "input" && "Send this NFT to another wallet"}
-            {step === "confirm" && "Please confirm the transfer details"}
-            {step === "processing" && "Processing your transfer..."}
-            {step === "success" && "Your NFT has been sent successfully"}
-            {step === "error" && "Something went wrong"}
+            {step === 'input' && 'Send this NFT to another wallet'}
+            {step === 'confirm' && 'Please confirm the transfer details'}
+            {step === 'processing' && 'Processing your transfer...'}
+            {step === 'success' && 'Your NFT has been sent successfully'}
+            {step === 'error' && 'Something went wrong'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {step === "input" && (
+          {step === 'input' && (
             <>
               <div>
                 <label className="text-sm font-medium text-slate-700 mb-1 block">
@@ -118,8 +114,8 @@ export function NftTransferModal({
                   onChange={(e) => setRecipient(e.target.value.trim())}
                   className={`font-mono text-sm ${
                     recipient.length > 0 && !recipientValid
-                      ? "border-red-300 focus:ring-red-500"
-                      : ""
+                      ? 'border-red-300 focus:ring-red-500'
+                      : ''
                   }`}
                 />
                 {recipient.length > 0 && !recipientValid && (
@@ -159,7 +155,7 @@ export function NftTransferModal({
             </>
           )}
 
-          {step === "confirm" && (
+          {step === 'confirm' && (
             <>
               <div className="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
                 <div className="flex justify-between">
@@ -168,7 +164,9 @@ export function NftTransferModal({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">To</span>
-                  <span className="font-mono text-xs">{recipient.slice(0, 8)}...{recipient.slice(-8)}</span>
+                  <span className="font-mono text-xs">
+                    {recipient.slice(0, 8)}...{recipient.slice(-8)}
+                  </span>
                 </div>
                 {memo && (
                   <div className="flex justify-between">
@@ -178,27 +176,35 @@ export function NftTransferModal({
                 )}
               </div>
               <p className="text-xs text-amber-600 bg-amber-50 rounded-lg p-3">
-                This action is irreversible. The NFT will be permanently transferred to the recipient.
+                This action is irreversible. The NFT will be permanently transferred to the
+                recipient.
               </p>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep("input")} className="flex-1 rounded-xl">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep('input')}
+                  className="flex-1 rounded-xl"
+                >
                   Back
                 </Button>
-                <Button onClick={handleTransfer} className="flex-1 bg-indigo-600 hover:bg-indigo-700 rounded-xl">
+                <Button
+                  onClick={handleTransfer}
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 rounded-xl"
+                >
                   Confirm Transfer
                 </Button>
               </div>
             </>
           )}
 
-          {step === "processing" && (
+          {step === 'processing' && (
             <div className="flex flex-col items-center py-8">
               <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mb-4" />
               <p className="text-sm text-slate-600">Submitting transaction...</p>
             </div>
           )}
 
-          {step === "success" && result && (
+          {step === 'success' && result && (
             <>
               <div className="flex flex-col items-center py-4">
                 <CheckCircle2 className="w-12 h-12 text-emerald-500 mb-3" />
@@ -213,7 +219,7 @@ export function NftTransferModal({
             </>
           )}
 
-          {step === "error" && (
+          {step === 'error' && (
             <>
               <div className="flex flex-col items-center py-4">
                 <AlertCircle className="w-12 h-12 text-red-500 mb-3" />
@@ -223,7 +229,7 @@ export function NftTransferModal({
                 <Button variant="outline" onClick={handleClose} className="flex-1 rounded-xl">
                   Cancel
                 </Button>
-                <Button onClick={() => setStep("input")} className="flex-1 rounded-xl">
+                <Button onClick={() => setStep('input')} className="flex-1 rounded-xl">
                   Try Again
                 </Button>
               </div>
@@ -232,5 +238,5 @@ export function NftTransferModal({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

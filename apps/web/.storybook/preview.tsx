@@ -1,18 +1,18 @@
-import type { Preview } from '@storybook/nextjs-vite'
-import { ThemeProvider } from 'next-themes'
+import type { Preview } from '@storybook/nextjs-vite';
+import { ThemeProvider } from 'next-themes';
 
 const preview: Preview = {
   parameters: {
     controls: {
       matchers: {
-       color: /(background|color)$/i,
-       date: /Date$/i,
+        color: /(background|color)$/i,
+        date: /Date$/i,
       },
     },
 
     a11y: {
-      test: 'todo'
-    }
+      test: 'todo',
+    },
   },
 
   decorators: [
@@ -22,6 +22,6 @@ const preview: Preview = {
       </ThemeProvider>
     ),
   ],
-}
+};
 
-export default preview
+export default preview;

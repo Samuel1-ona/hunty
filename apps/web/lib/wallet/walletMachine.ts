@@ -15,21 +15,21 @@
  * @module walletMachine
  */
 
-import { useCallback, useEffect, useReducer, useRef } from "react";
-import {
-  getAddress,
-  isConnected,
-  requestAccess,
-  WatchWalletChanges,
-} from "@stellar/freighter-api";
+import { useCallback, useEffect, useReducer, useRef } from 'react';
+import { getAddress, isConnected, requestAccess, WatchWalletChanges } from '@stellar/freighter-api';
 
-import type { WalletProvider } from "@/lib/wallets/types";
-import { connectWalletProvider, getStoredWalletSession, setStoredWalletSession, clearStoredWalletSession } from "@/lib/walletAdapter";
-import { disconnectWalletConnect } from "@/lib/walletConnect";
-import { cancelPendingTransactions } from "@/lib/txToast";
+import type { WalletProvider } from '@/lib/wallets/types';
+import {
+  connectWalletProvider,
+  getStoredWalletSession,
+  setStoredWalletSession,
+  clearStoredWalletSession,
+} from '@/lib/walletAdapter';
+import { disconnectWalletConnect } from '@/lib/walletConnect';
+import { cancelPendingTransactions } from '@/lib/txToast';
 
 // ─── Storage key for legacy freighter-only persistence ─────────────────────
-const STORAGE_KEY = "freighter_public_key";
+const STORAGE_KEY = 'freighter_public_key';
 
 // ─── State types ───────────────────────────────────────────────────────────
 
@@ -41,7 +41,7 @@ const STORAGE_KEY = "freighter_public_key";
  * - `disconnected`  — Explicitly disconnected by the user.
  * - `error`         - Last connection attempt failed.
  */
-export type WalletStatus = "idle" | "connecting" | "connected" | "disconnected" | "error";
+export type WalletStatus = 'idle' | 'connecting' | 'connected' | 'disconnected' | 'error';
 
 /**
  * Full wallet machine state.
@@ -58,94 +58,88 @@ export interface WalletMachineState {
 // ─── Events ────────────────────────────────────────────────────────────────
 
 export type WalletEvent =
-  | { type: "CONNECT_INIT"; provider: WalletProvider }
-  | { type: "CONNECT_SUCCESS"; publicKey: string; provider: WalletProvider }
-  | { type: "CONNECT_ERROR"; error: string }
-  | { type: "DISCONNECT" }
-  | { type: "SESSION_RESTORED"; publicKey: string; provider: WalletProvider }
-  | { type: "CLEAR_ERROR" };
+  | { type: 'CONNECT_INIT'; provider: WalletProvider }
+  | { type: 'CONNECT_SUCCESS'; publicKey: string; provider: WalletProvider }
+  | { type: 'CONNECT_ERROR'; error: string }
+  | { type: 'DISCONNECT' }
+  | { type: 'SESSION_RESTORED'; publicKey: string; provider: WalletProvider }
+  | { type: 'CLEAR_ERROR' };
 
 // ─── Initial state ─────────────────────────────────────────────────────────
 
 export const INITIAL_WALLET_STATE: WalletMachineState = {
-  status: "idle",
-  publicKey: "",
+  status: 'idle',
+  publicKey: '',
   provider: null,
   error: null,
 };
 
 // ─── Valid transition map (for reference / testing) ────────────────────────
 
-const VALID_TRANSITIONS: Record<WalletStatus, WalletEvent["type"][]> = {
-  idle:          ["CONNECT_INIT", "SESSION_RESTORED"],
-  connecting:    ["CONNECT_SUCCESS", "CONNECT_ERROR", "DISCONNECT"],
-  connected:     ["DISCONNECT", "CONNECT_ERROR"],
-  disconnected:  ["CONNECT_INIT", "SESSION_RESTORED"],
-  error:         ["CONNECT_INIT", "CLEAR_ERROR", "DISCONNECT"],
+const VALID_TRANSITIONS: Record<WalletStatus, WalletEvent['type'][]> = {
+  idle: ['CONNECT_INIT', 'SESSION_RESTORED'],
+  connecting: ['CONNECT_SUCCESS', 'CONNECT_ERROR', 'DISCONNECT'],
+  connected: ['DISCONNECT', 'CONNECT_ERROR'],
+  disconnected: ['CONNECT_INIT', 'SESSION_RESTORED'],
+  error: ['CONNECT_INIT', 'CLEAR_ERROR', 'DISCONNECT'],
 };
 
 /**
  * Returns whether a transition is valid from the current status.
  * Useful for assertions in tests and for guarded dispatch wrappers.
  */
-export function isValidTransition(
-  from: WalletStatus,
-  eventType: WalletEvent["type"],
-): boolean {
+export function isValidTransition(from: WalletStatus, eventType: WalletEvent['type']): boolean {
   return VALID_TRANSITIONS[from]?.includes(eventType) ?? false;
 }
 
 // ─── Reducer ───────────────────────────────────────────────────────────────
 
-export function walletReducer(
-  state: WalletMachineState,
-  event: WalletEvent,
-): WalletMachineState {
+export function walletReducer(state: WalletMachineState, event: WalletEvent): WalletMachineState {
   switch (event.type) {
-    case "CONNECT_INIT":
+    case 'CONNECT_INIT':
       return {
-        status: "connecting",
-        publicKey: "",
+        status: 'connecting',
+        publicKey: '',
         provider: event.provider,
         error: null,
       };
 
-    case "CONNECT_SUCCESS":
+    case 'CONNECT_SUCCESS':
       return {
-        status: "connected",
+        status: 'connected',
         publicKey: event.publicKey,
         provider: event.provider,
         error: null,
       };
 
-    case "CONNECT_ERROR":
+    case 'CONNECT_ERROR':
       return {
-        status: "error",
+        status: 'error',
         publicKey: state.publicKey,
         provider: state.provider,
         error: event.error,
       };
 
-    case "DISCONNECT":
+    case 'DISCONNECT':
       return {
-        status: "disconnected",
-        publicKey: "",
+        status: 'disconnected',
+        publicKey: '',
         provider: null,
         error: null,
       };
 
-    case "SESSION_RESTORED":
+    case 'SESSION_RESTORED':
       return {
-        status: "connected",
+        status: 'connected',
         publicKey: event.publicKey,
         provider: event.provider,
         error: null,
       };
 
-    case "CLEAR_ERROR":
+    case 'CLEAR_ERROR':
       return {
         ...state,
-        status: state.status === "error" ? "idle" : state.status,
+        status: state.status === 'error' ? 'idle' : state.status,
         error: null,
       };
 
@@ -161,11 +155,16 @@ export function walletReducer(
  */
 export function getWalletStatusLabel(status: WalletStatus): string {
   switch (status) {
-    case "idle":          return "Connect Wallet";
-    case "connecting":    return "Connecting…";
-    case "connected":     return "Connected";
-    case "disconnected":  return "Disconnected";
-    case "error":         return "Connection Failed";
+    case 'idle':
+      return 'Connect Wallet';
+    case 'connecting':
+      return 'Connecting…';
+    case 'connected':
+      return 'Connected';
+    case 'disconnected':
+      return 'Disconnected';
+    case 'error':
+      return 'Connection Failed';
   }
 }
 
@@ -197,7 +196,7 @@ export async function tryRestoreSession(): Promise<{
   }
 
   // Priority 2: legacy freighter key
-  if (typeof window === "undefined") return null;
+  if (typeof window === 'undefined') return null;
   const saved = localStorage.getItem(STORAGE_KEY);
   if (!saved) return null;
 
@@ -219,7 +218,7 @@ export async function tryRestoreSession(): Promise<{
       localStorage.setItem(STORAGE_KEY, resolvedKey);
     }
 
-    return { publicKey: resolvedKey, provider: "freighter" };
+    return { publicKey: resolvedKey, provider: 'freighter' };
   } catch {
     localStorage.removeItem(STORAGE_KEY);
     return null;
@@ -262,7 +261,7 @@ export function useWalletMachine(): UseWalletMachineReturn {
         if (cancelled) return;
         if (session) {
           dispatch({
-            type: "SESSION_RESTORED",
+            type: 'SESSION_RESTORED',
             publicKey: session.publicKey,
             provider: session.provider,
           });
@@ -275,12 +274,14 @@ export function useWalletMachine(): UseWalletMachineReturn {
     };
 
     restore();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // ── 2. Watch for Freighter account changes ───────────────────────────
   useEffect(() => {
-    if (state.status !== "connected") return;
+    if (state.status !== 'connected') return;
 
     try {
       watcherRef.current = new WatchWalletChanges(3000);
@@ -288,12 +289,12 @@ export function useWalletMachine(): UseWalletMachineReturn {
         ({ address }: { address: string; network: string; networkPassphrase: string }) => {
           if (address && address !== state.publicKey) {
             // Account switched — update
-            dispatch({ type: "CONNECT_SUCCESS", publicKey: address, provider: "freighter" });
+            dispatch({ type: 'CONNECT_SUCCESS', publicKey: address, provider: 'freighter' });
             localStorage.setItem(STORAGE_KEY, address);
-            setStoredWalletSession("freighter", address);
+            setStoredWalletSession('freighter', address);
           } else if (!address) {
             // User locked or disconnected Freighter
-            dispatch({ type: "DISCONNECT" });
+            dispatch({ type: 'DISCONNECT' });
             clearWalletSideEffects();
           }
         }
@@ -309,56 +310,56 @@ export function useWalletMachine(): UseWalletMachineReturn {
   }, [state.status, state.publicKey]);
 
   // ── 3. Connect handler ───────────────────────────────────────────────
-  const connect = useCallback(async (provider: WalletProvider = "freighter") => {
-    dispatch({ type: "CONNECT_INIT", provider });
+  const connect = useCallback(async (provider: WalletProvider = 'freighter') => {
+    dispatch({ type: 'CONNECT_INIT', provider });
 
     try {
-      if (provider === "freighter") {
+      if (provider === 'freighter') {
         const connResult = await isConnected();
         if (!connResult.isConnected) {
           dispatch({
-            type: "CONNECT_ERROR",
-            error: "Freighter extension not found. Please install it from freighter.app",
+            type: 'CONNECT_ERROR',
+            error: 'Freighter extension not found. Please install it from freighter.app',
           });
           return;
         }
 
         const accessResult = await requestAccess();
         if (accessResult.error) {
-          dispatch({ type: "CONNECT_ERROR", error: String(accessResult.error) });
+          dispatch({ type: 'CONNECT_ERROR', error: String(accessResult.error) });
           return;
         }
 
         const address = accessResult.address;
         if (!address) {
-          dispatch({ type: "CONNECT_ERROR", error: "No public key returned. Please try again." });
+          dispatch({ type: 'CONNECT_ERROR', error: 'No public key returned. Please try again.' });
           return;
         }
 
-        setStoredWalletSession("freighter", address);
+        setStoredWalletSession('freighter', address);
         localStorage.setItem(STORAGE_KEY, address);
-        dispatch({ type: "CONNECT_SUCCESS", publicKey: address, provider: "freighter" });
+        dispatch({ type: 'CONNECT_SUCCESS', publicKey: address, provider: 'freighter' });
       } else {
         const address = await connectWalletProvider(provider);
         setStoredWalletSession(provider, address);
-        dispatch({ type: "CONNECT_SUCCESS", publicKey: address, provider });
+        dispatch({ type: 'CONNECT_SUCCESS', publicKey: address, provider });
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Unexpected error during connection.";
-      dispatch({ type: "CONNECT_ERROR", error: message });
+      const message = err instanceof Error ? err.message : 'Unexpected error during connection.';
+      dispatch({ type: 'CONNECT_ERROR', error: message });
     }
   }, []);
 
   // ── 4. Disconnect handler ────────────────────────────────────────────
   const disconnect = useCallback(() => {
     watcherRef.current?.stop();
-    dispatch({ type: "DISCONNECT" });
+    dispatch({ type: 'DISCONNECT' });
     clearWalletSideEffects();
   }, []);
 
   // ── 5. Clear error ───────────────────────────────────────────────────
   const clearError = useCallback(() => {
-    dispatch({ type: "CLEAR_ERROR" });
+    dispatch({ type: 'CLEAR_ERROR' });
   }, []);
 
   return {
@@ -366,7 +367,7 @@ export function useWalletMachine(): UseWalletMachineReturn {
     connect,
     disconnect,
     clearError,
-    isActive: state.status === "connecting" || state.status === "connected",
+    isActive: state.status === 'connecting' || state.status === 'connected',
     isRestoring,
   };
 }
@@ -387,7 +388,7 @@ function clearWalletSideEffects(): void {
 function useStateLocal(initial: boolean): [boolean, (v: boolean) => void] {
   const [val, setVal] = useReducer(
     (_prev: boolean, next: boolean) => next,
-    typeof window === "undefined" ? false : initial,
+    typeof window === 'undefined' ? false : initial
   );
   return [val, setVal];
 }

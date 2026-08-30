@@ -6,9 +6,9 @@
  *   NEXT_PUBLIC_SENTRY_DSN  – public DSN (required in prod, safe to commit as placeholder)
  *   NEXT_PUBLIC_APP_VERSION – release identifier forwarded to Sentry
  */
-import * as Sentry from "@sentry/nextjs"
+import * as Sentry from '@sentry/nextjs';
 
-import { scrubSentryEvent } from "@/lib/sentry/scrub"
+import { scrubSentryEvent } from '@/lib/sentry/scrub';
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -41,13 +41,13 @@ Sentry.init({
   // Ignore well-known noise that produces no actionable signal.
   ignoreErrors: [
     // Browser extensions and user-initiated navigation.
-    "ResizeObserver loop limit exceeded",
-    "ResizeObserver loop completed with undelivered notifications",
+    'ResizeObserver loop limit exceeded',
+    'ResizeObserver loop completed with undelivered notifications',
     // Network errors that are not bugs in our code.
-    "Failed to fetch",
-    "NetworkError when attempting to fetch resource",
-    "Load failed",
+    'Failed to fetch',
+    'NetworkError when attempting to fetch resource',
+    'Load failed',
     // Safari quirk.
-    "Non-Error promise rejection captured with value: undefined",
+    'Non-Error promise rejection captured with value: undefined',
   ],
-})
+});

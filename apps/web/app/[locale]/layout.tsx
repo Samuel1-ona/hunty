@@ -1,57 +1,56 @@
-import "../globals.css"
+import '../globals.css';
 
-import type { Metadata } from "next"
-import { headers } from "next/headers"
-import { notFound } from "next/navigation"
-import { NextIntlClientProvider } from "next-intl"
-import { getMessages, getTranslations } from "next-intl/server"
+import type { Metadata } from 'next';
+import { headers } from 'next/headers';
+import { notFound } from 'next/navigation';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages, getTranslations } from 'next-intl/server';
 
-import { FirstHuntChecklist } from "@/components/FirstHuntChecklist"
-import { TxToaster } from "@/components/TxToaster"
-import { routing } from "@/i18n/routing"
-import { hankenGrotesk } from "@/lib/font"
+import { TxToaster } from '@/components/TxToaster';
+import { routing } from '@/i18n/routing';
+import { hankenGrotesk } from '@/lib/font';
 
-import Providers from "../providers"
+import Providers from '../providers';
 
 // RTL locales — add Arabic, Hebrew, Farsi, etc. here when supported
-const RTL_LOCALES: string[] = []
+const RTL_LOCALES: string[] = [];
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ locale: string }>
+  params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-  const { locale } = await params
-  const t = await getTranslations({ locale, namespace: "home" })
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'home' });
 
   return {
-    title: t("metaTitle"),
-    description: t("metaDescription"),
-    keywords: ["scavenger hunt", "game", "blockchain", "Stellar", "XLM", "NFT", "Web3"],
-    authors: [{ name: "Hunty Team" }],
+    title: t('metaTitle'),
+    description: t('metaDescription'),
+    keywords: ['scavenger hunt', 'game', 'blockchain', 'Stellar', 'XLM', 'NFT', 'Web3'],
+    authors: [{ name: 'Hunty Team' }],
     openGraph: {
-      type: "website",
-      locale: locale === "es" ? "es_ES" : locale === "fr" ? "fr_FR" : "en_US",
-      url: "https://hunty.app",
-      siteName: "Hunty",
-      title: t("metaTitle"),
-      description: t("metaDescription"),
+      type: 'website',
+      locale: locale === 'es' ? 'es_ES' : locale === 'fr' ? 'fr_FR' : 'en_US',
+      url: 'https://hunty.app',
+      siteName: 'Hunty',
+      title: t('metaTitle'),
+      description: t('metaDescription'),
       images: [
         {
-          url: "https://hunty.app/og-image.png",
+          url: 'https://hunty.app/og-image.png',
           width: 1200,
           height: 630,
-          alt: t("metaTitle"),
-          type: "image/png",
+          alt: t('metaTitle'),
+          type: 'image/png',
         },
       ],
     },
     twitter: {
-      card: "summary_large_image",
-      title: t("metaTitle"),
-      description: t("metaDescription"),
-      images: ["https://hunty.app/og-image.png"],
-      creator: "@huntyapp",
+      card: 'summary_large_image',
+      title: t('metaTitle'),
+      description: t('metaDescription'),
+      images: ['https://hunty.app/og-image.png'],
+      creator: '@huntyapp',
     },
     robots: {
       index: true,
@@ -59,47 +58,47 @@ export async function generateMetadata({
       googleBot: {
         index: true,
         follow: true,
-        "max-image-preview": "large",
-        "max-snippet": -1,
-        "max-video-preview": -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+        'max-video-preview': -1,
       },
     },
     alternates: {
       canonical: `https://hunty.app/${locale}`,
       languages: {
-        en: "https://hunty.app/en",
-        es: "https://hunty.app/es",
-        fr: "https://hunty.app/fr",
+        en: 'https://hunty.app/en',
+        es: 'https://hunty.app/es',
+        fr: 'https://hunty.app/fr',
       },
     },
-  }
+  };
 }
 
 export function generateStaticParams() {
-  return routing.locales.map((locale) => ({ locale }))
+  return routing.locales.map((locale) => ({ locale }));
 }
 
 export default async function LocaleLayout({
   children,
   params,
 }: {
-  children: React.ReactNode
-  params: Promise<{ locale: string }>
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
 }) {
-  const { locale } = await params
+  const { locale } = await params;
 
   // Validate that the incoming `locale` parameter is valid
-  if (!routing.locales.includes(locale as "en" | "es" | "fr")) {
-    notFound()
+  if (!routing.locales.includes(locale as 'en' | 'es')) {
+    notFound();
   }
 
   // Providing all messages to the client
-  const messages = await getMessages()
+  const messages = await getMessages();
 
-  const dir = RTL_LOCALES.includes(locale) ? "rtl" : "ltr"
+  const dir = RTL_LOCALES.includes(locale) ? 'rtl' : 'ltr';
 
-  const headersList = await headers()
-  const nonce = headersList.get("x-nonce") || undefined
+  const headersList = await headers();
+  const nonce = headersList.get('x-nonce') || undefined;
 
   return (
     <html lang={locale} dir={dir} suppressHydrationWarning>
@@ -123,12 +122,10 @@ export default async function LocaleLayout({
               Skip to content
             </a>
             <TxToaster />
-            <main id="main-content">
-              {children}
-            </main>
+            <main id="main-content">{children}</main>
           </Providers>
         </NextIntlClientProvider>
       </body>
     </html>
-  )
+  );
 }

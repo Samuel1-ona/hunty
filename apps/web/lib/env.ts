@@ -17,7 +17,7 @@
  * descriptive error at startup (fail-fast), preventing silent misconfiguration.
  */
 
-import { z } from "zod";
+import { z } from 'zod';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -27,7 +27,7 @@ import { z } from "zod";
 const booleanString = z
   .string()
   .toLowerCase()
-  .transform((v) => v === "true")
+  .transform((v) => v === 'true')
   .pipe(z.boolean())
   .optional();
 
@@ -44,13 +44,16 @@ const numberString = (min?: number) => {
 
 const serverSchema = z.object({
   /** PostgreSQL connection string */
-  DATABASE_URL: z.string().min(1, "DATABASE_URL is required").url("DATABASE_URL must be a valid URL"),
+  DATABASE_URL: z
+    .string()
+    .min(1, 'DATABASE_URL is required')
+    .url('DATABASE_URL must be a valid URL'),
 
   /** Pinata JWT for IPFS uploads */
-  PINATA_JWT: z.string().min(1, "PINATA_JWT is required"),
+  PINATA_JWT: z.string().min(1, 'PINATA_JWT is required'),
 
   /** Resend API key for transactional email */
-  RESEND_API_KEY: z.string().min(1, "RESEND_API_KEY is required"),
+  RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
 
   // -- Paymaster --
   /**
@@ -59,12 +62,12 @@ const serverSchema = z.object({
    * The corresponding public key should be set as NEXT_PUBLIC_PAYMASTER_PUBLIC_KEY.
    * Fund the account on testnet via https://laboratory.stellar.org/#account-creator?network=testnet
    */
-  PAYMASTER_SECRET: z.string().min(1, "PAYMASTER_SECRET is required"),
+  PAYMASTER_SECRET: z.string().min(1, 'PAYMASTER_SECRET is required'),
 
   // -- Web Push (VAPID) --
-  VAPID_PUBLIC_KEY: z.string().min(1, "VAPID_PUBLIC_KEY is required"),
-  VAPID_PRIVATE_KEY: z.string().min(1, "VAPID_PRIVATE_KEY is required"),
-  VAPID_SUBJECT: z.string().min(1, "VAPID_SUBJECT is required"),
+  VAPID_PUBLIC_KEY: z.string().min(1, 'VAPID_PUBLIC_KEY is required'),
+  VAPID_PRIVATE_KEY: z.string().min(1, 'VAPID_PRIVATE_KEY is required'),
+  VAPID_SUBJECT: z.string().min(1, 'VAPID_SUBJECT is required'),
   /** Optional secret that protects /api/push/send */
   PUSH_API_SECRET: z.string().optional(),
 
@@ -112,9 +115,7 @@ const serverSchema = z.object({
   HUNT_VIEW_ANALYTICS_SECRET: z.string().optional(),
 
   /** Node runtime environment (set automatically by Next.js) */
-  NODE_ENV: z
-    .enum(["development", "test", "production"])
-    .default("development"),
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 });
 
 // ---------------------------------------------------------------------------
@@ -123,12 +124,10 @@ const serverSchema = z.object({
 
 const clientSchema = z.object({
   /** Deployment environment: development | staging | production */
-  NEXT_PUBLIC_ENVIRONMENT: z
-    .enum(["development", "staging", "production"])
-    .default("development"),
+  NEXT_PUBLIC_ENVIRONMENT: z.enum(['development', 'staging', 'production']).default('development'),
 
   /** Public-facing base URL */
-  NEXT_PUBLIC_BASE_URL: z.string().url("NEXT_PUBLIC_BASE_URL must be a valid URL").optional(),
+  NEXT_PUBLIC_BASE_URL: z.string().url('NEXT_PUBLIC_BASE_URL must be a valid URL').optional(),
 
   /** Internal API base URL */
   NEXT_PUBLIC_API_URL: z.string().url().optional(),
@@ -140,7 +139,7 @@ const clientSchema = z.object({
   NEXT_PUBLIC_SOROBAN_RPC_URL: z.string().url().optional(),
   NEXT_PUBLIC_SOROBAN_FALLBACK_RPC_URL: z.string().url().optional(),
   NEXT_PUBLIC_SOROBAN_NETWORK_PASSPHRASE: z.string().optional(),
-  NEXT_PUBLIC_SOROBAN_NETWORK_TYPE: z.enum(["testnet", "mainnet"]).default("testnet"),
+  NEXT_PUBLIC_SOROBAN_NETWORK_TYPE: z.enum(['testnet', 'mainnet']).default('testnet'),
   NEXT_PUBLIC_SOROBAN_DEBOUNCE_MS: numberString(0),
   NEXT_PUBLIC_SOROBAN_READ_TTL_MS: numberString(0),
   NEXT_PUBLIC_HORIZON_URL: z.string().url().optional(),
@@ -191,15 +190,15 @@ const clientSchema = z.object({
 function parseEnv<T extends z.ZodTypeAny>(
   schema: T,
   raw: Record<string, string | undefined>,
-  label: string,
+  label: string
 ): z.infer<T> {
   const result = schema.safeParse(raw);
   if (!result.success) {
     const formatted = result.error.issues
-      .map((issue) => `  • ${issue.path.join(".")}: ${issue.message}`)
-      .join("\n");
+      .map((issue) => `  • ${issue.path.join('.')}: ${issue.message}`)
+      .join('\n');
     throw new Error(
-      `[env] Invalid ${label} environment variables:\n${formatted}\n\nFix the above variables in your .env.local file.`,
+      `[env] Invalid ${label} environment variables:\n${formatted}\n\nFix the above variables in your .env.local file.`
     );
   }
   return result.data as z.infer<T>;
@@ -207,7 +206,7 @@ function parseEnv<T extends z.ZodTypeAny>(
 
 // Guard: in the browser we must not read server-only variables.
 // We parse the server schema only on the server (typeof window === "undefined").
-const isServer = typeof window === "undefined";
+const isServer = typeof window === 'undefined';
 
 /**
  * Validated server-side environment variables.
@@ -216,7 +215,7 @@ const isServer = typeof window === "undefined";
  * @throws {Error} at startup if any required server variable is missing/invalid.
  */
 export const serverEnv = isServer
-  ? parseEnv(serverSchema, process.env as Record<string, string | undefined>, "server")
+  ? parseEnv(serverSchema, process.env as Record<string, string | undefined>, 'server')
   : ({} as z.infer<typeof serverSchema>);
 
 /**
@@ -228,7 +227,7 @@ export const serverEnv = isServer
 export const clientEnv = parseEnv(
   clientSchema,
   process.env as Record<string, string | undefined>,
-  "client (NEXT_PUBLIC_*)",
+  'client (NEXT_PUBLIC_*)'
 );
 
 // Export inferred types for use elsewhere in the codebase.

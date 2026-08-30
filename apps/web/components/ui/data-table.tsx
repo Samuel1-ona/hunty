@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   ChevronDown,
@@ -8,13 +8,13 @@ import {
   ChevronUp,
   Download,
   Search,
-} from "lucide-react";
-import * as React from "react";
+} from 'lucide-react';
+import * as React from 'react';
 
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
-import { Button } from "./button";
-import { Input } from "./input";
+import { Button } from './button';
+import { Input } from './input';
 
 export interface Column<T> {
   key: string;
@@ -38,7 +38,7 @@ interface DataTableProps<T> {
   emptyMessage?: string;
 }
 
-type SortDir = "asc" | "desc" | null;
+type SortDir = 'asc' | 'desc' | null;
 
 export function DataTable<T extends Record<string, unknown>>({
   columns,
@@ -50,7 +50,7 @@ export function DataTable<T extends Record<string, unknown>>({
   bulkActions,
   onExport,
   getRowId = (row) => JSON.stringify(row),
-  emptyMessage = "No data available",
+  emptyMessage = 'No data available',
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = React.useState<string | null>(null);
   const [sortDir, setSortDir] = React.useState<SortDir>(null);
@@ -84,14 +84,16 @@ export function DataTable<T extends Record<string, unknown>>({
       const av = getValue(a, col);
       const bv = getValue(b, col);
       const cmp = av < bv ? -1 : av > bv ? 1 : 0;
-      return sortDir === "asc" ? cmp : -cmp;
+      return sortDir === 'asc' ? cmp : -cmp;
     });
   }, [filtered, sortKey, sortDir, columns]);
 
   const totalPages = Math.ceil(sorted.length / pageSize);
   const paged = sorted.slice(page * pageSize, (page + 1) * pageSize);
 
-  React.useEffect(() => { setPage(0); }, [filters, pageSize]);
+  React.useEffect(() => {
+    setPage(0);
+  }, [filters, pageSize]);
 
   React.useEffect(() => {
     if (onSelectionChange) {
@@ -101,18 +103,19 @@ export function DataTable<T extends Record<string, unknown>>({
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
-      setSortDir(sortDir === "asc" ? "desc" : sortDir === "desc" ? null : "asc");
-      if (sortDir === "desc") setSortKey(null);
+      setSortDir(sortDir === 'asc' ? 'desc' : sortDir === 'desc' ? null : 'asc');
+      if (sortDir === 'desc') setSortKey(null);
     } else {
       setSortKey(key);
-      setSortDir("asc");
+      setSortDir('asc');
     }
   };
 
   const toggleRow = (id: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
@@ -127,7 +130,11 @@ export function DataTable<T extends Record<string, unknown>>({
 
   const SortIcon = ({ col }: { col: string }) => {
     if (sortKey !== col) return <ChevronsUpDown className="size-3.5 opacity-40" />;
-    return sortDir === "asc" ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />;
+    return sortDir === 'asc' ? (
+      <ChevronUp className="size-3.5" />
+    ) : (
+      <ChevronDown className="size-3.5" />
+    );
   };
 
   return (
@@ -168,8 +175,8 @@ export function DataTable<T extends Record<string, unknown>>({
                   <div className="space-y-1">
                     <button
                       className={cn(
-                        "inline-flex items-center gap-1",
-                        col.sortable && "cursor-pointer hover:text-foreground"
+                        'inline-flex items-center gap-1',
+                        col.sortable && 'cursor-pointer hover:text-foreground'
                       )}
                       onClick={() => col.sortable && handleSort(col.key)}
                       disabled={!col.sortable}
@@ -184,7 +191,7 @@ export function DataTable<T extends Record<string, unknown>>({
                         <input
                           type="text"
                           placeholder="Filter..."
-                          value={filters[col.key] || ""}
+                          value={filters[col.key] || ''}
                           onChange={(e) => setFilters((f) => ({ ...f, [col.key]: e.target.value }))}
                           className="h-6 w-full rounded border bg-background pl-6 pr-2 text-xs"
                           aria-label={`Filter ${col.header}`}
@@ -198,18 +205,36 @@ export function DataTable<T extends Record<string, unknown>>({
           </thead>
           <tbody className="divide-y">
             {paged.length === 0 ? (
-              <tr><td colSpan={columns.length + (selectable ? 1 : 0)} className="p-8 text-center text-muted-foreground">{emptyMessage}</td></tr>
+              <tr>
+                <td
+                  colSpan={columns.length + (selectable ? 1 : 0)}
+                  className="p-8 text-center text-muted-foreground"
+                >
+                  {emptyMessage}
+                </td>
+              </tr>
             ) : (
               paged.map((row) => {
                 const id = getRowId(row);
                 return (
-                  <tr key={id} className={cn("hover:bg-muted/30", selected.has(id) && "bg-primary/5")}>
+                  <tr
+                    key={id}
+                    className={cn('hover:bg-muted/30', selected.has(id) && 'bg-primary/5')}
+                  >
                     {selectable && (
-                      <td className="p-3"><input type="checkbox" checked={selected.has(id)} onChange={() => toggleRow(id)} aria-label="Select row" className="rounded" /></td>
+                      <td className="p-3">
+                        <input
+                          type="checkbox"
+                          checked={selected.has(id)}
+                          onChange={() => toggleRow(id)}
+                          aria-label="Select row"
+                          className="rounded"
+                        />
+                      </td>
                     )}
                     {columns.map((col) => (
                       <td key={col.key} className="p-3">
-                        {col.render ? col.render(row) : String(getValue(row, col) ?? "")}
+                        {col.render ? col.render(row) : String(getValue(row, col) ?? '')}
                       </td>
                     ))}
                   </tr>
@@ -228,16 +253,30 @@ export function DataTable<T extends Record<string, unknown>>({
           paged.map((row) => {
             const id = getRowId(row);
             return (
-              <div key={id} className={cn("rounded-lg border p-4 space-y-2", selected.has(id) && "ring-2 ring-primary/30")}>
+              <div
+                key={id}
+                className={cn(
+                  'rounded-lg border p-4 space-y-2',
+                  selected.has(id) && 'ring-2 ring-primary/30'
+                )}
+              >
                 {selectable && (
                   <div className="flex justify-end">
-                    <input type="checkbox" checked={selected.has(id)} onChange={() => toggleRow(id)} aria-label="Select row" className="rounded" />
+                    <input
+                      type="checkbox"
+                      checked={selected.has(id)}
+                      onChange={() => toggleRow(id)}
+                      aria-label="Select row"
+                      className="rounded"
+                    />
                   </div>
                 )}
                 {columns.map((col) => (
                   <div key={col.key} className="flex justify-between gap-2">
                     <span className="text-xs font-medium text-muted-foreground">{col.header}</span>
-                    <span className="text-sm text-right">{col.render ? col.render(row) : String(getValue(row, col) ?? "")}</span>
+                    <span className="text-sm text-right">
+                      {col.render ? col.render(row) : String(getValue(row, col) ?? '')}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -256,17 +295,35 @@ export function DataTable<T extends Record<string, unknown>>({
             className="h-8 rounded border bg-background px-2 text-sm"
             aria-label="Rows per page"
           >
-            {pageSizeOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+            {pageSizeOptions.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
           </select>
         </div>
         <div className="flex items-center gap-1">
           <span className="text-muted-foreground">
-            {sorted.length === 0 ? "0 of 0" : `${page * pageSize + 1}-${Math.min((page + 1) * pageSize, sorted.length)} of ${sorted.length}`}
+            {sorted.length === 0
+              ? '0 of 0'
+              : `${page * pageSize + 1}-${Math.min((page + 1) * pageSize, sorted.length)} of ${sorted.length}`}
           </span>
-          <Button variant="ghost" size="icon" disabled={page === 0} onClick={() => setPage(page - 1)} aria-label="Previous page">
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={page === 0}
+            onClick={() => setPage(page - 1)}
+            aria-label="Previous page"
+          >
             <ChevronLeft className="size-4" />
           </Button>
-          <Button variant="ghost" size="icon" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)} aria-label="Next page">
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={page >= totalPages - 1}
+            onClick={() => setPage(page + 1)}
+            aria-label="Next page"
+          >
             <ChevronRight className="size-4" />
           </Button>
         </div>

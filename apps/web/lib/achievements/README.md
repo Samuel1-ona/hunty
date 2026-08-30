@@ -15,18 +15,18 @@ The achievement system consists of:
 
 ### Available Achievements
 
-| ID | Title | Description | Icon | Rarity | Condition |
-|---|---|---|---|---|---|
-| `first_hunt_completed` | First Steps | Complete your first hunt | 🎯 | Common | Complete 1 hunt |
-| `first_win` | Victory Lap | Win your first hunt | 🏆 | Common | Win 1 hunt |
-| `five_wins` | Rising Star | Win 5 hunts | ⭐ | Uncommon | Win 5 hunts |
-| `ten_wins` | Champion | Win 10 hunts | 👑 | Rare | Win 10 hunts |
-| `twenty_five_wins` | Unstoppable | Win 25 hunts | 🔥 | Epic | Win 25 hunts |
-| `first_nft` | Collector | Earn your first NFT | 🎨 | Uncommon | Claim 1 NFT reward |
-| `high_scorer` | Sharpshooter | Achieve highest score in a month | 🎪 | Rare | Top score in a calendar month |
-| `speed_hunter` | Lightning Fast | Complete a hunt in record time | ⚡ | Rare | Complete a hunt in under 5 minutes |
-| `veteran` | Veteran | Complete 50 hunts | 🛡️ | Epic | Complete 50 hunts |
-| `legend` | Legend | Win 100 hunts | 💎 | Legendary | Win 100 hunts |
+| ID                     | Title          | Description                      | Icon | Rarity    | Condition                          |
+| ---------------------- | -------------- | -------------------------------- | ---- | --------- | ---------------------------------- |
+| `first_hunt_completed` | First Steps    | Complete your first hunt         | 🎯   | Common    | Complete 1 hunt                    |
+| `first_win`            | Victory Lap    | Win your first hunt              | 🏆   | Common    | Win 1 hunt                         |
+| `five_wins`            | Rising Star    | Win 5 hunts                      | ⭐   | Uncommon  | Win 5 hunts                        |
+| `ten_wins`             | Champion       | Win 10 hunts                     | 👑   | Rare      | Win 10 hunts                       |
+| `twenty_five_wins`     | Unstoppable    | Win 25 hunts                     | 🔥   | Epic      | Win 25 hunts                       |
+| `first_nft`            | Collector      | Earn your first NFT              | 🎨   | Uncommon  | Claim 1 NFT reward                 |
+| `high_scorer`          | Sharpshooter   | Achieve highest score in a month | 🎪   | Rare      | Top score in a calendar month      |
+| `speed_hunter`         | Lightning Fast | Complete a hunt in record time   | ⚡   | Rare      | Complete a hunt in under 5 minutes |
+| `veteran`              | Veteran        | Complete 50 hunts                | 🛡️   | Epic      | Complete 50 hunts                  |
+| `legend`               | Legend         | Win 100 hunts                    | 💎   | Legendary | Win 100 hunts                      |
 
 ### Rarity Levels
 
@@ -41,7 +41,7 @@ The achievement system consists of:
 ### Checking and Awarding Achievements
 
 ```typescript
-import { checkAndAwardAchievements } from "@/lib/achievements/service"
+import { checkAndAwardAchievements } from '@/lib/achievements/service';
 
 // Check and award achievements based on player stats
 const newAchievements = checkAndAwardAchievements(playerAddress, {
@@ -49,52 +49,54 @@ const newAchievements = checkAndAwardAchievements(playerAddress, {
   totalHuntsWon: 3,
   totalNftsEarned: 1,
   fastestCompletionSeconds: 250,
-})
+});
 
 // newAchievements will contain IDs of newly earned achievements
 if (newAchievements.length > 0) {
-  console.log("New achievements earned:", newAchievements)
+  console.log('New achievements earned:', newAchievements);
 }
 ```
 
 ### Getting Player Achievements
 
 ```typescript
-import { getAllAchievementsWithStatus, getEarnedAchievements } from "@/lib/achievements/service"
+import { getAllAchievementsWithStatus, getEarnedAchievements } from '@/lib/achievements/service';
 
 // Get all achievements with earned status
-const allAchievements = getAllAchievementsWithStatus(playerAddress)
+const allAchievements = getAllAchievementsWithStatus(playerAddress);
 
 // Get only earned achievements
-const earned = getEarnedAchievements(playerAddress)
+const earned = getEarnedAchievements(playerAddress);
 ```
 
 ### Checking Individual Achievements
 
 ```typescript
-import { hasAchievement } from "@/lib/achievements/service"
+import { hasAchievement } from '@/lib/achievements/service';
 
-if (hasAchievement(playerAddress, "first_hunt_completed")) {
-  console.log("Player has completed their first hunt!")
+if (hasAchievement(playerAddress, 'first_hunt_completed')) {
+  console.log('Player has completed their first hunt!');
 }
 ```
 
 ## Storage
 
 Achievements are stored in the browser's `localStorage` with the key format:
+
 ```
 hunty_achievements_{playerAddress}
 ```
 
 Each entry contains:
+
 ```typescript
 {
-  address: string
+  address: string;
   earned: Array<{
-    id: AchievementId
-    earnedAt: number // Unix timestamp
-  }>
-  lastUpdated: number // Unix timestamp
+    id: AchievementId;
+    earnedAt: number; // Unix timestamp
+  }>;
+  lastUpdated: number; // Unix timestamp
 }
 ```
 
@@ -103,6 +105,7 @@ Each entry contains:
 ### GameCompleteModal
 
 When a hunt is completed, the `GameCompleteModal` component:
+
 1. Calls `checkAndAwardAchievements()` with the player's stats
 2. Displays newly earned achievements in a highlighted section
 3. Shows toast notifications for each new achievement
@@ -113,20 +116,21 @@ const earned = checkAndAwardAchievements(playerAddress, {
   totalHuntsCompleted: 1,
   totalHuntsWon: 1,
   totalNftsEarned: 0,
-})
+});
 
 if (earned.length > 0) {
-  setNewAchievements(earned)
+  setNewAchievements(earned);
   earned.forEach((achievementId) => {
-    const achievement = ACHIEVEMENTS[achievementId]
-    toast.success(`🎉 Achievement Unlocked: ${achievement.title}!`)
-  })
+    const achievement = ACHIEVEMENTS[achievementId];
+    toast.success(`🎉 Achievement Unlocked: ${achievement.title}!`);
+  });
 }
 ```
 
 ### Profile Page
 
 The `BadgeWall` component displays all achievements on the player profile:
+
 - Shows earned achievements with full color and styling
 - Shows unearned achievements grayed out
 - Displays achievement metadata on hover (tooltip)
@@ -140,6 +144,7 @@ The `BadgeWall` component displays all achievements on the player profile:
 ## Testing
 
 The achievement system includes comprehensive tests covering:
+
 - Achievement awarding and retrieval
 - Duplicate prevention
 - Multiple achievement checking
@@ -147,6 +152,7 @@ The achievement system includes comprehensive tests covering:
 - Edge cases and error handling
 
 Run tests with:
+
 ```bash
 npm test -- lib/achievements/service.test.ts
 ```
@@ -172,7 +178,7 @@ Potential improvements for the achievement system:
 
 ```typescript
 interface BadgeWallProps {
-  playerAddress: string // Stellar address of the player
+  playerAddress: string; // Stellar address of the player
 }
 ```
 
@@ -180,41 +186,43 @@ interface BadgeWallProps {
 
 ```typescript
 type AchievementId =
-  | "first_hunt_completed"
-  | "first_win"
-  | "five_wins"
-  | "ten_wins"
-  | "twenty_five_wins"
-  | "first_nft"
-  | "high_scorer"
-  | "speed_hunter"
-  | "veteran"
-  | "legend"
+  | 'first_hunt_completed'
+  | 'first_win'
+  | 'five_wins'
+  | 'ten_wins'
+  | 'twenty_five_wins'
+  | 'first_nft'
+  | 'high_scorer'
+  | 'speed_hunter'
+  | 'veteran'
+  | 'legend';
 
 interface Achievement {
-  id: AchievementId
-  title: string
-  description: string
-  icon: string
-  rarity: "common" | "uncommon" | "rare" | "epic" | "legendary"
-  condition: string
+  id: AchievementId;
+  title: string;
+  description: string;
+  icon: string;
+  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  condition: string;
 }
 
 interface EarnedAchievement {
-  id: AchievementId
-  earnedAt: number
+  id: AchievementId;
+  earnedAt: number;
 }
 ```
 
 ## Styling
 
 The BadgeWall component uses:
+
 - **Tailwind CSS** for styling
 - **Gradient backgrounds** for rarity levels
 - **Radix UI Tooltip** for achievement details
 - **Responsive grid** (2-5 columns depending on screen size)
 
 Rarity color gradients:
+
 - Common: `from-slate-400 to-slate-600`
 - Uncommon: `from-green-400 to-green-600`
 - Rare: `from-blue-400 to-blue-600`

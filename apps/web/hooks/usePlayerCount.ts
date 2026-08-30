@@ -20,30 +20,34 @@
  * - isTrending = count >= TRENDING_PLAYER_THRESHOLD (50).
  */
 
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
+import { useEffect, useState } from 'react';
 
-import { PLAYER_COUNT_CACHE_TTL_MS, type PlayerCountResult,TRENDING_PLAYER_THRESHOLD } from "@/lib/types"
+import {
+  PLAYER_COUNT_CACHE_TTL_MS,
+  type PlayerCountResult,
+  TRENDING_PLAYER_THRESHOLD,
+} from '@/lib/types';
 
 // Module-level cache — survives re-renders, resets on page reload.
-const cache = new Map<string, { count: number; fetchedAt: number }>()
+const cache = new Map<string, { count: number; fetchedAt: number }>();
 
 /**
  * Counts registered players for a hunt by scanning localStorage keys of the
  * form `hunt_registered_{huntId}_{playerAddress}`.
  */
 export function getPlayerCountFromStorage(huntId: string): number {
-  if (typeof window === "undefined") return 0
-  const prefix = `hunt_registered_${huntId}_`
-  let count = 0
+  if (typeof window === 'undefined') return 0;
+  const prefix = `hunt_registered_${huntId}_`;
+  let count = 0;
   for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i)
-    if (key?.startsWith(prefix) && localStorage.getItem(key) === "true") {
-      count++
+    const key = localStorage.key(i);
+    if (key?.startsWith(prefix) && localStorage.getItem(key) === 'true') {
+      count++;
     }
   }
-  return count
+  return count;
 }
 
 /**
@@ -76,15 +80,22 @@ export function usePlayerCount(huntId: string): PlayerCountResult {
     fetchedAt: 0,
     isLoading: true,
     error: null,
-  })
+  });
 
   useEffect(() => {
     if (!huntId) {
-      setResult({ huntId, count: 0, isTrending: false, fetchedAt: 0, isLoading: false, error: "No huntId" })
-      return
+      setResult({
+        huntId,
+        count: 0,
+        isTrending: false,
+        fetchedAt: 0,
+        isLoading: false,
+        error: 'No huntId',
+      });
+      return;
     }
 
-    const cached = cache.get(huntId)
+    const cached = cache.get(huntId);
     if (cached && Date.now() - cached.fetchedAt < PLAYER_COUNT_CACHE_TTL_MS) {
       setResult({
         huntId,
@@ -93,15 +104,15 @@ export function usePlayerCount(huntId: string): PlayerCountResult {
         fetchedAt: cached.fetchedAt,
         isLoading: false,
         error: null,
-      })
-      return
+      });
+      return;
     }
 
     // Fetch (synchronous localStorage scan wrapped in try/catch)
     try {
-      const count = getPlayerCountFromStorage(huntId)
-      const fetchedAt = Date.now()
-      cache.set(huntId, { count, fetchedAt })
+      const count = getPlayerCountFromStorage(huntId);
+      const fetchedAt = Date.now();
+      cache.set(huntId, { count, fetchedAt });
       setResult({
         huntId,
         count,
@@ -109,7 +120,7 @@ export function usePlayerCount(huntId: string): PlayerCountResult {
         fetchedAt,
         isLoading: false,
         error: null,
-      })
+      });
     } catch (err) {
       setResult({
         huntId,
@@ -117,13 +128,13 @@ export function usePlayerCount(huntId: string): PlayerCountResult {
         isTrending: false,
         fetchedAt: 0,
         isLoading: false,
-        error: err instanceof Error ? err.message : "Failed to fetch player count",
-      })
+        error: err instanceof Error ? err.message : 'Failed to fetch player count',
+      });
     }
-  }, [huntId])
+  }, [huntId]);
 
-  return result
+  return result;
 }
 
 /** Exposed for testing and bulk hook use. */
-export { cache as playerCountCache }
+export { cache as playerCountCache };

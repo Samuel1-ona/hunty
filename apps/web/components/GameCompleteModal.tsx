@@ -1,58 +1,68 @@
-"use client"
+'use client';
 
-import { useEffect, useRef, useState } from "react"
-import { useReducedMotion } from "framer-motion"
-import Image from "next/image"
-import confetti from "canvas-confetti"
-import { AlertCircle, Clock3, Download, Lightbulb, Loader2, Medal, MessageCircle, Share2, Star, Twitter } from "lucide-react"
+import { useEffect, useRef, useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
+import Image from 'next/image';
+import confetti from 'canvas-confetti';
+import {
+  AlertCircle,
+  Clock3,
+  Download,
+  Lightbulb,
+  Loader2,
+  Medal,
+  MessageCircle,
+  Share2,
+  Star,
+  Twitter,
+} from 'lucide-react';
 
-import { Button } from "@hunty/ui"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import Coin from "@/components/icons/Coin"
-import Replay from "@/components/icons/Replay"
-import { RewardsPanel } from "@/components/RewardsPanel"
-import { NftMintProgress } from "@/components/NftMintProgress"
-import { AchievementCertificate } from "@/components/AchievementCertificate"
-import { LevelUpModal } from "./LevelUpModal"
-import { useQuery } from "@tanstack/react-query"
-import { checkRegistrationStatus } from "@/lib/contracts/player-registration"
-import { SOROBAN_READ_STALE_TIME_MS } from "@/lib/soroban/queryConfig"
-import { useXlmUsdPrice } from "@/hooks/useXlmUsdPrice"
+} from '@/components/ui/dropdown-menu';
+import Coin from '@/components/icons/Coin';
+import Replay from '@/components/icons/Replay';
+import { RewardsPanel } from '@/components/RewardsPanel';
+import { NftMintProgress } from '@/components/NftMintProgress';
+import { AchievementCertificate } from '@/components/AchievementCertificate';
+import { LevelUpModal } from './LevelUpModal';
+import { useQuery } from '@tanstack/react-query';
+import { checkRegistrationStatus } from '@/lib/contracts/player-registration';
+import { SOROBAN_READ_STALE_TIME_MS } from '@/lib/soroban/queryConfig';
+import { useXlmUsdPrice } from '@/hooks/useXlmUsdPrice';
 import {
   buildDeepLink,
-  buildResultCardImageUrl,
   downloadElementAsImage,
   shareOnTwitter,
   shareOnFarcaster,
   shareOnTelegram,
   shareOnWhatsApp,
-} from "@/lib/downloadAsImage"
-import { toast } from "sonner"
-import { ACHIEVEMENTS } from "@/lib/achievements/config"
-import { checkAndAwardAchievements } from "@/lib/achievements/service"
-import { logger } from "@/lib/logger"
-import type { HuntAttemptRecord, RewardReceipt } from "@/lib/types"
-import { queryCachePolicy, queryKeys } from "@/lib/queryKeys"
-import { awardXpFromHunt, getLevelTierForXp, getPlayerLevel } from "@/lib/level"
-import { formatDuration, getPlayerAttempts } from "@/lib/huntAttemptHistory"
-import { cn } from "@/lib/utils"
+} from '@/lib/downloadAsImage';
+import { toast } from 'sonner';
+import { ACHIEVEMENTS } from '@/lib/achievements/config';
+import { checkAndAwardAchievements } from '@/lib/achievements/service';
+import { logger } from '@/lib/logger';
+import type { HuntAttemptRecord, RewardReceipt } from '@/lib/types';
+import { queryCachePolicy, queryKeys } from '@/lib/queryKeys';
+import { awardXpFromHunt, getLevelTierForXp, getPlayerLevel } from '@/lib/level';
+import { formatDuration, getPlayerAttempts } from '@/lib/huntAttemptHistory';
+import { cn } from '@/lib/utils';
 
 interface GameCompleteModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onGoHome: () => void
-  onReplay: () => void
-  onViewLeaderboard: () => void
-  reward: number
-  rewardReceipt?: RewardReceipt | null
-  huntId?: number
-  playerAddress?: string
+  isOpen: boolean;
+  onClose: () => void;
+  onGoHome: () => void;
+  onReplay: () => void;
+  onViewLeaderboard: () => void;
+  reward: number;
+  rewardReceipt?: RewardReceipt | null;
+  huntId?: number;
+  playerAddress?: string;
 }
 
 export function GameCompleteModal({
@@ -66,65 +76,58 @@ export function GameCompleteModal({
   huntId,
   playerAddress,
 }: GameCompleteModalProps) {
-  const { price: xlmUsdPrice } = useXlmUsdPrice()
+  const { price: xlmUsdPrice } = useXlmUsdPrice();
 
   const currencyFormatter = new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: "USD",
+    style: 'currency',
+    currency: 'USD',
     maximumFractionDigits: 2,
-  })
+  });
 
-  const usdEquivalent =
-    xlmUsdPrice != null ? currencyFormatter.format(reward * xlmUsdPrice) : null
+  const usdEquivalent = xlmUsdPrice != null ? currencyFormatter.format(reward * xlmUsdPrice) : null;
 
-  const certificateRef = useRef<HTMLDivElement>(null)
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [resultCardGenerating, setResultCardGenerating] = useState(false)
-  const prefersReducedMotion = useReducedMotion()
-  const [newAchievements, setNewAchievements] = useState<string[]>([])
+  const certificateRef = useRef<HTMLDivElement>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
+  const [newAchievements, setNewAchievements] = useState<string[]>([]);
   const [levelUpData, setLevelUpData] = useState<{
-    oldLevel: number
-    newLevel: number
-    oldTier: ReturnType<typeof getLevelTierForXp>
-    newTier: ReturnType<typeof getLevelTierForXp>
-  } | null>(null)
-  const [isLevelUpModalOpen, setIsLevelUpModalOpen] = useState(false)
-  const [latestAttempt, setLatestAttempt] = useState<HuntAttemptRecord | null>(null)
+    oldLevel: number;
+    newLevel: number;
+    oldTier: ReturnType<typeof getLevelTierForXp>;
+    newTier: ReturnType<typeof getLevelTierForXp>;
+  } | null>(null);
+  const [isLevelUpModalOpen, setIsLevelUpModalOpen] = useState(false);
+  const [latestAttempt, setLatestAttempt] = useState<HuntAttemptRecord | null>(null);
 
   // ─── Review form state ────────────────────────────────────────────────────
-  const [selectedRating, setSelectedRating] = useState<number>(0)
-  const [hoverRating, setHoverRating] = useState<number>(0)
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string>("")
-  const [reviewText, setReviewText] = useState("")
-  const [reviewSubmitting, setReviewSubmitting] = useState(false)
-  const [reviewSubmitted, setReviewSubmitted] = useState(false)
-  const [reviewError, setReviewError] = useState<string | null>(null)
+  const [selectedRating, setSelectedRating] = useState<number>(0);
+  const [hoverRating, setHoverRating] = useState<number>(0);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('');
+  const [reviewText, setReviewText] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   // ─── Derived stats from the latest attempt ────────────────────────────────
-  const completionTimeLabel = latestAttempt
-    ? formatDuration(latestAttempt.totalTimeSeconds)
-    : "—"
+  const completionTimeLabel = latestAttempt ? formatDuration(latestAttempt.totalTimeSeconds) : '—';
 
   const totalHintsUsed = latestAttempt
     ? latestAttempt.clues.reduce((sum, c) => sum + (c.hintsUsed ?? 0), 0)
-    : 0
+    : 0;
 
   // Rank is not tracked locally; show a dash until the leaderboard is opened
-  const rankLabel = "—"
+  const rankLabel = '—';
 
   const { data: registrationStatus } = useQuery({
     queryKey: queryKeys.registration.status(huntId, playerAddress),
     queryFn: () =>
       huntId && playerAddress ? checkRegistrationStatus(huntId, playerAddress) : null,
     enabled: isOpen && !!huntId && !!playerAddress,
-    staleTime: Math.max(
-      SOROBAN_READ_STALE_TIME_MS,
-      queryCachePolicy.registrationStatus.staleTime
-    ),
+    staleTime: Math.max(SOROBAN_READ_STALE_TIME_MS, queryCachePolicy.registrationStatus.staleTime),
     gcTime: queryCachePolicy.registrationStatus.gcTime,
     refetchInterval: queryCachePolicy.registrationStatus.refetchInterval,
     refetchIntervalInBackground: true,
-  })
+  });
 
   const playerProgress = registrationStatus?.progressData
     ? {
@@ -133,20 +136,20 @@ export function GameCompleteModal({
         hunt_id: huntId,
         reward_amount: reward,
       }
-    : undefined
+    : undefined;
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen) return;
 
     if (!prefersReducedMotion) {
-      confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } })
+      confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
     }
 
     // Load the most recent attempt for this hunt so we can derive stats
     if (playerAddress && huntId) {
-      const attempts = getPlayerAttempts(playerAddress)
-      const match = attempts.find((a) => a.huntId === huntId) ?? null
-      setLatestAttempt(match)
+      const attempts = getPlayerAttempts(playerAddress);
+      const match = attempts.find((a) => a.huntId === huntId) ?? null;
+      setLatestAttempt(match);
     }
 
     if (playerAddress) {
@@ -156,187 +159,141 @@ export function GameCompleteModal({
           totalHuntsWon: 1,
           totalNftsEarned: 0,
           fastestCompletionSeconds: undefined,
-        })
+        });
         if (earned.length > 0) {
-          setNewAchievements(earned)
+          setNewAchievements(earned);
           earned.forEach((achievementId) => {
-            const achievement = ACHIEVEMENTS[achievementId as keyof typeof ACHIEVEMENTS]
+            const achievement = ACHIEVEMENTS[achievementId as keyof typeof ACHIEVEMENTS];
             if (achievement) {
               toast.success(`🎉 Achievement Unlocked: ${achievement.title}!`, {
                 description: achievement.description,
                 duration: 5000,
-              })
+              });
             }
-          })
+          });
         }
       } catch (error) {
-        logger.error("Failed to check achievements:", error)
+        logger.error('Failed to check achievements:', error);
       }
 
       try {
-        const oldLevelData = getPlayerLevel(playerAddress)
-        const oldTier = getLevelTierForXp(oldLevelData.totalXp)
-        const { xpEarned, levelUpOccurred } = awardXpFromHunt(playerAddress, reward)
+        const oldLevelData = getPlayerLevel(playerAddress);
+        const oldTier = getLevelTierForXp(oldLevelData.totalXp);
+        const { xpEarned, levelUpOccurred } = awardXpFromHunt(playerAddress, reward);
 
         if (levelUpOccurred) {
-          const newLevelData = getPlayerLevel(playerAddress)
-          const newTier = getLevelTierForXp(newLevelData.totalXp)
+          const newLevelData = getPlayerLevel(playerAddress);
+          const newTier = getLevelTierForXp(newLevelData.totalXp);
           setLevelUpData({
             oldLevel: oldTier.level,
             newLevel: newTier.level,
             oldTier,
             newTier,
-          })
-          setIsLevelUpModalOpen(true)
+          });
+          setIsLevelUpModalOpen(true);
         }
 
-        toast.success(`✨ +${xpEarned} XP earned!`, { duration: 3000 })
+        toast.success(`✨ +${xpEarned} XP earned!`, { duration: 3000 });
       } catch (error) {
-        logger.error("Failed to award XP:", error)
+        logger.error('Failed to award XP:', error);
       }
     }
-  }, [isOpen, playerAddress, huntId, prefersReducedMotion, reward])
+  }, [isOpen, playerAddress, huntId, prefersReducedMotion, reward]);
 
   // Reset review form when the modal re-opens for a new hunt
   useEffect(() => {
     if (isOpen) {
-      setSelectedRating(0)
-      setHoverRating(0)
-      setSelectedDifficulty("")
-      setReviewText("")
-      setReviewSubmitting(false)
-      setReviewSubmitted(false)
-      setReviewError(null)
+      setSelectedRating(0);
+      setHoverRating(0);
+      setSelectedDifficulty('');
+      setReviewText('');
+      setReviewSubmitting(false);
+      setReviewSubmitted(false);
+      setReviewError(null);
     }
-  }, [isOpen, huntId])
+  }, [isOpen, huntId]);
 
   // ─── Review submission ────────────────────────────────────────────────────
   const handleRateHunt = (rating: number) => {
-    setSelectedRating(rating)
-    setReviewError(null)
-  }
+    setSelectedRating(rating);
+    setReviewError(null);
+  };
 
   const handleSubmitReview = async () => {
     if (!playerAddress || !huntId) {
-      setReviewError("Connect your wallet to leave a review.")
-      return
+      setReviewError('Connect your wallet to leave a review.');
+      return;
     }
     if (selectedRating === 0) {
-      setReviewError("Please select a star rating first.")
-      return
+      setReviewError('Please select a star rating first.');
+      return;
     }
 
-    setReviewSubmitting(true)
-    setReviewError(null)
+    setReviewSubmitting(true);
+    setReviewError(null);
 
     try {
       // Register completion server-side so the review gate passes
       await fetch(`/api/v1/hunts/${huntId}/complete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ playerAddress }),
-      })
+      });
 
       const res = await fetch(`/api/v1/hunts/${huntId}/reviews`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           playerAddress,
           rating: selectedRating,
           text: reviewText.trim() || undefined,
           difficultyRating: selectedDifficulty || undefined,
         }),
-      })
+      });
 
-      const data = await res.json()
+      const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Failed to submit review")
+        throw new Error(data.error || 'Failed to submit review');
       }
 
-      setReviewSubmitted(true)
-      toast.success("Review submitted — thanks for the feedback!")
+      setReviewSubmitted(true);
+      toast.success('Review submitted — thanks for the feedback!');
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : "An error occurred while submitting your review."
-      setReviewError(message)
+        err instanceof Error ? err.message : 'An error occurred while submitting your review.';
+      setReviewError(message);
     } finally {
-      setReviewSubmitting(false)
+      setReviewSubmitting(false);
     }
-  }
+  };
 
   // ─── Share achievement ────────────────────────────────────────────────────
   const handleShareAchievement = async (
-    platform?: "twitter" | "farcaster" | "telegram" | "whatsapp"
+    platform?: 'twitter' | 'farcaster' | 'telegram' | 'whatsapp'
   ) => {
-    if (!certificateRef.current) return
-    setIsGenerating(true)
+    if (!certificateRef.current) return;
+    setIsGenerating(true);
     try {
-      const filename = `hunty-achievement-${huntId}.png`
-      await downloadElementAsImage(certificateRef.current, { filename })
+      const filename = `hunty-achievement-${huntId}.png`;
+      await downloadElementAsImage(certificateRef.current, { filename });
 
       const shareText = `I just completed "${
-        registrationStatus?.progressData?.hunt_id ? `Hunt #${huntId}` : "a Scavenger Hunt"
-      }" on @huntyapp! Check it out:`
-      const shareUrl = buildDeepLink(`/hunt/${huntId}`)
+        registrationStatus?.progressData?.hunt_id ? `Hunt #${huntId}` : 'a Scavenger Hunt'
+      }" on @huntyapp! Check it out:`;
+      const shareUrl = buildDeepLink(`/hunt/${huntId}`);
 
-      if (platform === "twitter") shareOnTwitter(shareText, shareUrl)
-      else if (platform === "farcaster") shareOnFarcaster(shareText, shareUrl)
-      else if (platform === "telegram") shareOnTelegram(shareText, shareUrl)
-      else if (platform === "whatsapp") shareOnWhatsApp(shareText, shareUrl)
-      else toast.success("Achievement image downloaded! You can now share it manually.")
+      if (platform === 'twitter') shareOnTwitter(shareText, shareUrl);
+      else if (platform === 'farcaster') shareOnFarcaster(shareText, shareUrl);
+      else if (platform === 'telegram') shareOnTelegram(shareText, shareUrl);
+      else if (platform === 'whatsapp') shareOnWhatsApp(shareText, shareUrl);
+      else toast.success('Achievement image downloaded! You can now share it manually.');
     } catch (error) {
-      logger.error("Failed to share achievement:", error)
-      toast.error("Failed to generate achievement image.")
+      logger.error('Failed to share achievement:', error);
+      toast.error('Failed to generate achievement image.');
     } finally {
-      setIsGenerating(false)
+      setIsGenerating(false);
     }
-  }
-
-  /**
-   * Share (or download) the result-card OG image generated on completion.
-   * Reuses the existing OG image pipeline (`/api/og/result`) with the player's
-   * rank and completion time baked in.
-   */
-  const handleShareResultCard = async (
-    platform?: "twitter" | "farcaster" | "telegram" | "whatsapp"
-  ) => {
-    if (!playerAddress || !huntId) return
-    setResultCardGenerating(true)
-    try {
-      const rank =
-        rewardReceipt?.rank ??
-        (latestAttempt?.isFirstToComplete ? 1 : undefined)
-      const resultCardUrl = buildResultCardImageUrl(huntId, playerAddress, {
-        rank,
-        time: latestAttempt ? Math.max(0, latestAttempt.totalTimeSeconds) : undefined,
-      })
-
-      if (platform) {
-        const shareText = `I just completed "${latestAttempt?.huntTitle ?? `Hunt #${huntId}`}" on @huntyapp! Check out my result:`
-        if (platform === "twitter") shareOnTwitter(shareText, resultCardUrl, resultCardUrl)
-        else if (platform === "farcaster") shareOnFarcaster(shareText, resultCardUrl)
-        else if (platform === "telegram") shareOnTelegram(shareText, resultCardUrl)
-        else if (platform === "whatsapp") shareOnWhatsApp(shareText, resultCardUrl)
-      } else {
-        // No platform -> download the generated card as a PNG.
-        const res = await fetch(resultCardUrl)
-        if (!res.ok) throw new Error(`Result card request failed (${res.status})`)
-        const blob = await res.blob()
-        const objectUrl = URL.createObjectURL(blob)
-        const link = document.createElement("a")
-        link.href = objectUrl
-        link.download = `hunty-result-${huntId}.png`
-        link.click()
-        URL.revokeObjectURL(objectUrl)
-        toast.success("Result card downloaded! You can now share it manually.")
-      }
-    } catch (error) {
-      logger.error("Failed to share result card:", error)
-      toast.error("Failed to generate result card.")
-    } finally {
-      setResultCardGenerating(false)
-    }
-  }
+  };
 
   return (
     <>
@@ -395,9 +352,7 @@ export function GameCompleteModal({
                   <Coin />
                   <span className="font-bold text-lg">{reward}</span>
                 </div>
-                {usdEquivalent && (
-                  <span className="text-sm text-slate-500">≈ {usdEquivalent}</span>
-                )}
+                {usdEquivalent && <span className="text-sm text-slate-500">≈ {usdEquivalent}</span>}
               </div>
             </div>
 
@@ -407,13 +362,12 @@ export function GameCompleteModal({
                 <p className="text-sm font-semibold text-emerald-900">Reward receipt</p>
                 <div className="mt-2 space-y-1 text-xs text-emerald-800">
                   <p>
-                    Amount:{" "}
+                    Amount:{' '}
                     <span className="font-semibold">{rewardReceipt.amount.toFixed(7)} XLM</span>
                   </p>
                   {rewardReceipt.rank && (
                     <p>
-                      Winner rank:{" "}
-                      <span className="font-semibold">#{rewardReceipt.rank}</span>
+                      Winner rank: <span className="font-semibold">#{rewardReceipt.rank}</span>
                     </p>
                   )}
                   <p className="break-all">
@@ -431,7 +385,7 @@ export function GameCompleteModal({
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   {newAchievements.map((achievementId) => {
-                    const achievement = ACHIEVEMENTS[achievementId as keyof typeof ACHIEVEMENTS]
+                    const achievement = ACHIEVEMENTS[achievementId as keyof typeof ACHIEVEMENTS];
                     return achievement ? (
                       <div
                         key={achievementId}
@@ -447,7 +401,7 @@ export function GameCompleteModal({
                           </p>
                         </div>
                       </div>
-                    ) : null
+                    ) : null;
                   })}
                 </div>
               </div>
@@ -463,11 +417,7 @@ export function GameCompleteModal({
 
             {/* NFT mint progress */}
             <div className="mt-6 border-t border-slate-100 pt-6">
-              <NftMintProgress
-                huntId={huntId ?? 0}
-                rank={1}
-                recipientAddress={playerAddress}
-              />
+              <NftMintProgress huntId={huntId ?? 0} rank={1} recipientAddress={playerAddress} />
             </div>
 
             {/* Nav buttons */}
@@ -477,7 +427,7 @@ export function GameCompleteModal({
                   onClick={onGoHome}
                   variant="outline"
                   className="w-full h-full bg-white border-none shadow-none rounded-xl"
-                  style={{ background: "white" }}
+                  style={{ background: 'white' }}
                 >
                   <span className="bg-gradient-to-br from-[#4A4AFF] to-[#0C0C4F] bg-clip-text text-transparent font-bold cursor-pointer">
                     Go Home
@@ -502,7 +452,7 @@ export function GameCompleteModal({
                     className="w-full border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 rounded-xl flex items-center gap-2 h-11"
                   >
                     {isGenerating ? (
-                      "Generating..."
+                      'Generating...'
                     ) : (
                       <>
                         <Share2 className="w-4 h-4" />
@@ -513,14 +463,14 @@ export function GameCompleteModal({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="center" className="w-[200px] rounded-xl">
                   <DropdownMenuItem
-                    onClick={() => handleShareAchievement("twitter")}
+                    onClick={() => handleShareAchievement('twitter')}
                     className="flex items-center gap-2 cursor-pointer py-2.5"
                   >
                     <Twitter className="w-4 h-4 text-sky-500" />
                     Share on Twitter / X
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => handleShareAchievement("farcaster")}
+                    onClick={() => handleShareAchievement('farcaster')}
                     className="flex items-center gap-2 cursor-pointer py-2.5"
                   >
                     <Image
@@ -533,14 +483,14 @@ export function GameCompleteModal({
                     Share on Farcaster
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => handleShareAchievement("telegram")}
+                    onClick={() => handleShareAchievement('telegram')}
                     className="flex items-center gap-2 cursor-pointer py-2.5"
                   >
                     <MessageCircle className="w-4 h-4 text-cyan-600" />
                     Share on Telegram
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => handleShareAchievement("whatsapp")}
+                    onClick={() => handleShareAchievement('whatsapp')}
                     className="flex items-center gap-2 cursor-pointer py-2.5"
                   >
                     <MessageCircle className="w-4 h-4 text-emerald-600" />
@@ -552,69 +502,6 @@ export function GameCompleteModal({
                   >
                     <Download className="w-4 h-4 text-slate-500" />
                     Download Image Only
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Share result card (OG image: rank, time, hunt name) */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    disabled={resultCardGenerating || !playerAddress || !huntId}
-                    className="w-full border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 rounded-xl flex items-center gap-2 h-11"
-                  >
-                    {resultCardGenerating ? (
-                      "Generating..."
-                    ) : (
-                      <>
-                        <Download className="w-4 h-4" />
-                        Share Result Card
-                      </>
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="w-[200px] rounded-xl">
-                  <DropdownMenuItem
-                    onClick={() => handleShareResultCard("twitter")}
-                    className="flex items-center gap-2 cursor-pointer py-2.5"
-                  >
-                    <Twitter className="w-4 h-4 text-sky-500" />
-                    Share on Twitter / X
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleShareResultCard("farcaster")}
-                    className="flex items-center gap-2 cursor-pointer py-2.5"
-                  >
-                    <Image
-                      src="/icons/farcaster.png"
-                      alt="Farcaster"
-                      width={16}
-                      height={16}
-                      className="opacity-70"
-                    />
-                    Share on Farcaster
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleShareResultCard("telegram")}
-                    className="flex items-center gap-2 cursor-pointer py-2.5"
-                  >
-                    <MessageCircle className="w-4 h-4 text-cyan-600" />
-                    Share on Telegram
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleShareResultCard("whatsapp")}
-                    className="flex items-center gap-2 cursor-pointer py-2.5"
-                  >
-                    <MessageCircle className="w-4 h-4 text-emerald-600" />
-                    Share on WhatsApp
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleShareResultCard()}
-                    className="flex items-center gap-2 cursor-pointer py-2.5 border-t mt-1"
-                  >
-                    <Download className="w-4 h-4 text-slate-500" />
-                    Download Result Card
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -642,7 +529,7 @@ export function GameCompleteModal({
                       <button
                         key={star}
                         type="button"
-                        aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
+                        aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
                         className="rounded-md p-1 hover:bg-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                         onClick={() => handleRateHunt(star)}
                         onMouseEnter={() => setHoverRating(star)}
@@ -650,10 +537,10 @@ export function GameCompleteModal({
                       >
                         <Star
                           className={cn(
-                            "h-5 w-5 transition-colors",
+                            'h-5 w-5 transition-colors',
                             star <= (hoverRating || selectedRating)
-                              ? "fill-amber-400 stroke-amber-500 text-amber-500"
-                              : "stroke-slate-400 text-slate-400"
+                              ? 'fill-amber-400 stroke-amber-500 text-amber-500'
+                              : 'stroke-slate-400 text-slate-400'
                           )}
                         />
                       </button>
@@ -664,21 +551,23 @@ export function GameCompleteModal({
                       </span>
                     )}
                   </div>
-                  
+
                   {/* Difficulty picker */}
                   <div className="mt-3">
-                    <p className="text-xs font-semibold text-slate-700 mb-1.5">How difficult was it?</p>
+                    <p className="text-xs font-semibold text-slate-700 mb-1.5">
+                      How difficult was it?
+                    </p>
                     <div className="flex gap-1.5 flex-wrap">
-                      {["Easy", "Medium", "Hard", "Expert"].map((diff) => (
+                      {['Easy', 'Medium', 'Hard', 'Expert'].map((diff) => (
                         <button
                           key={diff}
                           type="button"
                           onClick={() => setSelectedDifficulty(diff)}
                           className={cn(
-                            "px-3 py-1 text-xs font-semibold rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500",
+                            'px-3 py-1 text-xs font-semibold rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500',
                             selectedDifficulty === diff
-                              ? "bg-indigo-100 text-indigo-700 border-indigo-300"
-                              : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                              ? 'bg-indigo-100 text-indigo-700 border-indigo-300'
+                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                           )}
                         >
                           {diff}
@@ -726,7 +615,7 @@ export function GameCompleteModal({
                         Submitting…
                       </>
                     ) : (
-                      "Submit Review"
+                      'Submit Review'
                     )}
                   </Button>
                 </div>
@@ -748,12 +637,10 @@ export function GameCompleteModal({
               playerName={
                 playerAddress
                   ? `${playerAddress.slice(0, 6)}...${playerAddress.slice(-4)}`
-                  : "Explorer"
+                  : 'Explorer'
               }
               huntTitle={
-                registrationStatus?.progressData?.hunt_id
-                  ? `Hunt #${huntId}`
-                  : "Scavenger Hunt"
+                registrationStatus?.progressData?.hunt_id ? `Hunt #${huntId}` : 'Scavenger Hunt'
               }
               points={reward}
               rank={1}
@@ -773,5 +660,5 @@ export function GameCompleteModal({
         />
       )}
     </>
-  )
+  );
 }

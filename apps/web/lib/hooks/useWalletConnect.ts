@@ -1,6 +1,6 @@
-"use client"
+'use client';
 
-import { useCallback,useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from 'react';
 
 import {
   connectWalletConnect,
@@ -11,7 +11,7 @@ import {
   signTransactionWalletConnect,
   subscribeWalletConnect,
   type WalletConnectState,
-} from "@/lib/walletConnect"
+} from '@/lib/walletConnect';
 
 export function useWalletConnect() {
   const [state, setState] = useState<WalletConnectState>({
@@ -20,50 +20,44 @@ export function useWalletConnect() {
     session: null,
     qrCode: null,
     error: null,
-  })
+  });
 
   useEffect(() => {
-    const session = getActiveWalletConnectSession()
-    const connected = isWalletConnectConnected()
+    const session = getActiveWalletConnectSession();
+    const connected = isWalletConnectConnected();
     if (connected && session) {
       setState((prev) => ({
         ...prev,
         connected: true,
         session,
-      }))
+      }));
     }
 
     const unsub = subscribeWalletConnect((newState) => {
-      setState(newState)
-    })
+      setState(newState);
+    });
 
-    return unsub
-  }, [])
+    return unsub;
+  }, []);
 
   const connect = useCallback(async () => {
-    return connectWalletConnect()
-  }, [])
+    return connectWalletConnect();
+  }, []);
 
   const disconnect = useCallback(() => {
-    disconnectWalletConnect()
-  }, [])
+    disconnectWalletConnect();
+  }, []);
 
-  const signTransaction = useCallback(
-    async (xdr: string, networkPassphrase?: string) => {
-      return signTransactionWalletConnect(xdr, networkPassphrase)
-    },
-    []
-  )
+  const signTransaction = useCallback(async (xdr: string, networkPassphrase?: string) => {
+    return signTransactionWalletConnect(xdr, networkPassphrase);
+  }, []);
 
-  const signAndSubmit = useCallback(
-    async (xdr: string, networkPassphrase?: string) => {
-      return signAndSubmitTransactionWalletConnect(xdr, networkPassphrase)
-    },
-    []
-  )
+  const signAndSubmit = useCallback(async (xdr: string, networkPassphrase?: string) => {
+    return signAndSubmitTransactionWalletConnect(xdr, networkPassphrase);
+  }, []);
 
-  const publicKey = state.session?.accounts[0] || null
-  const walletName = state.session?.peer.name || null
+  const publicKey = state.session?.accounts[0] || null;
+  const walletName = state.session?.peer.name || null;
 
   return {
     ...state,
@@ -73,5 +67,5 @@ export function useWalletConnect() {
     disconnect,
     signTransaction,
     signAndSubmit,
-  }
+  };
 }

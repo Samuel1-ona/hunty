@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -10,28 +10,28 @@ import {
   AlertTriangle,
   RefreshCw,
   ShieldAlert,
-} from "lucide-react";
-import { Button } from "@hunty/ui";
-import { Card, CardDescription, CardTitle } from "@hunty/ui";
-import { Header } from "@/components/Header";
-import { toast } from "sonner";
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardDescription, CardTitle } from '@/components/ui/card';
+import { Header } from '@/components/Header';
+import { toast } from 'sonner';
 import type {
   AutoFlagReason,
   ContentPolicyViolation,
   ModerationSubmission,
-} from "@/lib/moderation/types";
+} from '@/lib/moderation/types';
 
 const POLICY_OPTIONS: { value: ContentPolicyViolation; label: string }[] = [
-  { value: "profanity", label: "Profanity" },
-  { value: "hate_speech", label: "Hate speech" },
-  { value: "spam", label: "Spam" },
-  { value: "misleading", label: "Misleading" },
-  { value: "illegal_content", label: "Illegal content" },
-  { value: "other", label: "Other" },
+  { value: 'profanity', label: 'Profanity' },
+  { value: 'hate_speech', label: 'Hate speech' },
+  { value: 'spam', label: 'Spam' },
+  { value: 'misleading', label: 'Misleading' },
+  { value: 'illegal_content', label: 'Illegal content' },
+  { value: 'other', label: 'Other' },
 ];
 
 function formatFlag(reason: AutoFlagReason): string {
-  return reason.replace(/_/g, " ");
+  return reason.replace(/_/g, ' ');
 }
 
 export default function AdminModerationPage() {
@@ -46,12 +46,12 @@ export default function AdminModerationPage() {
   const loadQueue = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/moderation?view=pending");
-      if (!res.ok) throw new Error("Failed to load queue");
+      const res = await fetch('/api/admin/moderation?view=pending');
+      if (!res.ok) throw new Error('Failed to load queue');
       const data = (await res.json()) as { submissions: ModerationSubmission[] };
       setSubmissions(data.submissions ?? []);
     } catch {
-      toast.error("Could not load moderation queue");
+      toast.error('Could not load moderation queue');
     } finally {
       setLoading(false);
     }
@@ -74,16 +74,16 @@ export default function AdminModerationPage() {
   const handleApprove = async (submission: ModerationSubmission) => {
     setActingId(submission.id);
     try {
-      const res = await fetch("/api/admin/moderation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "approve", submissionId: submission.id }),
+      const res = await fetch('/api/admin/moderation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'approve', submissionId: submission.id }),
       });
-      if (!res.ok) throw new Error("Approve failed");
+      if (!res.ok) throw new Error('Approve failed');
       toast.success(`Approved "${submission.hunt.title}"`);
       await loadQueue();
     } catch {
-      toast.error("Failed to approve hunt");
+      toast.error('Failed to approve hunt');
     } finally {
       setActingId(null);
     }
@@ -92,22 +92,22 @@ export default function AdminModerationPage() {
   const handleReject = async (submission: ModerationSubmission) => {
     const reason = rejectReasons[submission.id]?.trim();
     if (!reason) {
-      toast.error("Add a rejection reason before rejecting");
+      toast.error('Add a rejection reason before rejecting');
       return;
     }
     setActingId(submission.id);
     try {
-      const res = await fetch("/api/admin/moderation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/admin/moderation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: "reject",
+          action: 'reject',
           submissionId: submission.id,
           reason,
           policyViolations: selectedViolations[submission.id] ?? [],
         }),
       });
-      if (!res.ok) throw new Error("Reject failed");
+      if (!res.ok) throw new Error('Reject failed');
       toast.success(`Rejected "${submission.hunt.title}"`);
       setRejectReasons((prev) => {
         const next = { ...prev };
@@ -116,7 +116,7 @@ export default function AdminModerationPage() {
       });
       await loadQueue();
     } catch {
-      toast.error("Failed to reject hunt");
+      toast.error('Failed to reject hunt');
     } finally {
       setActingId(null);
     }
@@ -125,25 +125,25 @@ export default function AdminModerationPage() {
   const handleFlagOnly = async (submission: ModerationSubmission) => {
     const violations = selectedViolations[submission.id] ?? [];
     if (violations.length === 0) {
-      toast.error("Select at least one policy violation to flag");
+      toast.error('Select at least one policy violation to flag');
       return;
     }
     setActingId(submission.id);
     try {
-      const res = await fetch("/api/admin/moderation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/admin/moderation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: "flag",
+          action: 'flag',
           submissionId: submission.id,
           policyViolations: violations,
         }),
       });
-      if (!res.ok) throw new Error("Flag failed");
-      toast.success("Content policy flags recorded");
+      if (!res.ok) throw new Error('Flag failed');
+      toast.success('Content policy flags recorded');
       await loadQueue();
     } catch {
-      toast.error("Failed to flag submission");
+      toast.error('Failed to flag submission');
     } finally {
       setActingId(null);
     }
@@ -171,7 +171,7 @@ export default function AdminModerationPage() {
             disabled={loading}
             className="flex items-center gap-2 rounded-xl font-bold"
           >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh queue
           </Button>
         </div>
@@ -235,7 +235,8 @@ export default function AdminModerationPage() {
                           {submission.hunt.rewardType} · pool {submission.hunt.rewardPool ?? 0}
                         </span>
                         <span className="rounded-md bg-emerald-100 px-2 py-1 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-                          Age: {(submission.hunt.ageClassification ?? "all-ages").replace("-plus", "+")}
+                          Age:{' '}
+                          {(submission.hunt.ageClassification ?? 'all-ages').replace('-plus', '+')}
                         </span>
                         {submission.creatorEmail && (
                           <span className="rounded-md bg-slate-100 px-2 py-1 dark:bg-slate-800">
@@ -273,7 +274,7 @@ export default function AdminModerationPage() {
                                 key={v}
                                 className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-xs font-medium text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300"
                               >
-                                {v.replace(/_/g, " ")}
+                                {v.replace(/_/g, ' ')}
                               </span>
                             ))}
                           </div>
@@ -296,8 +297,8 @@ export default function AdminModerationPage() {
                             key={opt.value}
                             className={`cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
                               checked
-                                ? "border-rose-400 bg-rose-50 text-rose-800 dark:border-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
-                                : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-850 dark:text-slate-400"
+                                ? 'border-rose-400 bg-rose-50 text-rose-800 dark:border-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
+                                : 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-850 dark:text-slate-400'
                             }`}
                           >
                             <input
@@ -314,7 +315,7 @@ export default function AdminModerationPage() {
 
                     <textarea
                       placeholder="Rejection reason (required to reject)…"
-                      value={rejectReasons[submission.id] ?? ""}
+                      value={rejectReasons[submission.id] ?? ''}
                       onChange={(e) =>
                         setRejectReasons((prev) => ({ ...prev, [submission.id]: e.target.value }))
                       }
@@ -360,4 +361,3 @@ export default function AdminModerationPage() {
     </div>
   );
 }
- 

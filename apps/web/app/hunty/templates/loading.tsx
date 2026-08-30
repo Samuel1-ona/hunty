@@ -1,4 +1,4 @@
-import { TemplateCardSkeleton } from "@/components/LoadingSkeletons"
+import { TemplateCardSkeleton } from '@/components/LoadingSkeletons';
 
 export default function HuntyTemplatesLoading() {
   return (
@@ -7,5 +7,5 @@ export default function HuntyTemplatesLoading() {
         <TemplateCardSkeleton count={8} />
       </div>
     </div>
-  )
+  );
 }

@@ -1,16 +1,16 @@
-import { useCallback, useState } from "react"
+import { useCallback, useState } from 'react';
 
 export function useRefreshByUser<T>(refetch: () => Promise<T>) {
-  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
-    setIsRefreshing(true)
+    setIsRefreshing(true);
     try {
-      await refetch()
+      await refetch();
     } finally {
-      setIsRefreshing(false)
+      setIsRefreshing(false);
     }
-  }, [refetch])
+  }, [refetch]);
 
-  return { isRefreshing, onRefresh }
+  return { isRefreshing, onRefresh };
 }

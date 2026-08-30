@@ -13,17 +13,20 @@ The email digest feature enables re-engagement with lapsed players by sending pe
 ### Components
 
 1. **Database Schema** (`lib/db/migrations/010_create_email_digest_tables.sql`)
+
    - `player_email_preferences` - Stores email and subscription status
    - `email_digest_sends` - Tracks sent digests for analytics
    - `email_unsubscribe_tokens` - Secure tokens for unsubscribe links
 
 2. **Backend Services** (`lib/email/`)
+
    - `types.ts` - Type definitions
    - `dbStore.ts` - Database operations (queries, mutations)
    - `digestService.ts` - Digest content generation logic
    - `sendDigest.ts` - Email sending via Resend
 
 3. **API Endpoints** (`app/api/v1/`)
+
    - `email-preferences/` - Manage subscriptions
    - `email-digest/unsubscribe/` - Handle unsubscribe clicks
    - `email-digest/send/` - Admin endpoint for digest sends
@@ -50,6 +53,7 @@ CREATE TABLE player_email_preferences (
 ```
 
 **Indexes:**
+
 - `wallet_address` - Fast lookup by wallet
 - `(digest_subscribed, last_updated)` - Query all subscribed players efficiently
 
@@ -71,6 +75,7 @@ CREATE TABLE email_digest_sends (
 ```
 
 **Indexes:**
+
 - `(player_id, sent_at DESC)` - Find recent sends for a player
 
 ### email_unsubscribe_tokens
@@ -89,6 +94,7 @@ CREATE TABLE email_unsubscribe_tokens (
 ```
 
 **Indexes:**
+
 - `token` - Fast lookup during unsubscribe
 - `expires_at` - Clean up expired tokens
 
@@ -101,6 +107,7 @@ CREATE TABLE email_unsubscribe_tokens (
 Subscribe a player to email digests or update their preferences.
 
 **Request:**
+
 ```json
 {
   "walletAddress": "GXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
@@ -110,6 +117,7 @@ Subscribe a player to email digests or update their preferences.
 ```
 
 **Response (201):**
+
 ```json
 {
   "id": "uuid",
@@ -130,6 +138,7 @@ Subscribe a player to email digests or update their preferences.
 Retrieve a player's current email preferences.
 
 **Response (200):**
+
 ```json
 {
   "id": "uuid",
@@ -143,6 +152,7 @@ Retrieve a player's current email preferences.
 ```
 
 **Response (404):**
+
 ```json
 {
   "walletAddress": "GXXXX...",
@@ -158,6 +168,7 @@ Retrieve a player's current email preferences.
 Handle unsubscribe requests from email links. Validates token and marks player as unsubscribed.
 
 **Response (200 - Success):**
+
 ```json
 {
   "success": true,
@@ -167,6 +178,7 @@ Handle unsubscribe requests from email links. Validates token and marks player a
 ```
 
 **Response (400 - Invalid Token):**
+
 ```json
 {
   "success": false,
@@ -179,15 +191,18 @@ Handle unsubscribe requests from email links. Validates token and marks player a
 **Endpoint:** `POST /api/v1/email-digest/send`
 
 **Headers:**
+
 ```
 X-Admin-Token: <ADMIN_API_TOKEN>
 ```
 
 **Query Parameters:**
+
 - `dryRun` (boolean, default: false) - Simulate without sending
 - `minHours` (number, default: 24) - Min hours since last digest
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -205,6 +220,7 @@ X-Admin-Token: <ADMIN_API_TOKEN>
 ### Category Inference
 
 The digest service infers a player's interested categories by:
+
 1. Reading their completion history from `data/completions.json`
 2. Looking up the categories of completed hunts
 3. Building a set of interested categories
@@ -212,6 +228,7 @@ The digest service infers a player's interested categories by:
 ### Hunt Selection
 
 For digest generation:
+
 1. Find all Active, public hunts
 2. Filter by interested categories
 3. Exclude already-completed hunts
@@ -221,6 +238,7 @@ For digest generation:
 ### Email Content
 
 Each digest includes:
+
 - Player greeting ("Welcome back to Hunty!")
 - List of new hunts with:
   - Title and description
@@ -343,7 +361,7 @@ export function EmailPreferencesForm() {
           digestSubscribed: true,
         }),
       })
-      
+
       if (res.ok) {
         setSubscribed(true)
         // Show success toast
@@ -374,31 +392,34 @@ export function EmailPreferencesForm() {
 Track the success of digests through:
 
 1. **Database Queries:**
+
 ```sql
 -- Recent digest sends
-SELECT * FROM email_digest_sends 
+SELECT * FROM email_digest_sends
 ORDER BY sent_at DESC LIMIT 20;
 
 -- Subscription metrics
-SELECT 
+SELECT
   COUNT(*) as total_subscribed,
   COUNT(CASE WHEN last_updated > NOW() - INTERVAL '7 days' THEN 1 END) as active_this_week
-FROM player_email_preferences 
+FROM player_email_preferences
 WHERE digest_subscribed = true;
 
 -- Unsubscribe rate
-SELECT 
+SELECT
   COUNT(DISTINCT player_id) as unsubscribed_players
-FROM email_unsubscribe_tokens 
-WHERE used_at IS NOT NULL 
+FROM email_unsubscribe_tokens
+WHERE used_at IS NOT NULL
 AND used_at > NOW() - INTERVAL '30 days';
 ```
 
 2. **Resend Dashboard:**
+
 - Track email opens, clicks, and bounces
 - Monitor unsubscribe rates
 
 3. **Application Logs:**
+
 - Search for "digest" in logs for sending details
 - Track failures and error messages
 
@@ -409,20 +430,20 @@ AND used_at > NOW() - INTERVAL '30 days';
 Create tests for digest logic:
 
 ```typescript
-import { selectHuntsForDigest } from '@/lib/email/digestService'
+import { selectHuntsForDigest } from '@/lib/email/digestService';
 
 describe('digestService', () => {
   it('should select hunts matching player categories', async () => {
-    const hunts = await selectHuntsForDigest('GPLAYER123...')
-    expect(hunts).toHaveLength(5) // max 5
-  })
+    const hunts = await selectHuntsForDigest('GPLAYER123...');
+    expect(hunts).toHaveLength(5); // max 5
+  });
 
   it('should exclude already-completed hunts', async () => {
-    const hunts = await selectHuntsForDigest('GPLAYER123...')
-    const completedIds = new Set([1, 2, 3])
-    expect(hunts.every(h => !completedIds.has(h.id))).toBe(true)
-  })
-})
+    const hunts = await selectHuntsForDigest('GPLAYER123...');
+    const completedIds = new Set([1, 2, 3]);
+    expect(hunts.every((h) => !completedIds.has(h.id))).toBe(true);
+  });
+});
 ```
 
 ### Integration Tests
@@ -438,9 +459,9 @@ it('POST /api/v1/email-preferences subscribes player', async () => {
       email: 'test@example.com',
       digestSubscribed: true,
     }),
-  })
-  expect(res.status).toBe(200)
-})
+  });
+  expect(res.status).toBe(200);
+});
 ```
 
 ## Troubleshooting
@@ -468,20 +489,24 @@ it('POST /api/v1/email-preferences subscribes player', async () => {
 ## Future Enhancements
 
 1. **Frequency Control:**
+
    - Add `digest_frequency` (daily, weekly, monthly) to preferences
    - Adjust `minHoursSinceLast` dynamically
 
 2. **Content Personalization:**
+
    - Weight hunt recommendations by player's completion speed
    - Recommend hunts by difficulty progression
    - Highlight featured/promoted hunts
 
 3. **A/B Testing:**
+
    - Test different subject lines, send times
    - Track open rates and click-through rates
    - Optimize based on performance
 
 4. **Unsubscribe Management:**
+
    - Category-specific subscriptions (e.g., "only adventure hunts")
    - Temporary pause option (reactivate after N days)
    - Subscription preferences UI in player dashboard

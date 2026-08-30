@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
 
-import { withErrorHandling } from "@/lib/api/withErrorHandling";
-import { withValidation } from "@/lib/api/withValidation";
-import { assertAdminAuth } from "@/lib/api/adminAuth";
-import { readFeaturedId, writeFeaturedId } from "@/lib/featuredHuntDb";
-import { adminFeaturedBodySchema } from "@hunty/types/api-schemas";
+import { withErrorHandling } from '@/lib/api/withErrorHandling';
+import { withValidation } from '@/lib/api/withValidation';
+import { assertAdminAuth } from '@/lib/api/adminAuth';
+import { readFeaturedId, writeFeaturedId } from '@/lib/featuredHuntDb';
+import { adminFeaturedBodySchema } from '@hunty/types/api-schemas';
 
 /**
  * GET /api/admin/featured

@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { X } from "lucide-react";
-import React, { useEffect, useMemo,useState } from "react";
-import Joyride, { CallBackProps, STATUS, Step, TooltipRenderProps } from "react-joyride";
+import { X } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import Joyride, { CallBackProps, STATUS, Step, TooltipRenderProps } from 'react-joyride';
 
-import { useWallet } from "@/lib/context/WalletContext";
+import { useWallet } from '@/lib/context/WalletContext';
 
 interface OnboardingTourProps {
-  tourType: "player" | "creator";
+  tourType: 'player' | 'creator';
 }
 
 const OnboardingTour: React.FC<OnboardingTourProps> = ({ tourType }) => {
@@ -18,7 +18,7 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ tourType }) => {
 
   // Generate storage key dynamically based on user context
   const storageKey = useMemo(() => {
-    return `hasSeenTour_${tourType}_${publicKey || "guest"}`;
+    return `hasSeenTour_${tourType}_${publicKey || 'guest'}`;
   }, [tourType, publicKey]);
 
   useEffect(() => {
@@ -40,89 +40,98 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ tourType }) => {
         setRun(true);
       }
     };
-    window.addEventListener("start-onboarding-tour", handleStartTour);
+    window.addEventListener('start-onboarding-tour', handleStartTour);
     return () => {
-      window.removeEventListener("start-onboarding-tour", handleStartTour);
+      window.removeEventListener('start-onboarding-tour', handleStartTour);
     };
   }, [tourType]);
 
   const playerSteps: Step[] = [
     {
-      target: "body",
-      placement: "center",
-      title: "Welcome to Hunty! 🎯",
-      content: "Hunty is a decentralized Web3 scavenger hunt platform. Browse active challenges, solve clues, and unlock real crypto rewards and exclusive NFTs!",
+      target: 'body',
+      placement: 'center',
+      title: 'Welcome to Hunty! 🎯',
+      content:
+        'Hunty is a decentralized Web3 scavenger hunt platform. Browse active challenges, solve clues, and unlock real crypto rewards and exclusive NFTs!',
       disableBeacon: true,
     },
     {
-      target: "#wallet-button",
-      placement: "bottom",
-      title: "Connect Your Wallet 🔑",
-      content: "Connect your Stellar wallet to build your profile, start solving clues, and automatically claim your earnings.",
+      target: '#wallet-button',
+      placement: 'bottom',
+      title: 'Connect Your Wallet 🔑',
+      content:
+        'Connect your Stellar wallet to build your profile, start solving clues, and automatically claim your earnings.',
       disableBeacon: true,
     },
     {
-      target: "#play-button",
-      placement: "bottom",
-      title: "Play Active Hunts 🎮",
-      content: "If you have a game link, paste it in the field below or click 'Play Game' to start solving active hunts immediately.",
+      target: '#play-button',
+      placement: 'bottom',
+      title: 'Play Active Hunts 🎮',
+      content:
+        "If you have a game link, paste it in the field below or click 'Play Game' to start solving active hunts immediately.",
       disableBeacon: true,
     },
     {
-      target: "#discovery-arcade",
-      placement: "top",
-      title: "Explore the Discovery Arcade 🗺️",
-      content: "Browse the arcade of live and completed hunts. Filter by reward types (XLM, NFTs) or search for specific hunts by name or creator.",
+      target: '#discovery-arcade',
+      placement: 'top',
+      title: 'Explore the Discovery Arcade 🗺️',
+      content:
+        'Browse the arcade of live and completed hunts. Filter by reward types (XLM, NFTs) or search for specific hunts by name or creator.',
       disableBeacon: true,
     },
     {
-      target: "#balance-pill",
-      placement: "bottom",
-      title: "Track Your Earnings 💰",
-      content: "Your current Stellar balance is updated in real-time right here in the header once connected.",
+      target: '#balance-pill',
+      placement: 'bottom',
+      title: 'Track Your Earnings 💰',
+      content:
+        'Your current Stellar balance is updated in real-time right here in the header once connected.',
       disableBeacon: true,
     },
   ];
 
   const creatorSteps: Step[] = [
     {
-      target: "body",
-      placement: "center",
-      title: "Creator Dashboard 🛠️",
-      content: "Welcome to the Creator Workspace. Here you can design, deploy, and fund your custom scavenger hunts, and monitor player engagement.",
+      target: 'body',
+      placement: 'center',
+      title: 'Creator Dashboard 🛠️',
+      content:
+        'Welcome to the Creator Workspace. Here you can design, deploy, and fund your custom scavenger hunts, and monitor player engagement.',
       disableBeacon: true,
     },
     {
-      target: "#creator-create-button",
-      placement: "bottom",
-      title: "Create a Scavenger Hunt 📝",
-      content: "Design clues, hints, upload cover images, configure rules, and lock rewards (XLM/NFTs) inside a Soroban smart contract.",
+      target: '#creator-create-button',
+      placement: 'bottom',
+      title: 'Create a Scavenger Hunt 📝',
+      content:
+        'Design clues, hints, upload cover images, configure rules, and lock rewards (XLM/NFTs) inside a Soroban smart contract.',
       disableBeacon: true,
     },
     {
-      target: "#creator-templates-button",
-      placement: "bottom",
-      title: "Start from a Template 📑",
-      content: "Use our pre-made scavenger hunt templates to quickly launch local, educational, or virtual challenges.",
+      target: '#creator-templates-button',
+      placement: 'bottom',
+      title: 'Start from a Template 📑',
+      content:
+        'Use our pre-made scavenger hunt templates to quickly launch local, educational, or virtual challenges.',
       disableBeacon: true,
     },
     {
-      target: "#reward-history-section",
-      placement: "top",
-      title: "Reward Distributions 💸",
-      content: "Check transaction history, see who claimed rewards, and view public explorer links for your hunt transactions on the Stellar ledger.",
+      target: '#reward-history-section',
+      placement: 'top',
+      title: 'Reward Distributions 💸',
+      content:
+        'Check transaction history, see who claimed rewards, and view public explorer links for your hunt transactions on the Stellar ledger.',
       disableBeacon: true,
     },
   ];
 
-  const rawSteps = tourType === "player" ? playerSteps : creatorSteps;
+  const rawSteps = tourType === 'player' ? playerSteps : creatorSteps;
 
   // Dynamically filter steps based on presence of targets in DOM
   const steps = useMemo(() => {
-    if (typeof window === "undefined") return [];
+    if (typeof window === 'undefined') return [];
     return rawSteps.filter((step) => {
-      if (step.target === "body") return true;
-      if (typeof step.target === "string") {
+      if (step.target === 'body') return true;
+      if (typeof step.target === 'string') {
         const el = document.querySelector(step.target);
         return !!el;
       }
@@ -133,16 +142,16 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ tourType }) => {
   const handleJoyrideCallback = (data: CallBackProps) => {
     const { status, action, index } = data;
 
-    if (action === "close") {
+    if (action === 'close') {
       setRun(false);
       if (dontShowAgain) {
-        localStorage.setItem(storageKey, "true");
+        localStorage.setItem(storageKey, 'true');
       }
     } else if (([STATUS.FINISHED, STATUS.SKIPPED] as string[]).includes(status)) {
       setRun(false);
       // Mark tour as seen when completed or skipped, or if explicit opt-out is checked
       if (dontShowAgain || status === STATUS.FINISHED || status === STATUS.SKIPPED) {
-        localStorage.setItem(storageKey, "true");
+        localStorage.setItem(storageKey, 'true');
       }
     } else {
       setStepIndex(index);
@@ -235,7 +244,7 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ tourType }) => {
                 {...primaryProps}
                 className="px-4 py-1.5 bg-gradient-to-r from-[#3737A4] to-[#0C0C4F] dark:from-indigo-600 dark:to-indigo-800 text-white rounded-xl text-xs font-bold hover:opacity-90 transition-opacity shadow-sm"
               >
-                {isLastStep ? "Finish" : "Next"}
+                {isLastStep ? 'Finish' : 'Next'}
               </button>
             </div>
           </div>
@@ -255,8 +264,8 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ tourType }) => {
       tooltipComponent={TourTooltip}
       styles={{
         options: {
-          arrowColor: "transparent",
-          overlayColor: "rgba(12, 12, 79, 0.4)",
+          arrowColor: 'transparent',
+          overlayColor: 'rgba(12, 12, 79, 0.4)',
           zIndex: 1000,
         },
         spotlight: {

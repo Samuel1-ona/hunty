@@ -7,27 +7,27 @@
  *  e.g. "mypinata.mypinata.cloud").
  */
 
-const PINATA_GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY
-export const COVER_IMAGE_UPLOAD_ERROR_MESSAGE = "Failed to upload cover image. Please try again."
+const PINATA_GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY;
+export const COVER_IMAGE_UPLOAD_ERROR_MESSAGE = 'Failed to upload cover image. Please try again.';
 
 // Ordered list of public fallback gateways.
 const GATEWAYS: string[] = [
-  PINATA_GATEWAY ? `https://${PINATA_GATEWAY}` : "https://gateway.pinata.cloud",
-  "https://cloudflare-ipfs.com",
-  "https://dweb.link",
-  "https://ipfs.io",
-]
+  PINATA_GATEWAY ? `https://${PINATA_GATEWAY}` : 'https://gateway.pinata.cloud',
+  'https://cloudflare-ipfs.com',
+  'https://dweb.link',
+  'https://ipfs.io',
+];
 
 /** Total number of available gateways (used by consumers for fallback cycling). */
-export const GATEWAY_COUNT = GATEWAYS.length
+export const GATEWAY_COUNT = GATEWAYS.length;
 
 /**
  * Returns the IPFS gateway URL for a given CID using the gateway at `index`.
  * Wraps around if index exceeds the available gateway count.
  */
 export function getIPFSUrl(cid: string, gatewayIndex = 0): string {
-  const gateway = GATEWAYS[gatewayIndex % GATEWAYS.length]
-  return `${gateway}/ipfs/${cid}`
+  const gateway = GATEWAYS[gatewayIndex % GATEWAYS.length];
+  return `${gateway}/ipfs/${cid}`;
 }
 
 /**
@@ -35,14 +35,14 @@ export function getIPFSUrl(cid: string, gatewayIndex = 0): string {
  * Regular HTTP/HTTPS URLs are returned unchanged (passthrough).
  */
 export function resolveImageSrc(src: string, gatewayIndex = 0): string {
-  if (src.startsWith("ipfs://")) {
-    return getIPFSUrl(src.slice(7), gatewayIndex)
+  if (src.startsWith('ipfs://')) {
+    return getIPFSUrl(src.slice(7), gatewayIndex);
   }
   // Bare CID heuristic: CIDv0 starts with "Qm", CIDv1 starts with "bafy"
-  if (src.startsWith("Qm") || src.startsWith("bafy")) {
-    return getIPFSUrl(src, gatewayIndex)
+  if (src.startsWith('Qm') || src.startsWith('bafy')) {
+    return getIPFSUrl(src, gatewayIndex);
   }
-  return src
+  return src;
 }
 
 /**
@@ -50,10 +50,10 @@ export function resolveImageSrc(src: string, gatewayIndex = 0): string {
  * Returns `null` if the string doesn't look like an IPFS reference.
  */
 export function extractCID(src: string): string | null {
-  if (src.startsWith("ipfs://")) return src.slice(7)
-  if (src.startsWith("Qm") || src.startsWith("bafy")) return src
-  const match = src.match(/\/ipfs\/([A-Za-z0-9]+)/)
-  return match ? match[1] : null
+  if (src.startsWith('ipfs://')) return src.slice(7);
+  if (src.startsWith('Qm') || src.startsWith('bafy')) return src;
+  const match = src.match(/\/ipfs\/([A-Za-z0-9]+)/);
+  return match ? match[1] : null;
 }
 
 /**
@@ -65,32 +65,32 @@ export function extractCID(src: string): string | null {
  * - The network request fails
  */
 export async function uploadToIPFS(file: File, walletAddress?: string): Promise<string> {
-  const formData = new FormData()
-  formData.append("file", file)
+  const formData = new FormData();
+  formData.append('file', file);
 
-  const headers: Record<string, string> = {}
+  const headers: Record<string, string> = {};
   if (walletAddress) {
-    headers["x-wallet-address"] = walletAddress
+    headers['x-wallet-address'] = walletAddress;
   } else {
-    headers["x-wallet-address"] = "anonymous"
+    headers['x-wallet-address'] = 'anonymous';
   }
 
-  const res = await fetch("/api/ipfs", {
-    method: "POST",
+  const res = await fetch('/api/ipfs', {
+    method: 'POST',
     headers,
     body: formData,
-  })
+  });
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText })) as { error?: string }
-    throw new Error(err.error ?? "IPFS upload failed")
+    const err = (await res.json().catch(() => ({ error: res.statusText }))) as { error?: string };
+    throw new Error(err.error ?? 'IPFS upload failed');
   }
 
-  const data = await res.json().catch(() => null) as { cid?: string } | null
-  const cid = data?.cid?.trim()
+  const data = (await res.json().catch(() => null)) as { cid?: string } | null;
+  const cid = data?.cid?.trim();
   if (!cid) {
-    throw new Error("IPFS upload response did not include a CID")
+    throw new Error('IPFS upload response did not include a CID');
   }
 
-  return `ipfs://${cid}`
+  return `ipfs://${cid}`;
 }

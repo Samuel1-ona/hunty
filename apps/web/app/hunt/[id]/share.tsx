@@ -1,31 +1,31 @@
-"use client";
+'use client';
 
-import { useQueryClient } from "@tanstack/react-query";
-import { QrCode, Trophy } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useQueryClient } from '@tanstack/react-query';
+import { QrCode, Trophy } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
 
-import { ChatWindow } from "@/components/ChatWindow";
-import { EmbedModal } from "@/components/EmbedModal";
-import { GameCompleteModal } from "@/components/GameCompleteModal";
-import { HuntControls } from "@/components/HuntControls";
-import { HuntReviewsSection } from "@/components/HuntReviewsSection";
-import { PlayGame } from "@/components/PlayGame";
-import { PlayInterfaceGuard } from "@/components/PlayInterfaceGuard";
-import { PrivateHuntAccessGate } from "@/components/PrivateHuntAccessGate";
-import { QrCodeModal } from "@/components/QrCodeModal";
-import { RegistrationButton } from "@/components/RegistrationButton";
-import { SponsorHuntButton } from "@/components/SponsorHuntButton";
-import { Button } from "@hunty/ui";
-import { WaitlistDisplay } from "@/components/WaitlistDisplay";
+import { ChatWindow } from '@/components/ChatWindow';
+import { EmbedModal } from '@/components/EmbedModal';
+import { GameCompleteModal } from '@/components/GameCompleteModal';
+import { HuntControls } from '@/components/HuntControls';
+import { HuntReviewsSection } from '@/components/HuntReviewsSection';
+import { PlayGame } from '@/components/PlayGame';
+import { PlayInterfaceGuard } from '@/components/PlayInterfaceGuard';
+import { PrivateHuntAccessGate } from '@/components/PrivateHuntAccessGate';
+import { QrCodeModal } from '@/components/QrCodeModal';
+import { RegistrationButton } from '@/components/RegistrationButton';
+import { SponsorHuntButton } from '@/components/SponsorHuntButton';
+import { Button } from '@/components/ui/button';
+import { WaitlistDisplay } from '@/components/WaitlistDisplay';
 import {
   checkRegistrationStatus,
   clearRegistrationCache,
   isWalletAvailable,
   registerPlayer,
-} from "@/lib/contracts/player-registration";
-import { distributeCompletionReward } from "@/lib/contracts/rewardManager";
-import { debounce } from "@/lib/debounce";
+} from '@/lib/contracts/player-registration';
+import { distributeCompletionReward } from '@/lib/contracts/rewardManager';
+import { debounce } from '@/lib/debounce';
 import {
   buildDeepLink,
   buildHuntOgImageUrl,
@@ -33,23 +33,15 @@ import {
   shareOnTelegram,
   shareOnTwitter,
   shareOnWhatsApp,
-} from "@/lib/downloadAsImage";
-import { prepareHuntReattempt } from "@/lib/huntAttemptHistory";
-import {
-  getHuntById,
-  updateHuntStatus,
-  validateHuntInvite,
-} from "@/lib/huntStore";
-import { getHuntCapacity, getRemainingSpots } from "@/lib/huntStore";
-import { REGISTRATION_STATUS_DEBOUNCE_MS } from "@/lib/soroban/queryConfig";
-import { withTransactionToast } from "@/lib/txToast";
-import type {
-  HuntRegistrationStatus,
-  RewardReceipt,
-  StoredHunt,
-} from "@/lib/types";
-import { addToWaitlist, getWaitlistPosition } from "@/lib/waitlist";
-import { getReferralLink, storePendingReferralCode } from "@/lib/referrals";
+} from '@/lib/downloadAsImage';
+import { prepareHuntReattempt } from '@/lib/huntAttemptHistory';
+import { getHuntById, updateHuntStatus, validateHuntInvite } from '@/lib/huntStore';
+import { getHuntCapacity, getRemainingSpots } from '@/lib/huntStore';
+import { REGISTRATION_STATUS_DEBOUNCE_MS } from '@/lib/soroban/queryConfig';
+import { withTransactionToast } from '@/lib/txToast';
+import type { HuntRegistrationStatus, RewardReceipt, StoredHunt } from '@/lib/types';
+import { addToWaitlist, getWaitlistPosition } from '@/lib/waitlist';
+import { getReferralLink, storePendingReferralCode } from '@/lib/referrals';
 
 interface HuntDetailProps {
   hunt: StoredHunt;
@@ -58,7 +50,7 @@ interface HuntDetailProps {
 export default function HuntShare({ hunt }: HuntDetailProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const inviteToken = searchParams.get("invite");
+  const inviteToken = searchParams.get('invite');
   const inviteAccess = validateHuntInvite(hunt, inviteToken);
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
   const [completionScore, setCompletionScore] = useState(0);
@@ -81,16 +73,16 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
   const remainingSpots = getRemainingSpots(hunt);
 
   useEffect(() => {
-    if (searchParams.get("reattempt") !== "1" || !connectedPublicKey) return;
+    if (searchParams.get('reattempt') !== '1' || !connectedPublicKey) return;
     prepareHuntReattempt(connectedPublicKey, hunt.id);
   }, [connectedPublicKey, hunt.id, searchParams]);
 
   useEffect(() => {
-    const referralCode = searchParams.get("ref")
-    if (!referralCode) return
-    storePendingReferralCode(referralCode)
-  }, [searchParams])
-  
+    const referralCode = searchParams.get('ref');
+    if (!referralCode) return;
+    storePendingReferralCode(referralCode);
+  }, [searchParams]);
+
   /* eslint-disable react-hooks/set-state-in-effect -- wallet detection synchronizes React with an external browser extension. */
   useEffect(() => {
     // Check if wallet is available
@@ -100,7 +92,7 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
         isRegistered: false,
         isWaitlisted: false,
         loading: false,
-        error: "No wallet detected. Please install Freighter or another Soroban-compatible wallet.",
+        error: 'No wallet detected. Please install Freighter or another Soroban-compatible wallet.',
       });
       return;
     }
@@ -112,9 +104,10 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
       sorobanWallet?: { getPublicKey?: () => Promise<string> };
     };
     const wallet = win.freighter ?? win.soroban ?? win.sorobanWallet;
-    
+
     if (wallet?.getPublicKey) {
-      wallet.getPublicKey()
+      wallet
+        .getPublicKey()
         .then((key) => {
           setConnectedPublicKey(key);
           setWalletCheckComplete(true);
@@ -125,7 +118,7 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
             isRegistered: false,
             isWaitlisted: false,
             loading: false,
-            error: "Please connect your wallet to continue",
+            error: 'Please connect your wallet to continue',
           });
         });
     } else {
@@ -134,60 +127,60 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
         isRegistered: false,
         isWaitlisted: false,
         loading: false,
-        error: "Please connect your wallet to continue",
+        error: 'Please connect your wallet to continue',
       });
     }
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const refreshRegistrationStatus = useCallback(async (isActive: () => boolean = () => true) => {
-    if (!walletCheckComplete || !isActive()) {
-      return;
-    }
+  const refreshRegistrationStatus = useCallback(
+    async (isActive: () => boolean = () => true) => {
+      if (!walletCheckComplete || !isActive()) {
+        return;
+      }
 
-    if (!connectedPublicKey) {
+      if (!connectedPublicKey) {
+        if (isActive()) {
+          setRegistrationStatus({
+            isRegistered: false,
+            isWaitlisted: false,
+            loading: false,
+            error: 'Please connect your wallet to continue',
+          });
+        }
+        return;
+      }
+
+      // Set loading state
+      setRegistrationStatus({
+        isRegistered: false,
+        isWaitlisted: false,
+        loading: true,
+      });
+
+      // Check registration status
+      const status = await checkRegistrationStatus(hunt.id, connectedPublicKey);
+
+      // Also check waitlist position
+      const waitlistPosition = getWaitlistPosition(hunt.id, connectedPublicKey);
+
       if (isActive()) {
         setRegistrationStatus({
-          isRegistered: false,
-          isWaitlisted: false,
-          loading: false,
-          error: "Please connect your wallet to continue",
+          ...status,
+          isWaitlisted: waitlistPosition !== null,
+          waitlistPosition: waitlistPosition ?? undefined,
         });
       }
-      return;
-    }
-
-    // Set loading state
-    setRegistrationStatus({
-      isRegistered: false,
-      isWaitlisted: false,
-      loading: true,
-    });
-
-    // Check registration status
-    const status = await checkRegistrationStatus(hunt.id, connectedPublicKey);
-    
-    // Also check waitlist position
-    const waitlistPosition = getWaitlistPosition(hunt.id, connectedPublicKey);
-
-    if (isActive()) {
-      setRegistrationStatus({
-        ...status,
-        isWaitlisted: waitlistPosition !== null,
-        waitlistPosition: waitlistPosition ?? undefined,
-      });
-    }
-  }, [hunt.id, connectedPublicKey, walletCheckComplete]);
+    },
+    [hunt.id, connectedPublicKey, walletCheckComplete]
+  );
 
   // Check registration status when wallet is connected (Requirement 1.1, 2.3)
   useEffect(() => {
     let isActive = true;
-    const debouncedCheckStatus = debounce(
-      () => {
-        void refreshRegistrationStatus(() => isActive);
-      },
-      REGISTRATION_STATUS_DEBOUNCE_MS
-    );
+    const debouncedCheckStatus = debounce(() => {
+      void refreshRegistrationStatus(() => isActive);
+    }, REGISTRATION_STATUS_DEBOUNCE_MS);
 
     debouncedCheckStatus();
 
@@ -202,9 +195,10 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
     const access = validateHuntInvite(latestHunt, inviteToken);
 
     if (!access.isValid) {
-      const message = access.reason === "expired"
-        ? "Access denied. This invite link has expired."
-        : "Access denied. This invite link is invalid or has been revoked.";
+      const message =
+        access.reason === 'expired'
+          ? 'Access denied. This invite link has expired.'
+          : 'Access denied. This invite link is invalid or has been revoked.';
       throw new Error(message);
     }
   };
@@ -217,14 +211,14 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
 
     assertCurrentInviteAccess();
     const result = await registerPlayer(hunt.id, connectedPublicKey);
-    
+
     if (result.success) {
       // Clear cache and refresh registration status after successful registration
       clearRegistrationCache(hunt.id, connectedPublicKey);
       await refreshRegistrationStatus();
     } else {
       // Error is already handled by RegistrationButton component
-      throw new Error(result.error || "Registration failed");
+      throw new Error(result.error || 'Registration failed');
     }
   };
 
@@ -235,7 +229,11 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
     }
 
     assertCurrentInviteAccess();
-    addToWaitlist(hunt.id, connectedPublicKey, `${connectedPublicKey.slice(0, 6)}...${connectedPublicKey.slice(-4)}`);
+    addToWaitlist(
+      hunt.id,
+      connectedPublicKey,
+      `${connectedPublicKey.slice(0, 6)}...${connectedPublicKey.slice(-4)}`
+    );
     await refreshRegistrationStatus();
   };
 
@@ -243,19 +241,19 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
   useEffect(() => {
     void (async () => {
       try {
-        await fetch("/api/analytics/hunt-view", {
-          method: "POST",
+        await fetch('/api/analytics/hunt-view', {
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({ huntId: hunt.id }),
           keepalive: true,
-        })
+        });
       } catch {
         // analytics failure should not affect the user experience
       }
-    })()
-  }, [hunt.id])
+    })();
+  }, [hunt.id]);
 
   const handleShare = async () => {
     const url = connectedPublicKey
@@ -263,36 +261,36 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
           baseUrl: window.location.origin,
           huntId: hunt.id,
         })
-      : buildDeepLink(`/hunt/${hunt.id}`)
-    const copiedNow = await copyShareLink(url)
+      : buildDeepLink(`/hunt/${hunt.id}`);
+    const copiedNow = await copyShareLink(url);
     if (copiedNow) {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
-  const shareText = `Join me on \"${hunt.title}\" in Hunty and crack the clues!`
+  const shareText = `Join me on \"${hunt.title}\" in Hunty and crack the clues!`;
 
   const handleShareToX = () => {
-    const url = buildDeepLink(`/hunt/${hunt.id}`)
-    shareOnTwitter(shareText, url, buildHuntOgImageUrl(hunt.id))
-  }
-
-  const handleShareToTelegram = () => {
-    const url = buildDeepLink(`/hunt/${hunt.id}`)
-    shareOnTelegram(shareText, url)
-  }
-
-  const handleShareToWhatsApp = () => {
-    const url = buildDeepLink(`/hunt/${hunt.id}`)
-    shareOnWhatsApp(shareText, url)
-  }
-
-  const markHuntCancelled = (huntId: number) => {
-    updateHuntStatus(huntId, "Cancelled");
+    const url = buildDeepLink(`/hunt/${hunt.id}`);
+    shareOnTwitter(shareText, url, buildHuntOgImageUrl(hunt.id));
   };
 
-  const huntUrl = typeof window !== "undefined" ? `${window.location.origin}/hunt/${hunt.id}` : "";
+  const handleShareToTelegram = () => {
+    const url = buildDeepLink(`/hunt/${hunt.id}`);
+    shareOnTelegram(shareText, url);
+  };
+
+  const handleShareToWhatsApp = () => {
+    const url = buildDeepLink(`/hunt/${hunt.id}`);
+    shareOnWhatsApp(shareText, url);
+  };
+
+  const markHuntCancelled = (huntId: number) => {
+    updateHuntStatus(huntId, 'Cancelled');
+  };
+
+  const huntUrl = typeof window !== 'undefined' ? `${window.location.origin}/hunt/${hunt.id}` : '';
 
   return (
     <div className="space-y-6">
@@ -350,41 +348,65 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
             <Button variant="outline" onClick={handleShareToX} aria-label="Share hunt to X">
               Share X
             </Button>
-            <Button variant="outline" onClick={handleShareToTelegram} aria-label="Share hunt to Telegram">
+            <Button
+              variant="outline"
+              onClick={handleShareToTelegram}
+              aria-label="Share hunt to Telegram"
+            >
               Telegram
             </Button>
-            <Button variant="outline" onClick={handleShareToWhatsApp} aria-label="Share hunt to WhatsApp">
+            <Button
+              variant="outline"
+              onClick={handleShareToWhatsApp}
+              aria-label="Share hunt to WhatsApp"
+            >
               WhatsApp
             </Button>
           </div>
 
           <div className="flex gap-2">
-          <Button onClick={handleShare}>
-            {copied ? (
-              <>
-                <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                <span className="text-emerald-400">Copied!</span>
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                </svg>
-                Share
-              </>
-            )}
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setQrOpen(true)}
-            title="Show QR Code"
-            aria-label="Show QR code for this hunt"
-          >
-            <QrCode className="w-4 h-4" />
-          </Button>
+            <Button onClick={handleShare}>
+              {copied ? (
+                <>
+                  <svg
+                    className="w-4 h-4 text-emerald-400"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-emerald-400">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                    />
+                  </svg>
+                  Share
+                </>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setQrOpen(true)}
+              title="Show QR Code"
+              aria-label="Show QR code for this hunt"
+            >
+              <QrCode className="w-4 h-4" />
+            </Button>
           </div>
           {!hunt.is_private && (
             <Button
@@ -416,31 +438,25 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
         </div>
         {connectedPublicKey ? (
           <p className="text-xs text-slate-500">
-            Shared links include your referral code and award bonus points after a first completed hunt.
+            Shared links include your referral code and award bonus points after a first completed
+            hunt.
           </p>
         ) : null}
         <QrCodeModal open={qrOpen} onClose={() => setQrOpen(false)} url={huntUrl} />
         {!hunt.is_private && (
-          <EmbedModal
-            hunt={hunt}
-            open={embedOpen}
-            onClose={() => setEmbedOpen(false)}
-          />
+          <EmbedModal hunt={hunt} open={embedOpen} onClose={() => setEmbedOpen(false)} />
         )}
 
-        {hunt.rewardType !== "NFT" && (
-          <SponsorHuntButton
-            huntId={hunt.id}
-            totalPool={hunt.rewardPool ?? 0}
-          />
+        {hunt.rewardType !== 'NFT' && (
+          <SponsorHuntButton huntId={hunt.id} totalPool={hunt.rewardPool ?? 0} />
         )}
 
         <HuntControls
           hunt={hunt}
           connectedPublicKey={connectedPublicKey}
           onCancelled={(huntId, _txHash) => {
-            markHuntCancelled(huntId)
-            router.push("/hunts")
+            markHuntCancelled(huntId);
+            router.push('/hunts');
           }}
         />
       </div>
@@ -456,24 +472,27 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
             <PlayGame
               hunts={[]} // PlayGame will fetch clues itself using huntId
               gameName={hunt.title}
-              onExit={() => router.push("/")}
+              onExit={() => router.push('/')}
               onGameComplete={async (score) => {
                 // Refresh registration status to show completion/rewards
                 clearRegistrationCache(hunt.id, connectedPublicKey);
-                queryClient.invalidateQueries({ queryKey: ["registrationStatus", hunt.id, connectedPublicKey] });
-                const payout = hunt.rewardType === "NFT"
-                  ? null
-                  : await withTransactionToast(
-                      async (setStage) => {
-                        setStage("approving");
-                        return distributeCompletionReward(hunt.id, connectedPublicKey);
-                      },
-                      {
-                        pending: "Pending - preparing reward distribution...",
-                        approving: "Approving - sign the reward receipt in your wallet...",
-                        confirmed: "Reward distributed!",
-                      }
-                    );
+                queryClient.invalidateQueries({
+                  queryKey: ['registrationStatus', hunt.id, connectedPublicKey],
+                });
+                const payout =
+                  hunt.rewardType === 'NFT'
+                    ? null
+                    : await withTransactionToast(
+                        async (setStage) => {
+                          setStage('approving');
+                          return distributeCompletionReward(hunt.id, connectedPublicKey);
+                        },
+                        {
+                          pending: 'Pending - preparing reward distribution...',
+                          approving: 'Approving - sign the reward receipt in your wallet...',
+                          confirmed: 'Reward distributed!',
+                        }
+                      );
                 setCompletionScore(payout?.amount ?? score);
                 setRewardReceipt(payout?.receipt ?? null);
                 setIsCompleteModalOpen(true);
@@ -482,11 +501,11 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
               playerAddress={connectedPublicKey}
             />
           </div>
-          
+
           <GameCompleteModal
             isOpen={isCompleteModalOpen}
             onClose={() => setIsCompleteModalOpen(false)}
-            onGoHome={() => router.push("/")}
+            onGoHome={() => router.push('/')}
             onReplay={() => {
               setIsCompleteModalOpen(false);
               if (connectedPublicKey) {
@@ -503,10 +522,7 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
       )}
 
       {/* Chat Window */}
-      <ChatWindow 
-        huntId={hunt.id} 
-        currentUserAddress={connectedPublicKey} 
-      />
+      <ChatWindow huntId={hunt.id} currentUserAddress={connectedPublicKey} />
 
       <div className="mt-12 pt-8 border-t border-white/10">
         <HuntReviewsSection huntId={hunt.id} creatorAddress={hunt.creator} />
@@ -514,6 +530,3 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
     </div>
   );
 }
-
-
-

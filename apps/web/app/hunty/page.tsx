@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { AnimatePresence, type Easing, motion, useReducedMotion } from "framer-motion";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { AnimatePresence, type Easing, motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowLeft,
   ArrowRight,
@@ -11,55 +11,51 @@ import {
   Printer,
   QrCode,
   Share,
-} from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { z } from "zod";
+} from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { z } from 'zod';
 
-import { CategoryPicker } from "@/components/CategoryPicker";
-import { CollaboratorsPanel } from "@/components/CollaboratorsPanel";
-import { CreateGameTabs } from "@/components/CreateGameTabs";
-import { DraftRecoveryPrompt } from "@/components/DraftRecoveryPrompt";
-import { GamePreview } from "@/components/GamePreview";
-import { Header } from "@/components/Header";
-import { HuntForm } from "@/components/HuntForm";
-import { ManualSaveButton } from "@/components/ManualSaveButton";
-import { PublishModal } from "@/components/PublishModal";
-import { QrCodeModal } from "@/components/QrCodeModal";
-import { RewardsPanel } from "@/components/RewardsPanel";
-import { TagInput } from "@/components/TagInput";
-import ToggleButton from "@/components/ToggleButton";
-import { Button } from "@hunty/ui";
-import { Input } from "@/components/ui/input";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { CategoryPicker } from '@/components/CategoryPicker';
+import { CollaboratorsPanel } from '@/components/CollaboratorsPanel';
+import { CreateGameTabs } from '@/components/CreateGameTabs';
+import { DraftRecoveryPrompt } from '@/components/DraftRecoveryPrompt';
+import { GamePreview } from '@/components/GamePreview';
+import { Header } from '@/components/Header';
+import { HuntForm } from '@/components/HuntForm';
+import { ManualSaveButton } from '@/components/ManualSaveButton';
+import { PublishModal } from '@/components/PublishModal';
+import { QrCodeModal } from '@/components/QrCodeModal';
+import { RewardsPanel } from '@/components/RewardsPanel';
+import { TagInput } from '@/components/TagInput';
+import ToggleButton from '@/components/ToggleButton';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   fetchDraftFromServer,
   readDraftPayload,
   useHuntDraftAutoSave,
-} from "@/hooks/useHuntDraftAutoSave";
-import { useIsFeatureEnabled } from "@/hooks/useFeatureFlag";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
-import type { HuntCategoryId } from "@/lib/categories";
-import { ensureOwner } from "@/lib/collaboration";
-import { getCommunityTemplateBySlug } from "@/lib/communityTemplates";
-import { useWallet } from "@/lib/context/WalletContext";
-import { createHunt } from "@/lib/contracts/hunt";
-import { createRewardEscrow } from "@/lib/contracts/rewardManager";
-import { downloadElementAsImage } from "@/lib/downloadAsImage";
-import { dynapuff } from "@/lib/font";
-import {
-  addHunt as addStoredHunt,
-  getAllHuntsIncludingPrivate,
-  REWARD_REFUND_GRACE_PERIOD_SECONDS,
-} from "@/lib/huntStore";
-import { buildDraftHuntsFromTemplate, getStarterTemplateBySlug } from "@/lib/huntTemplates";
-import { COVER_IMAGE_UPLOAD_ERROR_MESSAGE } from "@/lib/ipfs";
-import { logger } from "@/lib/logger";
-import { withTransactionToast } from "@/lib/txToast";
+} from '@/hooks/useHuntDraftAutoSave';
+import { useIsFeatureEnabled } from '@/hooks/useFeatureFlag';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import type { HuntCategoryId } from '@/lib/categories';
+import { ensureOwner } from '@/lib/collaboration';
+import { getCommunityTemplateBySlug } from '@/lib/communityTemplates';
+import { useWallet } from '@/lib/context/WalletContext';
+import { createHunt } from '@/lib/contracts/hunt';
+import { createRewardEscrow } from '@/lib/contracts/rewardManager';
+import { downloadElementAsImage } from '@/lib/downloadAsImage';
+import { dynapuff } from '@/lib/font';
+import { addHunt as addStoredHunt, getAllHuntsIncludingPrivate } from '@/lib/huntStore';
+import { buildDraftHuntsFromTemplate, getStarterTemplateBySlug } from '@/lib/huntTemplates';
+import { COVER_IMAGE_UPLOAD_ERROR_MESSAGE } from '@/lib/ipfs';
+import { logger } from '@/lib/logger';
+import { withTransactionToast } from '@/lib/txToast';
 import type {
   CoverImageUploadState,
   HuntAgeClassification,
@@ -67,48 +63,48 @@ import type {
   HuntDraft,
   HuntDraftSave,
   Reward,
-} from "@/lib/types";
+} from '@/lib/types';
 
-const HUNT_DIFFICULTY_OPTIONS: HuntDifficulty[] = ["Easy", "Medium", "Hard", "Expert"] as const;
+const HUNT_DIFFICULTY_OPTIONS: HuntDifficulty[] = ['Easy', 'Medium', 'Hard', 'Expert'] as const;
 
 const EMPTY_HUNT_DRAFT: HuntDraft = {
   id: 1,
-  title: "",
-  description: "",
-  link: "",
-  code: "",
+  title: '',
+  description: '',
+  link: '',
+  code: '',
 };
 
 function CreateGameContent() {
   const searchParams = useSearchParams();
-  const editHuntId = searchParams.get("edit") ? parseInt(searchParams.get("edit")!, 10) : undefined;
-  const [activeTab, setActiveTab] = useState<"create" | "rewards" | "publish" | "leaderboard">(
-    "create"
+  const editHuntId = searchParams.get('edit') ? parseInt(searchParams.get('edit')!, 10) : undefined;
+  const [activeTab, setActiveTab] = useState<'create' | 'rewards' | 'publish' | 'leaderboard'>(
+    'create'
   );
-  const [hunts, setHunts] = useLocalStorage<HuntDraft[]>("draft-hunts", [EMPTY_HUNT_DRAFT]);
-  const [rewards, setRewards] = useLocalStorage<Reward[]>("draft-rewards", []);
-  const [rewardType, setRewardType] = useLocalStorage<"XLM" | "NFT" | "Both">(
-    "draft-rewardType",
-    "XLM"
+  const [hunts, setHunts] = useLocalStorage<HuntDraft[]>('draft-hunts', [EMPTY_HUNT_DRAFT]);
+  const [rewards, setRewards] = useLocalStorage<Reward[]>('draft-rewards', []);
+  const [rewardType, setRewardType] = useLocalStorage<'XLM' | 'NFT' | 'Both'>(
+    'draft-rewardType',
+    'XLM'
   );
-  const [gameName, setGameName] = useLocalStorage("draft-gameName", "Hunty");
-  const [startDate, setStartDate] = useLocalStorage("draft-startDate", "");
-  const [endDate, setEndDate] = useLocalStorage("draft-endDate", "");
+  const [gameName, setGameName] = useLocalStorage('draft-gameName', 'Hunty');
+  const [startDate, setStartDate] = useLocalStorage('draft-startDate', '');
+  const [endDate, setEndDate] = useLocalStorage('draft-endDate', '');
   // Hunt-level difficulty rating. Persisted in localStorage so the creator's
   // last choice is restored on refresh, and surfaced once at the publish step
   // (one rating applied to the whole hunt rather than per clue).
-  const [huntDifficulty, setHuntDifficulty] = useLocalStorage<HuntDifficulty | "">(
-    "draft-huntDifficulty",
-    ""
+  const [huntDifficulty, setHuntDifficulty] = useLocalStorage<HuntDifficulty | ''>(
+    'draft-huntDifficulty',
+    ''
   );
   const [ageClassification, setAgeClassification] = useLocalStorage<HuntAgeClassification>(
-    "draft-ageClassification",
-    "all-ages"
+    'draft-ageClassification',
+    'all-ages'
   );
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [direction, setDirection] = useState(0);
-  const [creatorEmail, setCreatorEmail] = useState("");
+  const [creatorEmail, setCreatorEmail] = useState('');
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [timerEnabled, setTimerEnabled] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
@@ -118,10 +114,10 @@ function CreateGameContent() {
     Record<number, CoverImageUploadState>
   >({});
   const [selectedTemplateTitle, setSelectedTemplateTitle] = useState<string | null>(null);
-  const [category, setCategory] = useState<HuntCategoryId | undefined>("adventure");
+  const [category, setCategory] = useState<HuntCategoryId | undefined>('adventure');
   const [tags, setTags] = useState<string[]>([]);
   const [lastPublishedHuntId, setLastPublishedHuntId] = useState<number | null>(null);
-  const [ownerWallet, setOwnerWallet] = useState("");
+  const [ownerWallet, setOwnerWallet] = useState('');
   const previewContainerRef = useRef<HTMLDivElement | null>(null);
   const appliedTemplateRef = useRef<string | null>(null);
   const router = useRouter();
@@ -132,10 +128,10 @@ function CreateGameContent() {
   // ── Draft auto-save ──────────────────────────────────────────────────────────
   // Keep track of which saved draft is loaded (so recovery prompt excludes it).
   const [activeDraftId, setActiveDraftId] = useState<string | null>(() =>
-    searchParams.get("draftId")
+    searchParams.get('draftId')
   );
 
-  const autoSaveMeta: HuntDraftSave["meta"] = {
+  const autoSaveMeta: HuntDraftSave['meta'] = {
     gameName,
     startDate,
     endDate,
@@ -186,12 +182,12 @@ function CreateGameContent() {
     exit: prefersReducedMotion ? {} : { x: direction > 0 ? -50 : 50, opacity: 0 },
     transition: prefersReducedMotion
       ? { duration: 0 }
-      : { duration: 0.3, ease: "easeInOut" as Easing },
+      : { duration: 0.3, ease: 'easeInOut' as Easing },
   };
 
   const tabToIndex = { create: 0, rewards: 1, publish: 2, leaderboard: 3 };
 
-  const handleTabChange = (newTab: "create" | "rewards" | "publish" | "leaderboard") => {
+  const handleTabChange = (newTab: 'create' | 'rewards' | 'publish' | 'leaderboard') => {
     const newIdx = tabToIndex[newTab];
     const oldIdx = tabToIndex[activeTab];
     setDirection(newIdx > oldIdx ? 1 : -1);
@@ -199,11 +195,11 @@ function CreateGameContent() {
   };
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const tab = params.get("tab");
-      if (tab === "publish" || tab === "rewards" || tab === "create") {
-        setActiveTab(tab as "publish" | "rewards" | "create");
+      const tab = params.get('tab');
+      if (tab === 'publish' || tab === 'rewards' || tab === 'create') {
+        setActiveTab(tab as 'publish' | 'rewards' | 'create');
       }
     }
   }, []);
@@ -214,7 +210,7 @@ function CreateGameContent() {
   // Falls back to the server copy when this device has no local copy (e.g.
   // the draft was auto-saved from a different browser/device).
   useEffect(() => {
-    const draftId = searchParams.get("draftId");
+    const draftId = searchParams.get('draftId');
     if (!draftId || appliedDraftIdRef.current === draftId) return;
 
     const applyDraft = (saved: HuntDraftSave) => {
@@ -249,7 +245,7 @@ function CreateGameContent() {
   }, [searchParams]);
 
   useEffect(() => {
-    const templateSlug = searchParams.get("template");
+    const templateSlug = searchParams.get('template');
     if (!templateSlug || appliedTemplateRef.current === templateSlug) return;
 
     const template =
@@ -262,10 +258,10 @@ function CreateGameContent() {
 
     // Apply any pre-filled builder settings that shipped with the template.
     if (template.settings) {
-      if (typeof template.settings.sequential === "boolean") {
+      if (typeof template.settings.sequential === 'boolean') {
         setSequential(template.settings.sequential);
       }
-      if (typeof template.settings.timerEnabled === "boolean") {
+      if (typeof template.settings.timerEnabled === 'boolean') {
         setTimerEnabled(template.settings.timerEnabled);
       }
       if (template.settings.rewardType) {
@@ -273,17 +269,17 @@ function CreateGameContent() {
       }
     }
 
-    setActiveTab("create");
+    setActiveTab('create');
     setSelectedTemplateTitle(template.title);
     toast.success(`Loaded ${template.title}. You can edit every field before publishing.`);
-    router.replace("/hunty");
+    router.replace('/hunty');
   }, [router, searchParams, setGameName, setHunts, setRewardType]);
 
   const rewardPool = rewards.reduce((sum, r) => sum + r.amount, 0);
 
   const setCoverImageUploadState = (huntId: number, state: CoverImageUploadState) => {
     setCoverImageUploadStates((current) => {
-      if (state === "idle" || state === "succeeded") {
+      if (state === 'idle' || state === 'succeeded') {
         const next = { ...current };
         delete next[huntId];
         return next;
@@ -296,11 +292,11 @@ function CreateGameContent() {
   const getCoverImageUploadBlockMessage = () => {
     const states = Object.values(coverImageUploadStates);
 
-    if (states.includes("uploading")) {
-      return "Please wait for the cover image upload to finish before publishing.";
+    if (states.includes('uploading')) {
+      return 'Please wait for the cover image upload to finish before publishing.';
     }
 
-    if (states.includes("failed")) {
+    if (states.includes('failed')) {
       return COVER_IMAGE_UPLOAD_ERROR_MESSAGE;
     }
 
@@ -309,32 +305,32 @@ function CreateGameContent() {
 
   const huntItemSchema = z.object({
     id: z.number(),
-    title: z.string().min(4, "Clue title must be at least 4 characters."),
-    description: z.string().min(8, "Clue description must be at least 8 characters."),
-    link: z.string().optional().or(z.literal("")),
-    code: z.string().optional().or(z.literal("")),
-    image: z.string().optional().or(z.literal("")),
+    title: z.string().min(4, 'Clue title must be at least 4 characters.'),
+    description: z.string().min(8, 'Clue description must be at least 8 characters.'),
+    link: z.string().optional().or(z.literal('')),
+    code: z.string().optional().or(z.literal('')),
+    image: z.string().optional().or(z.literal('')),
   });
 
   const rewardItemSchema = z.object({
     place: z.number().int().positive(),
-    amount: z.number().positive("Reward amount must be greater than 0."),
+    amount: z.number().positive('Reward amount must be greater than 0.'),
     icon: z.unknown().optional(),
   });
 
   const formSchema = z
     .object({
-      gameName: z.string().min(4, "Title length must be > 3 chars."),
-      startDate: z.string().min(1, "Start date is required."),
-      endDate: z.string().min(1, "End date is required."),
-      creatorEmail: z.string().email("Invalid email address").optional().or(z.literal("")),
+      gameName: z.string().min(4, 'Title length must be > 3 chars.'),
+      startDate: z.string().min(1, 'Start date is required.'),
+      endDate: z.string().min(1, 'End date is required.'),
+      creatorEmail: z.string().email('Invalid email address').optional().or(z.literal('')),
       emailNotifications: z.boolean(),
       timerEnabled: z.boolean(),
       isPrivate: z.boolean(),
       sequential: z.boolean(),
-      rewardType: z.enum(["XLM", "NFT", "Both"] as const),
-      hunts: z.array(huntItemSchema).min(3, "At least 3 clues are required."),
-      rewards: z.array(rewardItemSchema).min(1, "At least one reward slot is required."),
+      rewardType: z.enum(['XLM', 'NFT', 'Both'] as const),
+      hunts: z.array(huntItemSchema).min(3, 'At least 3 clues are required.'),
+      rewards: z.array(rewardItemSchema).min(1, 'At least one reward slot is required.'),
     })
     .refine(
       (data) => {
@@ -344,8 +340,8 @@ function CreateGameContent() {
         return false;
       },
       {
-        message: "Start Date must be before End Date.",
-        path: ["startDate"],
+        message: 'Start Date must be before End Date.',
+        path: ['startDate'],
       }
     )
     .refine(
@@ -355,13 +351,13 @@ function CreateGameContent() {
         return false;
       },
       {
-        message: "End Date must be in the future.",
-        path: ["endDate"],
+        message: 'End Date must be in the future.',
+        path: ['endDate'],
       }
     )
     .refine((data) => data.rewards.reduce((sum, reward) => sum + reward.amount, 0) > 0, {
-      message: "Reward pool must be greater than 0 and based on reward buckets.",
-      path: ["rewards"],
+      message: 'Reward pool must be greater than 0 and based on reward buckets.',
+      path: ['rewards'],
     });
 
   type HuntCreationFormValues = z.infer<typeof formSchema>;
@@ -373,7 +369,7 @@ function CreateGameContent() {
     formState: { errors, isValid },
   } = useForm<HuntCreationFormValues>({
     resolver: zodResolver(formSchema),
-    mode: "all",
+    mode: 'all',
     defaultValues: {
       gameName,
       startDate,
@@ -390,17 +386,17 @@ function CreateGameContent() {
   });
 
   useEffect(() => {
-    setValue("gameName", gameName);
-    setValue("startDate", startDate);
-    setValue("endDate", endDate);
-    setValue("creatorEmail", creatorEmail);
-    setValue("emailNotifications", emailNotifications);
-    setValue("timerEnabled", timerEnabled);
-    setValue("isPrivate", isPrivate);
-    setValue("sequential", sequential);
-    setValue("rewardType", rewardType);
-    setValue("hunts", hunts);
-    setValue("rewards", rewards);
+    setValue('gameName', gameName);
+    setValue('startDate', startDate);
+    setValue('endDate', endDate);
+    setValue('creatorEmail', creatorEmail);
+    setValue('emailNotifications', emailNotifications);
+    setValue('timerEnabled', timerEnabled);
+    setValue('isPrivate', isPrivate);
+    setValue('sequential', sequential);
+    setValue('rewardType', rewardType);
+    setValue('hunts', hunts);
+    setValue('rewards', rewards);
     void trigger();
   }, [
     gameName,
@@ -437,18 +433,14 @@ function CreateGameContent() {
   };
 
   const updateHunt = (id: number, field: string, value: string | number | undefined) => {
-    setHunts(
-      hunts.map((hunt) =>
-        hunt.id === id ? { ...hunt, [field]: value } : hunt,
-      ),
-    );
+    setHunts(hunts.map((hunt) => (hunt.id === id ? { ...hunt, [field]: value } : hunt)));
   };
 
   const addHunt = () => {
     const newId = Math.max(...hunts.map((h) => h.id)) + 1;
     setHunts([
       ...hunts,
-      { id: newId, title: "", description: "", link: "", code: "" } as HuntDraft,
+      { id: newId, title: '', description: '', link: '', code: '' } as HuntDraft,
     ]);
   };
 
@@ -479,7 +471,7 @@ function CreateGameContent() {
     }
 
     if (!isFormValidated) {
-      toast.error("Please fix validation issues before publishing the hunt.");
+      toast.error('Please fix validation issues before publishing the hunt.');
       return;
     }
 
@@ -487,7 +479,7 @@ function CreateGameContent() {
     try {
       const start_time = Math.floor(new Date(formValues.startDate).getTime() / 1000);
       const end_time = Math.floor(new Date(formValues.endDate).getTime() / 1000);
-      const description = formValues.hunts.map((h) => `${h.title}: ${h.description}`).join("\n");
+      const description = formValues.hunts.map((h) => `${h.title}: ${h.description}`).join('\n');
       const coverImageCid = formValues.hunts[0]?.image?.trim() || undefined;
       const existing = getAllHuntsIncludingPrivate();
       const localId = existing.length > 0 ? Math.max(...existing.map((h) => h.id)) + 1 : 1;
@@ -496,9 +488,9 @@ function CreateGameContent() {
 
       await withTransactionToast(
         async (setStage) => {
-          setStage("approving");
+          setStage('approving');
           const created = await createHunt(
-            "",
+            '',
             formValues.gameName,
             description,
             start_time,
@@ -510,16 +502,13 @@ function CreateGameContent() {
             formValues.sequential,
             // Normalize empty-string sentinel ("") from the publish-tab select back
             // to undefined so the on-chain metadata stays clean.
-            huntDifficulty ? huntDifficulty : undefined,
-            undefined,
-            REWARD_REFUND_GRACE_PERIOD_SECONDS
+            huntDifficulty ? huntDifficulty : undefined
           );
           const escrow = await createRewardEscrow({
             huntId: localId,
             rewardType: formValues.rewardType,
             rewards: formValues.rewards,
             expiresAt: end_time,
-            gracePeriodSeconds: REWARD_REFUND_GRACE_PERIOD_SECONDS,
           });
           rewardEscrowTxHash = escrow?.depositTxHash;
 
@@ -528,9 +517,9 @@ function CreateGameContent() {
           };
         },
         {
-          pending: "Pending — preparing your hunt…",
-          approving: "Approving — sign in your wallet…",
-          confirmed: "Hunt created successfully!",
+          pending: 'Pending — preparing your hunt…',
+          approving: 'Approving — sign in your wallet…',
+          confirmed: 'Hunt created successfully!',
         }
       );
 
@@ -542,17 +531,16 @@ function CreateGameContent() {
         title: formValues.gameName,
         description,
         cluesCount: formValues.hunts.length,
-        status: "Draft",
+        status: 'Draft',
         rewardType: formValues.rewardType,
         rewardPool,
         rewards: formValues.rewards.map(({ place, amount }) => ({ place, amount })),
         rewardEscrowTxHash,
-        rewardEscrowBalance: formValues.rewardType === "NFT" ? 0 : rewardPool,
+        rewardEscrowBalance: formValues.rewardType === 'NFT' ? 0 : rewardPool,
         playerCount: 0,
         createdAt: Math.floor(Date.now() / 1000),
         startTime: start_time,
         endTime: end_time,
-        gracePeriodSeconds: REWARD_REFUND_GRACE_PERIOD_SECONDS,
         creatorEmail: formValues.creatorEmail || undefined,
         emailNotifications: formValues.emailNotifications,
         is_private: formValues.isPrivate,
@@ -570,16 +558,16 @@ function CreateGameContent() {
       setLastPublishedHuntId(localId);
 
       setShowPublishModal(false);
-      router.push("/hunts");
+      router.push('/hunts');
     } catch (error) {
-      logger.error("Publish failed:", error);
+      logger.error('Publish failed:', error);
     } finally {
       setIsPublishing(false);
     }
   };
 
   const handleShare = () => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       navigator.clipboard.writeText(window.location.href);
       // You could add a toast here if you have a toast system
     }
@@ -587,18 +575,18 @@ function CreateGameContent() {
 
   const handleDownloadImage = async () => {
     if (!previewContainerRef.current) {
-      toast.error("Preview not available yet. Try again in a second.");
+      toast.error('Preview not available yet. Try again in a second.');
       return;
     }
 
     try {
       await downloadElementAsImage(previewContainerRef.current, {
-        filename: `${gameName || "hunty"}.png`,
+        filename: `${gameName || 'hunty'}.png`,
       });
-      toast.success("Preview downloaded.");
+      toast.success('Preview downloaded.');
     } catch (error) {
-      logger.error("Failed to download image:", error);
-      toast.error("Could not download image.");
+      logger.error('Failed to download image:', error);
+      toast.error('Could not download image.');
     }
   };
 
@@ -612,7 +600,7 @@ function CreateGameContent() {
             <div className="flex justify-between items-center mb-10">
               <Button
                 variant="outline"
-                onClick={() => router.push("/")}
+                onClick={() => router.push('/')}
                 className="flex items-center gap-2 border-[#3737A4] text-[#3737A4] hover:bg-[#3737A4] hover:text-white transition-all duration-300 rounded-full px-6"
               >
                 <ArrowLeft className="w-5 h-5" />
@@ -642,7 +630,7 @@ function CreateGameContent() {
 
                 <div className="relative overflow-hidden min-h-[400px]">
                   <AnimatePresence mode="wait" custom={direction}>
-                    {activeTab === "create" && (
+                    {activeTab === 'create' && (
                       <motion.div
                         key="create"
                         custom={direction}
@@ -658,12 +646,12 @@ function CreateGameContent() {
                               <h2 className="mt-1 text-xl font-bold text-slate-900">
                                 {selectedTemplateTitle
                                   ? `${selectedTemplateTitle} is loaded`
-                                  : "Need inspiration before you build?"}
+                                  : 'Need inspiration before you build?'}
                               </h2>
                               <p className="mt-2 text-sm leading-6 text-slate-600">
                                 {selectedTemplateTitle
-                                  ? "Tweak the clue titles, descriptions, answers, and anything else until it feels like yours."
-                                  : "Browse starter hunts with sample clue cards, then bring one back here fully editable."}
+                                  ? 'Tweak the clue titles, descriptions, answers, and anything else until it feels like yours.'
+                                  : 'Browse starter hunts with sample clue cards, then bring one back here fully editable.'}
                               </p>
                             </div>
                             <Button
@@ -700,7 +688,7 @@ function CreateGameContent() {
 
                         <div className="flex justify-end">
                           <Button
-                            onClick={() => handleTabChange("rewards")}
+                            onClick={() => handleTabChange('rewards')}
                             className="bg-slate-800 hover:bg-slate-700 text-white text-xl font-extrabold
                          px-6 py-4 rounded-xl flex items-center gap-2 cursor-pointer"
                           >
@@ -711,7 +699,7 @@ function CreateGameContent() {
                       </motion.div>
                     )}
 
-                    {activeTab === "rewards" && (
+                    {activeTab === 'rewards' && (
                       <motion.div
                         key="rewards"
                         custom={direction}
@@ -723,18 +711,18 @@ function CreateGameContent() {
                             Reward Type
                           </label>
                           <div className="grid grid-cols-3 gap-3">
-                            {(["XLM", "NFT", "Both"] as const).map((type) => (
+                            {(['XLM', 'NFT', 'Both'] as const).map((type) => (
                               <button
                                 key={type}
                                 onClick={() => setRewardType(type)}
                                 className={`px-4 py-3 rounded-lg font-semibold transition-all ${
                                   rewardType === type
-                                    ? type === "XLM"
-                                      ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-2 border-green-500"
-                                      : type === "NFT"
-                                        ? "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-2 border-purple-500"
-                                        : "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-2 border-amber-500"
-                                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-2 border-transparent"
+                                    ? type === 'XLM'
+                                      ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-2 border-green-500'
+                                      : type === 'NFT'
+                                        ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-2 border-purple-500'
+                                        : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-2 border-amber-500'
+                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-2 border-transparent'
                                 }`}
                               >
                                 {type}
@@ -742,10 +730,6 @@ function CreateGameContent() {
                             ))}
                           </div>
                         </div>
-
-                        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                          Unclaimed rewards can be reclaimed by the creator 7 days after this hunt ends.
-                        </p>
 
                         <RewardsPanel
                           rewards={rewards}
@@ -758,14 +742,14 @@ function CreateGameContent() {
 
                         <div className="flex justify-between">
                           <Button
-                            onClick={() => handleTabChange("create")}
+                            onClick={() => handleTabChange('create')}
                             className="bg-gradient-to-b from-[#576065] to-[#787884] hover:bg-gray-500 text-white px-8 py-2 rounded-xl flex items-center gap-2 text-xl font-black"
                           >
                             <ArrowLeft className="w-6 h-6" />
                             Previous
                           </Button>
                           <Button
-                            onClick={() => handleTabChange("publish")}
+                            onClick={() => handleTabChange('publish')}
                             className="bg-gradient-to-b from-[#576065] to-[#787884] hover:bg-gray-500 text-white px-8 py-2 rounded-xl flex items-center gap-2 text-xl font-black"
                           >
                             Next
@@ -775,7 +759,7 @@ function CreateGameContent() {
                       </motion.div>
                     )}
 
-                    {activeTab === "publish" && (
+                    {activeTab === 'publish' && (
                       <motion.div
                         key="publish"
                         custom={direction}
@@ -863,7 +847,7 @@ function CreateGameContent() {
                           onChange={setTags}
                           suggestFrom={{
                             title: gameName,
-                            description: hunts.map((h) => h.description).join(" "),
+                            description: hunts.map((h) => h.description).join(' '),
                           }}
                           className="pt-2"
                         />
@@ -914,7 +898,7 @@ function CreateGameContent() {
                             id="hunt-difficulty"
                             value={huntDifficulty}
                             onChange={(e) =>
-                              setHuntDifficulty(e.target.value as HuntDifficulty | "")
+                              setHuntDifficulty(e.target.value as HuntDifficulty | '')
                             }
                             className="h-11 w-[160px] text-center rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#3737A4]/40"
                           >
@@ -991,12 +975,12 @@ function CreateGameContent() {
                         </div>
                         {errors.hunts && (
                           <div className="text-red-500 text-sm">
-                            {errors.hunts.message || "At least 3 clues are required."}
+                            {errors.hunts.message || 'At least 3 clues are required.'}
                           </div>
                         )}
                         {errors.rewards && (
                           <div className="text-red-500 text-sm">
-                            {errors.rewards.message || "At least one reward is required."}
+                            {errors.rewards.message || 'At least one reward is required.'}
                           </div>
                         )}
 
@@ -1059,7 +1043,7 @@ function CreateGameContent() {
                         <QrCodeModal
                           open={qrOpen}
                           onClose={() => setQrOpen(false)}
-                          url={typeof window !== "undefined" ? window.location.href : ""}
+                          url={typeof window !== 'undefined' ? window.location.href : ''}
                         />
 
                         <div className="flex items-center justify-between mb-16">
@@ -1100,7 +1084,7 @@ function CreateGameContent() {
 
                         <div className="flex justify-between pb-12">
                           <Button
-                            onClick={() => handleTabChange("rewards")}
+                            onClick={() => handleTabChange('rewards')}
                             className="bg-gradient-to-b from-[#576065] to-[#787884] hover:bg-gray-500 text-white text-xl px-8 py-2 rounded-lg flex items-center gap-2"
                           >
                             <ArrowLeft className="w-4 h-4 " />
@@ -1117,7 +1101,7 @@ function CreateGameContent() {
 
                               if (!isFormValidated) {
                                 toast.error(
-                                  "Please fill all required hunt details before publishing."
+                                  'Please fill all required hunt details before publishing.'
                                 );
                                 return;
                               }
@@ -1155,15 +1139,15 @@ function CreateGameContent() {
       <QrCodeModal
         open={qrOpen}
         onClose={() => setQrOpen(false)}
-        url={typeof window !== "undefined" ? window.location.href : ""}
+        url={typeof window !== 'undefined' ? window.location.href : ''}
       />
     </TooltipProvider>
   );
 }
 
 function GameModesSection() {
-  const gameModesEnabled = useIsFeatureEnabled("gameModes");
-  const collaborativeEnabled = useIsFeatureEnabled("collaborativeHunts");
+  const gameModesEnabled = useIsFeatureEnabled('gameModes');
+  const collaborativeEnabled = useIsFeatureEnabled('collaborativeHunts');
 
   if (!gameModesEnabled && !collaborativeEnabled) return null;
 
@@ -1185,14 +1169,20 @@ function GameModesSection() {
           <label className="flex items-center gap-3 p-2 rounded-lg bg-white dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800">
             <input type="radio" name="gameMode" className="text-indigo-600" />
             <div>
-              <span className="text-sm font-medium text-slate-800 dark:text-slate-200">Timed Mode</span>
-              <p className="text-xs text-slate-500">Players must complete the hunt within a time limit</p>
+              <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                Timed Mode
+              </span>
+              <p className="text-xs text-slate-500">
+                Players must complete the hunt within a time limit
+              </p>
             </div>
           </label>
           <label className="flex items-center gap-3 p-2 rounded-lg bg-white dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800">
             <input type="radio" name="gameMode" className="text-indigo-600" />
             <div>
-              <span className="text-sm font-medium text-slate-800 dark:text-slate-200">Competitive Mode</span>
+              <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                Competitive Mode
+              </span>
               <p className="text-xs text-slate-500">Head-to-head competition with live rankings</p>
             </div>
           </label>
@@ -1202,7 +1192,9 @@ function GameModesSection() {
         <label className="flex items-center gap-3 p-2 rounded-lg bg-white dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800">
           <input type="checkbox" className="rounded text-indigo-600" />
           <div>
-            <span className="text-sm font-medium text-slate-800 dark:text-slate-200">Collaborative Mode</span>
+            <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
+              Collaborative Mode
+            </span>
             <p className="text-xs text-slate-500">Teams of players work together to solve clues</p>
           </div>
         </label>
@@ -1222,8 +1214,3 @@ export default function CreateGame() {
     </Suspense>
   );
 }
- 
-
-"use client";
-
-export { default } from "./create-game-content";

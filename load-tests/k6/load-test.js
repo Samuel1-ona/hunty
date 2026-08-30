@@ -1,6 +1,6 @@
-import { check, group,sleep } from 'k6';
+import { check, group, sleep } from 'k6';
 import http from 'k6/http';
-import { Counter,Rate, Trend } from 'k6/metrics';
+import { Counter, Rate, Trend } from 'k6/metrics';
 
 // ─── Custom Metrics ────────────────────────────────────────────────────────────
 const errorRate = new Rate('error_rate');
@@ -18,9 +18,9 @@ export const options = {
       executor: 'ramping-vus',
       startVUs: 0,
       stages: [
-        { duration: '1m', target: 20 },   // ramp up
-        { duration: '3m', target: 20 },   // hold steady
-        { duration: '1m', target: 0 },    // ramp down
+        { duration: '1m', target: 20 }, // ramp up
+        { duration: '3m', target: 20 }, // hold steady
+        { duration: '1m', target: 0 }, // ramp down
       ],
       tags: { scenario: 'normal_load' },
       gracefulRampDown: '30s',
@@ -29,12 +29,12 @@ export const options = {
     // 2. Peak Load — high-traffic periods
     peak_load: {
       executor: 'ramping-vus',
-      startTime: '6m',                    // starts after normal load
+      startTime: '6m', // starts after normal load
       startVUs: 0,
       stages: [
-        { duration: '2m', target: 100 },  // aggressive ramp
-        { duration: '3m', target: 100 },  // sustain peak
-        { duration: '1m', target: 0 },    // cool down
+        { duration: '2m', target: 100 }, // aggressive ramp
+        { duration: '3m', target: 100 }, // sustain peak
+        { duration: '1m', target: 0 }, // cool down
       ],
       tags: { scenario: 'peak_load' },
       gracefulRampDown: '30s',
@@ -43,12 +43,12 @@ export const options = {
     // 3. Spike — sudden burst of traffic
     spike: {
       executor: 'ramping-vus',
-      startTime: '13m',                   // starts after peak load
+      startTime: '13m', // starts after peak load
       startVUs: 0,
       stages: [
         { duration: '10s', target: 200 }, // instant spike
-        { duration: '1m', target: 200 },  // hold spike
-        { duration: '10s', target: 0 },   // drop off
+        { duration: '1m', target: 200 }, // hold spike
+        { duration: '10s', target: 0 }, // drop off
       ],
       tags: { scenario: 'spike' },
       gracefulRampDown: '30s',

@@ -11,6 +11,7 @@ The CSP headers have been added to `next.config.ts` via the `headers()` API with
 - **Report-Only Mode** (Staging): Logs CSP violations without blocking resources
 - **Enforcement Mode** (Production): Blocks resources that violate the policy
 - **Trusted Sources**:
+
   - `self` - Same origin
   - Soroban RPC endpoints (testnet and mainnet)
   - IPFS Gateways (Pinata, Cloudflare, dweb.link, ipfs.io)
@@ -29,17 +30,20 @@ The CSP headers have been added to `next.config.ts` via the `headers()` API with
 ## Step 1: Build and Run the Application
 
 ### 1.1 Install Dependencies
+
 ```bash
 cd /workspaces/hunty
 pnpm install
 ```
 
 ### 1.2 Start Development Server
+
 ```bash
 pnpm dev
 ```
 
 **Expected Output:**
+
 ```
 ▲ Next.js 15.3.4
 - Local:        http://localhost:3000
@@ -58,6 +62,7 @@ curl -I http://localhost:3000
 ```
 
 **Expected Output:**
+
 ```
 HTTP/1.1 200 OK
 ...
@@ -70,6 +75,7 @@ Permissions-Policy: geolocation=(self), microphone=(), camera=()
 ```
 
 **Verification Checklist:**
+
 - [ ] `Content-Security-Policy-Report-Only` header is present (dev mode)
 - [ ] All Soroban RPC endpoints are included
 - [ ] All IPFS gateways are listed
@@ -86,6 +92,7 @@ curl -I http://localhost:3000 | grep -E "Content-Security-Policy|X-Frame-Options
 ```
 
 **Expected Output:**
+
 ```
 Content-Security-Policy-Report-Only: script-src 'self' 'unsafe-inline' 'unsafe-eval'; ...
 X-Content-Type-Options: nosniff
@@ -99,6 +106,7 @@ X-Frame-Options: DENY
 ### 3.1 Chrome/Chromium DevTools
 
 **Steps:**
+
 1. Open the application in Chrome: `http://localhost:3000`
 2. Open DevTools: `F12` or `Ctrl+Shift+I` (Windows/Linux) or `Cmd+Option+I` (Mac)
 3. Go to the **Network** tab
@@ -107,6 +115,7 @@ X-Frame-Options: DENY
 6. Go to the **Response Headers** section
 
 **Expected Headers Visible:**
+
 - `content-security-policy-report-only`
 - `x-content-type-options: nosniff`
 - `x-frame-options: DENY`
@@ -114,6 +123,7 @@ X-Frame-Options: DENY
 - `permissions-policy: geolocation=(self), microphone=(), camera=()`
 
 **Verification Checklist:**
+
 - [ ] All security headers are visible in Response Headers
 - [ ] CSP is in report-only mode (in development)
 - [ ] No resources are blocked (all load successfully)
@@ -121,6 +131,7 @@ X-Frame-Options: DENY
 ### 3.2 Safari DevTools
 
 **Steps:**
+
 1. Open the application in Safari
 2. Enable DevTools: Develop menu (Develop > Show Web Inspector) or `Cmd+Option+U`
 3. Go to the **Network** tab
@@ -133,6 +144,7 @@ X-Frame-Options: DENY
 ### 3.3 Firefox DevTools
 
 **Steps:**
+
 1. Open the application in Firefox: `http://localhost:3000`
 2. Open DevTools: `F12` or `Ctrl+Shift+I` (Windows/Linux) or `Cmd+Option+I` (Mac)
 3. Go to the **Inspector** tab → **Network** subtab
@@ -149,6 +161,7 @@ X-Frame-Options: DENY
 ### 4.1 Test IPFS Gateway Access
 
 **Action:** Navigate to a page that loads images from IPFS gateways
+
 1. Load the Hunt Cards component or any page with IPFS images
 2. Open DevTools Network tab
 3. Look for requests to:
@@ -160,12 +173,14 @@ X-Frame-Options: DENY
 **Expected:** Images load successfully with HTTP 200 status
 
 **Verification Checklist:**
+
 - [ ] IPFS images load without CSP violations
 - [ ] No warnings in console about blocked resources
 
 ### 4.2 Test Blockchain Interactions
 
 **Action:** Connect wallet and perform a blockchain operation
+
 1. Click "Connect Wallet" button
 2. Open DevTools Console
 3. Monitor Network tab for Soroban RPC calls
@@ -174,6 +189,7 @@ X-Frame-Options: DENY
 **Expected:** Blockchain calls succeed without CSP violations
 
 **Verification Checklist:**
+
 - [ ] Wallet connects successfully
 - [ ] Blockchain calls reach the Soroban RPC endpoint
 - [ ] No CSP-related errors in console
@@ -181,6 +197,7 @@ X-Frame-Options: DENY
 ### 4.3 Check for CSP Report Violations
 
 **Steps:**
+
 1. Keep DevTools open in Console tab
 2. Interact with the application
 3. Look for messages like: `[Report Only] Refused to load the script because...`
@@ -188,6 +205,7 @@ X-Frame-Options: DENY
 **Expected in Report-Only Mode:** No CSP violations reported for legitimate resources
 
 **Expected Violations (should be blocked in production):**
+
 - Scripts from unauthorized external sources
 - Styles from unauthorized external sources
 - Connections to unauthorized APIs
@@ -205,6 +223,7 @@ pnpm start
 ```
 
 **Expected Output:**
+
 ```
 ▲ Next.js 15.3.4
 - Listening on 0.0.0.0:3000
@@ -213,7 +232,9 @@ pnpm start
 ### 5.2 Verify Enforcement Mode Headers
 
 **Steps:**
+
 1. Set production environment:
+
    ```bash
    NODE_ENV=production pnpm start
    ```
@@ -224,6 +245,7 @@ pnpm start
    ```
 
 **Expected Output:**
+
 ```
 Content-Security-Policy: script-src 'self' 'unsafe-inline' 'unsafe-eval'; ...
 ```
@@ -231,6 +253,7 @@ Content-Security-Policy: script-src 'self' 'unsafe-inline' 'unsafe-eval'; ...
 **Note:** Header should now be `Content-Security-Policy` (not `Report-Only`)
 
 **Verification Checklist:**
+
 - [ ] `Content-Security-Policy` header present (not Report-Only)
 - [ ] All security headers still present
 - [ ] Application functions normally with enforcement mode
@@ -247,6 +270,7 @@ pnpm dev
 ```
 
 **Expected:**
+
 - Header: `Content-Security-Policy-Report-Only`
 - Violations logged but not blocked
 - All resources load successfully
@@ -258,6 +282,7 @@ NODE_ENV=production pnpm start
 ```
 
 **Expected:**
+
 - Header: `Content-Security-Policy`
 - Policy actively enforced
 - Unauthorized resources blocked
@@ -269,6 +294,7 @@ NODE_ENV=production CSP_REPORT_ONLY=true pnpm start
 ```
 
 **Expected:**
+
 - Header: `Content-Security-Policy-Report-Only`
 - Even in production, violations are logged but not blocked
 - Allows safe monitoring before enforcement
@@ -287,6 +313,7 @@ pnpm test:e2e
 **Expected:** All existing E2E tests pass with CSP headers active
 
 **What to verify:**
+
 - [ ] `test:dashboard` passes (no CSP violations)
 - [ ] `test:hunt-creation` passes (IPFS uploads work)
 - [ ] `test:claim-reward` passes (blockchain calls work)
@@ -313,16 +340,19 @@ pnpm test
 ```
 
 **Expected:**
+
 - Security score: 90+
 - No CSP-related issues reported
 
 ### 8.2 Browser Security Extensions
 
 **Using:**
+
 - OWASP ZAP (free security scanner)
 - Burp Suite (free community edition)
 
 **Steps:**
+
 1. Run security scanner on `http://localhost:3000`
 2. Check for CSP-related findings
 3. Verify no high-risk security issues
@@ -334,6 +364,7 @@ pnpm test
 ### 9.1 Console Monitoring in Development
 
 **Steps:**
+
 1. Open DevTools Console
 2. Interact with the application
 3. Look for messages:
@@ -342,6 +373,7 @@ pnpm test
    - `Refused to connect to ... because it violates the following CSP directive`
 
 **Expected in Development:**
+
 - No violations from legitimate resources
 - Any violations should be from external/unauthorized sources
 
@@ -372,29 +404,34 @@ if (typeof window !== 'undefined') {
 Navigate through the application and verify these work with CSP enabled:
 
 **Hunt Management:**
+
 - [ ] Create a new hunt
 - [ ] Upload images to IPFS (via hunt creation)
 - [ ] View hunt details
 - [ ] IPFS images load correctly
 
 **Player Experience:**
+
 - [ ] Register for a hunt
 - [ ] Submit clues
 - [ ] Complete a hunt
 - [ ] View leaderboard
 
 **Wallet & Blockchain:**
+
 - [ ] Connect Freighter wallet
 - [ ] View wallet balance
 - [ ] Initiate blockchain transactions
 - [ ] Claim NFT rewards
 
 **Admin Features:**
+
 - [ ] Access dashboard
 - [ ] View analytics
 - [ ] Manage hunts
 
 **Verification Checklist:**
+
 - [ ] All features work without console errors
 - [ ] No CSP violations reported
 - [ ] Images from all IPFS gateways load
@@ -407,16 +444,19 @@ Navigate through the application and verify these work with CSP enabled:
 ### Supported Browsers:
 
 - [ ] **Chrome/Edge** (latest)
+
   ```bash
   # Already tested
   ```
 
 - [ ] **Firefox** (latest)
+
   ```bash
   # Test by opening http://localhost:3000 in Firefox
   ```
 
 - [ ] **Safari** (latest on macOS/iOS)
+
   ```bash
   # Test by opening http://localhost:3000 in Safari
   ```
@@ -428,6 +468,7 @@ Navigate through the application and verify these work with CSP enabled:
   ```
 
 **Verification Checklist for Each Browser:**
+
 - [ ] All headers present
 - [ ] No console errors
 - [ ] All features functional
@@ -445,6 +486,7 @@ cat next.config.ts | grep -A 50 "async headers()"
 ```
 
 **Expected:** Should see:
+
 - CSP header configuration
 - Soroban RPC endpoints
 - IPFS gateways
@@ -467,10 +509,12 @@ git diff next.config.ts
 ### Issue: CSP Headers Not Appearing
 
 **Possible Causes:**
+
 1. Application not running with updated config
 2. Cache not cleared
 
 **Solution:**
+
 ```bash
 # Stop the dev server (Ctrl+C)
 # Clear Next.js cache
@@ -482,11 +526,13 @@ pnpm dev
 ### Issue: Resources Blocked by CSP
 
 **Symptoms:**
+
 - Images not loading
 - API calls failing
 - Console shows CSP violation warnings
 
 **Solution:**
+
 1. Identify the blocked resource URL
 2. Add to appropriate CSP directive in `next.config.ts`
 3. Rebuild and test
@@ -494,6 +540,7 @@ pnpm dev
 ### Issue: CSP Report-Only Not Working
 
 **Solution:**
+
 ```bash
 # Verify NODE_ENV
 echo $NODE_ENV
@@ -505,6 +552,7 @@ echo $NODE_ENV
 ### Issue: Soroban RPC Calls Blocked
 
 **Solution:**
+
 1. Check the actual RPC URL being used
 2. Verify it's in the `sorobanRpcEndpoints` array
 3. Add if missing
@@ -514,6 +562,7 @@ echo $NODE_ENV
 ## Final Verification Checklist
 
 ### Security Headers Present:
+
 - [ ] `Content-Security-Policy` or `Content-Security-Policy-Report-Only`
 - [ ] `X-Frame-Options: DENY`
 - [ ] `X-Content-Type-Options: nosniff`
@@ -522,6 +571,7 @@ echo $NODE_ENV
 - [ ] `Permissions-Policy` configured
 
 ### CSP Directives Configured:
+
 - [ ] `script-src` - Contains self and necessary scripts
 - [ ] `style-src` - Contains self and inline styles
 - [ ] `img-src` - Contains self, data URLs, and IPFS gateways
@@ -531,6 +581,7 @@ echo $NODE_ENV
 - [ ] `default-src 'self'` - Safe default
 
 ### Application Functionality:
+
 - [ ] All pages load without errors
 - [ ] IPFS images display correctly
 - [ ] Blockchain operations work
@@ -539,6 +590,7 @@ echo $NODE_ENV
 - [ ] Console is clean (no CSP violations for legitimate resources)
 
 ### Environment Modes:
+
 - [ ] Development = Report-Only mode
 - [ ] Production = Enforcement mode
 - [ ] CSP_REPORT_ONLY=true = Report-Only even in production (safe rollout)
@@ -553,9 +605,10 @@ This CSP implementation protects the Hunty application from:
 ✅ **Data Exfiltration** - Limited connection sources  
 ✅ **Clickjacking** - X-Frame-Options prevents framing  
 ✅ **MIME Type Sniffing** - X-Content-Type-Options prevents misinterpretation  
-✅ **XSS Attacks** - XSS protection headers in place  
+✅ **XSS Attacks** - XSS protection headers in place
 
 The staged rollout approach ensures:
+
 - ✅ Report-only mode captures violations without breaking functionality
 - ✅ Smooth transition to enforcement after monitoring
 - ✅ All legitimate operations (blockchain, IPFS, emails) continue working
@@ -565,7 +618,7 @@ The staged rollout approach ensures:
 ## Support & Questions
 
 For issues or questions about CSP:
+
 1. Check the Troubleshooting Guide above
 2. Review OWASP CSP documentation: https://owasp.org/www-community/attacks/xss/#prevention-measures
 3. Reference MDN CSP Guide: https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
-

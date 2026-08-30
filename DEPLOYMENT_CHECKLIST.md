@@ -16,6 +16,7 @@ cp .env.example .env.local
 ```
 
 Required variables:
+
 ```env
 - [ ] NEXT_PUBLIC_SOROBAN_NETWORK_TYPE=testnet
 - [ ] NEXT_PUBLIC_HUNTY_CORE_ADDRESS_TESTNET=CA...
@@ -27,6 +28,7 @@ Required variables:
 ```
 
 **Verify:**
+
 ```bash
 grep "NEXT_PUBLIC_HUNTY_CORE_ADDRESS_TESTNET" .env.local
 grep "NEXT_PUBLIC_HUNTY_CORE_ADDRESS_MAINNET" .env.local
@@ -54,6 +56,7 @@ grep "NEXT_PUBLIC_HUNTY_CORE_ADDRESS_MAINNET" .env.local
 ```
 
 Expected output:
+
 ```
 ✓ Compiled successfully
 ✓ Collecting page data
@@ -69,6 +72,7 @@ pnpm dev
 ```
 
 ### Visual Checks:
+
 - [ ] Server starts without errors
 - [ ] No console errors on page load
 - [ ] Navigate to http://localhost:3000
@@ -76,6 +80,7 @@ pnpm dev
 - [ ] No 404 errors in Network tab
 
 ### Component Checks:
+
 - [ ] Yellow "TESTNET" badge visible in header
 - [ ] Yellow testnet warning banner appears at top
 - [ ] "Settings" link visible in navigation
@@ -103,12 +108,14 @@ Visit: http://localhost:3000/settings
 On settings page:
 
 1. **Click Mainnet option**
+
    - [ ] Confirmation modal appears
    - [ ] Modal shows warning text
    - [ ] "Cancel" button visible
    - [ ] "Switch & Reload" button visible
 
 2. **Click "Switch & Reload"**
+
    - [ ] Page reloads automatically
    - [ ] Green "MAINNET" badge now in header
    - [ ] No testnet warning banner
@@ -116,6 +123,7 @@ On settings page:
    - [ ] Mainnet has checkmark and green styling
 
 3. **Verify Persistence**
+
    - [ ] Refresh page manually (Cmd/Ctrl + R)
    - [ ] Still shows Mainnet
    - [ ] Open new tab to same URL
@@ -136,7 +144,7 @@ Open browser console (F12):
 
 ```javascript
 // Check network preference
-console.log(localStorage.getItem("stellar_network_preference"))
+console.log(localStorage.getItem('stellar_network_preference'));
 // Should output: "testnet" or "mainnet"
 
 // Check no errors
@@ -161,6 +169,7 @@ In browser console:
 ```
 
 Manual verification:
+
 - [ ] Check `lib/contracts/config.ts` exports `getContracts()`
 - [ ] Testnet contracts returned when on testnet
 - [ ] Mainnet contracts returned when on mainnet
@@ -172,12 +181,14 @@ Manual verification:
 If you have Freighter installed:
 
 1. **Connect Wallet**
+
    - [ ] Click "Connect Wallet" in header
    - [ ] Freighter popup appears
    - [ ] Approve connection
    - [ ] Wallet connects successfully
 
 2. **Network Mismatch Test**
+
    - [ ] Set app to testnet
    - [ ] Set Freighter to mainnet
    - [ ] Orange warning banner should appear
@@ -233,6 +244,7 @@ Test in multiple browsers:
 ## 13. Accessibility Test
 
 Keyboard navigation:
+
 - [ ] Tab to network badge (if focusable)
 - [ ] Tab to Settings link
 - [ ] Tab through network switcher options
@@ -241,6 +253,7 @@ Keyboard navigation:
 - [ ] Focus visible throughout
 
 Screen reader (optional):
+
 - [ ] Network indicator announces current network
 - [ ] Testnet warning is announced
 - [ ] Button labels are clear
@@ -283,18 +296,21 @@ pnpm start
 Before deploying to production:
 
 ### Vercel/Netlify
+
 - [ ] Add all env vars in dashboard
 - [ ] Set mainnet contract addresses
 - [ ] Set `NEXT_PUBLIC_SOROBAN_NETWORK_TYPE=mainnet` (for production)
 - [ ] Test deploy to staging first
 
 ### Docker
+
 - [ ] Update Dockerfile with env vars
 - [ ] Build Docker image successfully
 - [ ] Run container and test
 - [ ] Verify env vars accessible in container
 
 ### CI/CD
+
 - [ ] Update GitHub Actions / GitLab CI
 - [ ] Add secrets for contract addresses
 - [ ] Test CI/CD pipeline
@@ -307,6 +323,7 @@ Before deploying to production:
 After deploying to production:
 
 ### Immediate Checks (within 1 hour)
+
 - [ ] Production site loads
 - [ ] No 500 errors
 - [ ] No console errors
@@ -315,6 +332,7 @@ After deploying to production:
 - [ ] Network switching works
 
 ### Monitor (first 24 hours)
+
 - [ ] Check error logs
 - [ ] Monitor user reports
 - [ ] Verify analytics tracking
@@ -322,6 +340,7 @@ After deploying to production:
 - [ ] Monitor network switch events
 
 ### User Testing (first week)
+
 - [ ] Collect user feedback
 - [ ] Monitor support tickets
 - [ ] Check for confusion about networks
@@ -335,17 +354,20 @@ After deploying to production:
 If issues occur:
 
 ### Quick Rollback
+
 ```bash
 git revert <commit-hash>
 git push
 ```
 
 ### Environment Variable Rollback
+
 - Remove network-specific env vars
 - Keep legacy env vars as fallback
 - App will use testnet by default
 
 ### Feature Flag Rollback
+
 - Set `NEXT_PUBLIC_ENABLE_NETWORK_SWITCHING=false`
 - Hide NetworkSwitcher component
 - Users stay on default network
@@ -357,6 +379,7 @@ git push
 If you find issues during testing:
 
 1. **Document the issue:**
+
    - What were you doing?
    - What did you expect?
    - What actually happened?
@@ -364,13 +387,15 @@ If you find issues during testing:
    - Screenshots if applicable
 
 2. **Check console:**
+
    - Any errors?
    - Any warnings?
    - Network requests failing?
 
 3. **Check localStorage:**
+
    ```javascript
-   console.log(localStorage.getItem("stellar_network_preference"))
+   console.log(localStorage.getItem('stellar_network_preference'));
    ```
 
 4. **Report in:**
@@ -385,6 +410,7 @@ If you find issues during testing:
 Before marking as complete:
 
 **Developer Sign-Off:**
+
 - [ ] All checklist items completed
 - [ ] No critical bugs found
 - [ ] Documentation reviewed
@@ -392,6 +418,7 @@ Before marking as complete:
 - [ ] Ready for production
 
 **QA Sign-Off:**
+
 - [ ] All test cases passed
 - [ ] Regression testing complete
 - [ ] Performance acceptable
@@ -399,6 +426,7 @@ Before marking as complete:
 - [ ] Ready for deployment
 
 **Product Sign-Off:**
+
 - [ ] Feature meets requirements
 - [ ] UX acceptable
 - [ ] Documentation adequate
@@ -410,6 +438,7 @@ Before marking as complete:
 ## Success Criteria
 
 ✅ **Deployment is successful if:**
+
 1. All checklist items pass
 2. No critical bugs found
 3. Users can switch networks
@@ -421,8 +450,8 @@ Before marking as complete:
 
 ---
 
-**Deployment Date:** _____________
-**Deployed By:** _____________
+**Deployment Date:** **\*\***\_**\*\***
+**Deployed By:** **\*\***\_**\*\***
 **Version:** 1.0.0
 **Status:** ⬜ Ready / ⬜ Deployed / ⬜ Verified
 

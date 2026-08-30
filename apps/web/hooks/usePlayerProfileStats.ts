@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from 'react';
 
-import { getAllHunts } from "@/lib/huntStore";
-import { logger } from "@/lib/logger";
+import { getAllHunts } from '@/lib/huntStore';
+import { logger } from '@/lib/logger';
 import {
   emptyProfileStats,
   getPlayerProfileSummary,
   type PlayerHuntCompletion,
   type PlayerProfileStats,
-} from "@/lib/playerProfileStats";
+} from '@/lib/playerProfileStats';
 
 export interface UsePlayerProfileStatsResult {
   stats: PlayerProfileStats;
@@ -34,7 +34,7 @@ export function usePlayerProfileStats(
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const normalisedAddress = useMemo(() => address?.trim() ?? "", [address]);
+  const normalisedAddress = useMemo(() => address?.trim() ?? '', [address]);
 
   useEffect(() => {
     if (!normalisedAddress) {
@@ -60,11 +60,11 @@ export function usePlayerProfileStats(
         setStats(summary.stats);
         setTimeline(summary.timeline);
       } catch (err) {
-        logger.error("Failed to load player profile stats:", err);
+        logger.error('Failed to load player profile stats:', err);
         if (cancelled) return;
         setStats(emptyProfileStats());
         setTimeline([]);
-        setError(err instanceof Error ? err.message : "Failed to load profile statistics.");
+        setError(err instanceof Error ? err.message : 'Failed to load profile statistics.');
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -79,4 +79,3 @@ export function usePlayerProfileStats(
 
   return { stats, timeline, isLoading, error };
 }
- 

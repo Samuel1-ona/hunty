@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Code2, Copy, Check, ExternalLink, AlertTriangle } from "lucide-react";
+import { useState } from 'react';
+import { Code2, Copy, Check, ExternalLink, AlertTriangle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog";
-import { Button } from "@hunty/ui";
-import type { StoredHunt } from "@/lib/types";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import type { StoredHunt } from '@/lib/types';
 
 interface EmbedModalProps {
   hunt: StoredHunt;
@@ -35,9 +35,9 @@ export function EmbedModal({ hunt, open, onClose }: EmbedModalProps) {
   const [copied, setCopied] = useState(false);
 
   const baseUrl =
-    typeof window !== "undefined"
+    typeof window !== 'undefined'
       ? window.location.origin
-      : (process.env.NEXT_PUBLIC_BASE_URL ?? "https://hunty.app");
+      : (process.env.NEXT_PUBLIC_BASE_URL ?? 'https://hunty.app');
 
   const snippet = buildEmbedSnippet(hunt.id, baseUrl);
   const previewUrl = `${baseUrl}/hunt/${hunt.id}/embed`;
@@ -49,7 +49,7 @@ export function EmbedModal({ hunt, open, onClose }: EmbedModalProps) {
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // Fallback: select the textarea text
-      const el = document.getElementById("embed-snippet") as HTMLTextAreaElement | null;
+      const el = document.getElementById('embed-snippet') as HTMLTextAreaElement | null;
       el?.select();
     }
   };
@@ -66,7 +66,8 @@ export function EmbedModal({ hunt, open, onClose }: EmbedModalProps) {
             Embed &ldquo;{hunt.title}&rdquo;
           </DialogTitle>
           <DialogDescription className="text-slate-500 dark:text-slate-400 text-sm">
-            Paste this snippet into any webpage, Discord widget, or blog post to show a live hunt card.
+            Paste this snippet into any webpage, Discord widget, or blog post to show a live hunt
+            card.
           </DialogDescription>
         </DialogHeader>
 
@@ -75,8 +76,9 @@ export function EmbedModal({ hunt, open, onClose }: EmbedModalProps) {
           <div className="flex items-start gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
             <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
             <span>
-              This hunt is <strong>private</strong>. The embedded widget will show a &ldquo;private hunt&rdquo; message to viewers.
-              Make the hunt public if you want the widget to display its details.
+              This hunt is <strong>private</strong>. The embedded widget will show a &ldquo;private
+              hunt&rdquo; message to viewers. Make the hunt public if you want the widget to display
+              its details.
             </span>
           </div>
         )}
@@ -115,7 +117,8 @@ export function EmbedModal({ hunt, open, onClose }: EmbedModalProps) {
         {/* Preview hint */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-1">
           <p className="text-xs text-slate-400 dark:text-slate-500">
-            The widget shows the hunt title, reward type, clue count, and a live Play CTA. It updates automatically.
+            The widget shows the hunt title, reward type, clue count, and a live Play CTA. It
+            updates automatically.
           </p>
           <a
             href={previewUrl}

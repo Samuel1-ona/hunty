@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
 
-import { NotFoundError } from "@/lib/api/errors";
-import { withErrorHandling } from "@/lib/api/withErrorHandling";
-import { assertAdminAuth } from "@/lib/api/adminAuth";
-import { readFeaturedId, writeFeaturedId } from "@/lib/featuredHuntDb";
-import { SEED_HUNTS } from "@/lib/huntStore";
+import { NotFoundError } from '@/lib/api/errors';
+import { withErrorHandling } from '@/lib/api/withErrorHandling';
+import { assertAdminAuth } from '@/lib/api/adminAuth';
+import { readFeaturedId, writeFeaturedId } from '@/lib/featuredHuntDb';
+import { SEED_HUNTS } from '@/lib/huntStore';
 
 /**
  * POST /api/admin/featured/rotate
@@ -19,9 +19,9 @@ import { SEED_HUNTS } from "@/lib/huntStore";
 export const POST = withErrorHandling(async (req: Request) => {
   assertAdminAuth(req);
   // Only rotate amongst active seeded hunts
-  const activeSeedHunts = SEED_HUNTS.filter((h) => h.status === "Active");
+  const activeSeedHunts = SEED_HUNTS.filter((h) => h.status === 'Active');
   if (activeSeedHunts.length === 0) {
-    throw new NotFoundError("No active seeded hunts available to rotate");
+    throw new NotFoundError('No active seeded hunts available to rotate');
   }
 
   const currentId = await readFeaturedId();

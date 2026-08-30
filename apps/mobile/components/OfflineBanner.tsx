@@ -1,6 +1,6 @@
 import { useTheme } from '@providers/ThemeProvider';
 import React from 'react';
-import { StyleSheet,Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 export const OfflineBanner: React.FC = () => {
   const { colors } = useTheme();
