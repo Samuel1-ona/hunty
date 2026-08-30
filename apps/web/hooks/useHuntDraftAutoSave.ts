@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { debounce } from "@/lib/debounce";
-import { logger } from "@/lib/logger";
-import type { HuntDraft, HuntDraftSave, Reward } from "@/lib/types";
+import { debounce } from '@/lib/debounce';
+import { logger } from '@/lib/logger';
+import type { HuntDraft, HuntDraftSave, Reward } from '@/lib/types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -15,7 +15,7 @@ const LOCAL_SAVE_DELAY_MS = 1_500;
 const CLOUD_SYNC_DELAY_MS = 5_000;
 
 /** localStorage key prefix for saved drafts index. */
-export const DRAFT_INDEX_KEY = "hunty_draft_index";
+export const DRAFT_INDEX_KEY = 'hunty_draft_index';
 
 /** localStorage key template for individual draft payloads. */
 export const draftPayloadKey = (id: string) => `hunty_draft_${id}`;
@@ -24,7 +24,7 @@ export const draftPayloadKey = (id: string) => `hunty_draft_${id}`;
 
 /** Read the list of all saved draft IDs from the index. */
 function readDraftIndex(): string[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(DRAFT_INDEX_KEY);
     return raw ? (JSON.parse(raw) as string[]) : [];
@@ -35,13 +35,13 @@ function readDraftIndex(): string[] {
 
 /** Write the list of all saved draft IDs to the index. */
 function writeDraftIndex(ids: string[]): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
   localStorage.setItem(DRAFT_INDEX_KEY, JSON.stringify(ids));
 }
 
 /** Read a specific draft payload from localStorage, or null if missing. */
 export function readDraftPayload(draftId: string): HuntDraftSave | null {
-  if (typeof window === "undefined") return null;
+  if (typeof window === 'undefined') return null;
   try {
     const raw = localStorage.getItem(draftPayloadKey(draftId));
     return raw ? (JSON.parse(raw) as HuntDraftSave) : null;
@@ -52,7 +52,7 @@ export function readDraftPayload(draftId: string): HuntDraftSave | null {
 
 /** Write a draft payload and update the index. */
 function writeDraftPayload(draft: HuntDraftSave): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
   localStorage.setItem(draftPayloadKey(draft.draftId), JSON.stringify(draft));
   const index = readDraftIndex();
   if (!index.includes(draft.draftId)) {
@@ -62,7 +62,7 @@ function writeDraftPayload(draft: HuntDraftSave): void {
 
 /** Remove a draft from localStorage and the index. */
 export function deleteDraft(draftId: string): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
   localStorage.removeItem(draftPayloadKey(draftId));
   const index = readDraftIndex();
   writeDraftIndex(index.filter((id) => id !== draftId));
@@ -88,13 +88,13 @@ export function markDraftRecovered(draftId: string): void {
 
 /** Generate a simple UUID-v4-like identifier (browser-safe). */
 function generateId(): string {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
   // Fallback for environments without crypto.randomUUID
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
 }
@@ -109,9 +109,9 @@ function generateId(): string {
  */
 async function syncDraftToCloud(draft: HuntDraftSave, walletPublicKey: string): Promise<boolean> {
   try {
-    const res = await fetch("/api/v1/drafts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const res = await fetch('/api/v1/drafts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...draft, ownerKey: walletPublicKey }),
     });
     if (!res.ok) {
@@ -123,7 +123,7 @@ async function syncDraftToCloud(draft: HuntDraftSave, walletPublicKey: string): 
     );
     return true;
   } catch (err) {
-    logger.warn("[DraftAutoSave] cloud sync failed:", err);
+    logger.warn('[DraftAutoSave] cloud sync failed:', err);
     return false;
   }
 }
@@ -141,7 +141,7 @@ export async function fetchDraftFromServer(draftId: string): Promise<HuntDraftSa
     const { draft } = (await res.json()) as { draft: HuntDraftSave };
     return draft;
   } catch (err) {
-    logger.warn("[DraftAutoSave] fetch draft failed:", err);
+    logger.warn('[DraftAutoSave] fetch draft failed:', err);
     return null;
   }
 }
@@ -158,7 +158,7 @@ export async function fetchDraftsFromServer(ownerKey: string): Promise<HuntDraft
     const { drafts } = (await res.json()) as { drafts: HuntDraftSave[] };
     return drafts;
   } catch (err) {
-    logger.warn("[DraftAutoSave] fetch drafts failed:", err);
+    logger.warn('[DraftAutoSave] fetch drafts failed:', err);
     return [];
   }
 }
@@ -166,21 +166,21 @@ export async function fetchDraftsFromServer(ownerKey: string): Promise<HuntDraft
 /** Deletes a draft's server-side copy. Best-effort — errors are swallowed. */
 export async function deleteDraftFromServer(draftId: string): Promise<void> {
   try {
-    await fetch(`/api/v1/drafts/${draftId}`, { method: "DELETE" });
+    await fetch(`/api/v1/drafts/${draftId}`, { method: 'DELETE' });
   } catch (err) {
-    logger.warn("[DraftAutoSave] server delete failed:", err);
+    logger.warn('[DraftAutoSave] server delete failed:', err);
   }
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type SaveStatus = "idle" | "saving" | "saved" | "error";
+export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 export interface UseHuntDraftAutoSaveOptions {
   /** Current draft content to track. */
   hunts: HuntDraft[];
   rewards: Reward[];
-  meta: HuntDraftSave["meta"];
+  meta: HuntDraftSave['meta'];
   /**
    * If provided, the hook will attempt cloud sync after the local save.
    * Typically the Freighter/wallet public key for logged-in users.
@@ -221,7 +221,7 @@ export function useHuntDraftAutoSave({
   walletPublicKey,
   draftId: initialDraftId,
 }: UseHuntDraftAutoSaveOptions): UseHuntDraftAutoSaveReturn {
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   // Expose activeDraftId as state so the return value is stable across renders.
   const [activeDraftId] = useState<string>(() => initialDraftId ?? generateId());
   const activeDraftIdRef = useRef<string>(activeDraftId);
@@ -248,7 +248,7 @@ export function useHuntDraftAutoSave({
   // ── Core save logic (runs for both auto and manual saves) ──────────────────
   const performSave = useCallback(async () => {
     const draftId = activeDraftIdRef.current;
-    const label = metaRef.current.gameName?.trim() || "Untitled Draft";
+    const label = metaRef.current.gameName?.trim() || 'Untitled Draft';
 
     const snapshot: HuntDraftSave = {
       draftId,
@@ -260,7 +260,7 @@ export function useHuntDraftAutoSave({
       recovered: false,
     };
 
-    setSaveStatus("saving");
+    setSaveStatus('saving');
     try {
       writeDraftPayload(snapshot);
       logger.info(`[DraftAutoSave] saved draft ${draftId} to localStorage`);
@@ -269,14 +269,14 @@ export function useHuntDraftAutoSave({
       // server has actually confirmed the write.
       if (walletRef.current) {
         const synced = await syncDraftToCloud(snapshot, walletRef.current);
-        setSaveStatus(synced ? "saved" : "error");
+        setSaveStatus(synced ? 'saved' : 'error');
         return;
       }
 
-      setSaveStatus("saved");
+      setSaveStatus('saved');
     } catch (err) {
-      logger.error("[DraftAutoSave] failed to write draft:", err);
-      setSaveStatus("error");
+      logger.error('[DraftAutoSave] failed to write draft:', err);
+      setSaveStatus('error');
     }
   }, []);
 
@@ -305,7 +305,6 @@ export function useHuntDraftAutoSave({
     if (walletPublicKey) {
       debouncedCloudSyncRef.current?.();
     }
-  }, [hunts, rewards, meta, walletPublicKey]);
   }, [hunts, rewards, meta, walletPublicKey]); // eslint-disable-line react-hooks/exhaustive-deps -- debounced save handlers are stored in refs to remain stable across renders while saving updated form state (hunts, rewards, meta, walletPublicKey)
 
   // ── Manual save (exposed via saveNow) ─────────────────────────────────────

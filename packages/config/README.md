@@ -8,24 +8,24 @@ paths below.
 
 ### ESLint
 
-| Import | File | Description |
-| --- | --- | --- |
-| `@hunty/config/eslint/base` | `eslint/base.mjs` | Base ESLint rules for all packages |
-| `@hunty/config/eslint/next` | `eslint/next.mjs` | Next.js-specific rules (apps/web) |
-| `@hunty/config/eslint/react-native` | `eslint/react-native.mjs` | React Native rules (apps/mobile) |
+| Import                              | File                      | Description                        |
+| ----------------------------------- | ------------------------- | ---------------------------------- |
+| `@hunty/config/eslint/base`         | `eslint/base.mjs`         | Base ESLint rules for all packages |
+| `@hunty/config/eslint/next`         | `eslint/next.mjs`         | Next.js-specific rules (apps/web)  |
+| `@hunty/config/eslint/react-native` | `eslint/react-native.mjs` | React Native rules (apps/mobile)   |
 
 ### TypeScript
 
-| Import | File | Description |
-| --- | --- | --- |
-| `@hunty/config/tsconfig/base.json` | `tsconfig/base.json` | Base TS config for all packages |
-| `@hunty/config/tsconfig/nextjs.json` | `tsconfig/nextjs.json` | Next.js TS config (apps/web) |
+| Import                                     | File                         | Description                          |
+| ------------------------------------------ | ---------------------------- | ------------------------------------ |
+| `@hunty/config/tsconfig/base.json`         | `tsconfig/base.json`         | Base TS config for all packages      |
+| `@hunty/config/tsconfig/nextjs.json`       | `tsconfig/nextjs.json`       | Next.js TS config (apps/web)         |
 | `@hunty/config/tsconfig/react-native.json` | `tsconfig/react-native.json` | React Native TS config (apps/mobile) |
 
 ### Tailwind
 
-| Import | File | Description |
-| --- | --- | --- |
+| Import                   | File                | Description                |
+| ------------------------ | ------------------- | -------------------------- |
 | `@hunty/config/tailwind` | `tailwind/index.js` | Shared Tailwind CSS preset |
 
 ## Usage
@@ -39,8 +39,8 @@ Each workspace extends the configs it needs:
 
 ```js
 // eslint.config.mjs
-import base from "@hunty/config/eslint/next"
-export default base
+import base from '@hunty/config/eslint/next';
+export default base;
 ```
 
 ## Scripts

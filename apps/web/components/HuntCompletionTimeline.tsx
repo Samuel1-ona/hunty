@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { ArrowUpRight, Trophy } from "lucide-react";
-import Link from "next/link";
+import { ArrowUpRight, Trophy } from 'lucide-react';
+import Link from 'next/link';
 
-import { Button } from "@hunty/ui";
-import { Card, CardContent } from "@hunty/ui";
-import type { PlayerHuntCompletion } from "@/lib/playerProfileStats";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import type { PlayerHuntCompletion } from '@/lib/playerProfileStats';
 
 interface HuntCompletionTimelineProps {
   completions: PlayerHuntCompletion[];
@@ -15,29 +15,29 @@ interface HuntCompletionTimelineProps {
 }
 
 function formatCompletedAt(unixSeconds?: number): string {
-  if (!unixSeconds) return "Date unavailable";
+  if (!unixSeconds) return 'Date unavailable';
   return new Date(unixSeconds * 1000).toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
+    dateStyle: 'medium',
+    timeStyle: 'short',
   });
 }
 
 function rankStyles(rank: number): { badge: string; dot: string } {
   if (rank === 1) {
     return {
-      badge: "bg-amber-50 text-amber-700 border-amber-200",
-      dot: "bg-amber-400",
+      badge: 'bg-amber-50 text-amber-700 border-amber-200',
+      dot: 'bg-amber-400',
     };
   }
   if (rank <= 3) {
     return {
-      badge: "bg-slate-100 text-slate-700 border-slate-300",
-      dot: "bg-slate-400",
+      badge: 'bg-slate-100 text-slate-700 border-slate-300',
+      dot: 'bg-slate-400',
     };
   }
   return {
-    badge: "bg-indigo-50 text-indigo-700 border-indigo-200",
-    dot: "bg-indigo-400",
+    badge: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    dot: 'bg-indigo-400',
   };
 }
 
@@ -50,7 +50,7 @@ function rankStyles(rank: number): { badge: string; dot: string } {
 export function HuntCompletionTimeline({
   completions,
   isLoading = false,
-  emptyMessage = "No completed hunts yet. Finish a hunt to start building your timeline.",
+  emptyMessage = 'No completed hunts yet. Finish a hunt to start building your timeline.',
 }: HuntCompletionTimelineProps) {
   if (isLoading) {
     return (
@@ -92,7 +92,7 @@ export function HuntCompletionTimeline({
         const { badge, dot } = rankStyles(completion.rank);
 
         return (
-          <li key={`${completion.huntId}-${completion.completedAt ?? "na"}`} className="relative">
+          <li key={`${completion.huntId}-${completion.completedAt ?? 'na'}`} className="relative">
             <span
               aria-hidden="true"
               className={`absolute -left-6 top-6 hidden h-3.5 w-3.5 rounded-full ring-4 ring-white sm:block ${dot}`}
@@ -123,7 +123,7 @@ export function HuntCompletionTimeline({
 
                   <p className="mt-1.5 text-xs text-slate-500">
                     <span className="font-semibold text-emerald-700">{completion.points} pts</span>
-                    {" · "}
+                    {' · '}
                     <time
                       dateTime={
                         completion.completedAt
@@ -158,4 +158,3 @@ export function HuntCompletionTimeline({
     </ol>
   );
 }
- 

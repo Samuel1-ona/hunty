@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { Award, Layers, Medal, Sparkles, Star, Target, Trophy } from "lucide-react";
-import type { ReactNode } from "react";
+import { Award, Layers, Medal, Sparkles, Star, Target, Trophy } from 'lucide-react';
+import type { ReactNode } from 'react';
 
-import { Card, CardContent } from "@hunty/ui";
-import type { PlayerProfileStats } from "@/lib/playerProfileStats";
+import { Card, CardContent } from '@/components/ui/card';
+import type { PlayerProfileStats } from '@/lib/playerProfileStats';
 
 interface ProfileStatsDashboardProps {
   stats: PlayerProfileStats;
@@ -13,7 +13,7 @@ interface ProfileStatsDashboardProps {
 }
 
 function formatRank(rank: number | null): string {
-  if (rank === null) return "—";
+  if (rank === null) return '—';
   return `#${rank}`;
 }
 
@@ -34,55 +34,55 @@ export function ProfileStatsDashboard({ stats, isLoading = false }: ProfileStats
     accent: string;
   }> = [
     {
-      key: "hunts",
-      label: "Hunts Completed",
+      key: 'hunts',
+      label: 'Hunts Completed',
       value: stats.totalHuntsCompleted,
-      hint: "Hunts you appear on a leaderboard for",
+      hint: 'Hunts you appear on a leaderboard for',
       icon: <Target className="h-4 w-4" />,
-      accent: "text-indigo-600 bg-indigo-50 border-indigo-100",
+      accent: 'text-indigo-600 bg-indigo-50 border-indigo-100',
     },
     {
-      key: "points",
-      label: "Points Earned",
+      key: 'points',
+      label: 'Points Earned',
       value: stats.totalPoints,
-      hint: "Total across every hunt",
+      hint: 'Total across every hunt',
       icon: <Sparkles className="h-4 w-4" />,
-      accent: "text-emerald-600 bg-emerald-50 border-emerald-100",
+      accent: 'text-emerald-600 bg-emerald-50 border-emerald-100',
     },
     {
-      key: "rank",
-      label: "Best Rank",
+      key: 'rank',
+      label: 'Best Rank',
       value: formatRank(stats.bestRank),
       hint:
-        stats.averageRank !== null ? `Average rank ${stats.averageRank}` : "No ranked finishes yet",
+        stats.averageRank !== null ? `Average rank ${stats.averageRank}` : 'No ranked finishes yet',
       icon: <Trophy className="h-4 w-4" />,
-      accent: "text-amber-600 bg-amber-50 border-amber-100",
+      accent: 'text-amber-600 bg-amber-50 border-amber-100',
     },
     {
-      key: "nfts",
-      label: "NFTs Won",
+      key: 'nfts',
+      label: 'NFTs Won',
       value: stats.nftsWon,
-      hint: "From NFT-rewarding hunts",
+      hint: 'From NFT-rewarding hunts',
       icon: <Award className="h-4 w-4" />,
-      accent: "text-fuchsia-600 bg-fuchsia-50 border-fuchsia-100",
+      accent: 'text-fuchsia-600 bg-fuchsia-50 border-fuchsia-100',
     },
     {
-      key: "category",
-      label: "Favourite Category",
-      value: stats.favouriteCategory ?? "—",
-      hint: "Most played hunt category",
+      key: 'category',
+      label: 'Favourite Category',
+      value: stats.favouriteCategory ?? '—',
+      hint: 'Most played hunt category',
       icon: <Layers className="h-4 w-4" />,
-      accent: "text-sky-600 bg-sky-50 border-sky-100",
+      accent: 'text-sky-600 bg-sky-50 border-sky-100',
     },
     {
-      key: "podium",
-      label: "Podium Finishes",
+      key: 'podium',
+      label: 'Podium Finishes',
       value: stats.podiumFinishes,
       hint: `${stats.firstPlaceFinishes} first-place ${
-        stats.firstPlaceFinishes === 1 ? "finish" : "finishes"
+        stats.firstPlaceFinishes === 1 ? 'finish' : 'finishes'
       }`,
       icon: <Medal className="h-4 w-4" />,
-      accent: "text-rose-600 bg-rose-50 border-rose-100",
+      accent: 'text-rose-600 bg-rose-50 border-rose-100',
     },
   ];
 
@@ -123,7 +123,7 @@ export function ProfileStatsDashboard({ stats, isLoading = false }: ProfileStats
               </dt>
               <dd
                 className="mt-1 truncate text-2xl font-semibold text-slate-900"
-                title={typeof card.value === "string" ? card.value : undefined}
+                title={typeof card.value === 'string' ? card.value : undefined}
               >
                 {card.value}
               </dd>
@@ -168,4 +168,3 @@ export function ProfileHighlightBadge({ stats }: { stats: PlayerProfileStats }) 
     </span>
   );
 }
- 

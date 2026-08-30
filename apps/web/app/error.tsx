@@ -1,29 +1,29 @@
-"use client"
+'use client';
 
-import * as Sentry from "@sentry/nextjs"
-import Link from "next/link"
-import { useEffect } from "react"
+import * as Sentry from '@sentry/nextjs';
+import Link from 'next/link';
+import { useEffect } from 'react';
 
-import { logger } from "@/lib/logger"
-import { ErrorState } from "@/components/QueryState" 
+import { logger } from '@/lib/logger';
+import { ErrorState } from '@/components/QueryState';
 
 export default function Error({
   error,
   reset,
 }: {
-  error: Error & { digest?: string }
-  reset: () => void
+  error: Error & { digest?: string };
+  reset: () => void;
 }) {
   useEffect(() => {
-    logger.error("[RouteError] Unhandled error:", error)
+    logger.error('[RouteError] Unhandled error:', error);
     Sentry.captureException(error, {
-      tags: { boundary: "RouteError", digest: error.digest },
-    })
-  }, [error])
+      tags: { boundary: 'RouteError', digest: error.digest },
+    });
+  }, [error]);
 
-  const errorMessage = error.digest 
+  const errorMessage = error.digest
     ? `An unexpected error occurred. Our team has been notified. (Error ID: ${error.digest})`
-    : "An unexpected error occurred. Our team has been notified."
+    : 'An unexpected error occurred. Our team has been notified.';
 
   return (
     <div className="min-h-screen bg-[#0b0c10] text-white pb-24 flex items-center justify-center p-6">
@@ -34,7 +34,7 @@ export default function Error({
 
       <main className="relative w-full max-w-xl mx-auto flex flex-col items-center" role="alert">
         <div className="w-full">
-          <ErrorState 
+          <ErrorState
             title="500 - Something went wrong"
             description={errorMessage}
             onRetry={reset}
@@ -47,8 +47,7 @@ export default function Error({
         >
           Return to Game Arcade
         </Link>
-        
       </main>
     </div>
-  )
+  );
 }

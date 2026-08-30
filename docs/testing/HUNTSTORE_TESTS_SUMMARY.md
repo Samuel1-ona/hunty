@@ -97,7 +97,7 @@ it("only updates the specified hunt's end time", () => {
 Verify localStorage is updated correctly:
 
 ```typescript
-it("persists deletion to localStorage", () => {
+it('persists deletion to localStorage', () => {
   // Delete hunt
   // Read from localStorage
   // Verify it's gone
@@ -109,7 +109,7 @@ it("persists deletion to localStorage", () => {
 Verify cascading effects (e.g., deleting hunts also deletes their clues):
 
 ```typescript
-it("also removes associated clues when deleting hunt", () => {
+it('also removes associated clues when deleting hunt', () => {
   // Add hunt with clues
   // Delete hunt
   // Verify clues are also deleted
@@ -121,7 +121,7 @@ it("also removes associated clues when deleting hunt", () => {
 Verify snapshot/restore functionality:
 
 ```typescript
-it("restores hunts and clues from snapshot", () => {
+it('restores hunts and clues from snapshot', () => {
   // Take snapshot
   // Modify state
   // Restore from snapshot
@@ -141,7 +141,7 @@ Tests  62 passed (62)
 
 ## Files Modified
 
-- **[lib/**tests**/huntStore.test.ts](lib/__tests__/huntStore.test.ts)** - Added 26 new test cases covering missing functionality
+- **[lib/**tests**/huntStore.test.ts](lib/**tests**/huntStore.test.ts)** - Added 26 new test cases covering missing functionality
 
 ## Coverage Summary
 

@@ -1,4 +1,4 @@
-import { ProfilePageSkeleton } from "@/components/LoadingSkeletons"
+import { ProfilePageSkeleton } from '@/components/LoadingSkeletons';
 
 export default function ProfileLoading() {
   return (
@@ -7,5 +7,5 @@ export default function ProfileLoading() {
         <ProfilePageSkeleton />
       </div>
     </div>
-  )
+  );
 }

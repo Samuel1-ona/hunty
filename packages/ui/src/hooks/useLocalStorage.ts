@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react';
 
 /**
  * Platform-agnostic localStorage wrapper.
@@ -8,42 +8,42 @@ import { useEffect, useState } from 'react'
  * `storage` argument rather than relying on `window.localStorage`.
  */
 export interface StorageAdapter {
-  getItem(key: string): string | null | Promise<string | null>
-  setItem(key: string, value: string): void | Promise<void>
+  getItem(key: string): string | null | Promise<string | null>;
+  setItem(key: string, value: string): void | Promise<void>;
 }
 
 const webStorage: StorageAdapter | null =
-  typeof window !== 'undefined' ? window.localStorage : null
+  typeof window !== 'undefined' ? window.localStorage : null;
 
 export function useLocalStorage<T>(
   key: string,
   initialValue: T,
   storage: StorageAdapter | null = webStorage
 ): [T, (value: T | ((prev: T) => T)) => void] {
-  const [storedValue, setStoredValue] = useState<T>(initialValue)
+  const [storedValue, setStoredValue] = useState<T>(initialValue);
 
   useEffect(() => {
-    if (!storage) return
+    if (!storage) return;
 
     const load = async () => {
       try {
-        const item = await storage.getItem(key)
-        if (item != null) setStoredValue(JSON.parse(item) as T)
+        const item = await storage.getItem(key);
+        if (item != null) setStoredValue(JSON.parse(item) as T);
       } catch {
         // keep initialValue on parse errors
       }
-    }
+    };
 
-    void load()
-  }, [key, storage])
+    void load();
+  }, [key, storage]);
 
   const setValue = (value: T | ((prev: T) => T)) => {
-    const next = value instanceof Function ? value(storedValue) : value
-    setStoredValue(next)
+    const next = value instanceof Function ? value(storedValue) : value;
+    setStoredValue(next);
     if (storage) {
-      void storage.setItem(key, JSON.stringify(next))
+      void storage.setItem(key, JSON.stringify(next));
     }
-  }
+  };
 
-  return [storedValue, setValue]
+  return [storedValue, setValue];
 }

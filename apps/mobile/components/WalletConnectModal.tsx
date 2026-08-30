@@ -1,4 +1,4 @@
-import { ThemedButton,ThemedCustomText } from '@components/themed';
+import { ThemedButton, ThemedCustomText } from '@components/themed';
 import { useTheme } from '@providers/ThemeProvider';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 

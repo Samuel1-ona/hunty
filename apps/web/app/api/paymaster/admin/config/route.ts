@@ -15,41 +15,30 @@
  * Set a key to `null` to delete the override and revert to the default.
  */
 
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
 
-import { AuthError } from "@/lib/api/errors";
-import { withErrorHandling } from "@/lib/api/withErrorHandling";
-import { withValidation } from "@/lib/api/withValidation";
-import { getPaymasterConfig } from "@/lib/paymaster/config";
-import {
-  deleteConfigValue,
-  getConfigValue,
-  listUsers,
-  setConfigValue,
-} from "@/lib/paymaster/db";
-import {
-  CONFIG_KEYS,
-  type PaymasterConfig,
-  type PaymasterUserRecord,
-} from "@/lib/paymaster/types";
-import { paymasterAdminConfigBodySchema } from "@hunty/types/api-schemas";
+import { AuthError } from '@/lib/api/errors';
+import { withErrorHandling } from '@/lib/api/withErrorHandling';
+import { withValidation } from '@/lib/api/withValidation';
+import { getPaymasterConfig } from '@/lib/paymaster/config';
+import { deleteConfigValue, getConfigValue, listUsers, setConfigValue } from '@/lib/paymaster/db';
+import { CONFIG_KEYS, type PaymasterConfig, type PaymasterUserRecord } from '@/lib/paymaster/types';
+import { paymasterAdminConfigBodySchema } from '@hunty/types/api-schemas';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 // ─── Auth check helper ─────────────────────────────────────────────────────
 
 function requireAdmin(request: Request): void {
-  const auth = request.headers.get("authorization");
+  const auth = request.headers.get('authorization');
   const secret = process.env.ADMIN_API_SECRET;
 
   if (!secret) {
-    throw new AuthError(
-      "Paymaster admin is not configured (ADMIN_API_SECRET is not set).",
-    );
+    throw new AuthError('Paymaster admin is not configured (ADMIN_API_SECRET is not set).');
   }
 
-  if (!auth || !auth.startsWith("Bearer ") || auth.slice(7) !== secret) {
-    throw new AuthError("Invalid or missing admin authorization token.");
+  if (!auth || !auth.startsWith('Bearer ') || auth.slice(7) !== secret) {
+    throw new AuthError('Invalid or missing admin authorization token.');
   }
 }
 
@@ -103,7 +92,7 @@ export const POST = withValidation(
     if (body.maxSponsoredTx !== undefined) {
       if (body.maxSponsoredTx === null) {
         await deleteConfigValue(CONFIG_KEYS.MAX_SPONSORED_TX);
-        updated.push("maxSponsoredTx reverted to default");
+        updated.push('maxSponsoredTx reverted to default');
       } else {
         await setConfigValue(CONFIG_KEYS.MAX_SPONSORED_TX, String(body.maxSponsoredTx));
         updated.push(`maxSponsoredTx → ${body.maxSponsoredTx}`);
@@ -113,7 +102,7 @@ export const POST = withValidation(
     if (body.maxBudgetPerUserStroops !== undefined) {
       if (body.maxBudgetPerUserStroops === null) {
         await deleteConfigValue(CONFIG_KEYS.MAX_BUDGET_PER_USER);
-        updated.push("maxBudgetPerUserStroops reverted to default");
+        updated.push('maxBudgetPerUserStroops reverted to default');
       } else {
         await setConfigValue(CONFIG_KEYS.MAX_BUDGET_PER_USER, String(body.maxBudgetPerUserStroops));
         updated.push(`maxBudgetPerUserStroops → ${body.maxBudgetPerUserStroops}`);
@@ -123,7 +112,7 @@ export const POST = withValidation(
     if (body.maxFeePerTxStroops !== undefined) {
       if (body.maxFeePerTxStroops === null) {
         await deleteConfigValue(CONFIG_KEYS.MAX_FEE_PER_TX);
-        updated.push("maxFeePerTxStroops reverted to default");
+        updated.push('maxFeePerTxStroops reverted to default');
       } else {
         await setConfigValue(CONFIG_KEYS.MAX_FEE_PER_TX, String(body.maxFeePerTxStroops));
         updated.push(`maxFeePerTxStroops → ${body.maxFeePerTxStroops}`);

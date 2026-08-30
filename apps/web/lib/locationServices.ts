@@ -22,10 +22,7 @@ export function getDistanceMeters(from: Coordinates, to: Coordinates): number {
 
   const a =
     Math.sin(latDelta / 2) * Math.sin(latDelta / 2) +
-    Math.cos(fromLat) *
-      Math.cos(toLat) *
-      Math.sin(lonDelta / 2) *
-      Math.sin(lonDelta / 2);
+    Math.cos(fromLat) * Math.cos(toLat) * Math.sin(lonDelta / 2) * Math.sin(lonDelta / 2);
 
   return 2 * earthRadiusMeters * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }

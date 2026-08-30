@@ -1,16 +1,11 @@
-import { toast } from "sonner";
-import type { LeaderboardRankNotification } from "./types";
-import { getNotificationPreferences, shouldNotifyForRankChange } from "./notificationPreferences";
+import { toast } from 'sonner';
+import type { LeaderboardRankNotification } from './types';
+import { shouldNotifyForRankChange } from './notificationPreferences';
 
-import { saveNotifications } from "./rankTracker";
+import { saveNotifications } from './rankTracker';
 
 export function handleRankNotifications(notifications: LeaderboardRankNotification[]): void {
   if (notifications.length === 0) return;
-
-  const preferences = getNotificationPreferences();
-  // Do not add events to the in-app notification center while the player has
-  // muted the social category (or all notifications).
-  if (!preferences.enabled || !preferences.social) return;
 
   const filtered = notifications.filter((n) => {
     const changeMagnitude = Math.abs(n.previousRank - n.currentRank);
@@ -40,21 +35,21 @@ function showRankToast(notification: LeaderboardRankNotification): void {
   const huntLabel = notification.huntTitle || `Hunt #${notification.huntId}`;
 
   switch (notification.type) {
-    case "rank_improved":
+    case 'rank_improved':
       toast.success(
         `Rank improved in "${huntLabel}"! You moved from #${notification.previousRank} to #${notification.currentRank}.`,
         { duration: 5000 }
       );
       break;
-    case "rank_dropped":
+    case 'rank_dropped':
       toast.error(
         `Rank dropped in "${huntLabel}" from #${notification.previousRank} to #${notification.currentRank}.`,
         { duration: 5000 }
       );
       break;
-    case "overtaken":
+    case 'overtaken':
       toast.warning(
-        `You were overtaken by ${notification.overtakenBy || "another player"} in "${huntLabel}"! You are now #${notification.currentRank}.`,
+        `You were overtaken by ${notification.overtakenBy || 'another player'} in "${huntLabel}"! You are now #${notification.currentRank}.`,
         { duration: 5000 }
       );
       break;

@@ -1,4 +1,4 @@
-import type { NextRequest } from "next/server"
+import type { NextRequest } from 'next/server';
 
 /**
  * Extracts the client's IP address from a request in a secure way.
@@ -16,16 +16,16 @@ import type { NextRequest } from "next/server"
  */
 export function getClientIp(req: Request | NextRequest): string {
   // Prioritize Next.js's `ip` property, which is trusted on Vercel.
-  if ("ip" in req && req.ip) {
-    return req.ip
+  if ('ip' in req && req.ip) {
+    return req.ip;
   }
 
   // Fallback for standard `Request` or other environments.
-  const forwardedFor = req.headers.get("x-forwarded-for")
+  const forwardedFor = req.headers.get('x-forwarded-for');
   if (forwardedFor) {
     // The first IP in the list is the original client.
-    return forwardedFor.split(",")[0]?.trim() ?? "unknown"
+    return forwardedFor.split(',')[0]?.trim() ?? 'unknown';
   }
 
-  return req.headers.get("x-real-ip") ?? "unknown"
+  return req.headers.get('x-real-ip') ?? 'unknown';
 }

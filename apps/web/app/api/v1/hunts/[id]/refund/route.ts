@@ -1,11 +1,11 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
+import { huntRefundBodySchema } from '@hunty/types/api-schemas';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
-import { withValidation } from "@/lib/api/withValidation";
-import { ValidationError, NotFoundError } from "@/lib/api/errors";
-import { huntRefundBodySchema } from "@hunty/types/api-schemas";
-import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
-import { logger } from "@/lib/logger";
+import { NotFoundError, ValidationError } from '@/lib/api/errors';
+import { withValidation } from '@/lib/api/withValidation';
+import { logger } from '@/lib/logger';
+import { getIP, rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
 const paramsSchema = z.object({ id: z.string() });
 
@@ -39,52 +39,48 @@ export const POST = withValidation(
 
     const huntId = parseInt(params!.id, 10);
     if (isNaN(huntId)) {
-      throw new ValidationError("Invalid hunt ID", { id: params!.id });
+      throw new ValidationError('Invalid hunt ID', { id: params!.id });
     }
 
     try {
-      const { getHunt } = await import("@/lib/huntStore");
+      const { getHunt } = await import('@/lib/huntStore');
       const hunt = getHunt(String(huntId));
 
       if (!hunt) {
-        throw new NotFoundError("Hunt not found", { huntId });
+        throw new NotFoundError('Hunt not found', { huntId });
       }
 
-      if (hunt.status !== "Ended" && hunt.status !== "Completed") {
-        throw new ValidationError("Refunds are only available for ended or completed hunts", {
+      if (hunt.status !== 'Ended' && hunt.status !== 'Completed') {
+        throw new ValidationError('Refunds are only available for ended or completed hunts', {
           status: hunt.status,
         });
       }
 
       const gracePeriodSeconds =
-        typeof hunt.gracePeriodSeconds === "number"
+        typeof hunt.gracePeriodSeconds === 'number'
           ? hunt.gracePeriodSeconds
           : DEFAULT_GRACE_PERIOD_SECONDS;
 
-      const { refundUnclaimedRewards } = await import("@/lib/contracts/rewardManager");
-      const receipt = await refundUnclaimedRewards(
-        huntId,
-        body.creatorAddress,
-        gracePeriodSeconds
-      );
+      const { refundUnclaimedRewards } = await import('@/lib/contracts/rewardManager');
+      const receipt = await refundUnclaimedRewards(huntId, body.creatorAddress, gracePeriodSeconds);
 
       return NextResponse.json({ success: true, receipt });
     } catch (error) {
       if (error instanceof ValidationError || error instanceof NotFoundError) throw error;
-      const message = error instanceof Error ? error.message : "Refund failed";
-      logger.error("Refund unclaimed rewards error:", error);
+      const message = error instanceof Error ? error.message : 'Refund failed';
+      logger.error('Refund unclaimed rewards error:', error);
 
       // Map well-known contract errors to meaningful HTTP statuses.
       if (
-        message.includes("No reward escrow found") ||
-        message.includes("No unclaimed rewards remain") ||
-        message.includes("only be refunded after the hunt expires") ||
-        message.includes("Grace period has not elapsed")
+        message.includes('No reward escrow found') ||
+        message.includes('No unclaimed rewards remain') ||
+        message.includes('only be refunded after the hunt expires') ||
+        message.includes('Grace period has not elapsed')
       ) {
         return NextResponse.json({ error: message }, { status: 409 });
       }
 
-      if (message.includes("not the creator") || message.includes("creator")) {
+      if (message.includes('not the creator') || message.includes('creator')) {
         return NextResponse.json({ error: message }, { status: 403 });
       }
 

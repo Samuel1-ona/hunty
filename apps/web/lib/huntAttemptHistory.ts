@@ -1,4 +1,4 @@
-import { calculateCluePoints, DEFAULT_SCORING_WEIGHTS } from "@/lib/scoring"
+import { calculateCluePoints, DEFAULT_SCORING_WEIGHTS } from '@/lib/scoring';
 import type {
   ClueAttemptRecord,
   ClueDifficulty,
@@ -6,94 +6,88 @@ import type {
   HuntAttemptRecord,
   HuntAttemptStatus,
   HuntAttemptTimeComparison,
-} from "@/lib/types"
+} from '@/lib/types';
 
-const ACTIVE_ATTEMPT_KEY_PREFIX = "hunty_active_attempt_"
-const ATTEMPTS_KEY_PREFIX = "hunty_hunt_attempts_"
+const ACTIVE_ATTEMPT_KEY_PREFIX = 'hunty_active_attempt_';
+const ATTEMPTS_KEY_PREFIX = 'hunty_hunt_attempts_';
 
 export function getAttemptsStorageKey(playerAddress: string): string {
-  return `${ATTEMPTS_KEY_PREFIX}${playerAddress}`
+  return `${ATTEMPTS_KEY_PREFIX}${playerAddress}`;
 }
 
 export function getActiveAttemptKey(playerAddress: string, huntId: number): string {
-  return `${ACTIVE_ATTEMPT_KEY_PREFIX}${playerAddress}_${huntId}`
+  return `${ACTIVE_ATTEMPT_KEY_PREFIX}${playerAddress}_${huntId}`;
 }
 
 export function formatDuration(seconds: number): string {
-  const safeSeconds = Math.max(0, Math.round(seconds))
-  const hours = Math.floor(safeSeconds / 3600)
-  const minutes = Math.floor((safeSeconds % 3600) / 60)
-  const remainingSeconds = safeSeconds % 60
+  const safeSeconds = Math.max(0, Math.round(seconds));
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  const remainingSeconds = safeSeconds % 60;
 
   if (hours > 0) {
-    return `${hours}h ${minutes.toString().padStart(2, "0")}m ${remainingSeconds.toString().padStart(2, "0")}s`
+    return `${hours}h ${minutes.toString().padStart(2, '0')}m ${remainingSeconds.toString().padStart(2, '0')}s`;
   }
 
-  return `${minutes}m ${remainingSeconds.toString().padStart(2, "0")}s`
+  return `${minutes}m ${remainingSeconds.toString().padStart(2, '0')}s`;
 }
 
 function createAttemptId(): string {
-  return `attempt_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+  return `attempt_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
 function readAttempts(playerAddress: string): HuntAttemptRecord[] {
-  if (typeof window === "undefined" || !playerAddress) return []
+  if (typeof window === 'undefined' || !playerAddress) return [];
 
   try {
-    const raw = localStorage.getItem(getAttemptsStorageKey(playerAddress))
-    if (!raw) return []
-    const parsed = JSON.parse(raw) as HuntAttemptRecord[]
-    return Array.isArray(parsed) ? parsed : []
+    const raw = localStorage.getItem(getAttemptsStorageKey(playerAddress));
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as HuntAttemptRecord[];
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return []
+    return [];
   }
 }
 
 function writeAttempts(playerAddress: string, attempts: HuntAttemptRecord[]): void {
-  if (typeof window === "undefined" || !playerAddress) return
-  localStorage.setItem(getAttemptsStorageKey(playerAddress), JSON.stringify(attempts))
+  if (typeof window === 'undefined' || !playerAddress) return;
+  localStorage.setItem(getAttemptsStorageKey(playerAddress), JSON.stringify(attempts));
 }
 
 export function getPlayerAttempts(
   playerAddress: string,
-  options?: { status?: HuntAttemptStatus | "all" }
+  options?: { status?: HuntAttemptStatus | 'all' }
 ): HuntAttemptRecord[] {
   const attempts = readAttempts(playerAddress)
-    .filter((attempt) => attempt.status !== "in_progress")
+    .filter((attempt) => attempt.status !== 'in_progress')
     .sort((left, right) => {
-      const leftTime = new Date(left.completedAt ?? left.startedAt).getTime()
-      const rightTime = new Date(right.completedAt ?? right.startedAt).getTime()
-      return rightTime - leftTime
-    })
+      const leftTime = new Date(left.completedAt ?? left.startedAt).getTime();
+      const rightTime = new Date(right.completedAt ?? right.startedAt).getTime();
+      return rightTime - leftTime;
+    });
 
-  if (!options?.status || options.status === "all") {
-    return attempts
+  if (!options?.status || options.status === 'all') {
+    return attempts;
   }
 
-  return attempts.filter((attempt) => attempt.status === options.status)
+  return attempts.filter((attempt) => attempt.status === options.status);
 }
 
-export function getAttemptById(
-  playerAddress: string,
-  attemptId: string
-): HuntAttemptRecord | null {
-  return readAttempts(playerAddress).find((attempt) => attempt.id === attemptId) ?? null
+export function getAttemptById(playerAddress: string, attemptId: string): HuntAttemptRecord | null {
+  return readAttempts(playerAddress).find((attempt) => attempt.id === attemptId) ?? null;
 }
 
-export function getActiveAttempt(
-  playerAddress: string,
-  huntId: number
-): HuntAttemptRecord | null {
-  if (typeof window === "undefined" || !playerAddress) return null
+export function getActiveAttempt(playerAddress: string, huntId: number): HuntAttemptRecord | null {
+  if (typeof window === 'undefined' || !playerAddress) return null;
 
-  const activeId = localStorage.getItem(getActiveAttemptKey(playerAddress, huntId))
-  if (!activeId) return null
+  const activeId = localStorage.getItem(getActiveAttemptKey(playerAddress, huntId));
+  if (!activeId) return null;
 
   const attempt = readAttempts(playerAddress).find(
-    (entry) => entry.id === activeId && entry.status === "in_progress"
-  )
+    (entry) => entry.id === activeId && entry.status === 'in_progress'
+  );
 
-  return attempt ?? null
+  return attempt ?? null;
 }
 
 export function startHuntAttempt(
@@ -101,17 +95,17 @@ export function startHuntAttempt(
   huntId: number,
   huntTitle: string
 ): HuntAttemptRecord {
-  const attempts = readAttempts(playerAddress)
+  const attempts = readAttempts(playerAddress);
   const previousAttempts = attempts.filter(
-    (attempt) => attempt.huntId === huntId && attempt.status !== "in_progress"
-  )
+    (attempt) => attempt.huntId === huntId && attempt.status !== 'in_progress'
+  );
 
   const attempt: HuntAttemptRecord = {
     id: createAttemptId(),
     huntId,
     huntTitle,
     playerAddress,
-    status: "in_progress",
+    status: 'in_progress',
     startedAt: new Date().toISOString(),
     totalTimeSeconds: 0,
     totalPoints: 0,
@@ -119,13 +113,13 @@ export function startHuntAttempt(
     attemptNumber: previousAttempts.length + 1,
     currentStreak: 0,
     scoringWeights: DEFAULT_SCORING_WEIGHTS,
-  }
+  };
 
-  attempts.unshift(attempt)
-  writeAttempts(playerAddress, attempts)
-  localStorage.setItem(getActiveAttemptKey(playerAddress, huntId), attempt.id)
+  attempts.unshift(attempt);
+  writeAttempts(playerAddress, attempts);
+  localStorage.setItem(getActiveAttemptKey(playerAddress, huntId), attempt.id);
 
-  return attempt
+  return attempt;
 }
 
 function updateAttempt(
@@ -133,14 +127,14 @@ function updateAttempt(
   attemptId: string,
   updater: (attempt: HuntAttemptRecord) => HuntAttemptRecord
 ): HuntAttemptRecord | null {
-  const attempts = readAttempts(playerAddress)
-  const index = attempts.findIndex((attempt) => attempt.id === attemptId)
-  if (index === -1) return null
+  const attempts = readAttempts(playerAddress);
+  const index = attempts.findIndex((attempt) => attempt.id === attemptId);
+  if (index === -1) return null;
 
-  const updated = updater(attempts[index])
-  attempts[index] = updated
-  writeAttempts(playerAddress, attempts)
-  return updated
+  const updated = updater(attempts[index]);
+  attempts[index] = updated;
+  writeAttempts(playerAddress, attempts);
+  return updated;
 }
 
 export function recordClueAttempt(
@@ -155,7 +149,7 @@ export function recordClueAttempt(
    * When provided, this is used instead of the weight-based hint penalty
    * calculation so that per-hint `penalty` values are honoured precisely.
    */
-  exactHintPenalty?: number,
+  exactHintPenalty?: number
 ): HuntAttemptRecord | null {
   return updateAttempt(playerAddress, attemptId, (attempt) => {
     // Calculate scoring for this clue
@@ -166,8 +160,8 @@ export function recordClueAttempt(
       hintsUsed,
       attempt.currentStreak,
       attempt.scoringWeights,
-      exactHintPenalty,
-    )
+      exactHintPenalty
+    );
 
     // Create the updated clue record with scoring details
     const updatedClueRecord: ClueAttemptRecord = {
@@ -175,25 +169,20 @@ export function recordClueAttempt(
       hintsUsed,
       scoringBreakdown: breakdown,
       pointsEarned: breakdown.totalPoints,
-    }
+    };
 
     // Update the clues array
     const existingIndex = attempt.clues.findIndex(
       (clue) => clue.clueId === updatedClueRecord.clueId
-    )
+    );
     const clues =
       existingIndex === -1
         ? [...attempt.clues, updatedClueRecord]
-        : attempt.clues.map((clue, index) =>
-            index === existingIndex ? updatedClueRecord : clue
-          )
+        : attempt.clues.map((clue, index) => (index === existingIndex ? updatedClueRecord : clue));
 
     // Calculate total time and points
-    const totalTimeSeconds = clues.reduce(
-      (sum, clue) => sum + clue.timeTakenSeconds,
-      0
-    )
-    const totalPoints = clues.reduce((sum, clue) => sum + clue.pointsEarned, 0)
+    const totalTimeSeconds = clues.reduce((sum, clue) => sum + clue.timeTakenSeconds, 0);
+    const totalPoints = clues.reduce((sum, clue) => sum + clue.pointsEarned, 0);
 
     return {
       ...attempt,
@@ -201,8 +190,8 @@ export function recordClueAttempt(
       totalTimeSeconds,
       totalPoints,
       currentStreak: newStreak,
-    }
-  })
+    };
+  });
 }
 
 export function completeHuntAttempt(
@@ -212,16 +201,16 @@ export function completeHuntAttempt(
 ): HuntAttemptRecord | null {
   const completed = updateAttempt(playerAddress, attemptId, (attempt) => ({
     ...attempt,
-    status: "completed" as const,
+    status: 'completed' as const,
     completedAt: new Date().toISOString(),
     totalPoints: totalPoints ?? attempt.totalPoints,
-  }))
+  }));
 
   if (completed) {
-    localStorage.removeItem(getActiveAttemptKey(playerAddress, completed.huntId))
+    localStorage.removeItem(getActiveAttemptKey(playerAddress, completed.huntId));
   }
 
-  return completed
+  return completed;
 }
 
 export function abandonHuntAttempt(
@@ -230,15 +219,15 @@ export function abandonHuntAttempt(
 ): HuntAttemptRecord | null {
   const abandoned = updateAttempt(playerAddress, attemptId, (attempt) => ({
     ...attempt,
-    status: "abandoned" as const,
+    status: 'abandoned' as const,
     completedAt: new Date().toISOString(),
-  }))
+  }));
 
   if (abandoned) {
-    localStorage.removeItem(getActiveAttemptKey(playerAddress, abandoned.huntId))
+    localStorage.removeItem(getActiveAttemptKey(playerAddress, abandoned.huntId));
   }
 
-  return abandoned
+  return abandoned;
 }
 
 export function ensureActiveAttempt(
@@ -246,16 +235,18 @@ export function ensureActiveAttempt(
   huntId: number,
   huntTitle: string
 ): HuntAttemptRecord {
-  return getActiveAttempt(playerAddress, huntId) ?? startHuntAttempt(playerAddress, huntId, huntTitle)
+  return (
+    getActiveAttempt(playerAddress, huntId) ?? startHuntAttempt(playerAddress, huntId, huntTitle)
+  );
 }
 
 export function clearHuntPlayState(huntId: number): void {
-  if (typeof window === "undefined") return
+  if (typeof window === 'undefined') return;
 
-  const keysToRemove: string[] = []
+  const keysToRemove: string[] = [];
   for (let index = 0; index < localStorage.length; index += 1) {
-    const key = localStorage.key(index)
-    if (!key) continue
+    const key = localStorage.key(index);
+    if (!key) continue;
 
     if (
       key.startsWith(`hunt_clue_start_${huntId}_`) ||
@@ -263,39 +254,39 @@ export function clearHuntPlayState(huntId: number): void {
       key === `hunt_${huntId}_my_points` ||
       key === `hunt_completed_${huntId}`
     ) {
-      keysToRemove.push(key)
+      keysToRemove.push(key);
     }
   }
 
-  keysToRemove.forEach((key) => localStorage.removeItem(key))
+  keysToRemove.forEach((key) => localStorage.removeItem(key));
 }
 
 export function prepareHuntReattempt(playerAddress: string, huntId: number): void {
-  const activeAttempt = getActiveAttempt(playerAddress, huntId)
+  const activeAttempt = getActiveAttempt(playerAddress, huntId);
   if (activeAttempt) {
-    abandonHuntAttempt(playerAddress, activeAttempt.id)
+    abandonHuntAttempt(playerAddress, activeAttempt.id);
   }
-  clearHuntPlayState(huntId)
+  clearHuntPlayState(huntId);
 }
 
 export function getClueElapsedSeconds(huntId: number, clueId: number): number {
-  if (typeof window === "undefined") return 0
+  if (typeof window === 'undefined') return 0;
 
-  const startTimeStr = localStorage.getItem(`hunt_clue_start_${huntId}_${clueId}`)
-  if (!startTimeStr) return 0
+  const startTimeStr = localStorage.getItem(`hunt_clue_start_${huntId}_${clueId}`);
+  if (!startTimeStr) return 0;
 
-  const startTime = parseInt(startTimeStr, 10)
-  if (Number.isNaN(startTime)) return 0
+  const startTime = parseInt(startTimeStr, 10);
+  if (Number.isNaN(startTime)) return 0;
 
-  return Math.max(0, Math.round((Date.now() - startTime) / 1000))
+  return Math.max(0, Math.round((Date.now() - startTime) / 1000));
 }
 
 export function compareAttemptWithLeaderboard(
   attempt: HuntAttemptRecord,
   fastestPlayers: FastestPlayerEntry[]
 ): HuntAttemptTimeComparison {
-  const playerTimeSeconds = attempt.totalTimeSeconds
-  const playerTimeLabel = formatDuration(playerTimeSeconds)
+  const playerTimeSeconds = attempt.totalTimeSeconds;
+  const playerTimeLabel = formatDuration(playerTimeSeconds);
 
   if (fastestPlayers.length === 0) {
     return {
@@ -307,20 +298,20 @@ export function compareAttemptWithLeaderboard(
       averageTimeLabel: null,
       rankAmongFastest: null,
       totalComparedPlayers: 0,
-    }
+    };
   }
 
   const sortedTimes = [...fastestPlayers]
     .map((entry) => entry.completionTimeSeconds)
-    .sort((left, right) => left - right)
+    .sort((left, right) => left - right);
 
-  const fastestTimeSeconds = sortedTimes[0]
+  const fastestTimeSeconds = sortedTimes[0];
   const averageTimeSeconds = Math.round(
     sortedTimes.reduce((sum, value) => sum + value, 0) / sortedTimes.length
-  )
+  );
 
-  const combinedTimes = [...sortedTimes, playerTimeSeconds].sort((left, right) => left - right)
-  const rankAmongFastest = combinedTimes.indexOf(playerTimeSeconds) + 1
+  const combinedTimes = [...sortedTimes, playerTimeSeconds].sort((left, right) => left - right);
+  const rankAmongFastest = combinedTimes.indexOf(playerTimeSeconds) + 1;
 
   return {
     playerTimeSeconds,
@@ -331,5 +322,5 @@ export function compareAttemptWithLeaderboard(
     averageTimeLabel: formatDuration(averageTimeSeconds),
     rankAmongFastest,
     totalComparedPlayers: fastestPlayers.length,
-  }
+  };
 }

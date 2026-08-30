@@ -1,12 +1,12 @@
-import { NextResponse } from "next/server";
-import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
-import { logger } from "@/lib/logger";
-import { ValidationError } from "@/lib/api/errors";
-import { withValidation } from "@/lib/api/withValidation";
-import { huntArchiveBodySchema } from "@hunty/types/api-schemas";
-import { z } from "zod";
+import { NextResponse } from 'next/server';
+import { rateLimit, getIP, rateLimitResponse } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
+import { ValidationError } from '@/lib/api/errors';
+import { withValidation } from '@/lib/api/withValidation';
+import { huntArchiveBodySchema } from '@hunty/types/api-schemas';
+import { z } from 'zod';
 
-const paramsSchema = z.object({ id: z.string() })
+const paramsSchema = z.object({ id: z.string() });
 
 /**
  * POST /api/v1/hunts/[id]/archive
@@ -21,22 +21,22 @@ export const POST = withValidation(
 
     const huntId = parseInt(params!.id, 10);
     if (isNaN(huntId)) {
-      throw new ValidationError("Invalid hunt ID", { id: params!.id });
+      throw new ValidationError('Invalid hunt ID', { id: params!.id });
     }
 
     try {
-      if (body.action === "archive") {
-        const { hideHuntsFromPublic } = await import("@/lib/huntStore");
+      if (body.action === 'archive') {
+        const { hideHuntsFromPublic } = await import('@/lib/huntStore');
         hideHuntsFromPublic([huntId]);
-        return NextResponse.json({ success: true, message: "Hunt archived successfully" });
+        return NextResponse.json({ success: true, message: 'Hunt archived successfully' });
       } else {
-        const { unhideHuntsFromPublic } = await import("@/lib/huntStore");
+        const { unhideHuntsFromPublic } = await import('@/lib/huntStore');
         unhideHuntsFromPublic([huntId]);
-        return NextResponse.json({ success: true, message: "Hunt unarchived successfully" });
+        return NextResponse.json({ success: true, message: 'Hunt unarchived successfully' });
       }
     } catch (error) {
-      logger.error("Archive hunt error:", error);
-      return NextResponse.json({ error: "Failed to archive hunt" }, { status: 500 });
+      logger.error('Archive hunt error:', error);
+      return NextResponse.json({ error: 'Failed to archive hunt' }, { status: 500 });
     }
   }
 );

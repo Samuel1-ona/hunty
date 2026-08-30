@@ -1,4 +1,4 @@
-import { HuntCardSkeletonGrid } from "@/components/LoadingSkeletons"
+import { HuntCardSkeletonGrid } from '@/components/LoadingSkeletons';
 
 export default function DashboardLoading() {
   return (
@@ -7,5 +7,5 @@ export default function DashboardLoading() {
         <HuntCardSkeletonGrid count={4} />
       </div>
     </div>
-  )
+  );
 }

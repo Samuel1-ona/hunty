@@ -2,22 +2,22 @@
  * Hunt domain types shared across web and mobile.
  */
 
-import type { Reward, RewardType } from "./reward";
+import type { Reward, RewardType } from './reward';
 
 export type HuntStatus =
-  | "Active"
-  | "Completed"
-  | "Draft"
-  | "Cancelled"
-  | "PendingReview"
-  | "Scheduled"
-  | "Ended";
+  | 'Active'
+  | 'Completed'
+  | 'Draft'
+  | 'Cancelled'
+  | 'PendingReview'
+  | 'Scheduled'
+  | 'Ended';
 
 /** Broad hunt category used in discovery filters. */
-export type HuntCategory = "Urban" | "Campus" | "Office" | "Museum" | "General";
+export type HuntCategory = 'Urban' | 'Campus' | 'Office' | 'Museum' | 'General';
 
 /** Overall hunt difficulty tag used in discovery filters. */
-export type HuntDifficulty = "Easy" | "Medium" | "Hard";
+export type HuntDifficulty = 'Easy' | 'Medium' | 'Hard';
 
 /** A revocable bearer token used to access a private hunt. */
 export interface HuntInvite {

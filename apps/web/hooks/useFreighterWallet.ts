@@ -1,10 +1,5 @@
-import {
-  getAddress,
-  isConnected,
-  requestAccess,
-  WatchWalletChanges,
-} from "@stellar/freighter-api";
-import { useEffect, useState } from "react";
+import { getAddress, isConnected, requestAccess, WatchWalletChanges } from '@stellar/freighter-api';
+import { useEffect, useState } from 'react';
 
 import {
   clearStoredWalletSession,
@@ -12,12 +7,12 @@ import {
   getStoredWalletSession,
   setStoredWalletSession,
   type WalletProvider,
-} from "@/lib/walletAdapter";
-import { truncateAddress } from "@/lib/walletAddress";
+} from '@/lib/walletAdapter';
+import { truncateAddress } from '@/lib/walletAddress';
 
-import { useIsMounted } from "./useIsMounted";
+import { useIsMounted } from './useIsMounted';
 
-const STORAGE_KEY = "freighter_public_key";
+const STORAGE_KEY = 'freighter_public_key';
 
 /**
  * Shortens a Stellar public key for display.
@@ -61,7 +56,7 @@ interface UseFreighterWalletReturn {
  */
 export function useFreighterWallet(): UseFreighterWalletReturn {
   const mounted = useIsMounted();
-  const [publicKey, setPublicKey] = useState<string>("");
+  const [publicKey, setPublicKey] = useState<string>('');
   const [connected, setConnected] = useState(false);
   const [walletProvider, setWalletProvider] = useState<WalletProvider | null>(null);
 
@@ -111,7 +106,7 @@ export function useFreighterWallet(): UseFreighterWalletReturn {
           localStorage.setItem(STORAGE_KEY, resolvedKey);
         }
         setPublicKey(resolvedKey);
-        setWalletProvider("freighter");
+        setWalletProvider('freighter');
         setConnected(true);
       } catch {
         localStorage.removeItem(STORAGE_KEY);
@@ -131,26 +126,20 @@ export function useFreighterWallet(): UseFreighterWalletReturn {
     try {
       watcher = new WatchWalletChanges(3000);
       watcher.watch(
-        ({
-          address,
-        }: {
-          address: string;
-          network: string;
-          networkPassphrase: string;
-        }) => {
+        ({ address }: { address: string; network: string; networkPassphrase: string }) => {
           if (address) {
             // Account changed or connected
             setPublicKey(address);
             setConnected(true);
             localStorage.setItem(STORAGE_KEY, address);
-            setStoredWalletSession("freighter", address);
+            setStoredWalletSession('freighter', address);
           } else {
             // Empty address = user locked or disconnected Freighter
-            setPublicKey("");
+            setPublicKey('');
             setConnected(false);
             localStorage.removeItem(STORAGE_KEY);
           }
-        },
+        }
       );
     } catch {
       // Freighter not installed — watcher silently skipped
@@ -166,14 +155,13 @@ export function useFreighterWallet(): UseFreighterWalletReturn {
    * requestAccess() prompts if not yet on the allow list,
    * or returns immediately if the user already approved this app.
    */
-  const connect = async (provider: WalletProvider = "freighter"): Promise<{ error?: string }> => {
+  const connect = async (provider: WalletProvider = 'freighter'): Promise<{ error?: string }> => {
     try {
-      if (provider === "freighter") {
+      if (provider === 'freighter') {
         const connResult = await isConnected();
         if (!connResult.isConnected) {
           return {
-            error:
-              "Freighter extension not found. Please install it from freighter.app",
+            error: 'Freighter extension not found. Please install it from freighter.app',
           };
         }
 
@@ -187,13 +175,13 @@ export function useFreighterWallet(): UseFreighterWalletReturn {
 
         const address = accessResult.address;
         if (!address) {
-          return { error: "No public key returned. Please try again." };
+          return { error: 'No public key returned. Please try again.' };
         }
 
-        setStoredWalletSession("freighter", address);
+        setStoredWalletSession('freighter', address);
         localStorage.setItem(STORAGE_KEY, address);
         setPublicKey(address);
-        setWalletProvider("freighter");
+        setWalletProvider('freighter');
         setConnected(true);
         return {};
       }
@@ -207,10 +195,7 @@ export function useFreighterWallet(): UseFreighterWalletReturn {
       return {};
     } catch (err) {
       return {
-        error:
-          err instanceof Error
-            ? err.message
-            : "Unexpected error during connection.",
+        error: err instanceof Error ? err.message : 'Unexpected error during connection.',
       };
     }
   };
@@ -218,7 +203,7 @@ export function useFreighterWallet(): UseFreighterWalletReturn {
   const disconnect = () => {
     clearStoredWalletSession();
     localStorage.removeItem(STORAGE_KEY);
-    setPublicKey("");
+    setPublicKey('');
     setWalletProvider(null);
     setConnected(false);
   };

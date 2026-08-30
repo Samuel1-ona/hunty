@@ -1,62 +1,61 @@
-import "./globals.css";
+import './globals.css';
 
-import type { Metadata, Viewport } from "next";
-import { Suspense } from "react";
+import type { Metadata, Viewport } from 'next';
+import { Suspense } from 'react';
 
-import { hankenGrotesk } from "@/lib/font";
-import { TxToaster } from "@/components/TxToaster";
-import { EnvironmentIndicator } from "@/components/EnvironmentIndicator";
-import { Footer } from "@/components/Footer";
-import { FavoriteNotifications } from "@/components/FavoriteNotifications";
-import { PageSkeleton } from "@/components/PageSkeleton";
-import { PageTransitionWrapper } from "@/components/PageTransitionWrapper";
-import { FirstHuntChecklist } from "@/components/FirstHuntChecklist";
-import PWAInstallPrompt from "@/components/PWAInstallPrompt";
-import { TestnetWarning } from "@/components/NetworkIndicator";
+import { hankenGrotesk } from '@/lib/font';
+import { TxToaster } from '@/components/TxToaster';
+import { EnvironmentIndicator } from '@/components/EnvironmentIndicator';
+import { Footer } from '@/components/Footer';
+import { FavoriteNotifications } from '@/components/FavoriteNotifications';
+import { PageSkeleton } from '@/components/PageSkeleton';
+import { PageTransitionWrapper } from '@/components/PageTransitionWrapper';
+import PWAInstallPrompt from '@/components/PWAInstallPrompt';
+import { TestnetWarning } from '@/components/NetworkIndicator';
 
-import Providers from "./providers";
+import Providers from './providers';
 
 export const viewport: Viewport = {
-  themeColor: "#7c3aed",
+  themeColor: '#7c3aed',
 };
 
 export const metadata: Metadata = {
-  title: "Hunty - Decentralized Scavenger Hunt Game",
+  title: 'Hunty - Decentralized Scavenger Hunt Game',
   description:
-    "Create thrilling scavenger hunts with multiple clues and challenges. Engage players in immersive treasure hunts and reward them with XLM tokens or exclusive NFTs on the Stellar blockchain.",
-  keywords: ["scavenger hunt", "game", "blockchain", "Stellar", "XLM", "NFT", "Web3"],
-  authors: [{ name: "Hunty Team" }],
-  manifest: "/manifest.json",
+    'Create thrilling scavenger hunts with multiple clues and challenges. Engage players in immersive treasure hunts and reward them with XLM tokens or exclusive NFTs on the Stellar blockchain.',
+  keywords: ['scavenger hunt', 'game', 'blockchain', 'Stellar', 'XLM', 'NFT', 'Web3'],
+  authors: [{ name: 'Hunty Team' }],
+  manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
-    title: "Hunty",
+    statusBarStyle: 'default',
+    title: 'Hunty',
   },
   openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: "https://hunty.app",
-    siteName: "Hunty",
-    title: "Hunty - Decentralized Scavenger Hunt Game",
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://hunty.app',
+    siteName: 'Hunty',
+    title: 'Hunty - Decentralized Scavenger Hunt Game',
     description:
-      "Create thrilling scavenger hunts with multiple clues and challenges. Engage players in immersive treasure hunts and reward them with XLM tokens or exclusive NFTs on the Stellar blockchain.",
+      'Create thrilling scavenger hunts with multiple clues and challenges. Engage players in immersive treasure hunts and reward them with XLM tokens or exclusive NFTs on the Stellar blockchain.',
     images: [
       {
-        url: "https://hunty.app/og-image.png",
+        url: 'https://hunty.app/og-image.png',
         width: 1200,
         height: 630,
-        alt: "Hunty - Decentralized Scavenger Hunt Game",
-        type: "image/png",
+        alt: 'Hunty - Decentralized Scavenger Hunt Game',
+        type: 'image/png',
       },
     ],
   },
   twitter: {
-    card: "summary_large_image",
-    title: "Hunty - Decentralized Scavenger Hunt Game",
+    card: 'summary_large_image',
+    title: 'Hunty - Decentralized Scavenger Hunt Game',
     description:
-      "Create thrilling scavenger hunts with multiple clues and challenges. Engage players in immersive treasure hunts and reward them with XLM tokens or exclusive NFTs on the Stellar blockchain.",
-    images: ["https://hunty.app/og-image.png"],
-    creator: "@huntyapp",
+      'Create thrilling scavenger hunts with multiple clues and challenges. Engage players in immersive treasure hunts and reward them with XLM tokens or exclusive NFTs on the Stellar blockchain.',
+    images: ['https://hunty.app/og-image.png'],
+    creator: '@huntyapp',
   },
   robots: {
     index: true,
@@ -64,13 +63,13 @@ export const metadata: Metadata = {
     googleBot: {
       index: true,
       follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-      "max-video-preview": -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
     },
   },
   alternates: {
-    canonical: "https://hunty.app",
+    canonical: 'https://hunty.app',
   },
 };
 
@@ -111,7 +110,6 @@ export default function RootLayout({
           <TxToaster />
           <FavoriteNotifications />
           <PWAInstallPrompt />
-          <FirstHuntChecklist />
           <EnvironmentIndicator />
           <main id="main-content">
             <Suspense fallback={<PageSkeleton />}>

@@ -1,8 +1,8 @@
-"use client"
+'use client';
 
-import { useEffect } from "react"
-import { registerServiceWorker } from "@/lib/notifications/webPush"
-import { logger } from "@/lib/logger"
+import { useEffect } from 'react';
+import { registerServiceWorker } from '@/lib/notifications/webPush';
+import { logger } from '@/lib/logger';
 
 /**
  * PWAInstallPrompt
@@ -16,10 +16,10 @@ import { logger } from "@/lib/logger"
 export default function PWAInstallPrompt() {
   useEffect(() => {
     registerServiceWorker().catch((err) => {
-      logger.warn("[PWAInstallPrompt] Service worker registration failed:", err)
-    })
-  }, [])
+      logger.warn('[PWAInstallPrompt] Service worker registration failed:', err);
+    });
+  }, []);
 
   // No visible UI — purely a side-effect component for now
-  return null
+  return null;
 }

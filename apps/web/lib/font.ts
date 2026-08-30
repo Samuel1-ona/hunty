@@ -1,4 +1,4 @@
-import { DynaPuff,Hanken_Grotesk } from 'next/font/google';
+import { DynaPuff, Hanken_Grotesk } from 'next/font/google';
 
 /**
  * Primary UI font (Hanken Grotesk).

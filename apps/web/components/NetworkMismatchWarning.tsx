@@ -1,48 +1,48 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import { AlertTriangle, X } from "lucide-react"
-import { Button } from "@hunty/ui"
-import { checkWalletNetworkMatch, type NetworkMismatchError } from "@/lib/wallets/networkDetection"
-import type { WalletProvider } from "@/lib/walletAdapter"
+import { useEffect, useState } from 'react';
+import { AlertTriangle, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { checkWalletNetworkMatch, type NetworkMismatchError } from '@/lib/wallets/networkDetection';
+import type { WalletProvider } from '@/lib/walletAdapter';
 
 interface NetworkMismatchWarningProps {
-  walletProvider: WalletProvider | null
-  isConnected: boolean
+  walletProvider: WalletProvider | null;
+  isConnected: boolean;
 }
 
 /**
  * NetworkMismatchWarning Component
  * Shows a warning when the wallet network doesn't match the app network
  */
-export function NetworkMismatchWarning({ 
-  walletProvider, 
-  isConnected 
+export function NetworkMismatchWarning({
+  walletProvider,
+  isConnected,
 }: NetworkMismatchWarningProps) {
-  const [mismatch, setMismatch] = useState<NetworkMismatchError | null>(null)
-  const [dismissed, setDismissed] = useState(false)
+  const [mismatch, setMismatch] = useState<NetworkMismatchError | null>(null);
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     if (!isConnected || !walletProvider) {
-      setMismatch(null)
-      return
+      setMismatch(null);
+      return;
     }
 
     // Check for network mismatch
     const checkNetwork = async () => {
-      const result = await checkWalletNetworkMatch(walletProvider)
-      setMismatch(result)
-    }
+      const result = await checkWalletNetworkMatch(walletProvider);
+      setMismatch(result);
+    };
 
-    checkNetwork()
+    checkNetwork();
 
     // Recheck every 10 seconds while connected
-    const interval = setInterval(checkNetwork, 10000)
-    return () => clearInterval(interval)
-  }, [isConnected, walletProvider])
+    const interval = setInterval(checkNetwork, 10000);
+    return () => clearInterval(interval);
+  }, [isConnected, walletProvider]);
 
   if (!mismatch || dismissed) {
-    return null
+    return null;
   }
 
   return (
@@ -55,14 +55,15 @@ export function NetworkMismatchWarning({
               Network Mismatch Detected
             </h3>
             <p className="text-sm text-orange-800 dark:text-orange-300 mb-3">
-              Your wallet is connected to <span className="font-semibold">{mismatch.walletNetwork}</span> but 
-              the app is configured for <span className="font-semibold">{mismatch.appNetwork}</span>. 
+              Your wallet is connected to{' '}
+              <span className="font-semibold">{mismatch.walletNetwork}</span> but the app is
+              configured for <span className="font-semibold">{mismatch.appNetwork}</span>.
               Transactions may fail until you switch networks.
             </p>
             <div className="flex gap-2">
               <Button
                 size="sm"
-                onClick={() => window.location.href = "/settings"}
+                onClick={() => (window.location.href = '/settings')}
                 className="bg-orange-600 hover:bg-orange-700 text-white text-xs"
               >
                 Go to Settings
@@ -86,5 +87,5 @@ export function NetworkMismatchWarning({
         </div>
       </div>
     </div>
-  )
+  );
 }

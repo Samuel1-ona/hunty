@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { AlertCircle, CheckCircle2, ExternalLink, Loader2, RotateCw } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { AlertCircle, CheckCircle2, ExternalLink, Loader2, RotateCw } from 'lucide-react';
+import { useEffect, useMemo } from 'react';
 
-import { Button } from "@hunty/ui";
-import { type MintStage,stageLabel, useNftMint } from "@/hooks/useNftMint";
+import { Button } from '@/components/ui/button';
+import { type MintStage, stageLabel, useNftMint } from '@/hooks/useNftMint';
 
 interface NftMintProgressProps {
   huntId: number;
@@ -15,12 +15,12 @@ interface NftMintProgressProps {
 }
 
 const ORDERED_STAGES: MintStage[] = [
-  "building_metadata",
-  "uploading_metadata",
-  "estimating_fee",
-  "signing",
-  "submitting",
-  "confirming",
+  'building_metadata',
+  'uploading_metadata',
+  'estimating_fee',
+  'signing',
+  'submitting',
+  'confirming',
 ];
 
 export function NftMintProgress({
@@ -38,12 +38,11 @@ export function NftMintProgress({
   }, [estimate, huntId, recipientAddress]);
 
   const activeIndex = useMemo(
-    () => (stage === "idle" ? -1 : ORDERED_STAGES.indexOf(stage)),
+    () => (stage === 'idle' ? -1 : ORDERED_STAGES.indexOf(stage)),
     [stage]
   );
 
-  const isBusy =
-    stage !== "idle" && stage !== "complete" && stage !== "error";
+  const isBusy = stage !== 'idle' && stage !== 'complete' && stage !== 'error';
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
@@ -57,22 +56,24 @@ export function NftMintProgress({
       {feeEstimate && (
         <div className="mb-4 rounded-lg bg-slate-50 p-3 text-sm">
           <p className="font-medium text-slate-700">
-            Estimated fee: {feeEstimate.feeXlm} XLM{" "}
-            <span className="text-slate-500">({feeEstimate.feeStroops.toLocaleString()} stroops)</span>
+            Estimated fee: {feeEstimate.feeXlm} XLM{' '}
+            <span className="text-slate-500">
+              ({feeEstimate.feeStroops.toLocaleString()} stroops)
+            </span>
           </p>
           <p className="text-xs text-slate-500">
             {feeEstimate.simulated
-              ? "Estimate from live simulateTransaction."
-              : "Conservative default estimate (simulation unavailable)."}
+              ? 'Estimate from live simulateTransaction.'
+              : 'Conservative default estimate (simulation unavailable).'}
           </p>
         </div>
       )}
 
       <ol className="mb-4 space-y-2">
         {ORDERED_STAGES.map((step, index) => {
-          const done = index < activeIndex || stage === "complete";
+          const done = index < activeIndex || stage === 'complete';
           const active = index === activeIndex;
-          const failed = stage === "error" && active;
+          const failed = stage === 'error' && active;
           return (
             <li key={step} className="flex items-center gap-2 text-sm">
               {done ? (
@@ -89,12 +90,12 @@ export function NftMintProgress({
               <span
                 className={
                   done
-                    ? "text-slate-700"
+                    ? 'text-slate-700'
                     : active
                       ? failed
-                        ? "font-medium text-red-700"
-                        : "font-medium text-indigo-700"
-                      : "text-slate-400"
+                        ? 'font-medium text-red-700'
+                        : 'font-medium text-indigo-700'
+                      : 'text-slate-400'
                 }
               >
                 {stageLabel(step)}
@@ -151,7 +152,7 @@ export function NftMintProgress({
             Cancel
           </Button>
         )}
-        {stage === "error" && (
+        {stage === 'error' && (
           <Button
             onClick={() =>
               void mint({

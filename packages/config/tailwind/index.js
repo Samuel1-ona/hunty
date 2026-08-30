@@ -8,26 +8,26 @@
  * @type {import('tailwindcss').Config}
  */
 const sharedConfig = {
-  darkMode: "class",
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
         // Hunty brand palette — keep in sync with CSS custom properties in globals.css
         hunty: {
-          purple: "#7c3aed",
-          violet: "#8b5cf6",
-          indigo: "#6366f1",
+          purple: '#7c3aed',
+          violet: '#8b5cf6',
+          indigo: '#6366f1',
         },
       },
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
-        mono: ["var(--font-geist-mono)", "monospace"],
+        sans: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-geist-mono)', 'monospace'],
       },
       borderRadius: {
-        sm: "calc(var(--radius) - 4px)",
-        md: "calc(var(--radius) - 2px)",
-        lg: "var(--radius)",
-        xl: "calc(var(--radius) + 4px)",
+        sm: 'calc(var(--radius) - 4px)',
+        md: 'calc(var(--radius) - 2px)',
+        lg: 'var(--radius)',
+        xl: 'calc(var(--radius) + 4px)',
       },
     },
   },

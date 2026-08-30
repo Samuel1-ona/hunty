@@ -1,20 +1,20 @@
-"use client"
+'use client';
 
-import { Card } from "@hunty/ui"
-import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
+import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 type SkeletonCountProps = {
-  count?: number
-  className?: string
-}
+  count?: number;
+  className?: string;
+};
 
 export function HuntCardSkeleton({ className }: { className?: string }) {
   return (
     <Card
       aria-hidden="true"
       className={cn(
-        "overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800",
+        'overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800',
         className
       )}
     >
@@ -31,17 +31,22 @@ export function HuntCardSkeleton({ className }: { className?: string }) {
         </div>
       </div>
     </Card>
-  )
+  );
 }
 
 export function HuntCardSkeletonGrid({ count = 4, className }: SkeletonCountProps) {
   return (
-    <div className={cn("grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4", className)}>
+    <div
+      className={cn(
+        'grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
+        className
+      )}
+    >
       {Array.from({ length: count }).map((_, index) => (
         <HuntCardSkeleton key={`hunt-card-skeleton-${index}`} />
       ))}
     </div>
-  )
+  );
 }
 
 export function LeaderboardRowSkeleton() {
@@ -58,7 +63,7 @@ export function LeaderboardRowSkeleton() {
         <Skeleton className="mx-auto h-5 w-8 bg-slate-200 dark:bg-slate-800" />
       </td>
     </tr>
-  )
+  );
 }
 
 export function LeaderboardTableSkeleton({ count = 5 }: { count?: number }) {
@@ -68,23 +73,26 @@ export function LeaderboardTableSkeleton({ count = 5 }: { count?: number }) {
         <LeaderboardRowSkeleton key={`leaderboard-row-skeleton-${index}`} />
       ))}
     </>
-  )
+  );
 }
 
 export function FormFieldSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn("space-y-2", className)} aria-hidden="true">
+    <div className={cn('space-y-2', className)} aria-hidden="true">
       <Skeleton className="h-4 w-28 bg-slate-200 dark:bg-slate-700" />
       <Skeleton className="h-11 w-full rounded-xl bg-slate-200 dark:bg-slate-700" />
     </div>
-  )
+  );
 }
 
 export function ProfileSectionSkeleton({ className }: { className?: string }) {
   return (
     <section
       aria-hidden="true"
-      className={cn("rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900", className)}
+      className={cn(
+        'rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900',
+        className
+      )}
     >
       <div className="mb-5 flex items-center gap-4">
         <Skeleton className="h-14 w-14 rounded-full bg-slate-200 dark:bg-slate-700" />
@@ -95,14 +103,17 @@ export function ProfileSectionSkeleton({ className }: { className?: string }) {
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
         {Array.from({ length: 3 }).map((_, index) => (
-          <div key={`profile-stat-skeleton-${index}`} className="rounded-xl border border-slate-100 p-3 dark:border-white/10">
+          <div
+            key={`profile-stat-skeleton-${index}`}
+            className="rounded-xl border border-slate-100 p-3 dark:border-white/10"
+          >
             <Skeleton className="mb-2 h-4 w-16 bg-slate-200 dark:bg-slate-700" />
             <Skeleton className="h-7 w-12 bg-slate-200 dark:bg-slate-700" />
           </div>
         ))}
       </div>
     </section>
-  )
+  );
 }
 
 export function ProfilePageSkeleton() {
@@ -114,7 +125,7 @@ export function ProfilePageSkeleton() {
         <ProfileSectionSkeleton />
       </div>
     </div>
-  )
+  );
 }
 
 export function HuntPageSkeletonLayout() {
@@ -131,12 +142,15 @@ export function HuntPageSkeletonLayout() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export function FormPageSkeletonLayout() {
   return (
-    <div className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 dark:border-white/10 dark:bg-slate-900" aria-label="Loading form">
+    <div
+      className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 dark:border-white/10 dark:bg-slate-900"
+      aria-label="Loading form"
+    >
       <div className="grid gap-4 sm:grid-cols-2">
         <FormFieldSkeleton />
         <FormFieldSkeleton />
@@ -148,7 +162,7 @@ export function FormPageSkeletonLayout() {
         <Skeleton className="h-10 w-32 rounded-xl bg-slate-200 dark:bg-slate-700" />
       </div>
     </div>
-  )
+  );
 }
 
 export function AdminTableSkeleton({ rows = 5 }: { rows?: number }) {
@@ -170,7 +184,10 @@ export function AdminTableSkeleton({ rows = 5 }: { rows?: number }) {
         </div>
         <div className="divide-y divide-slate-100 dark:divide-slate-800">
           {Array.from({ length: rows }).map((_, i) => (
-            <div key={`admin-table-row-${i}`} className="p-4 flex items-center justify-between gap-4">
+            <div
+              key={`admin-table-row-${i}`}
+              className="p-4 flex items-center justify-between gap-4"
+            >
               <Skeleton className="h-5 w-1/3 bg-slate-200 dark:bg-slate-800" />
               <Skeleton className="h-6 w-20 rounded-full bg-slate-200 dark:bg-slate-800" />
               <Skeleton className="h-5 w-1/4 bg-slate-200 dark:bg-slate-800" />
@@ -180,12 +197,16 @@ export function AdminTableSkeleton({ rows = 5 }: { rows?: number }) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export function StatsCardSkeleton({ count = 3 }: { count?: number }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Loading statistics" role="status">
+    <div
+      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      aria-label="Loading statistics"
+      role="status"
+    >
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={`stats-card-${i}`}
@@ -200,7 +221,7 @@ export function StatsCardSkeleton({ count = 3 }: { count?: number }) {
         </div>
       ))}
     </div>
-  )
+  );
 }
 
 export function GalleryGridSkeleton({ count = 6 }: { count?: number }) {
@@ -208,19 +229,29 @@ export function GalleryGridSkeleton({ count = 6 }: { count?: number }) {
     <div className="space-y-8" aria-label="Loading gallery" role="status">
       <div className="flex flex-wrap gap-2">
         {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={`gallery-tag-${i}`} className="h-9 w-24 rounded-full bg-slate-200 dark:bg-slate-700" />
+          <Skeleton
+            key={`gallery-tag-${i}`}
+            className="h-9 w-24 rounded-full bg-slate-200 dark:bg-slate-700"
+          />
         ))}
       </div>
       <HuntCardSkeletonGrid count={count} />
     </div>
-  )
+  );
 }
 
 export function TemplateCardSkeleton({ count = 4 }: { count?: number }) {
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4" aria-label="Loading templates" role="status">
+    <div
+      className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
+      aria-label="Loading templates"
+      role="status"
+    >
       {Array.from({ length: count }).map((_, i) => (
-        <div key={`template-skeleton-${i}`} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-4">
+        <div
+          key={`template-skeleton-${i}`}
+          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-4"
+        >
           <Skeleton className="h-32 w-full rounded-xl bg-slate-200 dark:bg-slate-700" />
           <Skeleton className="h-5 w-3/4 bg-slate-200 dark:bg-slate-700" />
           <Skeleton className="h-4 w-full bg-slate-200 dark:bg-slate-700" />
@@ -228,7 +259,7 @@ export function TemplateCardSkeleton({ count = 4 }: { count?: number }) {
         </div>
       ))}
     </div>
-  )
+  );
 }
 
 export function ProfileHistorySkeleton({ count = 4 }: { count?: number }) {
@@ -240,7 +271,10 @@ export function ProfileHistorySkeleton({ count = 4 }: { count?: number }) {
       </div>
       <div className="space-y-3">
         {Array.from({ length: count }).map((_, i) => (
-          <div key={`history-item-${i}`} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 flex items-center justify-between gap-4">
+          <div
+            key={`history-item-${i}`}
+            className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 flex items-center justify-between gap-4"
+          >
             <div className="space-y-2 flex-1">
               <Skeleton className="h-5 w-1/3 bg-slate-200 dark:bg-slate-700" />
               <Skeleton className="h-4 w-1/4 bg-slate-200 dark:bg-slate-700" />
@@ -250,7 +284,7 @@ export function ProfileHistorySkeleton({ count = 4 }: { count?: number }) {
         ))}
       </div>
     </div>
-  )
+  );
 }
 
 export function DetailHeaderSkeleton() {
@@ -263,12 +297,16 @@ export function DetailHeaderSkeleton() {
       <Skeleton className="h-10 w-2/3 bg-slate-200 dark:bg-slate-700" />
       <Skeleton className="h-5 w-full bg-slate-200 dark:bg-slate-700" />
     </div>
-  )
+  );
 }
 
 export function GenericPageSkeleton() {
   return (
-    <div className="min-h-screen bg-gradient-to-tr from-blue-100 via-purple-50 to-[#f9f9ff] p-6 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900" aria-label="Loading" role="status">
+    <div
+      className="min-h-screen bg-gradient-to-tr from-blue-100 via-purple-50 to-[#f9f9ff] p-6 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900"
+      aria-label="Loading"
+      role="status"
+    >
       <div className="mx-auto max-w-6xl space-y-6">
         <Skeleton className="h-10 w-64 bg-slate-200 dark:bg-slate-700" />
         <Skeleton className="h-20 w-full rounded-2xl bg-slate-200 dark:bg-slate-700" />
@@ -278,8 +316,9 @@ export function GenericPageSkeleton() {
           <Skeleton className="h-56 rounded-2xl bg-slate-200 dark:bg-slate-700" />
         </div>
       </div>
-      <span className="sr-only" aria-live="polite">Loading content...</span>
+      <span className="sr-only" aria-live="polite">
+        Loading content...
+      </span>
     </div>
-  )
+  );
 }
-

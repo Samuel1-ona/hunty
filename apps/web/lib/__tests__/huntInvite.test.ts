@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   addHunt,
@@ -9,31 +9,31 @@ import {
   revokeHuntInvite,
   validateHuntInvite,
   validateHuntInviteToken,
-} from "@/lib/huntStore";
-import type { StoredHunt } from "@/lib/types";
+} from '@/lib/huntStore';
+import type { StoredHunt } from '@/lib/types';
 
 const privateHunt: StoredHunt = {
   id: 8801,
-  title: "Invitation only",
-  description: "A private test hunt",
+  title: 'Invitation only',
+  description: 'A private test hunt',
   cluesCount: 2,
-  status: "Active",
-  rewardType: "XLM",
+  status: 'Active',
+  rewardType: 'XLM',
   is_private: true,
 };
 
 const publicHunt: StoredHunt = {
   ...privateHunt,
   id: 8802,
-  title: "Public hunt",
+  title: 'Public hunt',
   is_private: false,
 };
 
-describe("private hunt invites", () => {
+describe('private hunt invites', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-07-26T10:00:00.000Z"));
+    vi.setSystemTime(new Date('2026-07-26T10:00:00.000Z'));
     addHunt(privateHunt);
     addHunt(publicHunt);
   });
@@ -43,7 +43,7 @@ describe("private hunt invites", () => {
     localStorage.clear();
   });
 
-  it("generates a UUID invite and persists its expiration with the hunt", () => {
+  it('generates a UUID invite and persists its expiration with the hunt', () => {
     const invite = generateHuntInvite(privateHunt.id);
 
     expect(invite.token).toMatch(
@@ -54,72 +54,72 @@ describe("private hunt invites", () => {
     expect(getHuntById(privateHunt.id)?.invite).toEqual(invite);
   });
 
-  it("accepts only the current token for the matching private hunt", () => {
+  it('accepts only the current token for the matching private hunt', () => {
     const firstInvite = generateHuntInvite(privateHunt.id);
     expect(validateHuntInviteToken(privateHunt.id, firstInvite.token)).toEqual({
       isValid: true,
-      reason: "valid",
+      reason: 'valid',
     });
 
     const replacement = generateHuntInvite(privateHunt.id);
     expect(replacement.token).not.toBe(firstInvite.token);
     expect(validateHuntInviteToken(privateHunt.id, firstInvite.token)).toEqual({
       isValid: false,
-      reason: "invalid",
+      reason: 'invalid',
     });
     expect(validateHuntInviteToken(privateHunt.id, replacement.token).isValid).toBe(true);
   });
 
-  it("denies missing and invalid tokens", () => {
+  it('denies missing and invalid tokens', () => {
     generateHuntInvite(privateHunt.id);
 
     expect(validateHuntInviteToken(privateHunt.id, null)).toEqual({
       isValid: false,
-      reason: "required",
+      reason: 'required',
     });
-    expect(validateHuntInviteToken(privateHunt.id, "not-the-token")).toEqual({
+    expect(validateHuntInviteToken(privateHunt.id, 'not-the-token')).toEqual({
       isValid: false,
-      reason: "invalid",
+      reason: 'invalid',
     });
   });
 
-  it("reports an expired matching token", () => {
+  it('reports an expired matching token', () => {
     const invite = generateHuntInvite(privateHunt.id, 60_000);
 
     expect(validateHuntInviteToken(privateHunt.id, invite.token, invite.expiresAt)).toEqual({
       isValid: false,
-      reason: "expired",
+      reason: 'expired',
     });
   });
 
-  it("revokes the current link and denies its token", () => {
+  it('revokes the current link and denies its token', () => {
     const invite = generateHuntInvite(privateHunt.id);
 
     expect(revokeHuntInvite(privateHunt.id)).toBe(true);
     expect(getHuntById(privateHunt.id)?.invite).toBeUndefined();
     expect(validateHuntInviteToken(privateHunt.id, invite.token)).toEqual({
       isValid: false,
-      reason: "invalid",
+      reason: 'invalid',
     });
     expect(revokeHuntInvite(privateHunt.id)).toBe(false);
   });
 
-  it("does not require an invite for public hunts", () => {
+  it('does not require an invite for public hunts', () => {
     expect(validateHuntInvite(publicHunt, null)).toEqual({
       isValid: true,
-      reason: "public",
+      reason: 'public',
     });
   });
 
-  it("does not generate invites for public or missing hunts", () => {
+  it('does not generate invites for public or missing hunts', () => {
     expect(() => generateHuntInvite(publicHunt.id)).toThrow(/private hunts/i);
     expect(() => generateHuntInvite(999_999)).toThrow(/not found/i);
     expect(() => generateHuntInvite(privateHunt.id, 0)).toThrow(/expiration/i);
   });
 
-  it("builds the canonical encoded invite URL", () => {
-    expect(buildHuntInviteUrl(42, "token/with spaces", "https://example.com/")).toBe(
-      "https://example.com/hunt/42?invite=token%2Fwith%20spaces"
+  it('builds the canonical encoded invite URL', () => {
+    expect(buildHuntInviteUrl(42, 'token/with spaces', 'https://example.com/')).toBe(
+      'https://example.com/hunt/42?invite=token%2Fwith%20spaces'
     );
   });
 });

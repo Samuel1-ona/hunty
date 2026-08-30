@@ -16,4 +16,4 @@ export {
   type FeatureFlagMap,
   type FeatureFlagOverride,
   type FeatureFlagValue,
-} from "./feature-flags/index"
+} from './feature-flags/index';

@@ -9,6 +9,7 @@ This document summarizes the network switching feature implementation for the Hu
 ### ✓ Network indicator in UI (testnet badge)
 
 **Implemented:**
+
 - `NetworkIndicator.tsx` - Flexible badge component with 3 variants (badge, pill, corner)
 - Header integration showing current network
 - Color-coded indicators (yellow=testnet, green=mainnet)
@@ -19,6 +20,7 @@ This document summarizes the network switching feature implementation for the Hu
 ### ✓ Network selection in developer settings
 
 **Implemented:**
+
 - `NetworkSwitcher.tsx` - Interactive network selection component
 - `app/settings/page.tsx` - Dedicated settings page
 - Confirmation modal before switching
@@ -30,6 +32,7 @@ This document summarizes the network switching feature implementation for the Hu
 ### ✓ Auto-detect connected wallet network
 
 **Implemented:**
+
 - `lib/wallets/networkDetection.ts` - Wallet network detection utilities
 - `checkWalletNetworkMatch()` - Validates wallet vs app network
 - `validateNetworkBeforeTransaction()` - Pre-transaction validation
@@ -41,6 +44,7 @@ This document summarizes the network switching feature implementation for the Hu
 ### ✓ Warning when on testnet
 
 **Implemented:**
+
 - `TestnetWarning` component - Dismissible banner at top of page
 - Network badge always visible in header
 - Visual warnings in network switcher
@@ -48,6 +52,7 @@ This document summarizes the network switching feature implementation for the Hu
 - Session-based dismissal (reappears on new session)
 
 **Multiple warning levels:**
+
 1. Persistent badge in header
 2. Dismissible top banner
 3. Contextual warnings in settings
@@ -55,6 +60,7 @@ This document summarizes the network switching feature implementation for the Hu
 ### ✓ Different contract addresses per network
 
 **Implemented:**
+
 - Updated `lib/contracts/config.ts` with network-aware contract resolution
 - Separate environment variables for testnet and mainnet contracts:
   - `NEXT_PUBLIC_HUNTY_CORE_ADDRESS_TESTNET`
@@ -69,12 +75,15 @@ This document summarizes the network switching feature implementation for the Hu
 ## Files Created
 
 ### Core Components
+
 1. **`components/NetworkIndicator.tsx`** (179 lines)
+
    - `NetworkIndicator` - Visual badge showing current network
    - `TestnetWarning` - Dismissible banner warning component
    - Multiple display variants (badge, pill, corner)
 
 2. **`components/NetworkSwitcher.tsx`** (151 lines)
+
    - Interactive network selection UI
    - Confirmation modal with warnings
    - Visual feedback for current network
@@ -86,7 +95,9 @@ This document summarizes the network switching feature implementation for the Hu
    - Provides quick actions (go to settings, dismiss)
 
 ### Utilities & Hooks
+
 4. **`lib/wallets/networkDetection.ts`** (139 lines)
+
    - `detectFreighterNetwork()` - Detects Freighter wallet network
    - `detectRabetNetwork()` - Detects Rabet wallet network
    - `checkWalletNetworkMatch()` - Validates network consistency
@@ -99,6 +110,7 @@ This document summarizes the network switching feature implementation for the Hu
    - Real-time network change detection
 
 ### Pages
+
 6. **`app/settings/page.tsx`** (85 lines)
    - Dedicated settings page with network controls
    - Notification preferences section
@@ -106,13 +118,16 @@ This document summarizes the network switching feature implementation for the Hu
    - Clean, organized layout
 
 ### Documentation
+
 7. **`NETWORK_SWITCHING_GUIDE.md`** (580+ lines)
+
    - Comprehensive user and developer guide
    - Usage examples and code snippets
    - Architecture documentation
    - Testing and deployment guides
 
 8. **`NETWORK_MIGRATION.md`** (430+ lines)
+
    - Migration guide for existing deployments
    - Breaking changes documentation
    - Rollback strategies
@@ -125,7 +140,9 @@ This document summarizes the network switching feature implementation for the Hu
 ## Files Modified
 
 ### Configuration
+
 1. **`lib/soroban/client.ts`**
+
    - Added `TESTNET_CONFIG` and `MAINNET_CONFIG` constants
    - Updated `getSorobanNetworkType()` to check localStorage
    - Added `setSorobanNetworkType()` for persistence
@@ -133,6 +150,7 @@ This document summarizes the network switching feature implementation for the Hu
    - Network-aware RPC URL and passphrase resolution
 
 2. **`lib/contracts/config.ts`**
+
    - Separated `TESTNET_CONTRACTS` and `MAINNET_CONTRACTS`
    - Added `getContracts()` for network-aware resolution
    - Updated `getRequiredAddress()` with better error messages
@@ -145,13 +163,16 @@ This document summarizes the network switching feature implementation for the Hu
    - Updated passphrase handling
 
 ### UI Components
+
 4. **`components/Header.tsx`**
+
    - Added `NetworkIndicator` to header
    - Added Settings link to navigation
    - Added Settings link to wallet dropdown
    - Imported necessary icons
 
 5. **`app/layout.tsx`**
+
    - Added `TestnetWarning` banner at top
    - Fixed duplicate imports
    - Added missing `headers` import
@@ -161,6 +182,7 @@ This document summarizes the network switching feature implementation for the Hu
    - Wrapped in `NetworkWarningWrapper` for context access
 
 ### Environment
+
 7. **`.env.example`**
    - Added network-specific contract address variables
    - Added helpful comments and structure
@@ -277,12 +299,14 @@ NEXT_PUBLIC_SOROBAN_NETWORK_PASSPHRASE=Custom Network ; 2025
 ### For End Users
 
 **Switching Networks:**
+
 1. Click "Settings" in header
 2. Choose network under "Network Settings"
 3. Confirm the switch
 4. Page reloads automatically
 
 **Understanding Indicators:**
+
 - Yellow badge = Testnet (safe, test XLM)
 - Green badge = Mainnet (real assets)
 - Orange warning = Network mismatch with wallet
@@ -290,29 +314,32 @@ NEXT_PUBLIC_SOROBAN_NETWORK_PASSPHRASE=Custom Network ; 2025
 ### For Developers
 
 **Check Current Network:**
-```typescript
-import { useNetwork } from "@/hooks/useNetwork"
 
-const { networkType, isTestnet } = useNetwork()
-console.log(networkType) // "testnet" | "mainnet"
+```typescript
+import { useNetwork } from '@/hooks/useNetwork';
+
+const { networkType, isTestnet } = useNetwork();
+console.log(networkType); // "testnet" | "mainnet"
 ```
 
 **Get Contract Addresses:**
-```typescript
-import { getContracts } from "@/lib/contracts/config"
 
-const contracts = getContracts()
+```typescript
+import { getContracts } from '@/lib/contracts/config';
+
+const contracts = getContracts();
 // Returns correct addresses for active network
 ```
 
 **Validate Before Transaction:**
-```typescript
-import { validateNetworkBeforeTransaction } from "@/lib/wallets/networkDetection"
 
-const { valid, error } = await validateNetworkBeforeTransaction("freighter")
+```typescript
+import { validateNetworkBeforeTransaction } from '@/lib/wallets/networkDetection';
+
+const { valid, error } = await validateNetworkBeforeTransaction('freighter');
 if (!valid) {
-  alert(error?.message)
-  return
+  alert(error?.message);
+  return;
 }
 // Proceed with transaction
 ```
@@ -334,18 +361,18 @@ if (!valid) {
 
 ```typescript
 // Test network switching
-describe("Network Switching", () => {
-  it("should persist network preference", () => {
-    setSorobanNetworkType("mainnet")
-    expect(localStorage.getItem("stellar_network_preference")).toBe("mainnet")
-  })
+describe('Network Switching', () => {
+  it('should persist network preference', () => {
+    setSorobanNetworkType('mainnet');
+    expect(localStorage.getItem('stellar_network_preference')).toBe('mainnet');
+  });
 
-  it("should return correct contracts for network", () => {
-    setSorobanNetworkType("mainnet")
-    const contracts = getContracts()
-    expect(contracts.HUNTY_CORE).toBe(process.env.NEXT_PUBLIC_HUNTY_CORE_ADDRESS_MAINNET)
-  })
-})
+  it('should return correct contracts for network', () => {
+    setSorobanNetworkType('mainnet');
+    const contracts = getContracts();
+    expect(contracts.HUNTY_CORE).toBe(process.env.NEXT_PUBLIC_HUNTY_CORE_ADDRESS_MAINNET);
+  });
+});
 ```
 
 ## Performance Impact
@@ -423,7 +450,7 @@ The network switching feature is fully implemented and meets all acceptance crit
 ✅ Network selection in developer settings  
 ✅ Auto-detect connected wallet network  
 ✅ Warning when on testnet  
-✅ Different contract addresses per network  
+✅ Different contract addresses per network
 
 The implementation is production-ready, well-documented, and follows best practices for Stellar dApp development.
 

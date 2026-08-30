@@ -1,10 +1,10 @@
-"use client"
+'use client';
 
-import Link from "next/link"
-import React, { useState } from "react"
+import Link from 'next/link';
+import React, { useState } from 'react';
 
 export default function ResponsiveShell({ children }: { children: React.ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div className="app-shell">
@@ -19,7 +19,7 @@ export default function ResponsiveShell({ children }: { children: React.ReactNod
             onClick={() => setCollapsed((s) => !s)}
             className="sidebar-toggle"
           >
-            {collapsed ? "☰" : "✕"}
+            {collapsed ? '☰' : '✕'}
           </button>
         </div>
 
@@ -52,5 +52,5 @@ export default function ResponsiveShell({ children }: { children: React.ReactNod
         </Link>
       </nav>
     </div>
-  )
+  );
 }

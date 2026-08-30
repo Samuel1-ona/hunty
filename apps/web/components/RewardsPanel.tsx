@@ -1,23 +1,20 @@
-"use client"
+'use client';
 
-import { Minus,Plus, Shield } from "lucide-react"
+import { Minus, Plus, Shield } from 'lucide-react';
 
-import { useEffect } from "react"
+import { ClaimRewardFlow } from '@/components/ClaimRewardFlow';
+import Coin from '@/components/icons/Coin';
+import Trash from '@/components/icons/trash';
+import { Button } from '@/components/ui/button';
+import { useXlmUsdPrice } from '@/hooks/useXlmUsdPrice';
+import { useIsFeatureEnabled } from '@/hooks/useFeatureFlag';
+import type { Reward, RewardPlayerProgress } from '@/lib/types';
 
-import { ClaimRewardFlow } from "@/components/ClaimRewardFlow"
-import Coin from "@/components/icons/Coin"
-import { markFirstHuntStep } from "@/lib/firstHuntGuide"
-import Trash from "@/components/icons/trash"
-import { Button } from "@hunty/ui"
-import { useXlmUsdPrice } from "@/hooks/useXlmUsdPrice"
-import { useIsFeatureEnabled } from "@/hooks/useFeatureFlag"
-import type { Reward, RewardPlayerProgress } from "@/lib/types"
-
-export type { RewardPlayerProgress as PlayerProgress,Reward }
+export type { RewardPlayerProgress as PlayerProgress, Reward };
 
 export interface RewardsPanelProps {
   rewards: Reward[];
-  rewardType?: "XLM" | "NFT" | "Both";
+  rewardType?: 'XLM' | 'NFT' | 'Both';
   onUpdateReward?: (place: number, amount: number) => void;
   onAddReward?: () => void;
   onDeleteReward?: (place: number) => void;
@@ -25,27 +22,30 @@ export interface RewardsPanelProps {
   playerProgress?: RewardPlayerProgress;
 }
 
-export function RewardsPanel({ rewards, rewardType = "XLM", onUpdateReward, onAddReward, onDeleteReward, error, playerProgress }: RewardsPanelProps) {
-  const { price: xlmUsdPrice } = useXlmUsdPrice()
-  const advancedRewardsEnabled = useIsFeatureEnabled("advancedRewards")
-
-  useEffect(() => {
-    if (playerProgress?.reward_claimed && playerProgress.hunt_id != null) {
-      markFirstHuntStep("claim", { huntId: Number(playerProgress.hunt_id) })
-    }
-  }, [playerProgress?.reward_claimed, playerProgress?.hunt_id])
+export function RewardsPanel({
+  rewards,
+  rewardType = 'XLM',
+  onUpdateReward,
+  onAddReward,
+  onDeleteReward,
+  error,
+  playerProgress,
+}: RewardsPanelProps) {
+  const { price: xlmUsdPrice } = useXlmUsdPrice();
+  const advancedRewardsEnabled = useIsFeatureEnabled('advancedRewards');
 
   const currencyFormatter = new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: "USD",
+    style: 'currency',
+    currency: 'USD',
     maximumFractionDigits: 2,
-  })
+  });
 
-  const totalRewardXlm = rewards.reduce((sum, reward) => sum + reward.amount, 0)
+  const totalRewardXlm = rewards.reduce((sum, reward) => sum + reward.amount, 0);
   const totalRewardUsd =
-    xlmUsdPrice != null ? currencyFormatter.format(totalRewardXlm * xlmUsdPrice) : null
+    xlmUsdPrice != null ? currencyFormatter.format(totalRewardXlm * xlmUsdPrice) : null;
 
-  const totalRewardAmount = totalRewardXlm > 0 ? totalRewardXlm : (playerProgress?.reward_amount ?? 0)
+  const totalRewardAmount =
+    totalRewardXlm > 0 ? totalRewardXlm : (playerProgress?.reward_amount ?? 0);
 
   return (
     <div className="space-y-6">
@@ -54,16 +54,22 @@ export function RewardsPanel({ rewards, rewardType = "XLM", onUpdateReward, onAd
           <p className="text-sm font-medium text-blue-900">Total Prize Pool</p>
           <p className="text-lg font-semibold text-blue-950">
             {totalRewardXlm.toFixed(2)} {rewardType}
-            {totalRewardUsd ? ` (≈ ${totalRewardUsd})` : ""}
+            {totalRewardUsd ? ` (≈ ${totalRewardUsd})` : ''}
           </p>
         </div>
       )}
 
       {rewards.map((reward) => (
-        <div key={reward.place} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-900/50 rounded-lg border border-transparent dark:border-white/5">
+        <div
+          key={reward.place}
+          className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-900/50 rounded-lg border border-transparent dark:border-white/5"
+        >
           <div className="flex items-center gap-3">
             <span className="text-2xl">{reward.icon}</span>
-            <span className="font-normal text-2xl bg-gradient-to-l from-[#3737A4] to-[#0C0C4F] text-transparent bg-clip-text">{reward.place == 1 && "1st"} {reward.place == 2 && "2nd"} {reward.place == 3 && "3rd"} {reward.place > 3 && `${reward.place}th`} Place</span>
+            <span className="font-normal text-2xl bg-gradient-to-l from-[#3737A4] to-[#0C0C4F] text-transparent bg-clip-text">
+              {reward.place == 1 && '1st'} {reward.place == 2 && '2nd'} {reward.place == 3 && '3rd'}{' '}
+              {reward.place > 3 && `${reward.place}th`} Place
+            </span>
           </div>
           <div className="flex items-center gap-2">
             {onUpdateReward && (
@@ -74,24 +80,26 @@ export function RewardsPanel({ rewards, rewardType = "XLM", onUpdateReward, onAd
                 aria-label={`Decrease reward for place ${reward.place}`}
                 className="w-6 h-6 border-2 border-transparent bg-origin-border hover:opacity-80 rounded-lg"
                 style={{
-                  background: 'linear-gradient(var(--background), var(--background)) padding-box, linear-gradient(to right, #0C0C4F, #4A4AFF) border-box'
-                }}  
+                  background:
+                    'linear-gradient(var(--background), var(--background)) padding-box, linear-gradient(to right, #0C0C4F, #4A4AFF) border-box',
+                }}
               >
                 <Minus className="w-3 h-3" />
               </Button>
             )}
-              <div className="flex items-center gap-8 bg-white dark:bg-slate-950 px-3 py-1 rounded border-b-2 border-transparent bg-gradient-to-r from-[#0C0C4F] to-[#4A4AFF] bg-[length:100%_2px] bg-no-repeat bg-bottom">
-                <Coin/>
-                <div className="flex flex-col">
-                  <span className="text-[16px] font-medium bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-transparent bg-clip-text">
-                    {reward.amount.toPrecision(3)} XLM
-                  </span>                    {xlmUsdPrice != null && (
-                    <span className="text-[11px] text-slate-500">
-                      ≈ {currencyFormatter.format(reward.amount * xlmUsdPrice)}
-                    </span>
-                  )}
-                </div>
+            <div className="flex items-center gap-8 bg-white dark:bg-slate-950 px-3 py-1 rounded border-b-2 border-transparent bg-gradient-to-r from-[#0C0C4F] to-[#4A4AFF] bg-[length:100%_2px] bg-no-repeat bg-bottom">
+              <Coin />
+              <div className="flex flex-col">
+                <span className="text-[16px] font-medium bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-transparent bg-clip-text">
+                  {reward.amount.toPrecision(3)} XLM
+                </span>{' '}
+                {xlmUsdPrice != null && (
+                  <span className="text-[11px] text-slate-500">
+                    ≈ {currencyFormatter.format(reward.amount * xlmUsdPrice)}
+                  </span>
+                )}
               </div>
+            </div>
             {onUpdateReward && (
               <Button
                 size="icon"
@@ -100,20 +108,21 @@ export function RewardsPanel({ rewards, rewardType = "XLM", onUpdateReward, onAd
                 aria-label={`Increase reward for place ${reward.place}`}
                 className="w-6 h-6 border-2 border-transparent bg-origin-border hover:opacity-80 rounded-lg"
                 style={{
-                  background: 'linear-gradient(var(--background), var(--background)) padding-box, linear-gradient(to right, #0C0C4F, #4A4AFF) border-box'
+                  background:
+                    'linear-gradient(var(--background), var(--background)) padding-box, linear-gradient(to right, #0C0C4F, #4A4AFF) border-box',
                 }}
               >
                 <Plus className="w-3 h-3" />
               </Button>
             )}
             {onDeleteReward && (
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 aria-label={`Delete reward for place ${reward.place}`}
                 className="w-8 h-8 p-3 bg-gradient-to-b from-[#FD0A44] to-[#932331] text-white rounded-lg ml-2 cursor-pointer hover:opacity-80"
                 onClick={() => onDeleteReward(reward.place)}
               >
-                <Trash/>  
+                <Trash />
               </Button>
             )}
           </div>
@@ -147,10 +156,10 @@ export function RewardsPanel({ rewards, rewardType = "XLM", onUpdateReward, onAd
       {onAddReward && (
         <div className="flex flex-col gap-2">
           <Button
-              className="bg-white dark:bg-slate-900 text-[#808080] dark:text-slate-400 text-[16px] font-medium hover:bg-gray-100 dark:hover:bg-slate-800 px-6 py-2 rounded-full border-2 border-dashed border-[#808080] dark:border-slate-700 cursor-pointer"
-              onClick={onAddReward}
-                    >
-              Add Reward for Runner-up
+            className="bg-white dark:bg-slate-900 text-[#808080] dark:text-slate-400 text-[16px] font-medium hover:bg-gray-100 dark:hover:bg-slate-800 px-6 py-2 rounded-full border-2 border-dashed border-[#808080] dark:border-slate-700 cursor-pointer"
+            onClick={onAddReward}
+          >
+            Add Reward for Runner-up
           </Button>
           {error && <span className="text-red-500 text-sm text-center">{error}</span>}
         </div>
@@ -160,7 +169,13 @@ export function RewardsPanel({ rewards, rewardType = "XLM", onUpdateReward, onAd
         <div className="flex justify-center mt-6">
           {playerProgress.reward_claimed ? (
             <div className="flex items-center gap-2 text-green-600 dark:text-green-400 font-semibold">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2.5}
+                viewBox="0 0 24 24"
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
               Reward Claimed
@@ -175,5 +190,5 @@ export function RewardsPanel({ rewards, rewardType = "XLM", onUpdateReward, onAd
         </div>
       )}
     </div>
-  )
+  );
 }

@@ -1,12 +1,12 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { Plus, Send, Trash2 } from "lucide-react"
-import { toast } from "sonner"
+import { useState } from 'react';
+import { Plus, Send, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Button } from "@hunty/ui"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -15,67 +15,62 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog';
 import {
   MIN_TEMPLATE_CLUES,
   addCommunityTemplate,
   type CommunityTemplateInput,
-} from "@/lib/communityTemplates"
-import type { HuntTemplateClue } from "@/lib/huntTemplates"
+} from '@/lib/communityTemplates';
+import type { HuntTemplateClue } from '@/lib/huntTemplates';
 
 interface SubmitTemplateDialogProps {
   /** Existing categories offered as quick suggestions. */
-  categories: string[]
+  categories: string[];
   /** Called after a template is successfully saved. */
-  onSubmitted?: () => void
+  onSubmitted?: () => void;
 }
 
 const emptyClue = (): HuntTemplateClue => ({
-  title: "",
-  description: "",
-  code: "",
-})
+  title: '',
+  description: '',
+  code: '',
+});
 
 function createEmptyClues(): HuntTemplateClue[] {
-  return Array.from({ length: MIN_TEMPLATE_CLUES }, emptyClue)
+  return Array.from({ length: MIN_TEMPLATE_CLUES }, emptyClue);
 }
 
-export function SubmitTemplateDialog({
-  categories,
-  onSubmitted,
-}: SubmitTemplateDialogProps) {
-  const [open, setOpen] = useState(false)
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [category, setCategory] = useState("")
-  const [estimatedDuration, setEstimatedDuration] = useState("")
-  const [author, setAuthor] = useState("")
-  const [clues, setClues] = useState<HuntTemplateClue[]>(createEmptyClues)
+export function SubmitTemplateDialog({ categories, onSubmitted }: SubmitTemplateDialogProps) {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
+  const [estimatedDuration, setEstimatedDuration] = useState('');
+  const [author, setAuthor] = useState('');
+  const [clues, setClues] = useState<HuntTemplateClue[]>(createEmptyClues);
 
   const resetForm = () => {
-    setTitle("")
-    setDescription("")
-    setCategory("")
-    setEstimatedDuration("")
-    setAuthor("")
-    setClues(createEmptyClues())
-  }
+    setTitle('');
+    setDescription('');
+    setCategory('');
+    setEstimatedDuration('');
+    setAuthor('');
+    setClues(createEmptyClues());
+  };
 
   const updateClue = (index: number, field: keyof HuntTemplateClue, value: string) => {
     setClues((current) =>
-      current.map((clue, i) => (i === index ? { ...clue, [field]: value } : clue)),
-    )
-  }
+      current.map((clue, i) => (i === index ? { ...clue, [field]: value } : clue))
+    );
+  };
 
-  const addClue = () => setClues((current) => [...current, emptyClue()])
+  const addClue = () => setClues((current) => [...current, emptyClue()]);
 
   const removeClue = (index: number) => {
     setClues((current) =>
-      current.length > MIN_TEMPLATE_CLUES
-        ? current.filter((_, i) => i !== index)
-        : current,
-    )
-  }
+      current.length > MIN_TEMPLATE_CLUES ? current.filter((_, i) => i !== index) : current
+    );
+  };
 
   const handleSubmit = () => {
     const input: CommunityTemplateInput = {
@@ -85,27 +80,25 @@ export function SubmitTemplateDialog({
       estimatedDuration,
       author,
       clues,
-    }
+    };
 
     try {
-      const saved = addCommunityTemplate(input)
-      toast.success(`"${saved.title}" shared with the community. Thank you!`)
-      resetForm()
-      setOpen(false)
-      onSubmitted?.()
+      const saved = addCommunityTemplate(input);
+      toast.success(`"${saved.title}" shared with the community. Thank you!`);
+      resetForm();
+      setOpen(false);
+      onSubmitted?.();
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Could not submit template.",
-      )
+      toast.error(error instanceof Error ? error.message : 'Could not submit template.');
     }
-  }
+  };
 
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        setOpen(next)
-        if (!next) resetForm()
+        setOpen(next);
+        if (!next) resetForm();
       }}
     >
       <DialogTrigger asChild>
@@ -115,15 +108,12 @@ export function SubmitTemplateDialog({
         </Button>
       </DialogTrigger>
 
-      <DialogContent
-        showCloseButton
-        className="max-h-[85vh] overflow-y-auto sm:max-w-2xl"
-      >
+      <DialogContent showCloseButton className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Share a community template</DialogTitle>
           <DialogDescription>
-            Publish your hunt idea so other creators can start from it. It stays
-            editable after they load it into the builder.
+            Publish your hunt idea so other creators can start from it. It stays editable after they
+            load it into the builder.
           </DialogDescription>
         </DialogHeader>
 
@@ -225,21 +215,19 @@ export function SubmitTemplateDialog({
                 </div>
                 <Input
                   value={clue.title}
-                  onChange={(e) => updateClue(index, "title", e.target.value)}
+                  onChange={(e) => updateClue(index, 'title', e.target.value)}
                   placeholder="Clue title"
                   className="bg-white"
                 />
                 <Textarea
                   value={clue.description}
-                  onChange={(e) =>
-                    updateClue(index, "description", e.target.value)
-                  }
+                  onChange={(e) => updateClue(index, 'description', e.target.value)}
                   placeholder="What should the player look for?"
                   className="bg-white"
                 />
                 <Input
                   value={clue.code}
-                  onChange={(e) => updateClue(index, "code", e.target.value)}
+                  onChange={(e) => updateClue(index, 'code', e.target.value)}
                   placeholder="Answer / code"
                   className="bg-white"
                 />
@@ -260,5 +248,5 @@ export function SubmitTemplateDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

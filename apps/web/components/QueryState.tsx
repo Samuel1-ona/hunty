@@ -1,9 +1,9 @@
-import Link from "next/link";
-import type { ReactNode } from "react";
-import { AlertTriangle } from "lucide-react";
-import type { UseQueryResult } from "@tanstack/react-query";
+import Link from 'next/link';
+import type { ReactNode } from 'react';
+import { AlertTriangle } from 'lucide-react';
+import type { UseQueryResult } from '@tanstack/react-query';
 
-import { Button } from "@hunty/ui";
+import { Button } from '@/components/ui/button';
 
 interface StateAction {
   label: string;
@@ -16,32 +16,38 @@ interface FeedbackStateProps {
   title: string;
   description: string;
   action?: StateAction;
-  variant?: "default" | "error";
+  variant?: 'default' | 'error';
 }
 
-function FeedbackState({ icon, title, description, action, variant = "default" }: FeedbackStateProps) {
-  const isError = variant === "error";
+function FeedbackState({
+  icon,
+  title,
+  description,
+  action,
+  variant = 'default',
+}: FeedbackStateProps) {
+  const isError = variant === 'error';
 
   return (
     <div
       className={`rounded-3xl border border-dashed p-8 text-center shadow-sm dark:bg-slate-900/60 ${
         isError
-          ? "border-red-300 bg-red-50/50 dark:border-red-900/50"
-          : "border-slate-300 bg-slate-50/90 dark:border-slate-700"
+          ? 'border-red-300 bg-red-50/50 dark:border-red-900/50'
+          : 'border-slate-300 bg-slate-50/90 dark:border-slate-700'
       }`}
     >
       <div
         className={`mx-auto flex h-20 w-20 items-center justify-center rounded-full shadow-sm dark:bg-slate-800 ${
           isError
-            ? "bg-red-100 text-red-600 dark:text-red-400"
-            : "bg-white text-slate-700 dark:text-slate-200"
+            ? 'bg-red-100 text-red-600 dark:text-red-400'
+            : 'bg-white text-slate-700 dark:text-slate-200'
         }`}
       >
         {icon}
       </div>
       <h2
         className={`mt-6 text-xl font-semibold ${
-          isError ? "text-red-700 dark:text-red-400" : "text-slate-900 dark:text-slate-100"
+          isError ? 'text-red-700 dark:text-red-400' : 'text-slate-900 dark:text-slate-100'
         }`}
       >
         {title}
@@ -54,14 +60,14 @@ function FeedbackState({ icon, title, description, action, variant = "default" }
           {action.href ? (
             <Button
               asChild
-              variant={isError ? "destructive" : "default"}
+              variant={isError ? 'destructive' : 'default'}
               className="rounded-full px-6 py-3 text-sm font-semibold"
             >
               <Link href={action.href}>{action.label}</Link>
             </Button>
           ) : (
             <Button
-              variant={isError ? "destructive" : "default"}
+              variant={isError ? 'destructive' : 'default'}
               onClick={action.onClick}
               className="rounded-full px-6 py-3 text-sm font-semibold"
             >
@@ -74,7 +80,7 @@ function FeedbackState({ icon, title, description, action, variant = "default" }
   );
 }
 
-export function EmptyState(props: Omit<FeedbackStateProps, "variant">) {
+export function EmptyState(props: Omit<FeedbackStateProps, 'variant'>) {
   return <FeedbackState {...props} variant="default" />;
 }
 
@@ -85,10 +91,15 @@ interface ErrorStateProps {
   description?: string;
 }
 
-export function ErrorState({ error, onRetry, title = "Something went wrong", description }: ErrorStateProps) {
+export function ErrorState({
+  error,
+  onRetry,
+  title = 'Something went wrong',
+  description,
+}: ErrorStateProps) {
   const errorMessage =
     description ||
-    (error instanceof Error ? error.message : "An unexpected error occurred while fetching data.");
+    (error instanceof Error ? error.message : 'An unexpected error occurred while fetching data.');
 
   return (
     <FeedbackState
@@ -97,7 +108,7 @@ export function ErrorState({ error, onRetry, title = "Something went wrong", des
       title={title}
       description={errorMessage}
       action={{
-        label: "Try Again",
+        label: 'Try Again',
         onClick: onRetry,
       }}
     />
@@ -107,7 +118,7 @@ export function ErrorState({ error, onRetry, title = "Something went wrong", des
 interface QueryStateWrapperProps<TData, TError> {
   query: UseQueryResult<TData, TError>;
   skeleton: ReactNode;
-  emptyProps: Omit<FeedbackStateProps, "variant">;
+  emptyProps: Omit<FeedbackStateProps, 'variant'>;
   children: (data: NonNullable<TData>) => ReactNode;
   isEmpty?: (data: NonNullable<TData>) => boolean;
 }

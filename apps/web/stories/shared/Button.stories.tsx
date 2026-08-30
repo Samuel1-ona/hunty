@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite'
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-import { Button } from '@hunty/ui/web'
+import { Button } from '@hunty/ui/web';
 
 const meta = {
   title: 'Shared/Web/Button',
@@ -17,21 +17,30 @@ const meta = {
   parameters: {
     backgrounds: { default: 'light' },
   },
-} satisfies Meta<typeof Button>
+} satisfies Meta<typeof Button>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
-export const Primary: Story = { args: { variant: 'primary' } }
-export const Secondary: Story = { args: { variant: 'secondary' } }
-export const Ghost: Story = { args: { variant: 'ghost' } }
-export const Outline: Story = { args: { variant: 'outline' } }
-export const Destructive: Story = { args: { variant: 'destructive' } }
-export const Small: Story = { args: { size: 'sm' } }
-export const Large: Story = { args: { size: 'lg' } }
-export const Loading: Story = { args: { loading: true } }
-export const Disabled: Story = { args: { disabled: true } }
+export const Primary: Story = { args: { variant: 'primary' } };
+export const Secondary: Story = { args: { variant: 'secondary' } };
+export const Ghost: Story = { args: { variant: 'ghost' } };
+export const Outline: Story = { args: { variant: 'outline' } };
+export const Destructive: Story = { args: { variant: 'destructive' } };
+export const Small: Story = { args: { size: 'sm' } };
+export const Large: Story = { args: { size: 'lg' } };
+export const Loading: Story = { args: { loading: true } };
+export const Disabled: Story = { args: { disabled: true } };
 
-export const PrimaryDark: Story = { args: { variant: 'primary' }, parameters: { backgrounds: { default: 'dark' } } }
-export const SecondaryDark: Story = { args: { variant: 'secondary' }, parameters: { backgrounds: { default: 'dark' } } }
-export const DestructiveDark: Story = { args: { variant: 'destructive' }, parameters: { backgrounds: { default: 'dark' } } }
+export const PrimaryDark: Story = {
+  args: { variant: 'primary' },
+  parameters: { backgrounds: { default: 'dark' } },
+};
+export const SecondaryDark: Story = {
+  args: { variant: 'secondary' },
+  parameters: { backgrounds: { default: 'dark' } },
+};
+export const DestructiveDark: Story = {
+  args: { variant: 'destructive' },
+  parameters: { backgrounds: { default: 'dark' } },
+};

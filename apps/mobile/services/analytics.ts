@@ -1,4 +1,4 @@
-import { type AnalyticsConfig,analyticsConfig } from '@config/analytics';
+import { type AnalyticsConfig, analyticsConfig } from '@config/analytics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 
@@ -247,14 +247,14 @@ export function trackAppStart(durationMs: number, coldStart = true): void {
     params: { duration_ms: Math.round(durationMs), cold_start: coldStart },
   });
 
-  // Also send as a Sentry span for performance monitoring
-  const span = Sentry.startInactiveSpan({
+  // Also send as a Sentry transaction for performance monitoring
+  const transaction = Sentry.startTransaction({
     name: 'app_start',
     op: 'app.lifecycle',
   });
-  span.setAttribute('duration_ms', durationMs);
-  span.setAttribute('cold_start', coldStart);
-  span.end();
+  transaction.setData('duration_ms', durationMs);
+  transaction.setData('cold_start', coldStart);
+  transaction.finish();
 }
 
 /**
@@ -266,12 +266,12 @@ export function trackScreenLoad(screenName: string, durationMs: number): void {
     params: { duration_ms: Math.round(durationMs) },
   });
 
-  const span = Sentry.startInactiveSpan({
+  const transaction = Sentry.startTransaction({
     name: `screen_load:${screenName}`,
     op: 'ui.load',
   });
-  span.setAttribute('duration_ms', durationMs);
-  span.end();
+  transaction.setData('duration_ms', durationMs);
+  transaction.finish();
 }
 
 /**
@@ -280,8 +280,8 @@ export function trackScreenLoad(screenName: string, durationMs: number): void {
 export function startPerformanceSpan(
   operation: string,
   description: string,
-): ReturnType<typeof Sentry.startInactiveSpan> {
-  return Sentry.startInactiveSpan({ name: description, op: operation });
+): ReturnType<typeof Sentry.startTransaction> {
+  return Sentry.startTransaction({ name: description, op: operation });
 }
 
 // ───────────────────────────────────────────────────────────

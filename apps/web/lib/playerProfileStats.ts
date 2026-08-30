@@ -18,9 +18,9 @@ import {
   findPlayerRank,
   getRankedLeaderboard,
   type RankedLeaderboardEntry,
-} from "@/lib/leaderboard";
-import { logger } from "@/lib/logger";
-import type { LeaderboardEntry, StoredHunt } from "@/lib/types";
+} from '@/lib/leaderboard';
+import { logger } from '@/lib/logger';
+import type { LeaderboardEntry, StoredHunt } from '@/lib/types';
 
 /** A single hunt the player appears on the leaderboard for. */
 export interface PlayerHuntCompletion {
@@ -126,7 +126,7 @@ export function pickFavouriteCategory(categories: Array<string | undefined | nul
 export function buildCompletionTimeline(
   address: string,
   boards: Array<{ huntId: number; entries: RankedLeaderboardEntry[] }>,
-  huntsById: Map<number, Pick<StoredHunt, "title" | "category" | "rewardType">>
+  huntsById: Map<number, Pick<StoredHunt, 'title' | 'category' | 'rewardType'>>
 ): PlayerHuntCompletion[] {
   const timeline: PlayerHuntCompletion[] = [];
 
@@ -156,7 +156,7 @@ export function buildCompletionTimeline(
 /** Reduces a completion timeline into the aggregate profile statistics. */
 export function summariseCompletions(
   timeline: PlayerHuntCompletion[],
-  huntsById?: Map<number, Pick<StoredHunt, "rewardType">>
+  huntsById?: Map<number, Pick<StoredHunt, 'rewardType'>>
 ): PlayerProfileStats {
   if (!timeline.length) return emptyProfileStats();
 
@@ -171,7 +171,7 @@ export function summariseCompletions(
 
   const nftsWon = timeline.filter((entry) => {
     const rewardType = huntsById?.get(entry.huntId)?.rewardType;
-    return rewardType === "NFT" || rewardType === "Both";
+    return rewardType === 'NFT' || rewardType === 'Both';
   }).length;
 
   return {
@@ -196,7 +196,7 @@ export async function getPlayerProfileSummary(
   address: string,
   hunts: StoredHunt[]
 ): Promise<PlayerProfileSummary> {
-  const trimmed = address?.trim() ?? "";
+  const trimmed = address?.trim() ?? '';
   if (!trimmed || !hunts.length) {
     return { address: trimmed, stats: emptyProfileStats(), timeline: [] };
   }
@@ -222,4 +222,3 @@ export async function getPlayerProfileSummary(
     timeline,
   };
 }
- 

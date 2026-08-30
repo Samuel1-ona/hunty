@@ -1,19 +1,19 @@
-"use client"
+'use client';
 
-import Image from "next/image"
-import { useState } from "react"
+import Image from 'next/image';
+import { useState } from 'react';
 
-import { GATEWAY_COUNT, resolveImageSrc } from "@/lib/ipfs"
+import { GATEWAY_COUNT, resolveImageSrc } from '@/lib/ipfs';
 
 interface HuntCoverImageProps {
-  src?: string
-  alt: string
-  className?: string
+  src?: string;
+  alt: string;
+  className?: string;
 }
 
 // Tiny dark blur placeholder shown while the cover image loads.
 const BLUR_PLACEHOLDER =
-  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiMxZTI5M2IiLz48L3N2Zz4=";
+  'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiMxZTI5M2IiLz48L3N2Zz4=';
 
 /** Branded fallback shown when the IPFS image cannot be loaded from any gateway. */
 function ImageFallback({ alt, containerClass }: { alt: string; containerClass: string }) {
@@ -34,17 +34,17 @@ function ImageFallback({ alt, containerClass }: { alt: string; containerClass: s
         <span className="text-[10px] font-medium tracking-wide uppercase">Image unavailable</span>
       </div>
     </div>
-  )
+  );
 }
 
 export function HuntCoverImage({ src, alt, className }: HuntCoverImageProps) {
-  const [gatewayIdx, setGatewayIdx] = useState(0)
-  const [hasFailed, setHasFailed] = useState(false)
+  const [gatewayIdx, setGatewayIdx] = useState(0);
+  const [hasFailed, setHasFailed] = useState(false);
 
   // `fill` requires the container to be positioned. We always inject
   // `relative` so callers don't have to remember to add it themselves,
   // preventing layout shift when the image loads.
-  const containerClass = `relative ${className ?? ""}`.trim()
+  const containerClass = `relative ${className ?? ''}`.trim();
 
   if (!src) {
     return (
@@ -60,12 +60,12 @@ export function HuntCoverImage({ src, alt, className }: HuntCoverImageProps) {
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
       </div>
-    )
+    );
   }
 
   // All IPFS gateways failed — show branded placeholder instead of a broken image.
   if (hasFailed) {
-    return <ImageFallback alt={alt} containerClass={containerClass} />
+    return <ImageFallback alt={alt} containerClass={containerClass} />;
   }
 
   return (
@@ -82,13 +82,13 @@ export function HuntCoverImage({ src, alt, className }: HuntCoverImageProps) {
         onError={() => {
           if (gatewayIdx < GATEWAY_COUNT - 1) {
             // Try the next available IPFS gateway.
-            setGatewayIdx((idx) => idx + 1)
+            setGatewayIdx((idx) => idx + 1);
           } else {
             // All gateways exhausted — surface the branded fallback UI.
-            setHasFailed(true)
+            setHasFailed(true);
           }
         }}
       />
     </div>
-  )
+  );
 }

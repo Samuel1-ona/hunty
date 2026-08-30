@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: "Environment to deploy to"
+        description: 'Environment to deploy to'
         required: true
-        default: "staging"
+        default: 'staging'
         type: choice
         options:
           - development
@@ -19,7 +19,7 @@ on:
           - production
 
 env:
-  NODE_VERSION: "20"
+  NODE_VERSION: '24'
 
 jobs:
   deploy-staging:

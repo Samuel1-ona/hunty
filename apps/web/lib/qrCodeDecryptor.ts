@@ -17,9 +17,7 @@ export type ParsedQrPayload =
   | { ok: true; answer?: string; hash?: string; huntId?: number; clueId?: number }
   | { ok: false; error: string };
 
-export type QrVerifyResult =
-  | { match: true; answer: string }
-  | { match: false; reason: string };
+export type QrVerifyResult = { match: true; answer: string } | { match: false; reason: string };
 
 function decodeBase64Url(value: string): string {
   const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
@@ -129,7 +127,7 @@ export function encodeHuntyQrPayload(payload: {
   answer: string;
 }): string {
   const encoded = encodeBase64Url(
-    JSON.stringify({ h: payload.huntId, c: payload.clueId, a: payload.answer }),
+    JSON.stringify({ h: payload.huntId, c: payload.clueId, a: payload.answer })
   );
   return `${HUNTY_QR_PREFIX}${encoded}`;
 }
@@ -141,7 +139,7 @@ export function encodeHuntyQrPayload(payload: {
 export async function verifyQrAgainstClue(
   raw: string,
   clue: Clue,
-  huntId: number,
+  huntId: number
 ): Promise<QrVerifyResult> {
   const parsed = parseQrPayload(raw);
   if (!parsed.ok) {

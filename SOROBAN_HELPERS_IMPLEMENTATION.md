@@ -9,30 +9,35 @@ Successfully implemented comprehensive type-safe helper functions for all Soroba
 All acceptance criteria have been met:
 
 ### ✅ Contract call wrappers with error handling
+
 - Created `writeContract()` for write operations
-- Created `readContract<T>()` for read operations  
+- Created `readContract<T>()` for read operations
 - Integrated `normalizeContractError()` using existing `parseStellarError`
 - All errors wrapped with context (method name, operation type)
 
 ### ✅ Automatic gas estimation
+
 - Implemented `estimateGas()` function
 - Automatically runs before contract writes (unless custom fee provided)
 - Returns fee, CPU instructions, and memory bytes
 - Falls back gracefully when simulation unavailable
 
 ### ✅ Transaction simulation before submission
+
 - Implemented `simulateTransaction()` function
 - Validates transactions before submission to network
 - Returns success status, cost estimation, and error details
 - Prevents failed transactions from being submitted
 
 ### ✅ Typed return values from contract reads
+
 - `readContract<T>()` accepts generic type parameter
 - Optional `parser` function for custom type transformations
 - Type-safe data extraction from RPC responses
 - Example included in documentation for `PlayerProgress` type
 
 ### ✅ Retry logic for transient RPC failures
+
 - Integrated existing `withSorobanRpcRetry` throughout all helpers
 - Exponential backoff with jitter
 - Configurable timeout and max attempts
@@ -45,23 +50,28 @@ All acceptance criteria have been met:
 Core implementation with all helper functions:
 
 **Write Operations:**
+
 - `writeContract(config)` - Execute contract writes with auto gas estimation and simulation
 - `writeContractAndWait(config, pollOptions?)` - Write and wait for confirmation in one call
 
 **Read Operations:**
+
 - `readContract<T>(config)` - Type-safe contract reads with optional parsers
 - `batchReadContracts<T>(configs)` - Parallel batch reads with individual error handling
 
 **Transaction Management:**
+
 - `estimateGas(server, transaction)` - Gas cost estimation before submission
 - `simulateTransaction(server, transaction)` - Pre-submission validation
 - `pollTransactionStatus(txHash, options?)` - Poll for transaction confirmation
 
 **Error Handling:**
+
 - `normalizeContractError(error, context?)` - Structured error normalization
 - `withErrorHandling<T>(operation, context)` - Error wrapper with context
 
 **Type Definitions:**
+
 - `ContractWriteConfig` - Configuration for write operations
 - `ContractReadConfig` - Configuration for read operations
 - `ContractWriteResult` - Result with txHash, gasEstimate, simulationStatus
@@ -74,6 +84,7 @@ Core implementation with all helper functions:
 Comprehensive test suite covering:
 
 **Test Suites:**
+
 - `normalizeContractError` (3 tests) - Error wrapping and context
 - `estimateGas` (4 tests) - Gas estimation with fallbacks
 - `simulateTransaction` (4 tests) - Simulation success/failure cases
@@ -85,6 +96,7 @@ Comprehensive test suite covering:
 - `retry logic integration` (2 tests) - Retry integration verification
 
 **Total:** 39 comprehensive test cases with mocks for:
+
 - `@stellar/stellar-sdk` (Server, TransactionBuilder, Account)
 - `../client` (getSorobanRpcUrl, getSorobanNetworkPassphrase)
 - `../rpcRetry` (withSorobanRpcRetry)
@@ -93,8 +105,9 @@ Comprehensive test suite covering:
 ### 3. `/workspaces/hunty/apps/web/lib/soroban/index.ts` (67 lines)
 
 Centralized exports for the entire Soroban module:
+
 - Client configuration and server factory
-- React context and hooks  
+- React context and hooks
 - Retry logic
 - RPC optimization and batching
 - Contract interaction helpers
@@ -103,6 +116,7 @@ Centralized exports for the entire Soroban module:
 ### 4. Updated `/workspaces/hunty/apps/web/lib/contracts/hunt.ts`
 
 Integrated contract helpers:
+
 - Imported `writeContractAndWait`, `pollTransactionStatus`, `normalizeContractError`
 - Refactored `pollTransaction()` to use `pollTransactionStatus` helper
 - Reduced code duplication by ~40 lines
@@ -111,6 +125,7 @@ Integrated contract helpers:
 ### 5. Updated `/workspaces/hunty/apps/web/lib/soroban/README.md`
 
 Comprehensive documentation added:
+
 - Overview of new `contractHelpers.ts` module
 - Detailed API reference for all functions
 - Usage examples with code snippets
@@ -122,17 +137,18 @@ Comprehensive documentation added:
 ## Key Features
 
 ### Type Safety
+
 ```typescript
 type PlayerProgress = {
-  hunt_id: number
-  player: string
-  current_clue_index: number
-  completed: boolean
-}
+  hunt_id: number;
+  player: string;
+  current_clue_index: number;
+  completed: boolean;
+};
 
 const result = await readContract<PlayerProgress>({
-  contractId: "CCONTRACT...",
-  method: "get_player_progress",
+  contractId: 'CCONTRACT...',
+  method: 'get_player_progress',
   args: [huntId, playerAddress],
   parser: (raw) => ({
     hunt_id: raw.hunt_id,
@@ -140,49 +156,53 @@ const result = await readContract<PlayerProgress>({
     current_clue_index: raw.current_clue_index,
     completed: raw.completed,
   }),
-})
+});
 ```
 
 ### Automatic Gas Estimation
+
 ```typescript
 // Gas is estimated automatically unless custom fee provided
 const result = await writeContract({
-  contractId: "CCONTRACT...",
-  method: "register_player",
+  contractId: 'CCONTRACT...',
+  method: 'register_player',
   args: [huntId, playerAddress],
   wallet: getActiveWalletAdapter(),
   // fee: "100000" // Optional: skip auto-estimation
-})
+});
 
-console.log(`Gas cost: ${result.gasEstimate} stroops`)
+console.log(`Gas cost: ${result.gasEstimate} stroops`);
 ```
 
 ### Transaction Simulation
+
 ```typescript
 // Simulation runs before every write operation
 // Prevents failed transactions from being submitted
-const simulation = await simulateTransaction(server, transaction)
+const simulation = await simulateTransaction(server, transaction);
 
 if (simulation.success) {
-  console.log(`Cost: ${simulation.cost?.cpuInsns} CPU instructions`)
+  console.log(`Cost: ${simulation.cost?.cpuInsns} CPU instructions`);
 } else {
-  throw new Error(`Simulation failed: ${simulation.error}`)
+  throw new Error(`Simulation failed: ${simulation.error}`);
 }
 ```
 
 ### Built-in Retry Logic
+
 ```typescript
 // All operations use withSorobanRpcRetry internally
 // Handles: network timeouts, rate limits, transient failures
 const result = await readContract({
-  contractId: "C...",
-  method: "get_balance",
+  contractId: 'C...',
+  method: 'get_balance',
   args: [address],
-})
+});
 // Automatically retries on failure with exponential backoff
 ```
 
 ### Error Normalization
+
 ```typescript
 try {
   await writeContract({ ... })
@@ -196,6 +216,7 @@ try {
 ## Integration Points
 
 ### Existing Modules Used
+
 - `@/lib/soroban/rpcRetry` - `withSorobanRpcRetry` for retry logic
 - `@/lib/stellarErrors` - `parseStellarError` for error classification
 - `@/lib/soroban/client` - `getSorobanRpcUrl`, `getSorobanNetworkPassphrase`
@@ -203,6 +224,7 @@ try {
 - `@stellar/stellar-sdk` - Server, TransactionBuilder, Account
 
 ### Backwards Compatibility
+
 - All existing contract files (`hunt.ts`, `player-registration.ts`, `rewardManager.ts`) continue to work
 - New helpers are opt-in and can be gradually adopted
 - `pollTransaction()` in `hunt.ts` updated to use new helper (transparent to callers)
@@ -210,12 +232,14 @@ try {
 ## Testing
 
 ### Running Tests
+
 ```bash
 cd apps/web
 pnpm test lib/soroban/__tests__/contractHelpers.test.ts
 ```
 
 ### Coverage
+
 - All public functions tested
 - Error paths covered
 - Edge cases (timeouts, rejections, fallbacks)
@@ -225,43 +249,47 @@ pnpm test lib/soroban/__tests__/contractHelpers.test.ts
 ## Usage Examples
 
 ### Simple Write
+
 ```typescript
 const result = await writeContract({
-  contractId: "CCONTRACT...",
-  method: "create_hunt",
+  contractId: 'CCONTRACT...',
+  method: 'create_hunt',
   args: [title, description, startTime, endTime],
   wallet: getActiveWalletAdapter(),
-})
+});
 ```
 
 ### Write and Wait
+
 ```typescript
 const result = await writeContractAndWait({
-  contractId: "CCONTRACT...",
-  method: "register_player",
+  contractId: 'CCONTRACT...',
+  method: 'register_player',
   args: [huntId, playerAddress],
   wallet: getActiveWalletAdapter(),
-})
+});
 // Transaction is confirmed when this returns
 ```
 
 ### Typed Read
+
 ```typescript
 const result = await readContract<PlayerProgress>({
-  contractId: "CCONTRACT...",
-  method: "get_player_progress",
+  contractId: 'CCONTRACT...',
+  method: 'get_player_progress',
   args: [huntId, playerAddress],
-  parser: (raw) => ({ ...raw as PlayerProgress }),
-})
+  parser: (raw) => ({ ...(raw as PlayerProgress) }),
+});
 ```
 
 ### Batch Reads
+
 ```typescript
 const results = await batchReadContracts([
-  { contractId: "C1...", method: "get_balance" },
-  { contractId: "C2...", method: "get_status" },
-  { contractId: "C3...", method: "get_rewards" },
-])
+  { contractId: 'C1...', method: 'get_balance' },
+  { contractId: 'C2...', method: 'get_status' },
+  { contractId: 'C3...', method: 'get_rewards' },
+]);
 ```
 
 ## Benefits
@@ -280,40 +308,47 @@ const results = await batchReadContracts([
 For existing contract files that want to adopt the new helpers:
 
 1. **Import the helpers:**
+
    ```typescript
-   import { writeContract, readContract, pollTransactionStatus } from "@/lib/soroban/contractHelpers"
+   import {
+     writeContract,
+     readContract,
+     pollTransactionStatus,
+   } from '@/lib/soroban/contractHelpers';
    ```
 
 2. **Replace manual transaction building with `writeContract()`:**
+
    ```typescript
    // Before:
-   const tx = new TransactionBuilder(account, { fee: "100" })
+   const tx = new TransactionBuilder(account, { fee: '100' })
      .addOperation(op)
      .setTimeout(180)
-     .build()
-   const signedXdr = await wallet.signTransaction(tx.toXDR())
-   const result = await server.submitTransaction(signedXdr)
+     .build();
+   const signedXdr = await wallet.signTransaction(tx.toXDR());
+   const result = await server.submitTransaction(signedXdr);
 
    // After:
    const result = await writeContract({
      contractId,
-     method: "my_method",
+     method: 'my_method',
      args: [arg1, arg2],
      wallet,
-   })
+   });
    ```
 
 3. **Replace manual polling with `pollTransactionStatus()`:**
+
    ```typescript
    // Before:
    for (let i = 0; i < 15; i++) {
-     const res = await server.getTransaction(txHash)
-     if (res.status === "SUCCESS") return true
-     await new Promise(r => setTimeout(r, 2000))
+     const res = await server.getTransaction(txHash);
+     if (res.status === 'SUCCESS') return true;
+     await new Promise((r) => setTimeout(r, 2000));
    }
 
    // After:
-   await pollTransactionStatus(txHash)
+   await pollTransactionStatus(txHash);
    ```
 
 ## Future Enhancements
@@ -330,6 +365,7 @@ Potential improvements for future iterations:
 ## Conclusion
 
 Issue #572 is fully resolved. All acceptance criteria met:
+
 - ✅ Contract call wrappers with error handling
 - ✅ Automatic gas estimation
 - ✅ Transaction simulation before submission

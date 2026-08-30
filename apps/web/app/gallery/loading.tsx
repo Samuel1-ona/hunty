@@ -1,4 +1,4 @@
-import { GalleryGridSkeleton } from "@/components/LoadingSkeletons"
+import { GalleryGridSkeleton } from '@/components/LoadingSkeletons';
 
 export default function GalleryLoading() {
   return (
@@ -7,5 +7,5 @@ export default function GalleryLoading() {
         <GalleryGridSkeleton count={8} />
       </div>
     </div>
-  )
+  );
 }

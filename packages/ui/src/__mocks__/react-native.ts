@@ -1,28 +1,38 @@
-import React from "react";
+import React from 'react';
 
-export const View = React.forwardRef<HTMLDivElement, Record<string, unknown>>(
+export const View = React.forwardRef<HTMLDivElement, any>(
   ({ testID, style, children, ...props }, ref) => {
     return React.createElement(
-      "div",
-      { "data-testid": testID, style: typeof style === "object" ? style : undefined, ref, ...props },
-      children as React.ReactNode
+      'div',
+      {
+        'data-testid': testID,
+        style: typeof style === 'object' ? style : undefined,
+        ref,
+        ...props,
+      },
+      children
     );
   }
 );
-View.displayName = "View";
+View.displayName = 'View';
 
-export const Text = React.forwardRef<HTMLSpanElement, Record<string, unknown>>(
+export const Text = React.forwardRef<HTMLSpanElement, any>(
   ({ testID, style, children, ...props }, ref) => {
     return React.createElement(
-      "span",
-      { "data-testid": testID, style: typeof style === "object" ? style : undefined, ref, ...props },
-      children as React.ReactNode
+      'span',
+      {
+        'data-testid': testID,
+        style: typeof style === 'object' ? style : undefined,
+        ref,
+        ...props,
+      },
+      children
     );
   }
 );
-Text.displayName = "Text";
+Text.displayName = 'Text';
 
-export const Pressable = React.forwardRef<HTMLButtonElement, Record<string, unknown>>(
+export const Pressable = React.forwardRef<HTMLButtonElement, any>(
   (
     {
       testID,
@@ -38,36 +48,33 @@ export const Pressable = React.forwardRef<HTMLButtonElement, Record<string, unkn
     },
     ref
   ) => {
-    const computedStyle =
-      typeof style === "function" ? (style as (s: { pressed: boolean }) => unknown)({ pressed: false }) : style;
+    const computedStyle = typeof style === 'function' ? style({ pressed: false }) : style;
     return React.createElement(
-      "button",
+      'button',
       {
-        "data-testid": testID,
-        "aria-label": accessibilityLabel,
-        role: accessibilityRole || "button",
+        'data-testid': testID,
+        'aria-label': accessibilityLabel,
+        role: accessibilityRole || 'button',
         disabled,
-        onClick: disabled ? undefined : (onPress as React.MouseEventHandler),
-        onMouseDown: disabled ? undefined : (onPressIn as React.MouseEventHandler),
-        onMouseUp: disabled ? undefined : (onPressOut as React.MouseEventHandler),
-        style: typeof computedStyle === "object" ? computedStyle : undefined,
+        onClick: disabled ? undefined : onPress,
+        onMouseDown: disabled ? undefined : onPressIn,
+        onMouseUp: disabled ? undefined : onPressOut,
+        style: typeof computedStyle === 'object' ? computedStyle : undefined,
         ref,
         ...props,
       },
-      typeof children === "function"
-        ? (children as (s: { pressed: boolean }) => React.ReactNode)({ pressed: false })
-        : (children as React.ReactNode)
+      typeof children === 'function' ? children({ pressed: false }) : children
     );
   }
 );
-Pressable.displayName = "Pressable";
+Pressable.displayName = 'Pressable';
 
-export const ActivityIndicator = ({ ...props }: Record<string, unknown>) => {
-  return React.createElement("div", { "data-testid": "activity-indicator", ...props });
+export const ActivityIndicator = ({ color, size, ...props }: any) => {
+  return React.createElement('div', { 'data-testid': 'activity-indicator', ...props });
 };
 
 export const StyleSheet = {
-  create: <T extends Record<string, Record<string, unknown>>>(styles: T): T => styles,
+  create: <T extends Record<string, any>>(styles: T): T => styles,
 };
 
-export const useColorScheme = () => "light";
+export const useColorScheme = () => 'light';

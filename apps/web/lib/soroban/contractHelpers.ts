@@ -12,12 +12,12 @@
  * @module soroban/contractHelpers
  */
 
-import Server, { type Account, type Transaction, TransactionBuilder } from "@stellar/stellar-sdk"
+import Server, { type Account, type Transaction, TransactionBuilder } from '@stellar/stellar-sdk';
 
-import { parseStellarError, type StellarError } from "../stellarErrors"
-import { getSorobanNetworkPassphrase, getSorobanRpcUrl } from "./client"
-import { withSorobanRpcRetry } from "./rpcRetry"
-import type { ActiveWalletAdapter } from "../walletAdapter"
+import { parseStellarError, type StellarError } from '../stellarErrors';
+import { getSorobanNetworkPassphrase, getSorobanRpcUrl } from './client';
+import { withSorobanRpcRetry } from './rpcRetry';
+import type { ActiveWalletAdapter } from '../walletAdapter';
 
 // ============================================================================
 // TYPES
@@ -28,87 +28,87 @@ import type { ActiveWalletAdapter } from "../walletAdapter"
  */
 export type ContractWriteConfig = {
   /** Contract ID (address) on the Stellar network */
-  contractId: string
+  contractId: string;
   /** Method name to invoke on the contract */
-  method: string
+  method: string;
   /** Method arguments (Soroban-compatible types) */
-  args?: unknown[]
+  args?: unknown[];
   /** Wallet adapter used to sign the transaction */
-  wallet: ActiveWalletAdapter
+  wallet: ActiveWalletAdapter;
   /** Optional custom fee in stroops — skips auto gas estimation when set */
-  fee?: string
+  fee?: string;
   /** Transaction timeout in seconds (default: 180) */
-  timeout?: number
-}
+  timeout?: number;
+};
 
 /**
  * Configuration for contract read operations.
  */
 export type ContractReadConfig = {
   /** Contract ID (address) on the Stellar network */
-  contractId: string
+  contractId: string;
   /** Method name to call on the contract */
-  method: string
+  method: string;
   /** Method arguments (Soroban-compatible types) */
-  args?: unknown[]
+  args?: unknown[];
   /** Optional parser to transform the raw RPC response into a typed value */
-  parser?: <T>(raw: unknown) => T
-}
+  parser?: <T>(raw: unknown) => T;
+};
 
 /**
  * Result from a contract write operation.
  */
 export type ContractWriteResult = {
   /** Transaction hash */
-  txHash: string
+  txHash: string;
   /** Estimated fee used in stroops */
-  gasEstimate: number
+  gasEstimate: number;
   /** Transaction status string returned by simulation */
-  simulationStatus: string
+  simulationStatus: string;
   /** Raw response from the RPC */
-  raw?: unknown
-}
+  raw?: unknown;
+};
 
 /**
  * Result from a contract read operation.
  */
 export type ContractReadResult<T = unknown> = {
   /** Parsed data returned by the contract */
-  data: T
+  data: T;
   /** Raw value from the RPC before parsing */
-  raw?: unknown
-}
+  raw?: unknown;
+};
 
 /**
  * Gas estimation result.
  */
 export type GasEstimation = {
   /** Estimated total fee in stroops (base + resource) */
-  fee: string
+  fee: string;
   /** Estimated CPU instructions consumed */
-  cpuInstructions?: number
+  cpuInstructions?: number;
   /** Estimated memory bytes consumed */
-  memoryBytes?: number
-}
+  memoryBytes?: number;
+};
 
 /**
  * Transaction simulation result.
  */
 export type SimulationResult = {
   /** Whether the simulation succeeded */
-  success: boolean
+  success: boolean;
   /** Status string from the simulation response */
-  status: string
+  status: string;
   /** Resource cost reported by simulation */
   cost?: {
-    cpuInsns: string
-    memBytes: string
-  }
+    cpuInsns: string;
+    memBytes: string;
+  };
   /** Error message when simulation fails */
-  error?: string
+  error?: string;
   /** Raw simulation response */
-  raw?: unknown
-}
+  raw?: unknown;
+};
 
 // ============================================================================
 // ERROR HANDLING
@@ -119,23 +119,20 @@ export type SimulationResult = {
  * `StellarError`, optionally prefixed with a context label.
  */
 export function normalizeContractError(error: unknown, context?: string): StellarError {
-  const stellarError = parseStellarError(error)
-  if (!context) return stellarError
-  return { ...stellarError, message: `${context}: ${stellarError.message}` }
+  const stellarError = parseStellarError(error);
+  if (!context) return stellarError;
+  return { ...stellarError, message: `${context}: ${stellarError.message}` };
 }
 
 /**
  * Runs `operation` and re-throws any error as a normalized `StellarError`
  * with the supplied context prefix.
  */
-async function withErrorHandling<T>(
-  operation: () => Promise<T>,
-  context: string
-): Promise<T> {
+async function withErrorHandling<T>(operation: () => Promise<T>, context: string): Promise<T> {
   try {
-    return await operation()
+    return await operation();
   } catch (error) {
-    throw normalizeContractError(error, context)
+    throw normalizeContractError(error, context);
   }
 }
 
@@ -145,7 +142,7 @@ async function withErrorHandling<T>(
 
 /** Creates a Soroban RPC Server pointed at the configured endpoint. */
 function createServer(): Server {
-  return new Server(getSorobanRpcUrl())
+  return new Server(getSorobanRpcUrl());
 }
 
 // ============================================================================
@@ -169,36 +166,34 @@ export async function estimateGas(
   return withErrorHandling(async () => {
     const maybeServer = server as Server & {
       simulateTransaction?: (tx: Transaction) => Promise<{
-        minResourceFee?: string
-        cost?: { cpuInsns?: string; memBytes?: string }
-      }>
-    }
+        minResourceFee?: string;
+        cost?: { cpuInsns?: string; memBytes?: string };
+      }>;
+    };
 
-    if (typeof maybeServer.simulateTransaction !== "function") {
-      return { fee: "100100" } // conservative fallback
+    if (typeof maybeServer.simulateTransaction !== 'function') {
+      return { fee: '100100' }; // conservative fallback
     }
 
     const simulation = await withSorobanRpcRetry(
       () => maybeServer.simulateTransaction(transaction),
       { timeoutMs: 10000, maxAttempts: 2 }
-    )
+    );
 
-    const BASE_FEE = 100
+    const BASE_FEE = 100;
     const resourceFee = simulation?.minResourceFee
       ? parseInt(simulation.minResourceFee, 10)
-      : 100000
-    const fee = (BASE_FEE + resourceFee).toString()
+      : 100000;
+    const fee = (BASE_FEE + resourceFee).toString();
 
     return {
       fee,
       cpuInstructions: simulation?.cost?.cpuInsns
         ? parseInt(simulation.cost.cpuInsns, 10)
         : undefined,
-      memoryBytes: simulation?.cost?.memBytes
-        ? parseInt(simulation.cost.memBytes, 10)
-        : undefined,
-    }
-  }, "Gas estimation failed")
+      memoryBytes: simulation?.cost?.memBytes ? parseInt(simulation.cost.memBytes, 10) : undefined,
+    };
+  }, 'Gas estimation failed');
 }
 
 // ============================================================================
@@ -223,36 +218,36 @@ export async function simulateTransaction(
   return withErrorHandling(async () => {
     const maybeServer = server as Server & {
       simulateTransaction?: (tx: Transaction) => Promise<{
-        status?: string
-        error?: string
-        cost?: { cpuInsns?: string; memBytes?: string }
-      }>
+        status?: string;
+        error?: string;
+        cost?: { cpuInsns?: string; memBytes?: string };
+      }>;
+    };
+
+    if (typeof maybeServer.simulateTransaction !== 'function') {
+      return { success: true, status: 'SIMULATION_NOT_AVAILABLE' };
     }
 
-    if (typeof maybeServer.simulateTransaction !== "function") {
-      return { success: true, status: "SIMULATION_NOT_AVAILABLE" }
-    }
+    const result = await withSorobanRpcRetry(() => maybeServer.simulateTransaction(transaction), {
+      timeoutMs: 10000,
+      maxAttempts: 2,
+    });
 
-    const result = (await withSorobanRpcRetry(
-      () => maybeServer.simulateTransaction(transaction),
-      { timeoutMs: 10000, maxAttempts: 2 }
-    ))
-
-    const success = !result?.error && result?.status !== "FAILED"
+    const success = !result?.error && result?.status !== 'FAILED';
 
     return {
       success,
-      status: result?.status ?? "UNKNOWN",
+      status: result?.status ?? 'UNKNOWN',
       cost: result?.cost
         ? {
-            cpuInsns: result.cost.cpuInsns ?? "0",
-            memBytes: result.cost.memBytes ?? "0",
+            cpuInsns: result.cost.cpuInsns ?? '0',
+            memBytes: result.cost.memBytes ?? '0',
           }
         : undefined,
       error: result?.error,
       raw: result,
-    }
-  }, "Transaction simulation failed")
+    };
+  }, 'Transaction simulation failed');
 }
 
 // ============================================================================
@@ -283,98 +278,85 @@ export async function simulateTransaction(
  * console.log(`Submitted: ${result.txHash} — gas: ${result.gasEstimate} stroops`)
  * ```
  */
-export async function writeContract(
-  config: ContractWriteConfig
-): Promise<ContractWriteResult> {
-  const {
-    contractId,
-    method,
-    args = [],
-    wallet,
-    fee: customFee,
-    timeout = 180,
-  } = config
+export async function writeContract(config: ContractWriteConfig): Promise<ContractWriteResult> {
+  const { contractId, method, args = [], wallet, fee: customFee, timeout = 180 } = config;
 
   return withErrorHandling(async () => {
     // 1. Resolve wallet public key and load on-chain account state
-    const publicKey = await withSorobanRpcRetry(
-      () => wallet.getPublicKey(),
-      { timeoutMs: 5000, maxAttempts: 2 }
-    )
+    const publicKey = await withSorobanRpcRetry(() => wallet.getPublicKey(), {
+      timeoutMs: 5000,
+      maxAttempts: 2,
+    });
 
-    const server = createServer()
-    const account = (await withSorobanRpcRetry(
-      () => server.getAccount(publicKey),
-      { timeoutMs: 10000, maxAttempts: 3 }
-    )) as Account
+    const server = createServer();
+    const account = (await withSorobanRpcRetry(() => server.getAccount(publicKey), {
+      timeoutMs: 10000,
+      maxAttempts: 3,
+    })) as Account;
 
     // 2. Serialize the call payload
-    const payload = JSON.stringify({ contract: contractId, method, args })
-    const opName = `${method}:${Date.now()}`
+    const payload = JSON.stringify({ contract: contractId, method, args });
+    const opName = `${method}:${Date.now()}`;
 
     /**
      * Builds a transaction carrying the payload as manageData.
      * In production this would be a proper Soroban InvokeHostFunctionOp.
      */
     function buildTx(fee: string): Transaction {
-      return (
-        new TransactionBuilder(account, {
-          fee,
-          networkPassphrase: getSorobanNetworkPassphrase(),
+      return new TransactionBuilder(account, {
+        fee,
+        networkPassphrase: getSorobanNetworkPassphrase(),
+      })
+        .addOperation({
+          type: 'manageData',
+          name: opName,
+          value: payload,
         })
-          .addOperation({
-            type: "manageData",
-            name: opName,
-            value: payload,
-          })
-          .setTimeout(timeout)
-          .build()
-      )
+        .setTimeout(timeout)
+        .build();
     }
 
     // 3. Estimate gas (or use caller-supplied fee)
-    let gasEstimate: GasEstimation
+    let gasEstimate: GasEstimation;
     if (customFee) {
-      gasEstimate = { fee: customFee }
+      gasEstimate = { fee: customFee };
     } else {
-      const preliminaryTx = buildTx("100")
-      gasEstimate = await estimateGas(server, preliminaryTx)
+      const preliminaryTx = buildTx('100');
+      gasEstimate = await estimateGas(server, preliminaryTx);
     }
 
     // 4. Build the final transaction with the correct fee
-    const finalTx = buildTx(gasEstimate.fee)
+    const finalTx = buildTx(gasEstimate.fee);
 
     // 5. Simulate — abort early if the contract call would fail
-    const simulation = await simulateTransaction(server, finalTx)
+    const simulation = await simulateTransaction(server, finalTx);
     if (!simulation.success) {
-      throw new Error(
-        `Transaction simulation failed: ${simulation.error ?? simulation.status}`
-      )
+      throw new Error(`Transaction simulation failed: ${simulation.error ?? simulation.status}`);
     }
 
     // 6. Wallet signing
-    const signedXdr = await withSorobanRpcRetry(
-      () => wallet.signTransaction(finalTx.toXDR()),
-      { timeoutMs: 30000, maxAttempts: 2 }
-    )
+    const signedXdr = await withSorobanRpcRetry(() => wallet.signTransaction(finalTx.toXDR()), {
+      timeoutMs: 30000,
+      maxAttempts: 2,
+    });
 
     // 7. Submit with retry
     const result = (await withSorobanRpcRetry(
       async () => {
-        const res = (await server.submitTransaction(signedXdr)) as { hash?: string }
-        if (!res?.hash) throw new Error("Transaction submission returned no hash")
-        return res
+        const res = (await server.submitTransaction(signedXdr)) as { hash?: string };
+        if (!res?.hash) throw new Error('Transaction submission returned no hash');
+        return res;
       },
       { timeoutMs: 15000, maxAttempts: 3 }
-    )) as { hash: string }
+    )) as { hash: string };
 
     return {
       txHash: result.hash,
       gasEstimate: parseInt(gasEstimate.fee, 10),
       simulationStatus: simulation.status,
       raw: result,
-    }
-  }, `Contract write failed [${method}]`)
+    };
+  }, `Contract write failed [${method}]`);
 }
 
 // ============================================================================
@@ -400,48 +382,46 @@ export async function writeContract(
 export async function readContract<T = unknown>(
   config: ContractReadConfig
 ): Promise<ContractReadResult<T>> {
-  const { contractId, method, args = [], parser } = config
+  const { contractId, method, args = [], parser } = config;
 
   return withErrorHandling(async () => {
-    const rpcUrl = getSorobanRpcUrl()
+    const rpcUrl = getSorobanRpcUrl();
 
-    const response = (await withSorobanRpcRetry(
+    const response = await withSorobanRpcRetry(
       async () => {
         const res = await fetch(rpcUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            jsonrpc: "2.0",
+            jsonrpc: '2.0',
             id: 1,
-            method: "invokeContractFunction",
+            method: 'invokeContractFunction',
             params: {
               contractId,
               function: method,
               args: args.map(String),
             },
           }),
-        })
+        });
         if (!res.ok) {
-          throw new Error(`RPC request failed with status ${res.status}`)
+          throw new Error(`RPC request failed with status ${res.status}`);
         }
         return res.json() as Promise<{
-          result?: unknown
-          error?: { message?: string }
-        }>
+          result?: unknown;
+          error?: { message?: string };
+        }>;
       },
       { timeoutMs: 10000, maxAttempts: 3 }
-    ))
+    );
 
     if (response.error) {
-      throw new Error(response.error.message ?? "Contract read failed")
+      throw new Error(response.error.message ?? 'Contract read failed');
     }
 
-    const data = parser
-      ? parser<T>(response.result)
-      : (response.result as T)
+    const data = parser ? parser<T>(response.result) : (response.result as T);
 
-    return { data, raw: response.result }
-  }, `Contract read failed [${method}]`)
+    return { data, raw: response.result };
+  }, `Contract read failed [${method}]`);
 }
 
 // ============================================================================
@@ -469,70 +449,68 @@ export async function pollTransactionStatus(
   txHash: string,
   options?: {
     /** Maximum number of poll attempts (default: 15) */
-    maxAttempts?: number
+    maxAttempts?: number;
     /** Delay between attempts in ms (default: 2000) */
-    pollInterval?: number
+    pollInterval?: number;
     /** Called before each poll attempt */
-    onPoll?: (attempt: number) => void
+    onPoll?: (attempt: number) => void;
   }
 ): Promise<boolean> {
-  const { maxAttempts = 15, pollInterval = 2000, onPoll } = options ?? {}
+  const { maxAttempts = 15, pollInterval = 2000, onPoll } = options ?? {};
 
   return withErrorHandling(async () => {
     // Development mock transactions resolve instantly
-    if (txHash.startsWith("mock_tx_")) {
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      return true
+    if (txHash.startsWith('mock_tx_')) {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      return true;
     }
 
-    const server = createServer()
+    const server = createServer();
     const maybeServer = server as Server & {
-      getTransaction?: (hash: string) => Promise<{ status?: string }>
-    }
+      getTransaction?: (hash: string) => Promise<{ status?: string }>;
+    };
 
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-      onPoll?.(attempt)
+      onPoll?.(attempt);
 
       try {
-        let status: string | undefined
+        let status: string | undefined;
 
-        if (typeof maybeServer.getTransaction === "function") {
+        if (typeof maybeServer.getTransaction === 'function') {
           const res = (await maybeServer.getTransaction(txHash)) as {
-            status?: string
-          }
-          status = res?.status
+            status?: string;
+          };
+          status = res?.status;
         } else {
           const rpcRes = (await fetch(getSorobanRpcUrl(), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              jsonrpc: "2.0",
+              jsonrpc: '2.0',
               id: 1,
-              method: "getTransaction",
+              method: 'getTransaction',
               params: { hash: txHash },
             }),
-          }).then((r) => r.json())) as { result?: { status?: string } }
+          }).then((r) => r.json())) as { result?: { status?: string } };
 
-          status = rpcRes?.result?.status
+          status = rpcRes?.result?.status;
         }
 
-        if (status && status !== "NOT_FOUND" && status !== "PENDING") {
-          if (status === "SUCCESS") return true
-          throw new Error(`Transaction failed with status: ${status}`)
+        if (status && status !== 'NOT_FOUND' && status !== 'PENDING') {
+          if (status === 'SUCCESS') return true;
+          throw new Error(`Transaction failed with status: ${status}`);
         }
       } catch (error) {
-        if (error instanceof Error && error.message.includes("Transaction failed")) {
-          throw error
+        if (error instanceof Error && error.message.includes('Transaction failed')) {
+          throw error;
         }
       }
 
-      await new Promise((resolve) => setTimeout(resolve, pollInterval))
+      await new Promise((resolve) => setTimeout(resolve, pollInterval));
     }
 
-    throw new Error(
-      `Transaction polling timed out after ${maxAttempts} attempts`
-    )
-  }, "Transaction polling failed")
+    throw new Error(`Transaction polling timed out after ${maxAttempts} attempts`);
+  }, 'Transaction polling failed');
 }
 
 // ============================================================================
@@ -557,9 +535,9 @@ export async function writeContractAndWait(
   config: ContractWriteConfig,
   pollOptions?: Parameters<typeof pollTransactionStatus>[1]
 ): Promise<ContractWriteResult> {
-  const result = await writeContract(config)
-  await pollTransactionStatus(result.txHash, pollOptions)
-  return result
+  const result = await writeContract(config);
+  await pollTransactionStatus(result.txHash, pollOptions);
+  return result;
 }
 
 /**
@@ -584,10 +562,10 @@ export async function batchReadContracts<T = unknown>(
   return Promise.all(
     configs.map(async (cfg) => {
       try {
-        return await readContract<T>(cfg)
+        return await readContract<T>(cfg);
       } catch (error) {
-        return { error: normalizeContractError(error) }
+        return { error: normalizeContractError(error) };
       }
     })
-  )
+  );
 }

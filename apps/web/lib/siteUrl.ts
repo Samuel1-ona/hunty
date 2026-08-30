@@ -12,7 +12,7 @@
  */
 
 /** Fallback origin used when NEXT_PUBLIC_BASE_URL is not configured. */
-export const DEFAULT_BASE_URL = "https://hunty.app"
+export const DEFAULT_BASE_URL = 'https://hunty.app';
 
 /**
  * Returns the site's absolute base URL with no trailing slash.
@@ -21,12 +21,12 @@ export const DEFAULT_BASE_URL = "https://hunty.app"
  *   getBaseUrl() // "https://hunty.app"
  *   getBaseUrl("/leaderboard/1") // "https://hunty.app/leaderboard/1"
  */
-export function getBaseUrl(path = ""): string {
-  const raw = process.env.NEXT_PUBLIC_BASE_URL || DEFAULT_BASE_URL
-  const base = raw.replace(/\/+$/, "")
+export function getBaseUrl(path = ''): string {
+  const raw = process.env.NEXT_PUBLIC_BASE_URL || DEFAULT_BASE_URL;
+  const base = raw.replace(/\/+$/, '');
 
-  if (!path) return base
+  if (!path) return base;
 
-  const suffix = path.startsWith("/") ? path : `/${path}`
-  return `${base}${suffix}`
+  const suffix = path.startsWith('/') ? path : `/${path}`;
+  return `${base}${suffix}`;
 }

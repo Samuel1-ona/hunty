@@ -1,29 +1,29 @@
-"use client"
+'use client';
 
-import { useParams } from "next/navigation"
-import { useContext, useEffect, useState } from "react"
+import { useParams } from 'next/navigation';
+import { useContext, useEffect, useState } from 'react';
 
-import { Header } from "@/components/Header"
-import { HuntReplayDetail } from "@/components/HuntReplayDetail"
-import { WalletContext } from "@/lib/context/WalletContext"
-import { getAttemptById } from "@/lib/huntAttemptHistory"
-import type { HuntAttemptRecord } from "@/lib/types"
+import { Header } from '@/components/Header';
+import { HuntReplayDetail } from '@/components/HuntReplayDetail';
+import { WalletContext } from '@/lib/context/WalletContext';
+import { getAttemptById } from '@/lib/huntAttemptHistory';
+import type { HuntAttemptRecord } from '@/lib/types';
 
 export default function HuntReplayPage() {
-  const params = useParams<{ attemptId: string }>()
-  const wallet = useContext(WalletContext)
-  const connected = wallet?.connected ?? false
-  const publicKey = wallet?.publicKey ?? ""
-  const [attempt, setAttempt] = useState<HuntAttemptRecord | null>(null)
+  const params = useParams<{ attemptId: string }>();
+  const wallet = useContext(WalletContext);
+  const connected = wallet?.connected ?? false;
+  const publicKey = wallet?.publicKey ?? '';
+  const [attempt, setAttempt] = useState<HuntAttemptRecord | null>(null);
 
   useEffect(() => {
     if (!connected || !publicKey || !params.attemptId) {
-      setAttempt(null)
-      return
+      setAttempt(null);
+      return;
     }
 
-    setAttempt(getAttemptById(publicKey, params.attemptId))
-  }, [connected, params.attemptId, publicKey])
+    setAttempt(getAttemptById(publicKey, params.attemptId));
+  }, [connected, params.attemptId, publicKey]);
 
   return (
     <div className="min-h-screen bg-linear-to-tr from-blue-100 bg-purple-100 to-[#f9f9ff] pb-20">
@@ -43,5 +43,5 @@ export default function HuntReplayPage() {
         )}
       </div>
     </div>
-  )
+  );
 }

@@ -1,8 +1,8 @@
-import { afterEach,beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { debounce } from "../debounce";
+import { debounce } from '../debounce';
 
-describe("debounce", () => {
+describe('debounce', () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -11,14 +11,14 @@ describe("debounce", () => {
     vi.useRealTimers();
   });
 
-  it("does not call the function immediately", () => {
+  it('does not call the function immediately', () => {
     const fn = vi.fn();
     const debounced = debounce(fn, 100);
     debounced();
     expect(fn).not.toHaveBeenCalled();
   });
 
-  it("calls the function after the specified delay", () => {
+  it('calls the function after the specified delay', () => {
     const fn = vi.fn();
     const debounced = debounce(fn, 100);
 
@@ -30,7 +30,7 @@ describe("debounce", () => {
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
-  it("calls the function only once for multiple rapid invocations", () => {
+  it('calls the function only once for multiple rapid invocations', () => {
     const fn = vi.fn();
     const debounced = debounce(fn, 100);
 
@@ -42,28 +42,28 @@ describe("debounce", () => {
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
-  it("passes the arguments from the last invocation", () => {
+  it('passes the arguments from the last invocation', () => {
     const fn = vi.fn();
     const debounced = debounce(fn, 100);
 
-    debounced("first");
-    debounced("second");
-    debounced("third");
+    debounced('first');
+    debounced('second');
+    debounced('third');
 
     vi.advanceTimersByTime(100);
-    expect(fn).toHaveBeenCalledWith("third");
+    expect(fn).toHaveBeenCalledWith('third');
   });
 
-  it("passes multiple arguments correctly", () => {
+  it('passes multiple arguments correctly', () => {
     const fn = vi.fn();
     const debounced = debounce(fn, 100);
 
-    debounced("a", 1, true);
+    debounced('a', 1, true);
     vi.advanceTimersByTime(100);
-    expect(fn).toHaveBeenCalledWith("a", 1, true);
+    expect(fn).toHaveBeenCalledWith('a', 1, true);
   });
 
-  it("resets the delay when called again before timeout", () => {
+  it('resets the delay when called again before timeout', () => {
     const fn = vi.fn();
     const debounced = debounce(fn, 100);
 
@@ -78,7 +78,7 @@ describe("debounce", () => {
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
-  it("works with zero delay", () => {
+  it('works with zero delay', () => {
     const fn = vi.fn();
     const debounced = debounce(fn, 0);
 
@@ -89,8 +89,8 @@ describe("debounce", () => {
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
-  describe("cancel", () => {
-    it("prevents the function from being called after cancel", () => {
+  describe('cancel', () => {
+    it('prevents the function from being called after cancel', () => {
       const fn = vi.fn();
       const debounced = debounce(fn, 100);
 
@@ -101,7 +101,7 @@ describe("debounce", () => {
       expect(fn).not.toHaveBeenCalled();
     });
 
-    it("allows subsequent calls after cancel", () => {
+    it('allows subsequent calls after cancel', () => {
       const fn = vi.fn();
       const debounced = debounce(fn, 100);
 
@@ -113,14 +113,14 @@ describe("debounce", () => {
       expect(fn).toHaveBeenCalledTimes(1);
     });
 
-    it("is safe to call when no timeout is pending", () => {
+    it('is safe to call when no timeout is pending', () => {
       const fn = vi.fn();
       const debounced = debounce(fn, 100);
 
       expect(() => debounced.cancel()).not.toThrow();
     });
 
-    it("is safe to call multiple times", () => {
+    it('is safe to call multiple times', () => {
       const fn = vi.fn();
       const debounced = debounce(fn, 100);
 
@@ -130,7 +130,7 @@ describe("debounce", () => {
     });
   });
 
-  it("supports multiple independent debounced functions", () => {
+  it('supports multiple independent debounced functions', () => {
     const fn1 = vi.fn();
     const fn2 = vi.fn();
     const debounced1 = debounce(fn1, 100);
@@ -147,26 +147,26 @@ describe("debounce", () => {
     expect(fn2).toHaveBeenCalledTimes(1);
   });
 
-  it("handles multiple separate invocation groups", () => {
+  it('handles multiple separate invocation groups', () => {
     const fn = vi.fn();
     const debounced = debounce(fn, 100);
 
-    debounced("a");
+    debounced('a');
     vi.advanceTimersByTime(100);
     expect(fn).toHaveBeenCalledTimes(1);
-    expect(fn).toHaveBeenCalledWith("a");
+    expect(fn).toHaveBeenCalledWith('a');
 
-    debounced("b");
+    debounced('b');
     vi.advanceTimersByTime(100);
     expect(fn).toHaveBeenCalledTimes(2);
-    expect(fn).toHaveBeenCalledWith("b");
+    expect(fn).toHaveBeenCalledWith('b');
   });
 
-  it("returns a function with a cancel method", () => {
+  it('returns a function with a cancel method', () => {
     const fn = vi.fn();
     const debounced = debounce(fn, 100);
 
-    expect(typeof debounced).toBe("function");
-    expect(typeof (debounced as unknown as { cancel: () => void }).cancel).toBe("function");
+    expect(typeof debounced).toBe('function');
+    expect(typeof (debounced as unknown as { cancel: () => void }).cancel).toBe('function');
   });
 });

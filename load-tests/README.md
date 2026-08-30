@@ -1,6 +1,5 @@
 # Load Testing — hunty API
 
-
 Load tests using [k6](https://k6.io/) covering the acceptance criteria for issue #667.
 
 ## Acceptance Criteria
@@ -75,22 +74,22 @@ BASE_URL=https://staging.hunty.app k6 run load-tests/k6/load-test.js
 
 ## Scenarios
 
-| Scenario     | VUs      | Duration | Purpose                        |
-|--------------|----------|----------|--------------------------------|
-| Normal load  | 20       | 5 min    | Typical daily traffic          |
-| Peak load    | 100      | 6 min    | High-traffic periods           |
-| Spike        | 200      | ~1.5 min | Sudden burst (viral event etc) |
-| Bottleneck   | up to 300| ~22 min  | Find the breaking point        |
+| Scenario    | VUs       | Duration | Purpose                        |
+| ----------- | --------- | -------- | ------------------------------ |
+| Normal load | 20        | 5 min    | Typical daily traffic          |
+| Peak load   | 100       | 6 min    | High-traffic periods           |
+| Spike       | 200       | ~1.5 min | Sudden burst (viral event etc) |
+| Bottleneck  | up to 300 | ~22 min  | Find the breaking point        |
 
 ---
 
 ## Thresholds
 
-| Metric        | Target   |
-|---------------|----------|
-| p95 latency   | < 200ms  |
-| p99 latency   | < 500ms  |
-| Error rate    | < 1%     |
+| Metric      | Target  |
+| ----------- | ------- |
+| p95 latency | < 200ms |
+| p99 latency | < 500ms |
+| Error rate  | < 1%    |
 
 ---
 
@@ -103,6 +102,7 @@ The GitHub Actions workflow (`.github/workflows/load-tests.yml`) runs automatica
 - Manually via **Actions → Load Tests → Run workflow**
 
 The workflow:
+
 1. Runs the smoke test first
 2. Runs the full load test suite only if smoke passes
 3. Checks that p95 < 200ms and fails the build if not
@@ -112,16 +112,16 @@ The workflow:
 
 Add these in **Settings → Secrets → Actions**:
 
-| Secret              | Description                   |
-|---------------------|-------------------------------|
-| `LOAD_TEST_EMAIL`   | Test account email            |
-| `LOAD_TEST_PASSWORD`| Test account password         |
+| Secret               | Description           |
+| -------------------- | --------------------- |
+| `LOAD_TEST_EMAIL`    | Test account email    |
+| `LOAD_TEST_PASSWORD` | Test account password |
 
 ### Required Variables
 
-| Variable       | Description                        |
-|----------------|------------------------------------|
-| `STAGING_URL`  | Staging base URL (fallback default)|
+| Variable      | Description                         |
+| ------------- | ----------------------------------- |
+| `STAGING_URL` | Staging base URL (fallback default) |
 
 ---
 

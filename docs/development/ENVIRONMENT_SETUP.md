@@ -20,31 +20,31 @@ Each environment is configured via dedicated `.env.*` files:
 - `.env.staging` - Staging/preview configuration
 - `.env.production` - Production configuration
 
-### Public Variables (NEXT_PUBLIC_*)
+### Public Variables (NEXT*PUBLIC*\*)
 
 These variables are available to both server and client code:
 
-| Variable | Purpose | Development | Staging | Production |
-|----------|---------|-------------|---------|-----------|
-| `NEXT_PUBLIC_ENVIRONMENT` | Current environment identifier | `development` | `staging` | `production` |
-| `NEXT_PUBLIC_BASE_URL` | Application base URL | `http://localhost:3000` | `https://staging.hunty.app` | `https://hunty.app` |
-| `NEXT_PUBLIC_SOROBAN_RPC_URL` | Soroban RPC endpoint | Testnet | Testnet | Mainnet |
-| `NEXT_PUBLIC_SOROBAN_NETWORK_PASSPHRASE` | Stellar network identifier | Test network | Test network | Public network |
-| `NEXT_PUBLIC_SOROBAN_NETWORK_TYPE` | Network type | `testnet` | `testnet` | `mainnet` |
-| `NEXT_PUBLIC_API_URL` | Backend API URL | `http://localhost:3000/api` | Staging API | Production API |
-| `NEXT_PUBLIC_GRAPHQL_URL` | GraphQL endpoint | `http://localhost:4000/graphql` | Staging GraphQL | Production GraphQL |
-| `NEXT_PUBLIC_ENABLE_STAGING_BANNER` | Show staging indicator | `false` | `true` | `false` |
+| Variable                                 | Purpose                        | Development                     | Staging                     | Production          |
+| ---------------------------------------- | ------------------------------ | ------------------------------- | --------------------------- | ------------------- |
+| `NEXT_PUBLIC_ENVIRONMENT`                | Current environment identifier | `development`                   | `staging`                   | `production`        |
+| `NEXT_PUBLIC_BASE_URL`                   | Application base URL           | `http://localhost:3000`         | `https://staging.hunty.app` | `https://hunty.app` |
+| `NEXT_PUBLIC_SOROBAN_RPC_URL`            | Soroban RPC endpoint           | Testnet                         | Testnet                     | Mainnet             |
+| `NEXT_PUBLIC_SOROBAN_NETWORK_PASSPHRASE` | Stellar network identifier     | Test network                    | Test network                | Public network      |
+| `NEXT_PUBLIC_SOROBAN_NETWORK_TYPE`       | Network type                   | `testnet`                       | `testnet`                   | `mainnet`           |
+| `NEXT_PUBLIC_API_URL`                    | Backend API URL                | `http://localhost:3000/api`     | Staging API                 | Production API      |
+| `NEXT_PUBLIC_GRAPHQL_URL`                | GraphQL endpoint               | `http://localhost:4000/graphql` | Staging GraphQL             | Production GraphQL  |
+| `NEXT_PUBLIC_ENABLE_STAGING_BANNER`      | Show staging indicator         | `false`                         | `true`                      | `false`             |
 
 ### Secret Variables
 
 These variables are kept private (server-side only) and must be configured in CI/CD:
 
-| Variable | Purpose | Scope |
-|----------|---------|-------|
-| `DATABASE_URL` | Database connection string | All environments |
-| `PINATA_JWT` | IPFS gateway authentication | All environments |
-| `RESEND_API_KEY` | Email service API key | All environments |
-| `NEXT_PUBLIC_SENTRY_DSN` | Error tracking endpoint | All environments |
+| Variable                 | Purpose                     | Scope            |
+| ------------------------ | --------------------------- | ---------------- |
+| `DATABASE_URL`           | Database connection string  | All environments |
+| `PINATA_JWT`             | IPFS gateway authentication | All environments |
+| `RESEND_API_KEY`         | Email service API key       | All environments |
+| `NEXT_PUBLIC_SENTRY_DSN` | Error tracking endpoint     | All environments |
 
 ## Soroban Network Configuration
 
@@ -76,6 +76,7 @@ The `vercel.json` configuration:
 The `.github/workflows/deploy-environments.yml` workflow:
 
 1. **Triggers on branch push**:
+
    - `staging` branch → Staging deployment (testnet)
    - `main` branch → Production deployment (mainnet)
    - Manual workflow dispatch for flexibility
@@ -89,7 +90,7 @@ The `.github/workflows/deploy-environments.yml` workflow:
 ### Server-Side Usage
 
 ```typescript
-import { getEnvironmentConfig } from "@/lib/config/environment";
+import { getEnvironmentConfig } from '@/lib/config/environment';
 
 const config = getEnvironmentConfig();
 
@@ -157,11 +158,13 @@ Update `DATABASE_URL` in each `.env.*` file to point to the correct database.
 ## Local Development Setup
 
 1. **Copy environment template**:
+
    ```bash
    cp .env.development .env.local
    ```
 
 2. **Update values** in `.env.local`:
+
    ```bash
    DATABASE_URL=postgresql://user:password@localhost:5432/hunty_dev
    PINATA_JWT=your_pinata_jwt
@@ -169,6 +172,7 @@ Update `DATABASE_URL` in each `.env.*` file to point to the correct database.
    ```
 
 3. **Run development server**:
+
    ```bash
    npm run dev
    ```
@@ -182,6 +186,7 @@ Update `DATABASE_URL` in each `.env.*` file to point to the correct database.
 Configure these secrets for automatic deployments:
 
 **Staging Secrets**:
+
 - `STAGING_SOROBAN_RPC_URL`
 - `STAGING_SOROBAN_NETWORK_PASSPHRASE`
 - `STAGING_API_URL`
@@ -191,6 +196,7 @@ Configure these secrets for automatic deployments:
 - `STAGING_RESEND_API_KEY`
 
 **Production Secrets**:
+
 - `PROD_SOROBAN_RPC_URL`
 - `PROD_SOROBAN_NETWORK_PASSPHRASE`
 - `PROD_API_URL`
@@ -200,6 +206,7 @@ Configure these secrets for automatic deployments:
 - `PROD_RESEND_API_KEY`
 
 **Vercel Secrets**:
+
 - `VERCEL_TOKEN` - Personal access token
 - `VERCEL_ORG_ID` - Organization ID
 - `VERCEL_PROJECT_ID` - Project ID

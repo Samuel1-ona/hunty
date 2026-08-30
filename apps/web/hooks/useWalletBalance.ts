@@ -1,10 +1,10 @@
-"use client"
+'use client';
 
-import { useCallback, useContext, useEffect, useMemo, useRef } from "react"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { WalletContext } from "@/lib/context/WalletContext"
-import { fetchPlayerNfts } from "@/lib/nftUtils"
-import { queryCachePolicy, queryKeys } from "@/lib/queryKeys"
+import { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { WalletContext } from '@/lib/context/WalletContext';
+import { fetchPlayerNfts } from '@/lib/nftUtils';
+import { queryCachePolicy, queryKeys } from '@/lib/queryKeys';
 import {
   describeWalletBalanceError,
   fetchWalletBalance,
@@ -13,73 +13,73 @@ import {
   type NftCountSnapshot,
   type TokenBalance,
   type WalletBalanceSnapshot,
-} from "@/lib/wallet/balance"
+} from '@/lib/wallet/balance';
 import {
   subscribeToWalletBalanceEvents,
   type WalletBalanceDelta,
-} from "@/lib/wallet/balanceEvents"
+} from '@/lib/wallet/balanceEvents';
 
 /** How long an unconfirmed optimistic value may stand before we force a refetch. */
-export const OPTIMISTIC_RECONCILE_MS = 6_000
+export const OPTIMISTIC_RECONCILE_MS = 6_000;
 
 /** Shared empty array so a token-less wallet does not hand out a new identity each render. */
-const EMPTY_TOKENS: TokenBalance[] = []
+const EMPTY_TOKENS: TokenBalance[] = [];
 
 /** Transient failures worth retrying; a bad address or unreadable payload is not. */
 function shouldRetry(failureCount: number, error: unknown): boolean {
   if (error instanceof WalletBalanceError) {
-    if (error.kind === "invalid-address" || error.kind === "parse") return false
+    if (error.kind === 'invalid-address' || error.kind === 'parse') return false;
   }
-  return failureCount < 2
+  return failureCount < 2;
 }
 
-const retryDelay = (attempt: number) => Math.min(1_000 * 2 ** attempt, 8_000)
+const retryDelay = (attempt: number) => Math.min(1_000 * 2 ** attempt, 8_000);
 
 export type WalletBalanceState = {
   /** Address the balance belongs to, or `""` when no wallet is connected. */
-  address: string
+  address: string;
   /** Native XLM balance; `null` until the first successful read. */
-  xlm: number | null
+  xlm: number | null;
   /** `xlm` rendered for display, or `"—"` when unknown. */
-  formattedXlm: string
+  formattedXlm: string;
   /** Non-native token holdings, richest first. Empty until the first read. */
-  tokens: TokenBalance[]
+  tokens: TokenBalance[];
   /** Number of NFTs owned; `null` until the first successful read. */
-  nftCount: number | null
+  nftCount: number | null;
   /** True when Horizon has no record of the account (never funded). */
-  unfunded: boolean
+  unfunded: boolean;
   /**
    * The XLM balance is not known yet and has not failed — show a placeholder.
    * Deliberately keyed to the balance query alone: the NFT count comes from a
    * different source that can resolve far sooner, and letting it satisfy the
    * loading check meant the placeholder never appeared in practice.
    */
-  isLoading: boolean
+  isLoading: boolean;
   /** A refresh is in flight while a previous value is already on screen. */
-  isRefreshing: boolean
+  isRefreshing: boolean;
   /** Showing a predicted value that chain state has not confirmed. */
-  isOptimistic: boolean
+  isOptimistic: boolean;
   /** User-facing failure message, or `null` when the last read succeeded. */
-  error: string | null
+  error: string | null;
   /**
    * A read failed *and* a previously loaded balance is still on screen, so the
    * value shown is real but possibly out of date. False when the balance never
    * loaded at all — nothing can be stale if it was never fresh.
    */
-  isStale: boolean
+  isStale: boolean;
   /**
    * A read failed and left nothing to display, so the user needs a way out.
    * Independent of the NFT count: a successful NFT read must not hide the
    * retry affordance for a balance that failed.
    */
-  canRetry: boolean
+  canRetry: boolean;
   /** Epoch millis of the last successful read, or `null`. */
-  lastUpdated: number | null
+  lastUpdated: number | null;
   /** Forces an immediate refetch of both balance and NFT count. */
-  refresh: () => void
+  refresh: () => void;
   /** Applies a predicted change locally, pending confirmation. */
-  applyOptimisticDelta: (delta: WalletBalanceDelta) => void
-}
+  applyOptimisticDelta: (delta: WalletBalanceDelta) => void;
+};
 
 /**
  * Live wallet balance for the connected account.
@@ -98,16 +98,16 @@ export type WalletBalanceState = {
  * is safe to call outside a `WalletProvider` (it simply stays idle).
  */
 export function useWalletBalance(options: { address?: string } = {}): WalletBalanceState {
-  const wallet = useContext(WalletContext)
-  const contextAddress = wallet?.connected ? wallet.publicKey : ""
-  const address = options.address ?? contextAddress ?? ""
-  const enabled = address.length > 0
+  const wallet = useContext(WalletContext);
+  const contextAddress = wallet?.connected ? wallet.publicKey : '';
+  const address = options.address ?? contextAddress ?? '';
+  const enabled = address.length > 0;
 
-  const queryClient = useQueryClient()
-  const reconcileTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const queryClient = useQueryClient();
+  const reconcileTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const balanceKey = useMemo(() => queryKeys.wallet.balance(address), [address])
-  const nftKey = useMemo(() => queryKeys.wallet.nftCount(address), [address])
+  const balanceKey = useMemo(() => queryKeys.wallet.balance(address), [address]);
+  const nftKey = useMemo(() => queryKeys.wallet.nftCount(address), [address]);
 
   const balanceQuery = useQuery<WalletBalanceSnapshot>({
     queryKey: balanceKey,
@@ -122,7 +122,7 @@ export function useWalletBalance(options: { address?: string } = {}): WalletBala
     refetchIntervalInBackground: false,
     retry: shouldRetry,
     retryDelay,
-  })
+  });
 
   const nftQuery = useQuery<NftCountSnapshot>({
     queryKey: nftKey,
@@ -139,26 +139,26 @@ export function useWalletBalance(options: { address?: string } = {}): WalletBala
     refetchIntervalInBackground: false,
     retry: shouldRetry,
     retryDelay,
-  })
+  });
 
   const clearReconcileTimer = useCallback(() => {
     if (reconcileTimer.current) {
-      clearTimeout(reconcileTimer.current)
-      reconcileTimer.current = null
+      clearTimeout(reconcileTimer.current);
+      reconcileTimer.current = null;
     }
-  }, [])
+  }, []);
 
   const refresh = useCallback(() => {
-    clearReconcileTimer()
-    if (!enabled) return
-    void queryClient.invalidateQueries({ queryKey: balanceKey })
-    void queryClient.invalidateQueries({ queryKey: nftKey })
-  }, [clearReconcileTimer, enabled, queryClient, balanceKey, nftKey])
+    clearReconcileTimer();
+    if (!enabled) return;
+    void queryClient.invalidateQueries({ queryKey: balanceKey });
+    void queryClient.invalidateQueries({ queryKey: nftKey });
+  }, [clearReconcileTimer, enabled, queryClient, balanceKey, nftKey]);
 
   const applyOptimisticDelta = useCallback(
     (delta: WalletBalanceDelta) => {
-      if (!enabled) return
-      const { xlmDelta = 0, nftDelta = 0 } = delta
+      if (!enabled) return;
+      const { xlmDelta = 0, nftDelta = 0 } = delta;
 
       if (xlmDelta !== 0) {
         queryClient.setQueryData<WalletBalanceSnapshot>(balanceKey, (previous) =>
@@ -166,53 +166,53 @@ export function useWalletBalance(options: { address?: string } = {}): WalletBala
             ? // A balance can never go negative, so a prediction that would
               // overshoot is clamped rather than rendered as nonsense.
               { ...previous, xlm: Math.max(0, previous.xlm + xlmDelta), optimistic: true }
-            : previous,
-        )
+            : previous
+        );
       }
 
       if (nftDelta !== 0) {
         queryClient.setQueryData<NftCountSnapshot>(nftKey, (previous) =>
           previous
             ? { ...previous, count: Math.max(0, previous.count + nftDelta), optimistic: true }
-            : previous,
-        )
+            : previous
+        );
       }
 
       // Safety net: if no settle event ever arrives (a transaction helper that
       // does not report back, a dropped promise), reconcile anyway.
-      clearReconcileTimer()
-      reconcileTimer.current = setTimeout(refresh, OPTIMISTIC_RECONCILE_MS)
+      clearReconcileTimer();
+      reconcileTimer.current = setTimeout(refresh, OPTIMISTIC_RECONCILE_MS);
     },
-    [enabled, queryClient, balanceKey, nftKey, clearReconcileTimer, refresh],
-  )
+    [enabled, queryClient, balanceKey, nftKey, clearReconcileTimer, refresh]
+  );
 
   useEffect(() => {
     return subscribeToWalletBalanceEvents((event) => {
-      if (event.type === "optimistic") {
-        applyOptimisticDelta({ xlmDelta: event.xlmDelta, nftDelta: event.nftDelta })
+      if (event.type === 'optimistic') {
+        applyOptimisticDelta({ xlmDelta: event.xlmDelta, nftDelta: event.nftDelta });
       } else {
-        refresh()
+        refresh();
       }
-    })
-  }, [applyOptimisticDelta, refresh])
+    });
+  }, [applyOptimisticDelta, refresh]);
 
-  useEffect(() => clearReconcileTimer, [clearReconcileTimer])
+  useEffect(() => clearReconcileTimer, [clearReconcileTimer]);
 
-  const balanceData = balanceQuery.data
-  const nftData = nftQuery.data
+  const balanceData = balanceQuery.data;
+  const nftData = nftQuery.data;
 
   // The balance is the headline figure, so its failure wins the error slot; an
   // NFT-count failure only surfaces when the balance itself loaded fine.
-  const failure = balanceQuery.error ?? nftQuery.error
-  const error = failure ? describeWalletBalanceError(failure) : null
+  const failure = balanceQuery.error ?? nftQuery.error;
+  const error = failure ? describeWalletBalanceError(failure) : null;
 
   // Each half is judged on its own query. Mixing them meant a fast-resolving
   // NFT count could mask the balance's real state — hiding the placeholder
   // while it loaded, and hiding the retry control when it failed.
-  const balanceFailed = balanceQuery.error != null
-  const nftFailed = nftQuery.error != null
-  const hasBalance = balanceData != null
-  const hasNft = nftData != null
+  const balanceFailed = balanceQuery.error != null;
+  const nftFailed = nftQuery.error != null;
+  const hasBalance = balanceData != null;
+  const hasNft = nftData != null;
 
   return {
     address,
@@ -230,5 +230,5 @@ export function useWalletBalance(options: { address?: string } = {}): WalletBala
     lastUpdated: balanceData?.fetchedAt ?? null,
     refresh,
     applyOptimisticDelta,
-  }
+  };
 }

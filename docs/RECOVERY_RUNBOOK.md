@@ -43,7 +43,7 @@ Use the provided restore script to overwrite the current database with the backu
 ./scripts/db-restore.sh ./data/backups/db_backup_<TIMESTAMP>.sql.gz
 ```
 
-*Note: The script will prompt for confirmation before terminating existing connections and restoring the data.*
+_Note: The script will prompt for confirmation before terminating existing connections and restoring the data._
 
 ---
 
@@ -109,11 +109,20 @@ Add the following entry (adjusting the path to the repository):
 
 ## Point-in-Time Recovery (PITR) Capability
 
-While logical backups (pg_dump) provide a solid baseline, true Point-in-Time Recovery requires Write-Ahead Log (WAL) archiving. 
+While logical backups (pg_dump) provide a solid baseline, true Point-in-Time Recovery requires Write-Ahead Log (WAL) archiving.
 If sub-hour precision is required, you can enable continuous WAL archiving by adjusting the `db` service command in `docker-compose.yml`:
 
 ```yaml
-    command: ["postgres", "-c", "wal_level=replica", "-c", "archive_mode=on", "-c", "archive_command=cp %p /var/lib/postgresql/data/archive/%f"]
+command:
+  [
+    'postgres',
+    '-c',
+    'wal_level=replica',
+    '-c',
+    'archive_mode=on',
+    '-c',
+    'archive_command=cp %p /var/lib/postgresql/data/archive/%f',
+  ]
 ```
 
-*Currently, the hourly snapshot architecture with automated verification is utilized to meet the 1-hour RPO.*
+_Currently, the hourly snapshot architecture with automated verification is utilized to meet the 1-hour RPO._

@@ -31,18 +31,12 @@ export function QueryStateWrapper<TData, TError>({
     return <ErrorState error={error} onRetry={refetch} />;
   }
 
-  const isDataEmpty = isEmpty 
-    ? isEmpty(data as NonNullable<TData>) 
+  const isDataEmpty = isEmpty
+    ? isEmpty(data as NonNullable<TData>)
     : (Array.isArray(data) && data.length === 0) || !data;
 
   if (isDataEmpty) {
-    return (
-      <>
-        {customEmptyState || (
-          <EmptyState title={emptyTitle} message={emptyMessage} />
-        )}
-      </>
-    );
+    return <>{customEmptyState || <EmptyState title={emptyTitle} message={emptyMessage} />}</>;
   }
 
   return <>{children(data as NonNullable<TData>)}</>;

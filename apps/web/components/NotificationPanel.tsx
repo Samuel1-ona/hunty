@@ -1,7 +1,7 @@
-"use client"
+'use client';
 
-import { ArrowDown, ArrowUp, Bell, ChevronDown, ChevronUp, Users, X } from "lucide-react"
-import React, { useCallback,useEffect, useState } from "react"
+import { ArrowDown, ArrowUp, Bell, ChevronDown, ChevronUp, Users, X } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import {
   clearNotifications,
@@ -9,92 +9,92 @@ import {
   getUnreadNotificationCount,
   markAllNotificationsRead,
   markNotificationRead,
-} from "@/lib/notifications/rankTracker"
-import type { LeaderboardRankNotification } from "@/lib/notifications/types"
-import { cn } from "@/lib/utils"
+} from '@/lib/notifications/rankTracker';
+import type { LeaderboardRankNotification } from '@/lib/notifications/types';
+import { cn } from '@/lib/utils';
 
 interface NotificationPanelProps {
-  open: boolean
-  onClose: () => void
+  open: boolean;
+  onClose: () => void;
 }
 
 function formatTimestamp(timestamp: number): string {
-  const diff = Date.now() - timestamp
-  const seconds = Math.floor(diff / 1000)
-  if (seconds < 60) return "just now"
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
+  const diff = Date.now() - timestamp;
+  const seconds = Math.floor(diff / 1000);
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 }
 
-function getNotificationIcon(type: LeaderboardRankNotification["type"]) {
+function getNotificationIcon(type: LeaderboardRankNotification['type']) {
   switch (type) {
-    case "rank_improved":
-      return <ChevronUp className="w-4 h-4 text-green-500" />
-    case "rank_dropped":
-      return <ChevronDown className="w-4 h-4 text-red-500" />
-    case "overtaken":
-      return <Users className="w-4 h-4 text-orange-500" />
+    case 'rank_improved':
+      return <ChevronUp className="w-4 h-4 text-green-500" />;
+    case 'rank_dropped':
+      return <ChevronDown className="w-4 h-4 text-red-500" />;
+    case 'overtaken':
+      return <Users className="w-4 h-4 text-orange-500" />;
   }
 }
 
 function getNotificationTitle(notification: LeaderboardRankNotification): string {
   switch (notification.type) {
-    case "rank_improved":
-      return `Rank improved! #${notification.previousRank} → #${notification.currentRank}`
-    case "rank_dropped":
-      return `Rank dropped #${notification.previousRank} → #${notification.currentRank}`
-    case "overtaken":
-      return `Overtaken by ${notification.overtakenBy || "another player"}`
+    case 'rank_improved':
+      return `Rank improved! #${notification.previousRank} → #${notification.currentRank}`;
+    case 'rank_dropped':
+      return `Rank dropped #${notification.previousRank} → #${notification.currentRank}`;
+    case 'overtaken':
+      return `Overtaken by ${notification.overtakenBy || 'another player'}`;
   }
 }
 
 function getNotificationDescription(notification: LeaderboardRankNotification): string {
-  const hunt = notification.huntTitle || `Hunt #${notification.huntId}`
+  const hunt = notification.huntTitle || `Hunt #${notification.huntId}`;
   switch (notification.type) {
-    case "rank_improved":
-      return `You moved up in "${hunt}"`
-    case "rank_dropped":
-      return `You moved down in "${hunt}"`
-    case "overtaken":
-      return `In "${hunt}" — now at #${notification.currentRank}`
+    case 'rank_improved':
+      return `You moved up in "${hunt}"`;
+    case 'rank_dropped':
+      return `You moved down in "${hunt}"`;
+    case 'overtaken':
+      return `In "${hunt}" — now at #${notification.currentRank}`;
   }
 }
 
 export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
-  const [notifications, setNotifications] = useState<LeaderboardRankNotification[]>([])
-  const [unreadCount, setUnreadCount] = useState(0)
+  const [notifications, setNotifications] = useState<LeaderboardRankNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const refresh = useCallback(() => {
-    setNotifications(getStoredNotifications())
-    setUnreadCount(getUnreadNotificationCount())
-  }, [])
+    setNotifications(getStoredNotifications());
+    setUnreadCount(getUnreadNotificationCount());
+  }, []);
 
   useEffect(() => {
     if (open) {
-      refresh()
+      refresh();
     }
-  }, [open, refresh])
+  }, [open, refresh]);
 
   const handleMarkRead = (id: string) => {
-    markNotificationRead(id)
-    refresh()
-  }
+    markNotificationRead(id);
+    refresh();
+  };
 
   const handleMarkAllRead = () => {
-    markAllNotificationsRead()
-    refresh()
-  }
+    markAllNotificationsRead();
+    refresh();
+  };
 
   const handleClearAll = () => {
-    clearNotifications()
-    refresh()
-  }
+    clearNotifications();
+    refresh();
+  };
 
-  if (!open) return null
+  if (!open) return null;
 
   return (
     <div className="absolute right-0 mt-2 w-80 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950 shadow-xl z-50 overflow-hidden backdrop-blur-xl">
@@ -149,18 +149,20 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
                 key={n.id}
                 onClick={() => handleMarkRead(n.id)}
                 className={cn(
-                  "w-full text-left px-4 py-3 flex items-start gap-3 transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50 border-b border-slate-100 dark:border-white/5",
-                  !n.read && "bg-blue-50/50 dark:bg-blue-900/10"
+                  'w-full text-left px-4 py-3 flex items-start gap-3 transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50 border-b border-slate-100 dark:border-white/5',
+                  !n.read && 'bg-blue-50/50 dark:bg-blue-900/10'
                 )}
               >
-                <div className="mt-0.5 shrink-0">
-                  {getNotificationIcon(n.type)}
-                </div>
+                <div className="mt-0.5 shrink-0">{getNotificationIcon(n.type)}</div>
                 <div className="min-w-0 flex-1">
-                  <p className={cn(
-                    "text-sm truncate",
-                    !n.read ? "font-semibold text-slate-900 dark:text-slate-100" : "text-slate-700 dark:text-slate-300"
-                  )}>
+                  <p
+                    className={cn(
+                      'text-sm truncate',
+                      !n.read
+                        ? 'font-semibold text-slate-900 dark:text-slate-100'
+                        : 'text-slate-700 dark:text-slate-300'
+                    )}
+                  >
                     {getNotificationTitle(n)}
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
@@ -176,5 +178,5 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
         )}
       </div>
     </div>
-  )
+  );
 }

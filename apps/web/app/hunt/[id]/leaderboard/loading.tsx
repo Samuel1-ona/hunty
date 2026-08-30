@@ -1,4 +1,4 @@
-import { LeaderboardTableSkeleton } from "@/components/LoadingSkeletons"
+import { LeaderboardTableSkeleton } from '@/components/LoadingSkeletons';
 
 export default function HuntLeaderboardLoading() {
   return (
@@ -13,5 +13,5 @@ export default function HuntLeaderboardLoading() {
         </div>
       </div>
     </div>
-  )
+  );
 }

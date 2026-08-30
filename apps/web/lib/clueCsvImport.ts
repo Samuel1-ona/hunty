@@ -13,7 +13,7 @@
  * - `difficulty` is optional; one of easy | medium | hard (default: medium)
  */
 
-import type { Clue, ClueDifficulty } from "./types";
+import type { Clue, ClueDifficulty } from './types';
 
 export interface CsvClueRow {
   row: number; // 1-based data row (excluding header)
@@ -36,13 +36,13 @@ export interface CsvImportResult {
   ok: boolean;
 }
 
-const VALID_DIFFICULTIES = new Set(["easy", "medium", "hard"]);
+const VALID_DIFFICULTIES = new Set(['easy', 'medium', 'hard']);
 const MAX_QUESTION_LENGTH = 500;
 const MAX_ANSWER_LENGTH = 500;
 
 function splitCsvLine(line: string): string[] {
   const out: string[] = [];
-  let cur = "";
+  let cur = '';
   let inQuotes = false;
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
@@ -53,9 +53,9 @@ function splitCsvLine(line: string): string[] {
       } else {
         inQuotes = !inQuotes;
       }
-    } else if (ch === "," && !inQuotes) {
+    } else if (ch === ',' && !inQuotes) {
       out.push(cur);
-      cur = "";
+      cur = '';
     } else {
       cur += ch;
     }
@@ -75,54 +75,58 @@ export function parseCluesCsv(csvText: string, huntId: number): CsvImportResult 
     .filter((l) => l.length > 0);
 
   if (lines.length === 0) {
-    return { rows, errors: [{ row: 0, field: "file", message: "CSV is empty" }], ok: false };
+    return { rows, errors: [{ row: 0, field: 'file', message: 'CSV is empty' }], ok: false };
   }
 
   const header = splitCsvLine(lines[0]).map((h) => h.toLowerCase());
-  const requiredCols = ["question", "answer", "points"];
+  const requiredCols = ['question', 'answer', 'points'];
   for (const col of requiredCols) {
     if (!header.includes(col)) {
       return {
         rows,
-        errors: [{ row: 0, field: "header", message: `Missing required column "${col}"` }],
+        errors: [{ row: 0, field: 'header', message: `Missing required column "${col}"` }],
         ok: false,
       };
     }
   }
 
   const colIdx = (name: string) => header.indexOf(name);
-  const qIdx = colIdx("question");
-  const aIdx = colIdx("answer");
-  const pIdx = colIdx("points");
-  const dIdx = colIdx("difficulty");
+  const qIdx = colIdx('question');
+  const aIdx = colIdx('answer');
+  const pIdx = colIdx('points');
+  const dIdx = colIdx('difficulty');
 
   for (let i = 1; i < lines.length; i++) {
     const rowNumber = i; // 1-based data row
     const cells = splitCsvLine(lines[i]);
     let rowValid = true;
 
-    const question = cells[qIdx] ?? "";
-    const answer = aIdx >= 0 ? cells[aIdx] ?? "" : "";
-    const pointsRaw = pIdx >= 0 ? cells[pIdx] ?? "" : "";
-    const difficultyRaw = dIdx >= 0 ? cells[dIdx] ?? "" : "";
+    const question = cells[qIdx] ?? '';
+    const answer = aIdx >= 0 ? (cells[aIdx] ?? '') : '';
+    const pointsRaw = pIdx >= 0 ? (cells[pIdx] ?? '') : '';
+    const difficultyRaw = dIdx >= 0 ? (cells[dIdx] ?? '') : '';
 
     if (!question) {
-      errors.push({ row: rowNumber, field: "question", message: "Question is required" });
+      errors.push({ row: rowNumber, field: 'question', message: 'Question is required' });
       rowValid = false;
     } else if (question.length > MAX_QUESTION_LENGTH) {
       errors.push({
         row: rowNumber,
-        field: "question",
+        field: 'question',
         message: `Question exceeds ${MAX_QUESTION_LENGTH} characters`,
       });
       rowValid = false;
     }
 
     if (!answer) {
-      errors.push({ row: rowNumber, field: "answer", message: "Answer is required" });
+      errors.push({ row: rowNumber, field: 'answer', message: 'Answer is required' });
       rowValid = false;
     } else if (answer.length > MAX_ANSWER_LENGTH) {
-      errors.push({ row: rowNumber, field: "answer", message: `Answer exceeds ${MAX_ANSWER_LENGTH} characters` });
+      errors.push({
+        row: rowNumber,
+        field: 'answer',
+        message: `Answer exceeds ${MAX_ANSWER_LENGTH} characters`,
+      });
       rowValid = false;
     }
 
@@ -130,7 +134,7 @@ export function parseCluesCsv(csvText: string, huntId: number): CsvImportResult 
     if (!pointsRaw || !Number.isInteger(points) || points <= 0) {
       errors.push({
         row: rowNumber,
-        field: "points",
+        field: 'points',
         message: `Points must be a positive integer (got "${pointsRaw}")`,
       });
       rowValid = false;
@@ -142,8 +146,8 @@ export function parseCluesCsv(csvText: string, huntId: number): CsvImportResult 
       if (!VALID_DIFFICULTIES.has(normalized)) {
         errors.push({
           row: rowNumber,
-          field: "difficulty",
-          message: `Difficulty must be one of: ${[...VALID_DIFFICULTIES].join(", ")}`,
+          field: 'difficulty',
+          message: `Difficulty must be one of: ${[...VALID_DIFFICULTIES].join(', ')}`,
         });
         rowValid = false;
       } else {

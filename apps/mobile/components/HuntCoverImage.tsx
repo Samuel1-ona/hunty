@@ -1,4 +1,4 @@
-import { GATEWAY_COUNT,resolveImageSrc } from '@lib/ipfs';
+import { GATEWAY_COUNT, resolveImageSrc } from '@lib/ipfs';
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';

@@ -7,9 +7,9 @@
  * bundle. Only the plain `BudgetInfo` type (safe, data-only) is shared.
  */
 
-import type { BudgetInfo } from "@/lib/paymaster/types";
+import type { BudgetInfo } from '@/lib/paymaster/types';
 
-export type PaymasterBudgetErrorKind = "invalid-address" | "network" | "http" | "parse";
+export type PaymasterBudgetErrorKind = 'invalid-address' | 'network' | 'http' | 'parse';
 
 export class PaymasterBudgetError extends Error {
   readonly kind: PaymasterBudgetErrorKind;
@@ -17,7 +17,7 @@ export class PaymasterBudgetError extends Error {
 
   constructor(kind: PaymasterBudgetErrorKind, message: string, status?: number) {
     super(message);
-    this.name = "PaymasterBudgetError";
+    this.name = 'PaymasterBudgetError';
     this.kind = kind;
     this.status = status;
   }
@@ -31,10 +31,10 @@ const STELLAR_PUBLIC_KEY_PATTERN = /^G[A-Z2-7]{55}$/;
  */
 export async function fetchPaymasterBudget(
   address: string,
-  init?: { signal?: AbortSignal },
+  init?: { signal?: AbortSignal }
 ): Promise<BudgetInfo> {
   if (!STELLAR_PUBLIC_KEY_PATTERN.test(address)) {
-    throw new PaymasterBudgetError("invalid-address", "Invalid Stellar wallet address.");
+    throw new PaymasterBudgetError('invalid-address', 'Invalid Stellar wallet address.');
   }
 
   let response: Response;
@@ -44,16 +44,16 @@ export async function fetchPaymasterBudget(
     });
   } catch (err) {
     throw new PaymasterBudgetError(
-      "network",
-      err instanceof Error ? err.message : "Network request failed.",
+      'network',
+      err instanceof Error ? err.message : 'Network request failed.'
     );
   }
 
   if (!response.ok) {
     throw new PaymasterBudgetError(
-      "http",
+      'http',
       `Paymaster budget request failed with status ${response.status}.`,
-      response.status,
+      response.status
     );
   }
 
@@ -61,8 +61,8 @@ export async function fetchPaymasterBudget(
     return (await response.json()) as BudgetInfo;
   } catch (err) {
     throw new PaymasterBudgetError(
-      "parse",
-      err instanceof Error ? err.message : "Failed to parse paymaster budget response.",
+      'parse',
+      err instanceof Error ? err.message : 'Failed to parse paymaster budget response.'
     );
   }
 }

@@ -6,23 +6,23 @@ blockchain via the Stellar SDK and Freighter wallet extension.
 
 ## Scripts
 
-| Script | Description |
-| --- | --- |
-| `dev` | Start the Next.js dev server |
-| `build` | Production build |
-| `analyze` | Build with `ANALYZE=true` for bundle analysis |
-| `bundle:check` | Check bundle sizes against budgets |
-| `start` | Start the production server |
-| `lint` | Run Next.js ESLint |
-| `typecheck` | Run TypeScript in `--noEmit` mode |
-| `test` | Run Vitest (single run) |
-| `test:watch` | Run Vitest in watch mode |
-| `test:coverage` | Run Vitest with v8 coverage |
-| `e2e` | Run Playwright end-to-end tests |
-| `smoke` | Run Playwright smoke suite |
-| `test:e2e:ui` | Open Playwright interactive UI |
-| `perf:budget` | Check performance budgets |
-| `clean` | Remove `.next` build cache |
+| Script          | Description                                   |
+| --------------- | --------------------------------------------- |
+| `dev`           | Start the Next.js dev server                  |
+| `build`         | Production build                              |
+| `analyze`       | Build with `ANALYZE=true` for bundle analysis |
+| `bundle:check`  | Check bundle sizes against budgets            |
+| `start`         | Start the production server                   |
+| `lint`          | Run Next.js ESLint                            |
+| `typecheck`     | Run TypeScript in `--noEmit` mode             |
+| `test`          | Run Vitest (single run)                       |
+| `test:watch`    | Run Vitest in watch mode                      |
+| `test:coverage` | Run Vitest with v8 coverage                   |
+| `e2e`           | Run Playwright end-to-end tests               |
+| `smoke`         | Run Playwright smoke suite                    |
+| `test:e2e:ui`   | Open Playwright interactive UI                |
+| `perf:budget`   | Check performance budgets                     |
+| `clean`         | Remove `.next` build cache                    |
 
 ## Key dependencies
 

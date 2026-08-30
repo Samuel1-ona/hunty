@@ -8,10 +8,10 @@
  *   const { currentProgress, setProgress } = usePlayerStore()
  */
 
-import { create } from "zustand"
-import { persist, type PersistStorage } from "zustand/middleware"
-import * as SecureStore from "expo-secure-store"
-import type { PlayerProgress } from "@hunty/types"
+import { create } from 'zustand';
+import { persist, type PersistStorage } from 'zustand/middleware';
+import * as SecureStore from 'expo-secure-store';
+import type { PlayerProgress } from '@hunty/types';
 
 // ─── Wallet Store ─────────────────────────────────────────────────────────────
 
@@ -75,14 +75,12 @@ export const useWalletStore = create<WalletState>()(
         removeItem: async (key: string) => {
           await SecureStore.deleteItemAsync(key);
         },
-      } as unknown as PersistStorage<
-        Pick<WalletState, "walletAddress" | "network" | "watchOnlyAddress">
-      >,
+      } as unknown as PersistStorage<WalletState>,
       // Persist wallet identity + network; balance is fetched on demand.
       partialize: (state) => ({
-          walletAddress: state.walletAddress,
-          network: state.network,
-          watchOnlyAddress: state.watchOnlyAddress,
+        walletAddress: state.walletAddress,
+        network: state.network,
+        watchOnlyAddress: state.watchOnlyAddress,
       }),
     },
   ),

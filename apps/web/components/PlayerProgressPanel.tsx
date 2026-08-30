@@ -1,12 +1,12 @@
-"use client"
+'use client';
 
-import { CheckCircle2,Trophy } from "lucide-react"
-import React from "react"
+import { CheckCircle2, Trophy } from 'lucide-react';
+import React from 'react';
 
 interface PlayerProgressPanelProps {
-  cluesSolved: number
-  totalClues: number
-  totalPoints: number
+  cluesSolved: number;
+  totalClues: number;
+  totalPoints: number;
 }
 
 export const PlayerProgressPanel: React.FC<PlayerProgressPanelProps> = ({
@@ -14,7 +14,7 @@ export const PlayerProgressPanel: React.FC<PlayerProgressPanelProps> = ({
   totalClues,
   totalPoints,
 }) => {
-  const percentage = totalClues > 0 ? Math.round((cluesSolved / totalClues) * 100) : 0
+  const percentage = totalClues > 0 ? Math.round((cluesSolved / totalClues) * 100) : 0;
 
   return (
     <div className="w-full max-w-md mx-auto bg-white dark:bg-slate-900 rounded-2xl shadow-md border border-slate-200 dark:border-white/10 p-5">
@@ -22,7 +22,9 @@ export const PlayerProgressPanel: React.FC<PlayerProgressPanelProps> = ({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Trophy className="w-5 h-5 text-yellow-500" />
-          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Total Points</span>
+          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            Total Points
+          </span>
         </div>
         <span className="text-lg font-bold bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] dark:from-blue-400 dark:to-blue-600 bg-clip-text text-transparent">
           {totalPoints}
@@ -41,7 +43,7 @@ export const PlayerProgressPanel: React.FC<PlayerProgressPanelProps> = ({
       </div>
 
       {/* Progress bar */}
-      <div 
+      <div
         className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"
         role="progressbar"
         aria-valuenow={percentage}
@@ -56,7 +58,9 @@ export const PlayerProgressPanel: React.FC<PlayerProgressPanelProps> = ({
       </div>
 
       {/* Percentage label */}
-      <p className="text-xs text-slate-400 dark:text-slate-500 text-right mt-1">{percentage}% complete</p>
+      <p className="text-xs text-slate-400 dark:text-slate-500 text-right mt-1">
+        {percentage}% complete
+      </p>
     </div>
-  )
-}
+  );
+};

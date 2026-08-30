@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   AlertTriangle,
@@ -10,17 +10,16 @@ import {
   HelpCircle,
   Pencil,
   RefreshCw,
-  Sparkles,
   Trash2,
-} from "lucide-react";
-import dynamic from "next/dynamic";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
+} from 'lucide-react';
+import dynamic from 'next/dynamic';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
-import { Button } from "@hunty/ui";
-import { Card, CardDescription, CardTitle } from "@hunty/ui";
+import { Button } from '@/components/ui/button';
+import { Card, CardDescription, CardTitle } from '@/components/ui/card';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,16 +29,16 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
 
-const OnboardingTour = dynamic(() => import("@/components/OnboardingTour"), {
+const OnboardingTour = dynamic(() => import('@/components/OnboardingTour'), {
   ssr: false,
-})
-import { Header } from "@/components/Header";
-import { RewardHistorySection } from "@/components/RewardHistorySection";
-import { DraftListPanel } from "@/components/DraftListPanel";
-import { useWallet } from "@/lib/context/WalletContext";
-import { promoteHunt } from "@/lib/contracts/rewardManager";
+});
+import { Header } from '@/components/Header';
+import { RewardHistorySection } from '@/components/RewardHistorySection';
+import { DraftListPanel } from '@/components/DraftListPanel';
+import { useWallet } from '@/lib/context/WalletContext';
+import { promoteHunt } from '@/lib/contracts/rewardManager';
 import {
   duplicateHunt,
   getArchivedHunts,
@@ -52,18 +51,17 @@ import {
   softDeleteHunts,
   SPOTLIGHT_FEE_XLM,
   unhideHuntsFromPublic,
-} from "@/lib/huntStore";
-import { saveHuntAsTemplate } from "@/lib/communityTemplates";
-import { logger } from "@/lib/logger";
-import { fetchCreatorRewardHistory } from "@/lib/rewardHistory";
-import type { StoredHunt } from "@/lib/types";
+} from '@/lib/huntStore';
+import { logger } from '@/lib/logger';
+import { fetchCreatorRewardHistory } from '@/lib/rewardHistory';
+import type { StoredHunt } from '@/lib/types';
 
-function StatusBadge({ status }: { status: StoredHunt["status"] }) {
-  const config: Partial<Record<StoredHunt["status"], string>> = {
-    Draft: "bg-amber-100 text-amber-800 border-amber-200",
-    Active: "bg-emerald-100 text-emerald-800 border-emerald-200",
-    Completed: "bg-slate-100 text-slate-700 border-slate-200",
-    Cancelled: "bg-red-100 text-red-800 border-red-200",
+function StatusBadge({ status }: { status: StoredHunt['status'] }) {
+  const config: Partial<Record<StoredHunt['status'], string>> = {
+    Draft: 'bg-amber-100 text-amber-800 border-amber-200',
+    Active: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    Completed: 'bg-slate-100 text-slate-700 border-slate-200',
+    Cancelled: 'bg-red-100 text-red-800 border-red-200',
   };
   const style = config[status] ?? config.Draft!;
   return (
@@ -84,20 +82,14 @@ export default function CreatorPage() {
   const [rewardHistory, setRewardHistory] = useState<
     Awaited<ReturnType<typeof fetchCreatorRewardHistory>>
   >([]);
-  const [activeTab, setActiveTab] = useState<"active" | "archived" | "deleted">("active");
+  const [activeTab, setActiveTab] = useState<'active' | 'archived' | 'deleted'>('active');
   const [selectedHunts, setSelectedHunts] = useState<number[]>([]);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
-    action: "archive" | "unarchive" | "soft-delete" | "restore" | "permanent-delete";
+    action: 'archive' | 'unarchive' | 'soft-delete' | 'restore' | 'permanent-delete';
     huntIds: number[];
-  }>({ open: false, action: "archive", huntIds: [] });
+  }>({ open: false, action: 'archive', huntIds: [] });
   const [promotingHuntId, setPromotingHuntId] = useState<number | null>(null);
-
-  const [templateDialog, setTemplateDialog] = useState<{ open: boolean; huntId: number | null }>({
-    open: false,
-    huntId: null,
-  });
-  const [templateAuthor, setTemplateAuthor] = useState("");
 
   const loadHunts = useCallback(() => {
     if (!publicKey) {
@@ -128,7 +120,7 @@ export default function CreatorPage() {
         const data = await fetchCreatorRewardHistory(publicKey);
         if (!cancelled) setRewardHistory(data);
       } catch (err) {
-        logger.error("Failed to load creator reward history:", err);
+        logger.error('Failed to load creator reward history:', err);
       }
     };
 
@@ -140,9 +132,9 @@ export default function CreatorPage() {
   }, [publicKey]);
 
   const handleCardClick = (hunt: StoredHunt) => {
-    if (hunt.status === "Draft") {
+    if (hunt.status === 'Draft') {
       router.push(`/hunty?edit=${hunt.id}`);
-    } else if (hunt.status === "Active") {
+    } else if (hunt.status === 'Active') {
       router.push(`/creator/stats/${hunt.id}`);
     }
     // Completed: no navigation or could open a read-only summary
@@ -154,17 +146,17 @@ export default function CreatorPage() {
       const receipt = await promoteHunt(huntId, SPOTLIGHT_FEE_XLM);
       loadHunts();
       toast.success(
-        `Spotlight active until ${new Date(receipt.promotedUntil * 1000).toLocaleString()}.`,
+        `Spotlight active until ${new Date(receipt.promotedUntil * 1000).toLocaleString()}.`
       );
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to promote hunt.");
+      toast.error(error instanceof Error ? error.message : 'Failed to promote hunt.');
     } finally {
       setPromotingHuntId(null);
     }
   };
 
   const handleAction = (
-    action: "archive" | "unarchive" | "soft-delete" | "restore" | "permanent-delete",
+    action: 'archive' | 'unarchive' | 'soft-delete' | 'restore' | 'permanent-delete',
     huntIds: number[]
   ) => {
     setConfirmDialog({ open: true, action, huntIds });
@@ -174,24 +166,24 @@ export default function CreatorPage() {
     const { action, huntIds } = confirmDialog;
 
     switch (action) {
-      case "archive":
+      case 'archive':
         hideHuntsFromPublic(huntIds);
         break;
-      case "unarchive":
+      case 'unarchive':
         unhideHuntsFromPublic(huntIds);
         break;
-      case "soft-delete":
+      case 'soft-delete':
         softDeleteHunts(huntIds);
         break;
-      case "restore":
+      case 'restore':
         restoreHunts(huntIds);
         break;
-      case "permanent-delete":
+      case 'permanent-delete':
         permanentDeleteHunts(huntIds);
         break;
     }
 
-    setConfirmDialog({ open: false, action: "archive", huntIds: [] });
+    setConfirmDialog({ open: false, action: 'archive', huntIds: [] });
     setSelectedHunts([]);
     loadHunts();
   };
@@ -207,26 +199,26 @@ export default function CreatorPage() {
     const count = huntIds.length;
 
     switch (action) {
-      case "archive":
-        return `Archive ${count} hunt${count > 1 ? "s" : ""}? They will be hidden from the public but data will be preserved.`;
-      case "unarchive":
-        return `Unarchive ${count} hunt${count > 1 ? "s" : ""}? They will be visible to the public again.`;
-      case "soft-delete":
-        return `Soft delete ${count} hunt${count > 1 ? "s" : ""}? They will be moved to trash and can be restored within 30 days.`;
-      case "restore":
-        return `Restore ${count} hunt${count > 1 ? "s" : ""}? They will be moved back to your active hunts.`;
-      case "permanent-delete":
-        return `Permanently delete ${count} hunt${count > 1 ? "s" : ""}? This action cannot be undone and all data will be lost.`;
+      case 'archive':
+        return `Archive ${count} hunt${count > 1 ? 's' : ''}? They will be hidden from the public but data will be preserved.`;
+      case 'unarchive':
+        return `Unarchive ${count} hunt${count > 1 ? 's' : ''}? They will be visible to the public again.`;
+      case 'soft-delete':
+        return `Soft delete ${count} hunt${count > 1 ? 's' : ''}? They will be moved to trash and can be restored within 30 days.`;
+      case 'restore':
+        return `Restore ${count} hunt${count > 1 ? 's' : ''}? They will be moved back to your active hunts.`;
+      case 'permanent-delete':
+        return `Permanently delete ${count} hunt${count > 1 ? 's' : ''}? This action cannot be undone and all data will be lost.`;
     }
   };
 
   const getCurrentHunts = () => {
     switch (activeTab) {
-      case "active":
+      case 'active':
         return hunts.filter((h) => !h.isArchived);
-      case "archived":
+      case 'archived':
         return archivedHunts;
-      case "deleted":
+      case 'deleted':
         return softDeletedHunts;
       default:
         return hunts;
@@ -260,7 +252,7 @@ export default function CreatorPage() {
             className="text-xs font-semibold text-[#3737A4] dark:text-indigo-400 hover:underline gap-1.5 flex items-center p-1 h-auto"
             onClick={() =>
               window.dispatchEvent(
-                new CustomEvent("start-onboarding-tour", { detail: { tourType: "creator" } })
+                new CustomEvent('start-onboarding-tour', { detail: { tourType: 'creator' } })
               )
             }
           >
@@ -277,39 +269,39 @@ export default function CreatorPage() {
         <div className="mb-6 flex gap-2 border-b border-slate-200">
           <button
             onClick={() => {
-              setActiveTab("active");
+              setActiveTab('active');
               setSelectedHunts([]);
             }}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === "active"
-                ? "border-[#3737A4] text-[#3737A4]"
-                : "border-transparent text-slate-600 hover:text-slate-900"
+              activeTab === 'active'
+                ? 'border-[#3737A4] text-[#3737A4]'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
             }`}
           >
             Active ({hunts.filter((h) => !h.isArchived).length})
           </button>
           <button
             onClick={() => {
-              setActiveTab("archived");
+              setActiveTab('archived');
               setSelectedHunts([]);
             }}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === "archived"
-                ? "border-[#3737A4] text-[#3737A4]"
-                : "border-transparent text-slate-600 hover:text-slate-900"
+              activeTab === 'archived'
+                ? 'border-[#3737A4] text-[#3737A4]'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
             }`}
           >
             Archived ({archivedHunts.length})
           </button>
           <button
             onClick={() => {
-              setActiveTab("deleted");
+              setActiveTab('deleted');
               setSelectedHunts([]);
             }}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === "deleted"
-                ? "border-[#3737A4] text-[#3737A4]"
-                : "border-transparent text-slate-600 hover:text-slate-900"
+              activeTab === 'deleted'
+                ? 'border-[#3737A4] text-[#3737A4]'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
             }`}
           >
             Trash ({softDeletedHunts.length})
@@ -320,12 +312,12 @@ export default function CreatorPage() {
         {selectedHunts.length > 0 && (
           <div className="mb-4 flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
             <span className="text-sm text-slate-600">{selectedHunts.length} selected</span>
-            {activeTab === "active" && (
+            {activeTab === 'active' && (
               <>
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleAction("archive", selectedHunts)}
+                  onClick={() => handleAction('archive', selectedHunts)}
                   className="gap-1"
                 >
                   <Archive className="w-4 h-4" />
@@ -334,7 +326,7 @@ export default function CreatorPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleAction("soft-delete", selectedHunts)}
+                  onClick={() => handleAction('soft-delete', selectedHunts)}
                   className="gap-1 text-red-600 border-red-200 hover:bg-red-50"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -342,12 +334,12 @@ export default function CreatorPage() {
                 </Button>
               </>
             )}
-            {activeTab === "archived" && (
+            {activeTab === 'archived' && (
               <>
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleAction("unarchive", selectedHunts)}
+                  onClick={() => handleAction('unarchive', selectedHunts)}
                   className="gap-1"
                 >
                   <RefreshCw className="w-4 h-4" />
@@ -356,7 +348,7 @@ export default function CreatorPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleAction("soft-delete", selectedHunts)}
+                  onClick={() => handleAction('soft-delete', selectedHunts)}
                   className="gap-1 text-red-600 border-red-200 hover:bg-red-50"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -364,12 +356,12 @@ export default function CreatorPage() {
                 </Button>
               </>
             )}
-            {activeTab === "deleted" && (
+            {activeTab === 'deleted' && (
               <>
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleAction("restore", selectedHunts)}
+                  onClick={() => handleAction('restore', selectedHunts)}
                   className="gap-1"
                 >
                   <RefreshCw className="w-4 h-4" />
@@ -378,7 +370,7 @@ export default function CreatorPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleAction("permanent-delete", selectedHunts)}
+                  onClick={() => handleAction('permanent-delete', selectedHunts)}
                   className="gap-1 text-red-600 border-red-200 hover:bg-red-50"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -429,8 +421,8 @@ export default function CreatorPage() {
           <>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {getCurrentHunts().map((hunt) => {
-                const isDraft = hunt.status === "Draft";
-                const isActive = hunt.status === "Active";
+                const isDraft = hunt.status === 'Draft';
+                const isActive = hunt.status === 'Active';
                 const isClickable = isDraft || isActive;
                 const isSelected = selectedHunts.includes(hunt.id);
                 const isPromoted = isHuntPromoted(hunt);
@@ -439,8 +431,8 @@ export default function CreatorPage() {
                   <Card
                     key={hunt.id}
                     className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow ${
-                      isClickable ? "cursor-pointer hover:shadow-md" : "opacity-90"
-                    } ${isSelected ? "ring-2 ring-[#3737A4]" : ""}`}
+                      isClickable ? 'cursor-pointer hover:shadow-md' : 'opacity-90'
+                    } ${isSelected ? 'ring-2 ring-[#3737A4]' : ''}`}
                   >
                     <div className="p-5">
                       <div className="mb-2 flex items-start justify-between gap-2">
@@ -473,7 +465,7 @@ export default function CreatorPage() {
                           <Button
                             type="button"
                             size="sm"
-                            variant={isPromoted ? "outline" : "primary"}
+                            variant={isPromoted ? 'outline' : 'primary'}
                             onClick={(event) => {
                               event.stopPropagation();
                               void handlePromote(hunt.id);
@@ -481,16 +473,16 @@ export default function CreatorPage() {
                             disabled={promotingHuntId === hunt.id}
                           >
                             {promotingHuntId === hunt.id
-                              ? "Promoting..."
+                              ? 'Promoting...'
                               : isPromoted
-                                ? "Extend Spotlight"
+                                ? 'Extend Spotlight'
                                 : `Promote (${SPOTLIGHT_FEE_XLM} XLM)`}
                           </Button>
                         </div>
                       )}
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="text-xs text-slate-500">
-                          {hunt.cluesCount} {hunt.cluesCount === 1 ? "clue" : "clues"}
+                          {hunt.cluesCount} {hunt.cluesCount === 1 ? 'clue' : 'clues'}
                         </span>
                         <div className="flex items-center gap-1">
                           {isDraft && (
@@ -506,7 +498,7 @@ export default function CreatorPage() {
                             </span>
                           )}
                           {/* Individual action buttons */}
-                          {activeTab === "active" && (
+                          {activeTab === 'active' && (
                             <>
                               <Button
                                 size="sm"
@@ -528,19 +520,7 @@ export default function CreatorPage() {
                                 variant="ghost"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setTemplateDialog({ open: true, huntId: hunt.id });
-                                }}
-                                className="h-6 w-6 p-0 text-slate-500 hover:text-orange-600"
-                                title="Save as Template"
-                              >
-                                <Sparkles className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleAction("archive", [hunt.id]);
+                                  handleAction('archive', [hunt.id]);
                                 }}
                                 className="h-6 w-6 p-0 text-slate-500 hover:text-slate-700"
                               >
@@ -551,7 +531,7 @@ export default function CreatorPage() {
                                 variant="ghost"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleAction("soft-delete", [hunt.id]);
+                                  handleAction('soft-delete', [hunt.id]);
                                 }}
                                 className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
                               >
@@ -559,14 +539,14 @@ export default function CreatorPage() {
                               </Button>
                             </>
                           )}
-                          {activeTab === "archived" && (
+                          {activeTab === 'archived' && (
                             <>
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleAction("unarchive", [hunt.id]);
+                                  handleAction('unarchive', [hunt.id]);
                                 }}
                                 className="h-6 w-6 p-0 text-slate-500 hover:text-slate-700"
                                 title="Unarchive"
@@ -578,7 +558,7 @@ export default function CreatorPage() {
                                 variant="ghost"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleAction("soft-delete", [hunt.id]);
+                                  handleAction('soft-delete', [hunt.id]);
                                 }}
                                 className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
                                 title="Delete"
@@ -587,14 +567,14 @@ export default function CreatorPage() {
                               </Button>
                             </>
                           )}
-                          {activeTab === "deleted" && (
+                          {activeTab === 'deleted' && (
                             <>
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleAction("restore", [hunt.id]);
+                                  handleAction('restore', [hunt.id]);
                                 }}
                                 className="h-6 w-6 p-0 text-emerald-500 hover:text-emerald-700"
                                 title="Restore"
@@ -606,7 +586,7 @@ export default function CreatorPage() {
                                 variant="ghost"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleAction("permanent-delete", [hunt.id]);
+                                  handleAction('permanent-delete', [hunt.id]);
                                 }}
                                 className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
                                 title="Permanent Delete"
@@ -620,13 +600,13 @@ export default function CreatorPage() {
                       {hunt.deletedAt && (
                         <div className="mt-2 text-xs text-orange-600 flex items-center gap-1">
                           <AlertTriangle className="h-3 w-3" />
-                          Expires in{" "}
+                          Expires in{' '}
                           {Math.ceil(
                             (hunt.deletedAt +
                               (hunt.recoveryWindow || 30 * 86400) -
                               Math.floor(Date.now() / 1000)) /
                               86400
-                          )}{" "}
+                          )}{' '}
                           days
                         </div>
                       )}
@@ -658,23 +638,23 @@ export default function CreatorPage() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2">
-                {confirmDialog.action === "permanent-delete" && (
+                {confirmDialog.action === 'permanent-delete' && (
                   <AlertTriangle className="h-5 w-5 text-red-600" />
                 )}
-                {confirmDialog.action === "archive" && (
+                {confirmDialog.action === 'archive' && (
                   <Archive className="h-5 w-5 text-slate-600" />
                 )}
-                {confirmDialog.action === "unarchive" && (
+                {confirmDialog.action === 'unarchive' && (
                   <RefreshCw className="h-5 w-5 text-slate-600" />
                 )}
-                {confirmDialog.action === "soft-delete" && (
+                {confirmDialog.action === 'soft-delete' && (
                   <Trash2 className="h-5 w-5 text-orange-600" />
                 )}
-                {confirmDialog.action === "restore" && (
+                {confirmDialog.action === 'restore' && (
                   <CheckCircle className="h-5 w-5 text-emerald-600" />
                 )}
                 {confirmDialog.action.charAt(0).toUpperCase() +
-                  confirmDialog.action.slice(1).replace("-", " ")}
+                  confirmDialog.action.slice(1).replace('-', ' ')}
               </AlertDialogTitle>
               <AlertDialogDescription>{getActionMessage()}</AlertDialogDescription>
             </AlertDialogHeader>
@@ -683,70 +663,13 @@ export default function CreatorPage() {
               <AlertDialogAction
                 onClick={confirmAction}
                 className={
-                  confirmDialog.action === "permanent-delete" ||
-                  confirmDialog.action === "soft-delete"
-                    ? "bg-red-600 hover:bg-red-700"
-                    : "bg-[#3737A4] hover:bg-slate-800"
+                  confirmDialog.action === 'permanent-delete' ||
+                  confirmDialog.action === 'soft-delete'
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : 'bg-[#3737A4] hover:bg-slate-800'
                 }
               >
                 Confirm
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {/* Save as Template Dialog */}
-        <AlertDialog
-          open={templateDialog.open}
-          onOpenChange={(open) => setTemplateDialog({ ...templateDialog, open })}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-orange-600" />
-                Save as Template
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                Save this hunt&apos;s structure as a template. The clues will be saved but the answers will be removed, allowing others to create new hunts from your design.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="py-4">
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Author Name
-              </label>
-              <Input
-                value={templateAuthor}
-                onChange={(e) => setTemplateAuthor(e.target.value)}
-                placeholder="Your Name or Studio"
-                autoFocus
-              />
-            </div>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  if (!templateAuthor.trim()) {
-                    toast.error("Author name is required.");
-                    return;
-                  }
-                  if (templateDialog.huntId) {
-                    try {
-                        const hunt = [...hunts, ...archivedHunts, ...softDeletedHunts].find((h) => h.id === templateDialog.huntId);
-                        if (hunt) {
-                            saveHuntAsTemplate(hunt, templateAuthor);
-                            toast.success("Saved as template. It is now available in the Template Gallery.");
-                        }
-                    } catch (err: any) {
-                        toast.error(err.message || "Failed to save template.");
-                    }
-                  }
-                  setTemplateDialog({ open: false, huntId: null });
-                  setTemplateAuthor("");
-                }}
-                disabled={!templateAuthor.trim()}
-                className="bg-[#3737A4] hover:bg-slate-800"
-              >
-                Save Template
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -755,4 +678,3 @@ export default function CreatorPage() {
     </div>
   );
 }
- 

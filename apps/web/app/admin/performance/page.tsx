@@ -1,11 +1,11 @@
-"use client"
+'use client';
 
-import { ArrowLeft, BarChart3 } from "lucide-react"
-import Link from "next/link"
+import { ArrowLeft, BarChart3 } from 'lucide-react';
+import Link from 'next/link';
 
-import { Header } from "@/components/Header"
-import { PerformanceDashboard } from "@/components/PerformanceDashboard"
-import { Button } from "@hunty/ui"
+import { Header } from '@/components/Header';
+import { PerformanceDashboard } from '@/components/PerformanceDashboard';
+import { Button } from '@/components/ui/button';
 
 export default function AdminPerformancePage() {
   return (
@@ -34,13 +34,13 @@ export default function AdminPerformancePage() {
             </h1>
           </div>
           <p className="text-slate-650 dark:text-slate-400">
-            Core Web Vitals monitoring — LCP, FID, CLS, TTFB, INP tracking with
-            trend analysis and budget alerts.
+            Core Web Vitals monitoring — LCP, FID, CLS, TTFB, INP tracking with trend analysis and
+            budget alerts.
           </p>
         </div>
 
         <PerformanceDashboard />
       </div>
     </div>
-  )
+  );
 }

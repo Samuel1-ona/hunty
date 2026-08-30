@@ -8,10 +8,10 @@
  *   const { currentProgress, setProgress } = usePlayerStore()
  */
 
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
-import type { PlayerProgress } from "@/lib/types";
+import type { PlayerProgress } from '@/lib/types';
 
 // ─── Wallet Store ─────────────────────────────────────────────────────────────
 
@@ -35,23 +35,21 @@ interface WalletState {
  * Sync this store whenever useWallet fires connect / disconnect,
  * or call setWallet / clearWallet directly.
  */
-export const useWalletStore = create<StoreState["wallet"]>()(
+export const useWalletStore = create<StoreState['wallet']>()(
   persist(
     (set) => ({
-      walletAddress: "",
+      walletAddress: '',
       walletBalance: null,
       isConnected: false,
 
-      setWallet: (address) =>
-        set({ walletAddress: address, isConnected: Boolean(address) }),
+      setWallet: (address) => set({ walletAddress: address, isConnected: Boolean(address) }),
 
       setBalance: (balance) => set({ walletBalance: balance }),
 
-      clearWallet: () =>
-        set({ walletAddress: "", walletBalance: null, isConnected: false }),
+      clearWallet: () => set({ walletAddress: '', walletBalance: null, isConnected: false }),
     }),
     {
-      name: "hunty-wallet",
+      name: 'hunty-wallet',
       // Only persist the address — balance is fetched on demand
       partialize: (state) => ({ walletAddress: state.walletAddress }),
       // Re-hydrate isConnected after restoring the address
@@ -60,8 +58,8 @@ export const useWalletStore = create<StoreState["wallet"]>()(
           state.isConnected = true;
         }
       },
-    },
-  ),
+    }
+  )
 );
 
 // ─── Player Progress Store ────────────────────────────────────────────────────
@@ -95,7 +93,7 @@ export interface StoreState {
  * Set currentProgress when a player registers or resumes a hunt.
  * Clear it when the hunt ends or the player navigates away.
  */
-export const usePlayerStore = create<StoreState["player"]>()((set) => ({
+export const usePlayerStore = create<StoreState['player']>()((set) => ({
   currentProgress: null,
 
   setProgress: (progress) => set({ currentProgress: progress }),
@@ -104,14 +102,14 @@ export const usePlayerStore = create<StoreState["player"]>()((set) => ({
     set((state) =>
       state.currentProgress
         ? { currentProgress: { ...state.currentProgress, current_clue_index: index } }
-        : state,
+        : state
     ),
 
   markCompleted: () =>
     set((state) =>
       state.currentProgress
         ? { currentProgress: { ...state.currentProgress, completed: true } }
-        : state,
+        : state
     ),
 
   clearProgress: () => set({ currentProgress: null }),

@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 /**
  * PreviewPageClient (#581)
@@ -13,9 +13,9 @@
  * - Reset session at any time
  */
 
-import React, { useCallback, useEffect, useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import React, { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   Check,
@@ -28,11 +28,11 @@ import {
   Smartphone,
   Tablet,
   Trophy,
-} from "lucide-react"
-import { toast } from "sonner"
-import { Button } from "@hunty/ui"
-import { PreviewClueCard } from "@/components/PreviewClueCard"
-import { formatTimestamp } from "@/lib/dateUtils"
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { PreviewClueCard } from '@/components/PreviewClueCard';
+import { formatTimestamp } from '@/lib/dateUtils';
 import {
   advancePreviewSession,
   buildPreviewUrl,
@@ -44,7 +44,7 @@ import {
   type PreviewViewport,
   VIEWPORT_LABELS,
   VIEWPORT_WIDTHS,
-} from "@/lib/previewStore"
+} from '@/lib/previewStore';
 
 // ─── Viewport icons ───────────────────────────────────────────────────────────
 
@@ -52,26 +52,26 @@ const VIEWPORT_ICONS: Record<PreviewViewport, React.ReactNode> = {
   mobile: <Smartphone className="w-4 h-4" />,
   tablet: <Tablet className="w-4 h-4" />,
   desktop: <Monitor className="w-4 h-4" />,
-}
+};
 
-const VIEWPORTS: PreviewViewport[] = ["mobile", "tablet", "desktop"]
+const VIEWPORTS: PreviewViewport[] = ['mobile', 'tablet', 'desktop'];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function PreviewBanner({ huntId }: { huntId: number }) {
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState(false);
 
   const handleShare = async () => {
-    const ok = await copyPreviewUrlToClipboard(huntId)
+    const ok = await copyPreviewUrlToClipboard(huntId);
     if (ok) {
-      setCopied(true)
-      toast.success("Preview link copied to clipboard!")
-      setTimeout(() => setCopied(false), 2000)
+      setCopied(true);
+      toast.success('Preview link copied to clipboard!');
+      setTimeout(() => setCopied(false), 2000);
     } else {
       // Fallback: show the URL in a toast
-      toast.info(`Preview URL: ${buildPreviewUrl(huntId)}`, { duration: 5000 })
+      toast.info(`Preview URL: ${buildPreviewUrl(huntId)}`, { duration: 5000 });
     }
-  }
+  };
 
   return (
     <div
@@ -82,7 +82,10 @@ function PreviewBanner({ huntId }: { huntId: number }) {
         <Info className="w-4 h-4 shrink-0 text-amber-600" />
         <p className="text-xs sm:text-sm font-medium truncate">
           <span className="font-semibold">Preview Mode</span>
-          <span className="hidden sm:inline"> — answers are validated locally, nothing is saved.</span>
+          <span className="hidden sm:inline">
+            {' '}
+            — answers are validated locally, nothing is saved.
+          </span>
         </p>
       </div>
       <Button
@@ -105,15 +108,15 @@ function PreviewBanner({ huntId }: { huntId: number }) {
         )}
       </Button>
     </div>
-  )
+  );
 }
 
 function ViewportSelector({
   current,
   onChange,
 }: {
-  current: PreviewViewport
-  onChange: (v: PreviewViewport) => void
+  current: PreviewViewport;
+  onChange: (v: PreviewViewport) => void;
 }) {
   return (
     <div
@@ -127,8 +130,8 @@ function ViewportSelector({
           onClick={() => onChange(v)}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
             current === v
-              ? "bg-white text-slate-900 shadow-sm"
-              : "text-slate-500 hover:text-slate-700"
+              ? 'bg-white text-slate-900 shadow-sm'
+              : 'text-slate-500 hover:text-slate-700'
           }`}
           aria-pressed={current === v}
           title={VIEWPORT_LABELS[v]}
@@ -138,34 +141,34 @@ function ViewportSelector({
         </button>
       ))}
     </div>
-  )
+  );
 }
 
 function ViewportWrapper({
   viewport,
   children,
 }: {
-  viewport: PreviewViewport
-  children: React.ReactNode
+  viewport: PreviewViewport;
+  children: React.ReactNode;
 }) {
-  const width = VIEWPORT_WIDTHS[viewport]
+  const width = VIEWPORT_WIDTHS[viewport];
 
   if (width === null) {
     // Desktop — full width, no artificial constraint
-    return <div className="w-full">{children}</div>
+    return <div className="w-full">{children}</div>;
   }
 
   return (
     <div className="flex justify-center w-full">
       <div
-        style={{ width, maxWidth: "100%" }}
+        style={{ width, maxWidth: '100%' }}
         className="transition-all duration-300 border-2 border-dashed border-slate-300 rounded-2xl overflow-hidden"
         aria-label={`${VIEWPORT_LABELS[viewport]} viewport`}
       >
         {children}
       </div>
     </div>
-  )
+  );
 }
 
 // ─── Hunt landing overview (mirrors app/hunt/[id]/page.tsx appearance) ────────
@@ -174,32 +177,32 @@ function HuntLandingOverview({
   session,
   onStartPreview,
 }: {
-  session: PreviewSession
-  onStartPreview: () => void
+  session: PreviewSession;
+  onStartPreview: () => void;
 }) {
-  const { hunt } = session
-  const totalPoints = session.clues.reduce((s, cs) => s + (cs.clue.points ?? 0), 0)
+  const { hunt } = session;
+  const totalPoints = session.clues.reduce((s, cs) => s + (cs.clue.points ?? 0), 0);
 
   const statusStyles: Record<string, { label: string; classes: string }> = {
     Active: {
-      label: "Active",
-      classes: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30",
+      label: 'Active',
+      classes: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30',
     },
     Draft: {
-      label: "Draft",
-      classes: "bg-amber-500/10 text-amber-400 border border-amber-500/30",
+      label: 'Draft',
+      classes: 'bg-amber-500/10 text-amber-400 border border-amber-500/30',
     },
     Completed: {
-      label: "Completed",
-      classes: "bg-zinc-500/10 text-zinc-400 border border-zinc-500/30",
+      label: 'Completed',
+      classes: 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/30',
     },
     Cancelled: {
-      label: "Cancelled",
-      classes: "bg-red-500/10 text-red-400 border border-red-500/30",
+      label: 'Cancelled',
+      classes: 'bg-red-500/10 text-red-400 border border-red-500/30',
     },
-  }
+  };
 
-  const statusStyle = statusStyles[hunt.status] ?? statusStyles.Draft
+  const statusStyle = statusStyles[hunt.status] ?? statusStyles.Draft;
 
   return (
     <div className="min-h-screen bg-[#0b0c10] text-white pb-16">
@@ -215,7 +218,7 @@ function HuntLandingOverview({
           <span
             className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold tracking-widest uppercase ${statusStyle.classes}`}
           >
-            {hunt.status === "Active" && (
+            {hunt.status === 'Active' && (
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             )}
             {statusStyle.label}
@@ -226,9 +229,7 @@ function HuntLandingOverview({
           {hunt.title}
         </h1>
 
-        <p className="text-zinc-400 text-lg leading-relaxed mb-10">
-          {hunt.description}
-        </p>
+        <p className="text-zinc-400 text-lg leading-relaxed mb-10">{hunt.description}</p>
 
         {/* Metadata cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-12">
@@ -279,20 +280,17 @@ function HuntLandingOverview({
           <div className="rounded-2xl bg-amber-900/30 border border-amber-500/20 px-6 py-4">
             <p className="text-amber-400 font-medium">No clues added yet.</p>
             <p className="text-amber-400/70 text-sm mt-1">
-              Add clues in the{" "}
-              <Link
-                href="/hunty"
-                className="underline underline-offset-2 hover:text-amber-300"
-              >
+              Add clues in the{' '}
+              <Link href="/hunty" className="underline underline-offset-2 hover:text-amber-300">
                 hunt editor
-              </Link>{" "}
+              </Link>{' '}
               to preview the full experience.
             </p>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }
 
 // ─── Clue step-through ────────────────────────────────────────────────────────
@@ -304,18 +302,18 @@ function ClueStepThrough({
   onResetClue,
   onGoToClue,
 }: {
-  session: PreviewSession
-  onSolve: (clueIndex: number, answer: string) => void
-  onWrongAnswer: (clueIndex: number, answer: string) => void
-  onResetClue: (clueIndex: number) => void
-  onGoToClue: (index: number) => void
+  session: PreviewSession;
+  onSolve: (clueIndex: number, answer: string) => void;
+  onWrongAnswer: (clueIndex: number, answer: string) => void;
+  onResetClue: (clueIndex: number) => void;
+  onGoToClue: (index: number) => void;
 }) {
-  const { currentClueIndex, clues } = session
-  const currentState = clues[currentClueIndex]
+  const { currentClueIndex, clues } = session;
+  const currentState = clues[currentClueIndex];
 
-  if (!currentState) return null
+  if (!currentState) return null;
 
-  const solvedCount = clues.filter((cs) => cs.solved).length
+  const solvedCount = clues.filter((cs) => cs.solved).length;
 
   return (
     <div className="min-h-screen bg-gradient-to-tr from-blue-100 via-purple-100 to-[#f9f9ff] pb-12">
@@ -349,20 +347,24 @@ function ClueStepThrough({
         </div>
 
         {/* Clue navigation dots */}
-        <div className="flex items-center gap-1.5 mt-4 flex-wrap" role="tablist" aria-label="Clue navigation">
+        <div
+          className="flex items-center gap-1.5 mt-4 flex-wrap"
+          role="tablist"
+          aria-label="Clue navigation"
+        >
           {clues.map((cs, i) => (
             <button
               key={cs.clue.id}
               role="tab"
               aria-selected={i === currentClueIndex}
-              aria-label={`Clue ${i + 1}${cs.solved ? ", solved" : ""}`}
+              aria-label={`Clue ${i + 1}${cs.solved ? ', solved' : ''}`}
               onClick={() => onGoToClue(i)}
               className={`w-7 h-7 rounded-full text-xs font-semibold transition-all ${
                 i === currentClueIndex
-                  ? "bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-white shadow-md scale-110"
+                  ? 'bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-white shadow-md scale-110'
                   : cs.solved
-                  ? "bg-emerald-500 text-white"
-                  : "bg-slate-200 text-slate-600 hover:bg-slate-300"
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
               }`}
             >
               {cs.solved ? <CheckCircle2 className="w-4 h-4 mx-auto" /> : i + 1}
@@ -410,12 +412,12 @@ function ClueStepThrough({
             disabled={!currentState.solved}
             className="rounded-full bg-gradient-to-b from-[#39A437] to-[#194F0C] text-white disabled:opacity-50"
           >
-            {currentState.solved ? "Finish Hunt →" : "Solve to finish"}
+            {currentState.solved ? 'Finish Hunt →' : 'Solve to finish'}
           </Button>
         )}
       </div>
     </div>
-  )
+  );
 }
 
 // ─── Completion screen ────────────────────────────────────────────────────────
@@ -424,8 +426,8 @@ function PreviewComplete({
   session,
   onRestart,
 }: {
-  session: PreviewSession
-  onRestart: () => void
+  session: PreviewSession;
+  onRestart: () => void;
 }) {
   return (
     <div className="min-h-screen bg-gradient-to-tr from-blue-100 via-purple-100 to-[#f9f9ff] flex items-center justify-center p-6">
@@ -434,9 +436,7 @@ function PreviewComplete({
           <Trophy className="w-8 h-8 text-white" />
         </div>
         <h2 className="text-2xl font-bold text-slate-900 mb-2">Hunt Complete!</h2>
-        <p className="text-slate-500 text-sm mb-6">
-          Preview finished · No data was saved
-        </p>
+        <p className="text-slate-500 text-sm mb-6">Preview finished · No data was saved</p>
         <div className="bg-indigo-50 border border-indigo-100 rounded-2xl px-6 py-4 mb-8">
           <p className="text-3xl font-bold text-indigo-700">{session.totalPoints}</p>
           <p className="text-indigo-500 text-sm mt-1">points scored</p>
@@ -458,79 +458,81 @@ function PreviewComplete({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-type PreviewView = "landing" | "clues" | "complete"
+type PreviewView = 'landing' | 'clues' | 'complete';
 
 interface PreviewPageClientProps {
-  huntId: number
+  huntId: number;
 }
 
 export function PreviewPageClient({ huntId }: PreviewPageClientProps) {
-  const router = useRouter()
-  const [session, setSession] = useState<PreviewSession | null>(null)
-  const [view, setView] = useState<PreviewView>("landing")
-  const [viewport, setViewport] = useState<PreviewViewport>("desktop")
-  const [notFound, setNotFound] = useState(false)
+  const router = useRouter();
+  const [session, setSession] = useState<PreviewSession | null>(null);
+  const [view, setView] = useState<PreviewView>('landing');
+  const [viewport, setViewport] = useState<PreviewViewport>('desktop');
+  const [notFound, setNotFound] = useState(false);
 
   // Initialize session once on mount
   useEffect(() => {
-    const s = createPreviewSession(huntId)
+    const s = createPreviewSession(huntId);
     if (!s) {
-      setNotFound(true)
+      setNotFound(true);
     } else {
-      setSession(s)
+      setSession(s);
     }
-  }, [huntId])
+  }, [huntId]);
 
   const handleSolve = useCallback((clueIndex: number, answer: string) => {
     setSession((prev) => {
-      if (!prev) return prev
-      const next = advancePreviewSession(prev, clueIndex, answer)
+      if (!prev) return prev;
+      const next = advancePreviewSession(prev, clueIndex, answer);
       if (next.isComplete) {
         // Delay so the user sees the success card before the complete screen
-        setTimeout(() => setView("complete"), 800)
+        setTimeout(() => setView('complete'), 800);
       }
-      return next
-    })
-  }, [])
+      return next;
+    });
+  }, []);
 
   const handleWrongAnswer = useCallback((clueIndex: number, answer: string) => {
-    setSession((prev) => (prev ? recordWrongAttempt(prev, clueIndex, answer) : prev))
-  }, [])
+    setSession((prev) => (prev ? recordWrongAttempt(prev, clueIndex, answer) : prev));
+  }, []);
 
   const handleResetClue = useCallback((clueIndex: number) => {
     setSession((prev) => {
-      if (!prev) return prev
+      if (!prev) return prev;
       const updatedClues = prev.clues.map((cs, i) =>
-        i === clueIndex ? { ...cs, solved: false, lastAttempt: undefined, lastAttemptCorrect: undefined } : cs,
-      )
+        i === clueIndex
+          ? { ...cs, solved: false, lastAttempt: undefined, lastAttemptCorrect: undefined }
+          : cs
+      );
       const totalPoints = updatedClues
         .filter((cs) => cs.solved)
-        .reduce((s, cs) => s + (cs.clue.points ?? 0), 0)
-      return { ...prev, clues: updatedClues, totalPoints, isComplete: false }
-    })
-  }, [])
+        .reduce((s, cs) => s + (cs.clue.points ?? 0), 0);
+      return { ...prev, clues: updatedClues, totalPoints, isComplete: false };
+    });
+  }, []);
 
   const handleGoToClue = useCallback((index: number) => {
     setSession((prev) => {
-      if (!prev) return prev
-      return { ...prev, currentClueIndex: index }
-    })
-  }, [])
+      if (!prev) return prev;
+      return { ...prev, currentClueIndex: index };
+    });
+  }, []);
 
   const handleRestart = useCallback(() => {
-    setSession((prev) => (prev ? resetPreviewSession(prev) : prev))
-    setView("landing")
-  }, [])
+    setSession((prev) => (prev ? resetPreviewSession(prev) : prev));
+    setView('landing');
+  }, []);
 
   const handleResetAndGoToClues = useCallback(() => {
-    setSession((prev) => (prev ? resetPreviewSession(prev) : prev))
-    setView("clues")
-  }, [])
+    setSession((prev) => (prev ? resetPreviewSession(prev) : prev));
+    setView('clues');
+  }, []);
 
   // Not found
   if (notFound) {
@@ -546,7 +548,7 @@ export function PreviewPageClient({ huntId }: PreviewPageClientProps) {
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   // Loading
@@ -555,7 +557,7 @@ export function PreviewPageClient({ huntId }: PreviewPageClientProps) {
       <div className="min-h-screen bg-[#0b0c10] flex items-center justify-center">
         <div className="text-white text-lg animate-pulse">Loading preview…</div>
       </div>
-    )
+    );
   }
 
   return (
@@ -578,7 +580,7 @@ export function PreviewPageClient({ huntId }: PreviewPageClientProps) {
         <div className="flex items-center gap-2">
           <ViewportSelector current={viewport} onChange={setViewport} />
 
-          {view !== "landing" && (
+          {view !== 'landing' && (
             <Button
               variant="ghost"
               size="sm"
@@ -591,10 +593,10 @@ export function PreviewPageClient({ huntId }: PreviewPageClientProps) {
             </Button>
           )}
 
-          {view === "landing" && session.clues.length > 0 && (
+          {view === 'landing' && session.clues.length > 0 && (
             <Button
               size="sm"
-              onClick={() => setView("clues")}
+              onClick={() => setView('clues')}
               className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-white text-xs rounded-lg px-3"
             >
               Start Preview
@@ -605,13 +607,10 @@ export function PreviewPageClient({ huntId }: PreviewPageClientProps) {
 
       {/* Viewport wrapper */}
       <ViewportWrapper viewport={viewport}>
-        {view === "landing" && (
-          <HuntLandingOverview
-            session={session}
-            onStartPreview={() => setView("clues")}
-          />
+        {view === 'landing' && (
+          <HuntLandingOverview session={session} onStartPreview={() => setView('clues')} />
         )}
-        {view === "clues" && (
+        {view === 'clues' && (
           <ClueStepThrough
             session={session}
             onSolve={handleSolve}
@@ -620,10 +619,8 @@ export function PreviewPageClient({ huntId }: PreviewPageClientProps) {
             onGoToClue={handleGoToClue}
           />
         )}
-        {view === "complete" && (
-          <PreviewComplete session={session} onRestart={handleRestart} />
-        )}
+        {view === 'complete' && <PreviewComplete session={session} onRestart={handleRestart} />}
       </ViewportWrapper>
     </div>
-  )
+  );
 }

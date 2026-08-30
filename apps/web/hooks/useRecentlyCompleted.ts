@@ -1,11 +1,11 @@
-"use client"
+'use client';
 
-import { useMemo } from "react"
+import { useMemo } from 'react';
 
-import type { StoredHunt } from "@/lib/types"
+import type { StoredHunt } from '@/lib/types';
 
 /** Maximum number of completed hunts shown in the Recently Completed strip. */
-export const MAX_RECENTLY_COMPLETED = 5
+export const MAX_RECENTLY_COMPLETED = 5;
 
 /**
  * Derives the most recently completed hunts from the hunt list already
@@ -23,9 +23,9 @@ export function useRecentlyCompleted(hunts: StoredHunt[]): StoredHunt[] {
   return useMemo(
     () =>
       hunts
-        .filter((h) => h.status === "Completed" && !h.is_private)
+        .filter((h) => h.status === 'Completed' && !h.is_private)
         .sort((a, b) => (b.endTime ?? 0) - (a.endTime ?? 0))
         .slice(0, MAX_RECENTLY_COMPLETED),
     [hunts]
-  )
+  );
 }

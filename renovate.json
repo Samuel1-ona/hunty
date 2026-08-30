@@ -7,104 +7,53 @@
     ":enableVulnerabilityAlertsWithLabel(security)",
     "npm:unpublishSafe"
   ],
-  "enabledManagers": [
-    "github-actions",
-    "npm"
-  ],
+  "enabledManagers": ["github-actions", "npm"],
   "rangeStrategy": "bump",
   "prConcurrentLimit": 10,
   "prHourlyLimit": 4,
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": [
-      "before 6am on monday"
-    ],
+    "schedule": ["before 6am on monday"],
     "automerge": true,
-      "platformAutomerge": false
+    "platformAutomerge": false
   },
   "packageRules": [
     {
       "description": "Automerge patch updates after required checks pass",
-      "matchUpdateTypes": [
-        "patch"
-      ],
+      "matchUpdateTypes": ["patch"],
       "automerge": true,
       "automergeType": "pr",
       "platformAutomerge": true,
       "stabilityDays": 2,
-      "labels": [
-        "dependencies",
-        "automerge",
-        "patch"
-      ]
+      "labels": ["dependencies", "automerge", "patch"]
     },
     {
       "description": "Group minor dependency updates",
-      "matchUpdateTypes": [
-        "minor"
-      ],
+      "matchUpdateTypes": ["minor"],
       "groupName": "minor dependency updates",
-      "labels": [
-        "dependencies",
-        "minor"
-      ]
+      "labels": ["dependencies", "minor"]
     },
     {
       "description": "Group major dependency updates for coordinated review",
-      "matchUpdateTypes": [
-        "major"
-      ],
+      "matchUpdateTypes": ["major"],
       "groupName": "major dependency updates",
-      "labels": [
-        "dependencies",
-        "major"
-      ],
+      "labels": ["dependencies", "major"],
       "automerge": false
     },
     {
       "description": "Keep Expo and React Native updates together",
-      "matchPackageNames": [
-        "/^expo/",
-        "/^@expo\\//",
-        "/^react-native/"
-      ],
+      "matchPackageNames": ["/^expo/", "/^@expo\\//", "/^react-native/"],
       "groupName": "expo and react native packages"
     },
     {
       "description": "Keep React packages together",
-      "matchPackageNames": [
-        "react",
-        "react-dom",
-        "@types/react",
-        "@types/react-dom"
-      ],
+      "matchPackageNames": ["react", "react-dom", "@types/react", "@types/react-dom"],
       "groupName": "react packages"
-    },
-    {
-      "description": "Group and coordinate Playwright browser updates",
-      "matchPackageNames": [
-        "@playwright/test",
-        "playwright"
-      ],
-      "groupName": "playwright packages",
-      "groupSlug": "playwright-group",
-      "labels": [
-        "dependencies",
-        "playwright",
-        "e2e"
-      ],
-      "automerge": false,
-      "semanticCommits": false,
-      "semanticCommitType": "chore",
-      "semanticCommitScope": "playwright"
     }
   ],
   "vulnerabilityAlerts": {
     "enabled": true,
-    "labels": [
-      "security",
-      "dependencies"
-    ],
+    "labels": ["security", "dependencies"],
     "automerge": false
   }
 }

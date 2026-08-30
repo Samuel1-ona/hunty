@@ -17,22 +17,12 @@ export function isSha256Hex(value: string): boolean {
 export async function matchesClueAnswer(
   candidate: string,
   clue: Clue,
-  huntId: number,
-  /** Optional variant key ('A'|'B') — when provided, variant-specific answer fields are used */
-  variant?: "A" | "B",
+  huntId: number
 ): Promise<boolean> {
-  let stored = clue.answer || '';
-  // If a variant is requested and the clue defines variants, prefer it.
-  if (variant && clue.variants) {
-    const v = variant === 'A' ? clue.variants.A : clue.variants.B
-    if (v && v.answer) {
-      stored = v.answer
-    }
-  }
+  const stored = clue.answer || '';
   const isStoredHash = isSha256Hex(stored);
-  const strictness: AnswerStrictness =
-    (variant && clue.variants ? (variant === 'A' ? clue.variants.A?.answerStrictness : clue.variants.B?.answerStrictness) : undefined) ?? clue.answerStrictness ?? 'normal';
-  const alternatives = (variant && clue.variants ? (variant === 'A' ? clue.variants.A?.alternativeAnswers : clue.variants.B?.alternativeAnswers) : undefined) ?? clue.alternativeAnswers ?? [];
+  const strictness: AnswerStrictness = clue.answerStrictness ?? 'normal';
+  const alternatives = clue.alternativeAnswers ?? [];
 
   if (isSha256Hex(candidate)) {
     return isStoredHash && candidate.toLowerCase() === stored.toLowerCase();
@@ -63,7 +53,10 @@ export async function matchesClueAnswer(
   }
 
   // Legacy plaintext: support pipe-separated answers plus fuzzy matching
-  const pipeAlts = stored.split('|').map((v) => v.trim()).filter(Boolean);
+  const pipeAlts = stored
+    .split('|')
+    .map((v) => v.trim())
+    .filter(Boolean);
   const primary = pipeAlts[0] ?? stored;
   const allAlts = [...pipeAlts.slice(1), ...alternatives];
 

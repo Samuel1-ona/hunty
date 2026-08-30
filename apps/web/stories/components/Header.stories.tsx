@@ -1,20 +1,18 @@
-import type { Meta, StoryObj } from "@storybook/nextjs-vite"
-import { Header } from "@/components/Header"
-import { withWalletContext } from "../support/StoryProviders"
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { Header } from '@/components/Header';
+import { withWalletContext } from '../support/StoryProviders';
 
 const meta = {
-  title: "Components/Header",
+  title: 'Components/Header',
   component: Header,
-  tags: ["autodocs"],
-  decorators: [
-    (Story) => withWalletContext(<Story />),
-  ],
+  tags: ['autodocs'],
+  decorators: [(Story) => withWalletContext(<Story />)],
   args: {
-    balance: "24.2453",
+    balance: '24.2453',
   },
-} satisfies Meta<typeof Header>
+} satisfies Meta<typeof Header>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {}
+export const Default: Story = {};

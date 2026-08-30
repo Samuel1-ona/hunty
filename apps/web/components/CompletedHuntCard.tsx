@@ -1,31 +1,31 @@
-"use client"
+'use client';
 
-import Link from "next/link"
-import React from "react"
+import Link from 'next/link';
+import React from 'react';
 
-import { HuntCoverImage } from "@/components/HuntCoverImage"
-import { StarRating } from "@/components/StarRating"
-import { truncateAddress } from "@/lib/walletAddress"
-import type { StoredHunt } from "@/lib/types"
+import { HuntCoverImage } from '@/components/HuntCoverImage';
+import { StarRating } from '@/components/StarRating';
+import { truncateAddress } from '@/lib/walletAddress';
+import type { StoredHunt } from '@/lib/types';
 
 interface CompletedHuntCardProps {
-  hunt: StoredHunt
+  hunt: StoredHunt;
   /**
    * Full Stellar G-address of the top-ranked player.
    * Raw address is never shown as visible text — always truncated.
    * The full address is accessible via `title` and `aria-label`.
    * Omit while the leaderboard is still loading.
    */
-  winnerAddress?: string
+  winnerAddress?: string;
 }
 
 /** This card has always used a 5 + 4 split with a single-character ellipsis. */
-const WINNER_ADDRESS_FORMAT = { lead: 5, tail: 4, separator: "…" }
+const WINNER_ADDRESS_FORMAT = { lead: 5, tail: 4, separator: '…' };
 
-function rewardBadgeClass(rewardType: StoredHunt["rewardType"]): string {
-  if (rewardType === "XLM") return "bg-green-50 text-green-700"
-  if (rewardType === "NFT") return "bg-purple-50 text-purple-700"
-  return "bg-amber-50 text-amber-700"
+function rewardBadgeClass(rewardType: StoredHunt['rewardType']): string {
+  if (rewardType === 'XLM') return 'bg-green-50 text-green-700';
+  if (rewardType === 'NFT') return 'bg-purple-50 text-purple-700';
+  return 'bg-amber-50 text-amber-700';
 }
 
 export function CompletedHuntCard({ hunt, winnerAddress }: CompletedHuntCardProps) {
@@ -52,9 +52,11 @@ export function CompletedHuntCard({ hunt, winnerAddress }: CompletedHuntCardProp
         {/* Metadata row */}
         <div className="flex items-center gap-2 flex-wrap">
           <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:text-slate-300">
-            {hunt.cluesCount} {hunt.cluesCount === 1 ? "clue" : "clues"}
+            {hunt.cluesCount} {hunt.cluesCount === 1 ? 'clue' : 'clues'}
           </span>
-          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${rewardBadgeClass(hunt.rewardType)}`}>
+          <span
+            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${rewardBadgeClass(hunt.rewardType)}`}
+          >
             {hunt.rewardType}
           </span>
           {/* Completed badge */}
@@ -86,5 +88,5 @@ export function CompletedHuntCard({ hunt, winnerAddress }: CompletedHuntCardProp
         </Link>
       </div>
     </article>
-  )
+  );
 }

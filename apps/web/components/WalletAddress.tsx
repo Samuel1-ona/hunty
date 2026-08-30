@@ -1,33 +1,33 @@
-"use client"
+'use client';
 
-import { useCallback, useEffect, useRef, useState } from "react"
-import { Check, Copy, ExternalLink } from "lucide-react"
-import { toast } from "sonner"
-import { cn } from "@/lib/utils"
-import { WalletIdenticon } from "@/components/WalletIdenticon"
-import { getStellarAccountExplorerUrl, truncateAddress } from "@/lib/walletAddress"
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Check, Copy, ExternalLink } from 'lucide-react';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import { WalletIdenticon } from '@/components/WalletIdenticon';
+import { getStellarAccountExplorerUrl, truncateAddress } from '@/lib/walletAddress';
 
-const COPIED_RESET_MS = 2000
+const COPIED_RESET_MS = 2000;
 
 interface WalletAddressProps {
   /** Full Stellar address. Nothing renders when this is empty. */
-  address: string
+  address: string;
   /** Characters kept at the start of the truncated form. Default 4. */
-  lead?: number
+  lead?: number;
   /** Characters kept at the end of the truncated form. Default 4. */
-  tail?: number
+  tail?: number;
   /** Show the derived avatar. Default true. */
-  showIdenticon?: boolean
+  showIdenticon?: boolean;
   /** Avatar size in pixels. Default 24. */
-  identiconSize?: number
+  identiconSize?: number;
   /** Show the copy button. Default true. */
-  showCopyButton?: boolean
+  showCopyButton?: boolean;
   /** Show the stellar.expert link. Default true. */
-  showExplorerLink?: boolean
+  showExplorerLink?: boolean;
   /** Wrapper classes. */
-  className?: string
+  className?: string;
   /** Classes for the address text itself, for callers that need a different size. */
-  addressClassName?: string
+  addressClassName?: string;
 }
 
 /**
@@ -48,48 +48,48 @@ export function WalletAddress({
   className,
   addressClassName,
 }: WalletAddressProps) {
-  const [copied, setCopied] = useState(false)
-  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [copied, setCopied] = useState(false);
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // The "Copied!" tick outlives the click, so it has to be cancelled if the
   // component unmounts first — leaderboard rows come and go on every refresh.
   useEffect(() => {
     return () => {
-      if (resetTimer.current) clearTimeout(resetTimer.current)
-    }
-  }, [])
+      if (resetTimer.current) clearTimeout(resetTimer.current);
+    };
+  }, []);
 
   const handleCopy = useCallback(async () => {
-    if (!address) return
+    if (!address) return;
 
     try {
-      await navigator.clipboard.writeText(address)
+      await navigator.clipboard.writeText(address);
 
-      setCopied(true)
-      toast.success("Wallet address copied")
+      setCopied(true);
+      toast.success('Wallet address copied');
 
-      if (resetTimer.current) clearTimeout(resetTimer.current)
-      resetTimer.current = setTimeout(() => setCopied(false), COPIED_RESET_MS)
+      if (resetTimer.current) clearTimeout(resetTimer.current);
+      resetTimer.current = setTimeout(() => setCopied(false), COPIED_RESET_MS);
     } catch {
       // Clipboard access is refused on insecure origins and in some in-app
       // browsers. Tell the user rather than silently doing nothing.
-      toast.error("Couldn't copy the address. Select and copy it manually.")
+      toast.error("Couldn't copy the address. Select and copy it manually.");
     }
-  }, [address])
+  }, [address]);
 
-  if (!address) return null
+  if (!address) return null;
 
-  const truncated = truncateAddress(address, { lead, tail })
+  const truncated = truncateAddress(address, { lead, tail });
 
   return (
-    <span className={cn("inline-flex items-center gap-2 min-w-0", className)}>
+    <span className={cn('inline-flex items-center gap-2 min-w-0', className)}>
       {showIdenticon && (
         <WalletIdenticon address={address} size={identiconSize} className="flex-shrink-0" />
       )}
 
       <span
         title={address}
-        className={cn("font-mono text-sm truncate", addressClassName)}
+        className={cn('font-mono text-sm truncate', addressClassName)}
         data-testid="wallet-address-text"
       >
         {truncated}
@@ -122,5 +122,5 @@ export function WalletAddress({
         </a>
       )}
     </span>
-  )
+  );
 }

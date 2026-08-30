@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { Fuel, Wallet, Zap } from "lucide-react";
+import { Fuel, Wallet, Zap } from 'lucide-react';
 
-import { cn } from "@/lib/utils";
-import { formatXlmAmount } from "@/lib/wallet/balance";
-import { usePaymasterBudget } from "@/hooks/usePaymasterBudget";
+import { usePaymasterBudget } from '@/hooks/usePaymasterBudget';
+import { cn } from '@/lib/utils';
+import { formatXlmAmount } from '@/lib/wallet/balance';
 
 /** 1 XLM = 10_000_000 stroops. */
 const STROOPS_PER_XLM = 10_000_000;
@@ -38,14 +38,14 @@ export function GasSponsorshipIndicator({ className }: GasSponsorshipIndicatorPr
   if (!address) return null;
 
   const rootClass = cn(
-    "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
-    className,
+    'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
+    className
   );
 
   if (isLoading) {
     return (
       <div
-        className={cn(rootClass, "bg-slate-100 dark:bg-slate-800")}
+        className={cn(rootClass, 'bg-slate-100 dark:bg-slate-800')}
         role="status"
         aria-label="Checking gas sponsorship status"
       >
@@ -60,7 +60,7 @@ export function GasSponsorshipIndicator({ className }: GasSponsorshipIndicatorPr
       <div
         className={cn(
           rootClass,
-          "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+          'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
         )}
         role="status"
         aria-label="Your next action will not be sponsored — you'll pay the network fee"
@@ -84,14 +84,14 @@ export function GasSponsorshipIndicator({ className }: GasSponsorshipIndicatorPr
     remainingBudget != null ? formatXlmAmount(remainingBudget / STROOPS_PER_XLM) : null;
 
   const label = showRemaining
-    ? `Your next action is sponsored — ${remainingTx} sponsored transaction${remainingTx === 1 ? "" : "s"} left, ${remainingXlm} XLM budget remaining`
-    : "Your next action is sponsored — network fees are covered";
+    ? `Your next action is sponsored — ${remainingTx} sponsored transaction${remainingTx === 1 ? '' : 's'} left, ${remainingXlm} XLM budget remaining`
+    : 'Your next action is sponsored — network fees are covered';
 
   return (
     <div
       className={cn(
         rootClass,
-        "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+        'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
       )}
       role="status"
       aria-label={label}

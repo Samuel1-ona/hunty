@@ -1,33 +1,33 @@
-import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   FIRST_HUNT_GUIDE_EVENT,
   FIRST_HUNT_GUIDE_STORAGE_KEY,
-  markFirstHuntStep,
   type FirstHuntGuideState,
-} from "@/lib/firstHuntGuide";
+  markFirstHuntStep,
+} from '@/lib/firstHuntGuide';
 
 let mockConnected = false;
-let mockPublicKey = "";
+let mockPublicKey = '';
 
-vi.mock("@/lib/context/WalletContext", () => ({
+vi.mock('@/lib/context/WalletContext', () => ({
   useWallet: () => ({
     connected: mockConnected,
     publicKey: mockPublicKey,
   }),
 }));
 
-import { useFirstHuntGuide } from "../useFirstHuntGuide";
+import { useFirstHuntGuide } from '../useFirstHuntGuide';
 
-describe("useFirstHuntGuide", () => {
+describe('useFirstHuntGuide', () => {
   beforeEach(() => {
     window.localStorage.clear();
     mockConnected = false;
-    mockPublicKey = "";
+    mockPublicKey = '';
   });
 
-  it("hydrates from localStorage on mount", () => {
+  it('hydrates from localStorage on mount', () => {
     window.localStorage.setItem(
       FIRST_HUNT_GUIDE_STORAGE_KEY,
       JSON.stringify({
@@ -46,19 +46,19 @@ describe("useFirstHuntGuide", () => {
     expect(result.current.state.completed.connect).toBe(true);
     expect(result.current.state.huntId).toBe(4);
     expect(result.current.isVisible).toBe(true);
-    expect(result.current.progress.nextStep?.id).toBe("join");
+    expect(result.current.progress.nextStep?.id).toBe('join');
   });
 
-  it("marks connect when a wallet is already connected", () => {
+  it('marks connect when a wallet is already connected', () => {
     mockConnected = true;
-    mockPublicKey = "GABC";
+    mockPublicKey = 'GABC';
 
     const { result } = renderHook(() => useFirstHuntGuide());
 
     expect(result.current.state.completed.connect).toBe(true);
   });
 
-  it("hides after dismiss and keeps that choice in storage", () => {
+  it('hides after dismiss and keeps that choice in storage', () => {
     const { result } = renderHook(() => useFirstHuntGuide());
 
     act(() => {
@@ -72,7 +72,7 @@ describe("useFirstHuntGuide", () => {
     );
   });
 
-  it("restores a dismissed checklist", () => {
+  it('restores a dismissed checklist', () => {
     const { result } = renderHook(() => useFirstHuntGuide());
 
     act(() => {
@@ -86,7 +86,7 @@ describe("useFirstHuntGuide", () => {
     expect(result.current.state.dismissed).toBe(false);
   });
 
-  it("collapses without dismissing", () => {
+  it('collapses without dismissing', () => {
     const { result } = renderHook(() => useFirstHuntGuide());
 
     act(() => {
@@ -97,11 +97,11 @@ describe("useFirstHuntGuide", () => {
     expect(result.current.isVisible).toBe(true);
   });
 
-  it("marks steps from the hook and from cross-tab events", () => {
+  it('marks steps from the hook and from cross-tab events', () => {
     const { result } = renderHook(() => useFirstHuntGuide());
 
     act(() => {
-      result.current.markStep("join", 12);
+      result.current.markStep('join', 12);
     });
 
     expect(result.current.state.completed.join).toBe(true);
@@ -109,13 +109,13 @@ describe("useFirstHuntGuide", () => {
     expect(result.current.state.huntId).toBe(12);
 
     act(() => {
-      markFirstHuntStep("solve", { huntId: 12 });
+      markFirstHuntStep('solve', { huntId: 12 });
     });
 
     expect(result.current.state.completed.solve).toBe(true);
   });
 
-  it("accepts a guide event without detail by reloading storage", () => {
+  it('accepts a guide event without detail by reloading storage', () => {
     const { result } = renderHook(() => useFirstHuntGuide());
 
     window.localStorage.setItem(

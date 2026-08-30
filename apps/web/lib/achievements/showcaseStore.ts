@@ -1,10 +1,10 @@
-import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 
-import { getDb } from "@/lib/db";
+import { getDb } from '@/lib/db';
 
-import type { AchievementId } from "./config";
+import type { AchievementId } from './config';
 
-const SETTINGS_PREFIX = "achievement_showcase:";
+const SETTINGS_PREFIX = 'achievement_showcase:';
 const MAX_PINNED_ACHIEVEMENTS = 3;
 
 interface StoredShowcase {
@@ -17,7 +17,7 @@ function keyFor(address: string): string {
 }
 
 function digest(value: string): Buffer {
-  return createHash("sha256").update(value).digest();
+  return createHash('sha256').update(value).digest();
 }
 
 function secretsMatch(expected: string, received: string | undefined): boolean {
@@ -53,7 +53,7 @@ export async function savePinnedAchievements(
   const existing = await getStoredShowcase(address);
   if (existing && !secretsMatch(existing.ownerSecret, ownerSecret)) return null;
 
-  const secret = existing?.ownerSecret ?? randomBytes(32).toString("hex");
+  const secret = existing?.ownerSecret ?? randomBytes(32).toString('hex');
   const value = JSON.stringify({ ownerSecret: secret, pinned });
   const sql = getDb();
   await sql`

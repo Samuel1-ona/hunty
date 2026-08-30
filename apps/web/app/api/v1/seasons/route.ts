@@ -1,18 +1,17 @@
-import { NextResponse } from "next/server";
-import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
-import { NotFoundError } from "@/lib/api/errors";
-import { withErrorHandling } from "@/lib/api/withErrorHandling";
-import { withValidation } from "@/lib/api/withValidation";
-import type { Reward } from "@/lib/types";
+import { NextResponse } from 'next/server';
+import { rateLimit, getIP, rateLimitResponse } from '@/lib/rate-limit';
+import { NotFoundError } from '@/lib/api/errors';
+import { withErrorHandling } from '@/lib/api/withErrorHandling';
+import { withValidation } from '@/lib/api/withValidation';
+import type { Reward } from '@/lib/types';
 
 import {
   createSeason,
   getActiveSeason,
   getAllSeasons,
   getCurrentSeasonLeaderboard,
-} from "@/lib/seasonStore";
-import { seasonCreateBodySchema } from "@hunty/types/api-schemas";
-import { getBattlePassTiers } from "@/lib/battlePassStore";
+} from '@/lib/seasonStore';
+import { seasonCreateBodySchema } from '@hunty/types/api-schemas';
 
 /**
  * GET /api/v1/seasons
@@ -24,30 +23,24 @@ export const GET = withErrorHandling(async (req: Request) => {
   if (!success) return rateLimitResponse(reset);
 
   const { searchParams } = new URL(req.url);
-  const activeOnly = searchParams.get("active") === "true";
+  const activeOnly = searchParams.get('active') === 'true';
 
   if (activeOnly) {
     const activeSeason = getActiveSeason();
     if (!activeSeason) {
-      throw new NotFoundError("No active season");
+      throw new NotFoundError('No active season');
     }
 
     const leaderboard = getCurrentSeasonLeaderboard();
-    const tiers = getBattlePassTiers(activeSeason);
     return NextResponse.json({
       season: activeSeason,
       leaderboard,
-      tiers,
       timeRemaining: activeSeason.endTime - Math.floor(Date.now() / 1000),
     });
   }
 
   const seasons = getAllSeasons();
-  const seasonsWithTiers = seasons.map(season => ({
-    ...season,
-    tiers: getBattlePassTiers(season),
-  }));
-  return NextResponse.json({ seasons: seasonsWithTiers });
+  return NextResponse.json({ seasons });
 });
 
 /**
@@ -65,7 +58,7 @@ export const POST = withValidation(
       name: body.name,
       startTime: Math.floor(new Date(body.startTime).getTime() / 1000),
       endTime: Math.floor(new Date(body.endTime).getTime() / 1000),
-      status: "Upcoming",
+      status: 'Upcoming',
       rewards: body.rewards as Reward[] | undefined,
     });
 

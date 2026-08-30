@@ -1,7 +1,7 @@
-import { matchesClueAnswer } from "@/lib/clueAnswerVerification";
-import { getDb } from "@/lib/db";
-import { logger } from "@/lib/logger";
-import { getServerClue } from "@/lib/server/seedClues";
+import { matchesClueAnswer } from '@/lib/clueAnswerVerification';
+import { getDb } from '@/lib/db';
+import { logger } from '@/lib/logger';
+import { getServerClue } from '@/lib/server/seedClues';
 
 export interface AntiCheatConfig {
   minClueIntervalMs: number;
@@ -72,7 +72,7 @@ export async function checkMinInterval(
 
     return { allowed: true, waitMs: 0 };
   } catch (err) {
-    logger.error("[Anti-Cheat] checkMinInterval DB error, allowing:", err);
+    logger.error('[Anti-Cheat] checkMinInterval DB error, allowing:', err);
     return { allowed: true, waitMs: 0 };
   }
 }
@@ -94,7 +94,7 @@ export async function trackClueSubmission(
             attempt_count = anti_cheat_tracking.attempt_count + 1
     `;
   } catch (err) {
-    logger.error("[Anti-Cheat] trackClueSubmission DB error:", err);
+    logger.error('[Anti-Cheat] trackClueSubmission DB error:', err);
   }
 }
 
@@ -123,16 +123,16 @@ export async function detectAnomalies(
       const { last_submission_time, attempt_count } = trackRows[0];
 
       if (attempt_count > 5) {
-        flags.push("rapid_attempts");
+        flags.push('rapid_attempts');
       }
 
       const elapsed = Date.now() - last_submission_time.getTime();
       if (elapsed < 1000) {
-        flags.push("fast_submission");
+        flags.push('fast_submission');
       }
 
       if (correct && attempt_count === 1 && elapsed < 500) {
-        flags.push("impossible_pattern");
+        flags.push('impossible_pattern');
       }
     }
 
@@ -144,7 +144,7 @@ export async function detectAnomalies(
         AND server_timestamp > NOW() - INTERVAL '10 seconds'
     `;
     if ((recentWalletCount[0]?.count ?? 0) > 10) {
-      flags.push("excessive_frequency");
+      flags.push('excessive_frequency');
     }
 
     // Check for same IP with different wallets in last 5 min
@@ -156,7 +156,7 @@ export async function detectAnomalies(
         AND server_timestamp > NOW() - INTERVAL '5 minutes'
     `;
     if ((sameIpRows[0]?.count ?? 0) > 3) {
-      flags.push("suspicious_wallet_ip");
+      flags.push('suspicious_wallet_ip');
     }
 
     // Check for same wallet with different IPs in last hour
@@ -168,10 +168,10 @@ export async function detectAnomalies(
         AND server_timestamp > NOW() - INTERVAL '1 hour'
     `;
     if ((sameWalletRows[0]?.count ?? 0) > 2) {
-      flags.push("suspicious_wallet_ip");
+      flags.push('suspicious_wallet_ip');
     }
   } catch (err) {
-    logger.error("[Anti-Cheat] detectAnomalies DB error:", err);
+    logger.error('[Anti-Cheat] detectAnomalies DB error:', err);
   }
 
   return flags;
@@ -215,14 +215,14 @@ export async function recordAnswer(
         )
         VALUES (
           ${anomalyId}, ${wallet}, ${ip}, ${flag},
-          ${"huntId=" + huntId + " clueId=" + clueId + " correct=" + correct + " score=" + score},
+          ${'huntId=' + huntId + ' clueId=' + clueId + ' correct=' + correct + ' score=' + score},
           NOW(), ${huntId}, ${clueId}
         )
       `;
       logger.warn(`[Anti-Cheat] Anomaly detected: ${flag} - wallet=${wallet} ip=${ip}`);
     }
   } catch (err) {
-    logger.error("[Anti-Cheat] recordAnswer DB error:", err);
+    logger.error('[Anti-Cheat] recordAnswer DB error:', err);
   }
 }
 
@@ -236,7 +236,7 @@ export async function isBanned(wallet: string, ip: string): Promise<boolean> {
     `;
     return (rows[0]?.count ?? 0) > 0;
   } catch (err) {
-    logger.error("[Anti-Cheat] isBanned DB error:", err);
+    logger.error('[Anti-Cheat] isBanned DB error:', err);
     return false;
   }
 }
@@ -268,7 +268,7 @@ export async function getFlaggedUsers(): Promise<
       lastAnomaly: r.last_anomaly.getTime(),
     }));
   } catch (err) {
-    logger.error("[Anti-Cheat] getFlaggedUsers DB error:", err);
+    logger.error('[Anti-Cheat] getFlaggedUsers DB error:', err);
     return [];
   }
 }
@@ -333,7 +333,7 @@ export async function getAnomalyHistory(wallet?: string): Promise<
       clueId: r.clue_id,
     }));
   } catch (err) {
-    logger.error("[Anti-Cheat] getAnomalyHistory DB error:", err);
+    logger.error('[Anti-Cheat] getAnomalyHistory DB error:', err);
     return [];
   }
 }
@@ -408,7 +408,7 @@ export async function getSubmissionHistory(wallet?: string): Promise<
       anomalyFlags: r.anomaly_flags,
     }));
   } catch (err) {
-    logger.error("[Anti-Cheat] getSubmissionHistory DB error:", err);
+    logger.error('[Anti-Cheat] getSubmissionHistory DB error:', err);
     return [];
   }
 }
@@ -433,7 +433,7 @@ export async function getBannedUsers(): Promise<
       bannedBy: r.banned_by,
     }));
   } catch (err) {
-    logger.error("[Anti-Cheat] getBannedUsers DB error:", err);
+    logger.error('[Anti-Cheat] getBannedUsers DB error:', err);
     return [];
   }
 }
@@ -455,7 +455,7 @@ export async function banUser(
       `[Anti-Cheat] User banned: wallet=${wallet} ip=${ip} reason="${reason}" by=${bannedBy}`
     );
   } catch (err) {
-    logger.error("[Anti-Cheat] banUser DB error:", err);
+    logger.error('[Anti-Cheat] banUser DB error:', err);
   }
 }
 
@@ -473,7 +473,7 @@ export async function unbanUser(wallet: string): Promise<boolean> {
     }
     return false;
   } catch (err) {
-    logger.error("[Anti-Cheat] unbanUser DB error:", err);
+    logger.error('[Anti-Cheat] unbanUser DB error:', err);
     return false;
   }
 }

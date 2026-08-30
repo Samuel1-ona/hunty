@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { Loader2,X } from "lucide-react";
-import { useState } from "react";
+import { Loader2, X } from 'lucide-react';
+import { useState } from 'react';
 
-import { Button } from "@hunty/ui";
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogClose,
@@ -11,8 +11,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import type { WalletProvider } from "@/lib/walletAdapter";
+} from '@/components/ui/dialog';
+import type { WalletProvider } from '@/lib/walletAdapter';
 
 interface WalletModalProps {
   isOpen: boolean;
@@ -72,66 +72,58 @@ export function WalletModal({ isOpen, onClose, onConnect }: WalletModalProps) {
 
         <div className="space-y-4 py-2">
           <Button
-            onClick={() => handleConnect("freighter")}
+            onClick={() => handleConnect('freighter')}
             disabled={connecting}
             className="w-full bg-slate-800 dark:bg-slate-900 hover:bg-slate-700 dark:hover:bg-slate-800 disabled:opacity-50 text-white p-4 rounded-xl flex items-center gap-3 justify-start h-auto border border-white/5"
           >
             <span className="text-2xl">🚀</span>
             <div className="text-left flex-1">
               <div className="font-semibold text-base">Freighter</div>
-              <div className="text-xs opacity-75">
-                Stellar browser extension
-              </div>
+              <div className="text-xs opacity-75">Stellar browser extension</div>
             </div>
-            {connecting && connectingProvider === "freighter" && (
+            {connecting && connectingProvider === 'freighter' && (
               <Loader2 className="h-4 w-4 animate-spin ml-auto shrink-0" />
             )}
           </Button>
           <Button
-            onClick={() => handleConnect("albedo")}
+            onClick={() => handleConnect('albedo')}
             disabled={connecting}
             className="w-full bg-indigo-700 dark:bg-indigo-900 hover:bg-indigo-600 dark:hover:bg-indigo-800 disabled:opacity-50 text-white p-4 rounded-xl flex items-center gap-3 justify-start h-auto border border-white/5"
           >
             <span className="text-2xl">✨</span>
             <div className="text-left flex-1">
               <div className="font-semibold text-base">Albedo</div>
-              <div className="text-xs opacity-75">
-                Stellar delegated signer
-              </div>
+              <div className="text-xs opacity-75">Stellar delegated signer</div>
             </div>
-            {connecting && connectingProvider === "albedo" && (
+            {connecting && connectingProvider === 'albedo' && (
               <Loader2 className="h-4 w-4 animate-spin ml-auto shrink-0" />
             )}
           </Button>
           <Button
-            onClick={() => handleConnect("rabet")}
+            onClick={() => handleConnect('rabet')}
             disabled={connecting}
             className="w-full bg-emerald-700 dark:bg-emerald-900 hover:bg-emerald-600 dark:hover:bg-emerald-800 disabled:opacity-50 text-white p-4 rounded-xl flex items-center gap-3 justify-start h-auto border border-white/5"
           >
             <span className="text-2xl">🟢</span>
             <div className="text-left flex-1">
               <div className="font-semibold text-base">Rabet</div>
-              <div className="text-xs opacity-75">
-                Stellar browser extension
-              </div>
+              <div className="text-xs opacity-75">Stellar browser extension</div>
             </div>
-            {connecting && connectingProvider === "rabet" && (
+            {connecting && connectingProvider === 'rabet' && (
               <Loader2 className="h-4 w-4 animate-spin ml-auto shrink-0" />
             )}
           </Button>
           <Button
-            onClick={() => handleConnect("xbull")}
+            onClick={() => handleConnect('xbull')}
             disabled={connecting}
             className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:opacity-90 disabled:opacity-50 text-white p-4 rounded-xl flex items-center gap-3 justify-start h-auto border border-white/5"
           >
             <span className="text-2xl">🐂</span>
             <div className="text-left flex-1">
               <div className="font-semibold text-base">xBull Wallet</div>
-              <div className="text-xs opacity-75">
-                Feature-rich Stellar wallet
-              </div>
+              <div className="text-xs opacity-75">Feature-rich Stellar wallet</div>
             </div>
-            {connecting && connectingProvider === "xbull" && (
+            {connecting && connectingProvider === 'xbull' && (
               <Loader2 className="h-4 w-4 animate-spin ml-auto shrink-0" />
             )}
           </Button>
@@ -147,7 +139,7 @@ export function WalletModal({ isOpen, onClose, onConnect }: WalletModalProps) {
           {error && (
             <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 p-3 text-sm text-red-700 dark:text-red-400">
               {error}
-              {error.includes("not found") && (
+              {error.includes('not found') && (
                 <a
                   href="https://freighter.app"
                   target="_blank"

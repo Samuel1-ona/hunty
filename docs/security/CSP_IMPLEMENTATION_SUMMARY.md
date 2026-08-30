@@ -13,6 +13,7 @@ This document confirms that all requirements for the Content Security Policy (CS
 **Status:** COMPLETED
 
 **What was done:**
+
 - Updated `/workspaces/hunty/next.config.ts` with a complete `headers()` function
 - Implemented CSP directives as per Next.js best practices
 - Configuration supports both staging and production environments
@@ -28,17 +29,20 @@ This document confirms that all requirements for the Content Security Policy (CS
 #### Trusted Sources Configured:
 
 1. **Self (`'self'`)**
+
    - Scripts, styles, fonts from same origin
    - Images and connections from same origin
    - Form actions to same origin
 
 2. **Soroban RPC Endpoints**
+
    - ✅ `https://soroban-testnet.stellar.org`
    - ✅ `https://rpc.testnet.soroban.stellar.org`
    - ✅ `https://soroban-mainnet.stellar.org`
    - ✅ `https://rpc.mainnet.soroban.stellar.org`
 
 3. **IPFS Gateways**
+
    - ✅ `https://gateway.pinata.cloud` (Pinata public gateway)
    - ✅ `https://*.mypinata.cloud` (Pinata custom gateways)
    - ✅ `https://cloudflare-ipfs.com` (Cloudflare IPFS gateway)
@@ -46,6 +50,7 @@ This document confirms that all requirements for the Content Security Policy (CS
    - ✅ `https://ipfs.io` (Protocol Labs IPFS gateway)
 
 4. **Resend (Email Service)**
+
    - ✅ `https://api.resend.com`
 
 5. **Additional APIs**
@@ -59,6 +64,7 @@ This document confirms that all requirements for the Content Security Policy (CS
 **Status:** COMPLETED
 
 **Implementation:**
+
 - Detection logic: Checks if `NODE_ENV` is `production` or `CSP_REPORT_ONLY` is set to `true`
 - In staging (development): Uses `Content-Security-Policy-Report-Only` header
 - Violations logged to console but resources NOT blocked
@@ -67,6 +73,7 @@ This document confirms that all requirements for the Content Security Policy (CS
 **Code Location:** [next.config.ts](next.config.ts) lines 18-21
 
 **Usage:**
+
 ```bash
 # Development (automatic report-only)
 pnpm dev
@@ -84,10 +91,12 @@ NODE_ENV=production CSP_REPORT_ONLY=true pnpm start
 #### Headers Implemented:
 
 1. **`X-Frame-Options: DENY`**
+
    - Prevents clickjacking attacks
    - Disallows framing in iframes
 
 2. **`X-Content-Type-Options: nosniff`**
+
    - Prevents MIME type sniffing
    - Forces browser to respect declared content types
 
@@ -121,6 +130,7 @@ A comprehensive testing guide has been created: [CSP_TESTING_GUIDE.md](CSP_TESTI
 ### Quick Test Steps:
 
 1. **Start the application:**
+
    ```bash
    cd /workspaces/hunty
    pnpm install
@@ -128,11 +138,13 @@ A comprehensive testing guide has been created: [CSP_TESTING_GUIDE.md](CSP_TESTI
    ```
 
 2. **Verify headers are present:**
+
    ```bash
    curl -I http://localhost:3000 | grep -E "Content-Security-Policy|X-Frame-Options|X-Content-Type-Options"
    ```
 
 3. **Check browser DevTools:**
+
    - Open http://localhost:3000
    - Press F12 (DevTools)
    - Go to Network tab
@@ -151,25 +163,31 @@ A comprehensive testing guide has been created: [CSP_TESTING_GUIDE.md](CSP_TESTI
 ## Environment Support
 
 ### Development Mode
+
 ```bash
 pnpm dev
 ```
+
 - Header: `Content-Security-Policy-Report-Only`
 - Violations logged but NOT blocked
 - Safe for development and initial testing
 
 ### Production Mode
+
 ```bash
 NODE_ENV=production pnpm start
 ```
+
 - Header: `Content-Security-Policy`
 - Violations actively blocked
 - Full enforcement
 
 ### Safe Rollout Mode
+
 ```bash
 NODE_ENV=production CSP_REPORT_ONLY=true pnpm start
 ```
+
 - Header: `Content-Security-Policy-Report-Only`
 - Even in production, violations only logged
 - Ideal for staging environment monitoring
@@ -184,13 +202,14 @@ This implementation protects against:
 ✅ **Data Exfiltration** - Restricted connection to unauthorized domains  
 ✅ **Clickjacking** - X-Frame-Options prevents framing attacks  
 ✅ **MIME Type Sniffing** - Browser cannot misinterpret file types  
-✅ **XSS Attacks** - Multiple layers of XSS protection  
+✅ **XSS Attacks** - Multiple layers of XSS protection
 
 ---
 
 ## Files Modified
 
 1. **[next.config.ts](next.config.ts)** - Main implementation
+
    - Added `headers()` async function
    - Configured CSP directives
    - Added environment detection logic

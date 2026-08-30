@@ -12,11 +12,6 @@
     // Do NOT add paths here — they belong in apps/web/tsconfig.json.
     "paths": {}
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts"
-  ],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules", "mobile/**/*"]
 }

@@ -1,24 +1,24 @@
-import { logger } from "@/lib/logger";
+import { logger } from '@/lib/logger';
 
-const SESSION_STORAGE_KEY = "hunty-session";
+const SESSION_STORAGE_KEY = 'hunty-session';
 const SESSION_DURATION = 24 * 60 * 60 * 1000;
 const SESSION_RENEWAL_THRESHOLD = 60 * 60 * 1000;
 
 const ALL_KNOWN_STORAGE_KEYS: string[] = [
   SESSION_STORAGE_KEY,
-  "stellar_wallet_session",
-  "freighter_public_key",
-  "hunty-wallet",
-  "hunty_hunts",
-  "hunty_clues",
-  "draft-hunts",
-  "draft-rewards",
-  "draft-rewardType",
-  "theme",
+  'stellar_wallet_session',
+  'freighter_public_key',
+  'hunty-wallet',
+  'hunty_hunts',
+  'hunty_clues',
+  'draft-hunts',
+  'draft-rewards',
+  'draft-rewardType',
+  'theme',
 ];
 
 export interface UserPreferences {
-  theme?: "light" | "dark" | "system";
+  theme?: 'light' | 'dark' | 'system';
 }
 
 export interface Session {
@@ -31,14 +31,14 @@ export interface Session {
 }
 
 export function generateSessionToken(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(36).slice(2, 18)}`;
 }
 
 function isBrowser(): boolean {
-  return typeof window !== "undefined";
+  return typeof window !== 'undefined';
 }
 
 export function createSession(publicKey: string, preferences?: UserPreferences): Session {
@@ -59,7 +59,7 @@ export function getStoredSession(): Session | null {
     const raw = localStorage.getItem(SESSION_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Session;
-    if (!parsed.token || !parsed.publicKey || typeof parsed.expiresAt !== "number") {
+    if (!parsed.token || !parsed.publicKey || typeof parsed.expiresAt !== 'number') {
       return null;
     }
     return parsed;
@@ -73,7 +73,7 @@ export function setStoredSession(session: Session): void {
   try {
     localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
   } catch (err) {
-    logger.warn("Failed to persist session", err);
+    logger.warn('Failed to persist session', err);
   }
 }
 

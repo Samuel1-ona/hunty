@@ -16,18 +16,18 @@ The achievement/badge system for Hunty has been fully implemented, tested, and d
 
 ## Achievements
 
-| ID | Title | Icon | Rarity | Condition |
-|---|---|---|---|---|
-| `first_hunt_completed` | First Steps | 🎯 | Common | Complete 1 hunt |
-| `first_win` | Victory Lap | 🏆 | Common | Win 1 hunt |
-| `five_wins` | Rising Star | ⭐ | Uncommon | Win 5 hunts |
-| `ten_wins` | Champion | 👑 | Rare | Win 10 hunts |
-| `twenty_five_wins` | Unstoppable | 🔥 | Epic | Win 25 hunts |
-| `first_nft` | Collector | 🎨 | Uncommon | Earn 1 NFT |
-| `high_scorer` | Sharpshooter | 🎪 | Rare | Highest monthly score |
-| `speed_hunter` | Lightning Fast | ⚡ | Rare | Complete in under 5 minutes |
-| `veteran` | Veteran | 🛡️ | Epic | Complete 50 hunts |
-| `legend` | Legend | 💎 | Legendary | Win 100 hunts |
+| ID                     | Title          | Icon | Rarity    | Condition                   |
+| ---------------------- | -------------- | ---- | --------- | --------------------------- |
+| `first_hunt_completed` | First Steps    | 🎯   | Common    | Complete 1 hunt             |
+| `first_win`            | Victory Lap    | 🏆   | Common    | Win 1 hunt                  |
+| `five_wins`            | Rising Star    | ⭐   | Uncommon  | Win 5 hunts                 |
+| `ten_wins`             | Champion       | 👑   | Rare      | Win 10 hunts                |
+| `twenty_five_wins`     | Unstoppable    | 🔥   | Epic      | Win 25 hunts                |
+| `first_nft`            | Collector      | 🎨   | Uncommon  | Earn 1 NFT                  |
+| `high_scorer`          | Sharpshooter   | 🎪   | Rare      | Highest monthly score       |
+| `speed_hunter`         | Lightning Fast | ⚡   | Rare      | Complete in under 5 minutes |
+| `veteran`              | Veteran        | 🛡️   | Epic      | Complete 50 hunts           |
+| `legend`               | Legend         | 💎   | Legendary | Win 100 hunts               |
 
 ## File Structure
 
@@ -81,23 +81,30 @@ clearAchievements(address: string): void
 
 ```typescript
 type AchievementId =
-  | "first_hunt_completed" | "first_win" | "five_wins"
-  | "ten_wins" | "twenty_five_wins" | "first_nft"
-  | "high_scorer" | "speed_hunter" | "veteran" | "legend"
+  | 'first_hunt_completed'
+  | 'first_win'
+  | 'five_wins'
+  | 'ten_wins'
+  | 'twenty_five_wins'
+  | 'first_nft'
+  | 'high_scorer'
+  | 'speed_hunter'
+  | 'veteran'
+  | 'legend';
 
 interface Achievement {
-  id: AchievementId
-  title: string
-  description: string
-  icon: string
-  rarity: "common" | "uncommon" | "rare" | "epic" | "legendary"
-  condition: string
+  id: AchievementId;
+  title: string;
+  description: string;
+  icon: string;
+  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  condition: string;
 }
 
 interface PlayerAchievements {
-  address: string
-  earned: EarnedAchievement[]
-  lastUpdated: number
+  address: string;
+  earned: EarnedAchievement[];
+  lastUpdated: number;
 }
 ```
 
@@ -106,23 +113,23 @@ interface PlayerAchievements {
 ### Award achievements on hunt completion
 
 ```typescript
-import { checkAndAwardAchievements } from "@/lib/achievements/service"
-import { ACHIEVEMENTS } from "@/lib/achievements/config"
-import { toast } from "sonner"
+import { checkAndAwardAchievements } from '@/lib/achievements/service';
+import { ACHIEVEMENTS } from '@/lib/achievements/config';
+import { toast } from 'sonner';
 
 const earned = checkAndAwardAchievements(playerAddress, {
   totalHuntsCompleted: 1,
   totalHuntsWon: 1,
   totalNftsEarned: 0,
-})
+});
 
 earned.forEach((id) => {
-  const a = ACHIEVEMENTS[id]
+  const a = ACHIEVEMENTS[id];
   toast.success(`Achievement Unlocked: ${a.title}!`, {
     description: a.description,
     duration: 5000,
-  })
-})
+  });
+});
 ```
 
 ### Display achievements on profile
@@ -138,10 +145,10 @@ import { BadgeWall } from "@/components/BadgeWall"
 ### Check individual achievement
 
 ```typescript
-import { hasAchievement } from "@/lib/achievements/service"
+import { hasAchievement } from '@/lib/achievements/service';
 
-if (hasAchievement(playerAddress, "first_hunt_completed")) {
-  console.log("Player completed their first hunt!")
+if (hasAchievement(playerAddress, 'first_hunt_completed')) {
+  console.log('Player completed their first hunt!');
 }
 ```
 

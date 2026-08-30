@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import { useCallback, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useCallback, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
-import type { MintStage } from "@/lib/nft/minter";
-import { settleWalletBalance } from "@/lib/wallet/balanceEvents";
+import type { MintStage } from '@/lib/nft/minter';
+import { settleWalletBalance } from '@/lib/wallet/balanceEvents';
 import {
   estimateMintFee,
   type FeeEstimate,
   mintHuntRewardNft,
   type MintResult,
   saveMintReceipt,
-} from "@/lib/nft/minter";
+} from '@/lib/nft/minter';
 
-export type { MintStage } from "@/lib/nft/minter";
+export type { MintStage } from '@/lib/nft/minter';
 
 export interface UseNftMintResult {
   stage: MintStage;
@@ -33,15 +33,15 @@ export interface UseNftMintResult {
 }
 
 const STAGE_LABEL: Record<MintStage, string> = {
-  idle: "Idle",
-  building_metadata: "Building metadata",
-  uploading_metadata: "Uploading to IPFS",
-  estimating_fee: "Estimating fee",
-  signing: "Waiting for wallet signature",
-  submitting: "Submitting mint transaction",
-  confirming: "Confirming transaction",
-  complete: "Mint complete",
-  error: "Mint failed",
+  idle: 'Idle',
+  building_metadata: 'Building metadata',
+  uploading_metadata: 'Uploading to IPFS',
+  estimating_fee: 'Estimating fee',
+  signing: 'Waiting for wallet signature',
+  submitting: 'Submitting mint transaction',
+  confirming: 'Confirming transaction',
+  complete: 'Mint complete',
+  error: 'Mint failed',
 };
 
 export function stageLabel(stage: MintStage): string {
@@ -49,29 +49,26 @@ export function stageLabel(stage: MintStage): string {
 }
 
 export function useNftMint(): UseNftMintResult {
-  const [stage, setStage] = useState<MintStage>("idle");
+  const [stage, setStage] = useState<MintStage>('idle');
   const [feeEstimate, setFeeEstimate] = useState<FeeEstimate | null>(null);
   const [result, setResult] = useState<MintResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const estimate = useCallback(
-    async (huntId: number, recipientAddress?: string) => {
-      setError(null);
-      try {
-        const estimate = await estimateMintFee(huntId, recipientAddress);
-        setFeeEstimate(estimate);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Fee estimation failed");
-      }
-    },
-    []
-  );
+  const estimate = useCallback(async (huntId: number, recipientAddress?: string) => {
+    setError(null);
+    try {
+      const estimate = await estimateMintFee(huntId, recipientAddress);
+      setFeeEstimate(estimate);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fee estimation failed');
+    }
+  }, []);
 
-  const mint = useCallback<UseNftMintResult["mint"]>(async (input) => {
+  const mint = useCallback<UseNftMintResult['mint']>(async (input) => {
     setError(null);
     setResult(null);
-    setStage("building_metadata");
+    setStage('building_metadata');
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -84,16 +81,16 @@ export function useNftMint(): UseNftMintResult {
       });
       saveMintReceipt(input, mintResult);
       setResult(mintResult);
-      toast.success("NFT minted successfully");
+      toast.success('NFT minted successfully');
       // Minting spends network fees and adds a token, so both halves of the
       // wallet display are now out of date. This path does not go through
       // withTransactionToast, so it settles the balance itself.
       settleWalletBalance();
       return mintResult;
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Mint failed";
+      const message = err instanceof Error ? err.message : 'Mint failed';
       setError(message);
-      setStage("error");
+      setStage('error');
       toast.error(message);
       return null;
     }
@@ -101,15 +98,15 @@ export function useNftMint(): UseNftMintResult {
 
   const reset = useCallback(() => {
     abortRef.current?.abort();
-    setStage("idle");
+    setStage('idle');
     setResult(null);
     setError(null);
   }, []);
 
   const abort = useCallback(() => {
     abortRef.current?.abort();
-    setStage("idle");
-    setError("Mint cancelled");
+    setStage('idle');
+    setError('Mint cancelled');
   }, []);
 
   return { stage, feeEstimate, result, error, estimate, mint, reset, abort };

@@ -1,6 +1,6 @@
-"use client"
+'use client';
 
-import { Toaster } from "sonner"
+import { Toaster } from 'sonner';
 
 export function TxToaster() {
   return (
@@ -11,6 +11,5 @@ export function TxToaster() {
       closeButton
       containerAriaLabel="Transaction status notifications"
     />
-  )
+  );
 }
-

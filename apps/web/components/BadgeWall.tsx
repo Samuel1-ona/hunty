@@ -1,37 +1,39 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
+import { useEffect, useState } from 'react';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@hunty/ui"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { RARITY_BORDER_COLORS,RARITY_COLORS } from "@/lib/achievements/config"
-import { getAllAchievementsWithStatus } from "@/lib/achievements/service"
-import { logger } from "@/lib/logger"
-import { cn } from "@/lib/utils"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { RARITY_BORDER_COLORS, RARITY_COLORS } from '@/lib/achievements/config';
+import { getAllAchievementsWithStatus } from '@/lib/achievements/service';
+import { logger } from '@/lib/logger';
+import { cn } from '@/lib/utils';
 
 interface BadgeWallProps {
-  playerAddress: string
+  playerAddress: string;
 }
 
 export function BadgeWall({ playerAddress }: BadgeWallProps) {
-  const [achievements, setAchievements] = useState<ReturnType<typeof getAllAchievementsWithStatus>>([])
-  const [loading, setLoading] = useState(true)
+  const [achievements, setAchievements] = useState<ReturnType<typeof getAllAchievementsWithStatus>>(
+    []
+  );
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!playerAddress) {
-      setLoading(false)
-      return
+      setLoading(false);
+      return;
     }
 
     try {
-      const allAchievements = getAllAchievementsWithStatus(playerAddress)
-      setAchievements(allAchievements)
+      const allAchievements = getAllAchievementsWithStatus(playerAddress);
+      setAchievements(allAchievements);
     } catch (error) {
-      logger.error("Failed to load achievements:", error)
+      logger.error('Failed to load achievements:', error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [playerAddress])
+  }, [playerAddress]);
 
   if (loading) {
     return (
@@ -44,11 +46,11 @@ export function BadgeWall({ playerAddress }: BadgeWallProps) {
           <div className="text-center text-slate-500">Loading achievements...</div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
-  const earnedCount = achievements.filter((a) => a.earned).length
-  const totalCount = achievements.length
+  const earnedCount = achievements.filter((a) => a.earned).length;
+  const totalCount = achievements.length;
 
   return (
     <Card className="w-full">
@@ -66,10 +68,10 @@ export function BadgeWall({ playerAddress }: BadgeWallProps) {
                 <TooltipTrigger asChild>
                   <div
                     className={cn(
-                      "flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all cursor-pointer",
+                      'flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all cursor-pointer',
                       achievement.earned
                         ? `bg-gradient-to-br ${RARITY_COLORS[achievement.rarity]} ${RARITY_BORDER_COLORS[achievement.rarity]} shadow-lg`
-                        : "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 opacity-50"
+                        : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 opacity-50'
                     )}
                   >
                     <div className="text-4xl mb-2">{achievement.icon}</div>
@@ -111,5 +113,5 @@ export function BadgeWall({ playerAddress }: BadgeWallProps) {
         )}
       </CardContent>
     </Card>
-  )
+  );
 }

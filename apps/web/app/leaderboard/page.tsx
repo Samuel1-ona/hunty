@@ -1,91 +1,103 @@
-"use client"
+'use client';
 
-import { ArrowLeft, Check, Copy, Trophy, Users } from "lucide-react"
-import dynamic from "next/dynamic"
-import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Suspense, useCallback, useEffect, useState } from "react"
+import { ArrowLeft, Check, Copy, Trophy } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 
-import { Header } from "@/components/Header"
-import { LeaderboardTableSkeleton } from "@/components/LoadingSkeletons"
-import { ReferralLeaderboardTable } from "@/components/ReferralLeaderboardTable"
-import { Button } from "@/components/ui/button"
-import type { LeaderboardFilters, LeaderboardMetric, LeaderboardTimePeriod } from "@/lib/types"
-import type { ClueDifficulty } from "@/lib/types"
+import { Header } from '@/components/Header';
+import { LeaderboardTableSkeleton } from '@/components/LoadingSkeletons';
+import { Button } from '@/components/ui/button';
+import type { LeaderboardFilters, LeaderboardMetric, LeaderboardTimePeriod } from '@/lib/types';
+import type { ClueDifficulty } from '@/lib/types';
 
 const LeaderboardFilterBar = dynamic(() =>
-  import("@/components/LeaderboardFilterBar").then((mod) => mod.LeaderboardFilterBar)
-)
+  import('@/components/LeaderboardFilterBar').then((mod) => mod.LeaderboardFilterBar)
+);
 const LeaderboardTable = dynamic(() =>
-  import("@/components/LeaderBoardTable").then((mod) => mod.LeaderboardTable)
-)
+  import('@/components/LeaderBoardTable').then((mod) => mod.LeaderboardTable)
+);
 
 const DEFAULT_FILTERS: LeaderboardFilters = {
-  timePeriod: "all",
-  category: "all",
-  difficulty: "all",
-  metric: "points",
-}
+  timePeriod: 'all',
+  category: 'all',
+  difficulty: 'all',
+  metric: 'points',
+};
 
 function parseFiltersFromParams(params: URLSearchParams): LeaderboardFilters {
-  const timePeriod = params.get("period") as LeaderboardTimePeriod | null
-  const category = params.get("category") ?? "all"
-  const difficulty = params.get("difficulty") as ClueDifficulty | "all" | null
-  const metric = params.get("metric") as LeaderboardMetric | null
+  const timePeriod = params.get('period') as LeaderboardTimePeriod | null;
+  const category = params.get('category') ?? 'all';
+  const difficulty = params.get('difficulty') as ClueDifficulty | 'all' | null;
+  const metric = params.get('metric') as LeaderboardMetric | null;
 
-  const validPeriods: LeaderboardTimePeriod[] = ["today", "week", "month", "all"]
-  const validDifficulties: (ClueDifficulty | "all")[] = ["all", "Easy", "Medium", "Hard"]
-  const validMetrics: LeaderboardMetric[] = ["points", "completions"]
+  const validPeriods: LeaderboardTimePeriod[] = ['today', 'week', 'month', 'all'];
+  const validDifficulties: (ClueDifficulty | 'all')[] = ['all', 'Easy', 'Medium', 'Hard'];
+  const validMetrics: LeaderboardMetric[] = ['points', 'completions'];
 
   return {
-    timePeriod: timePeriod && validPeriods.includes(timePeriod) ? timePeriod : DEFAULT_FILTERS.timePeriod,
+    timePeriod:
+      timePeriod && validPeriods.includes(timePeriod) ? timePeriod : DEFAULT_FILTERS.timePeriod,
     category: category || DEFAULT_FILTERS.category,
-    difficulty: difficulty && validDifficulties.includes(difficulty) ? difficulty : DEFAULT_FILTERS.difficulty,
+    difficulty:
+      difficulty && validDifficulties.includes(difficulty)
+        ? difficulty
+        : DEFAULT_FILTERS.difficulty,
     metric: metric && validMetrics.includes(metric) ? metric : DEFAULT_FILTERS.metric,
-  }
+  };
 }
 
 function LeaderboardContent() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [filters, setFilters] = useState<LeaderboardFilters>(() => parseFiltersFromParams(searchParams))
-  const [copied, setCopied] = useState(false)
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [filters, setFilters] = useState<LeaderboardFilters>(() =>
+    parseFiltersFromParams(searchParams)
+  );
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    setFilters(parseFiltersFromParams(searchParams))
-  }, [searchParams])
+    setFilters(parseFiltersFromParams(searchParams));
+  }, [searchParams]);
 
-  const handleFilterChange = useCallback((updated: Partial<LeaderboardFilters>) => {
-    setFilters((prev) => {
-      const next = { ...prev, ...updated }
-      const params = new URLSearchParams()
-      if (next.timePeriod !== "all") params.set("period", next.timePeriod)
-      if (next.category !== "all") params.set("category", next.category)
-      if (next.difficulty !== "all") params.set("difficulty", next.difficulty)
-      if (next.metric !== "points") params.set("metric", next.metric)
-      const query = params.toString()
-      router.replace(`/leaderboard${query ? `?${query}` : ""}`, { scroll: false })
-      return next
-    })
-  }, [router])
+  const handleFilterChange = useCallback(
+    (updated: Partial<LeaderboardFilters>) => {
+      setFilters((prev) => {
+        const next = { ...prev, ...updated };
+        const params = new URLSearchParams();
+        if (next.timePeriod !== 'all') params.set('period', next.timePeriod);
+        if (next.category !== 'all') params.set('category', next.category);
+        if (next.difficulty !== 'all') params.set('difficulty', next.difficulty);
+        if (next.metric !== 'points') params.set('metric', next.metric);
+        const query = params.toString();
+        router.replace(`/leaderboard${query ? `?${query}` : ''}`, { scroll: false });
+        return next;
+      });
+    },
+    [router]
+  );
 
   const handleCopyLink = useCallback(() => {
     navigator.clipboard.writeText(window.location.href).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
-  }, [])
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, []);
 
   const isFiltered =
-    filters.timePeriod !== "all" ||
-    filters.category !== "all" ||
-    filters.difficulty !== "all" ||
-    filters.metric !== "points"
+    filters.timePeriod !== 'all' ||
+    filters.category !== 'all' ||
+    filters.difficulty !== 'all' ||
+    filters.metric !== 'points';
 
   return (
     <>
       <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
-        <Button variant="ghost" asChild className="flex items-center gap-2 text-zinc-400 hover:text-white hover:bg-white/5">
+        <Button
+          variant="ghost"
+          asChild
+          className="flex items-center gap-2 text-zinc-400 hover:text-white hover:bg-white/5"
+        >
           <Link href="/">
             <ArrowLeft className="h-4 w-4" />
             Back to Arcade
@@ -99,7 +111,7 @@ function LeaderboardContent() {
           className="flex items-center gap-2 border-white/20 text-white hover:bg-white/10"
         >
           {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
-          {copied ? "Copied!" : "Share filtered view"}
+          {copied ? 'Copied!' : 'Share filtered view'}
         </Button>
       </div>
 
@@ -121,8 +133,8 @@ function LeaderboardContent() {
           <span className="text-xs text-zinc-500">Active filters applied.</span>
           <button
             onClick={() => {
-              router.replace("/leaderboard", { scroll: false })
-              setFilters(DEFAULT_FILTERS)
+              router.replace('/leaderboard', { scroll: false });
+              setFilters(DEFAULT_FILTERS);
             }}
             className="text-xs text-[#6b8cff] hover:underline"
           >
@@ -132,14 +144,10 @@ function LeaderboardContent() {
       )}
 
       <div className="bg-white/5 border border-white/10 rounded-2xl p-6 shadow-inner">
-        {activeTab === "game" ? (
-          <LeaderboardTable huntId={1} filters={filters} />
-        ) : (
-          <ReferralLeaderboardTable />
-        )}
+        <LeaderboardTable huntId={1} filters={filters} />
       </div>
     </>
-  )
+  );
 }
 
 export default function LeaderboardPage() {
@@ -171,5 +179,5 @@ export default function LeaderboardPage() {
         </Suspense>
       </div>
     </div>
-  )
+  );
 }

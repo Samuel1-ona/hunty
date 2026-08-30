@@ -1,16 +1,13 @@
-import { NextResponse } from "next/server";
-import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
-import { getHuntById } from "@/lib/huntStore";
+import { NextResponse } from 'next/server';
+import { rateLimit, getIP, rateLimitResponse } from '@/lib/rate-limit';
+import { getHuntById } from '@/lib/huntStore';
 
 /**
  * GET /api/embed/[id]
  * Returns lightweight hunt data for the embed widget.
  * Private hunts return 403 so the widget can inform the viewer.
  */
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const ip = getIP(req);
   const { success, reset } = await rateLimit(ip, { limit: 120, windowMs: 60 * 1000 });
 
@@ -22,18 +19,18 @@ export async function GET(
   const huntId = parseInt(id, 10);
 
   if (isNaN(huntId)) {
-    return NextResponse.json({ error: "Invalid hunt ID" }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid hunt ID' }, { status: 400 });
   }
 
   const hunt = getHuntById(huntId);
 
   if (!hunt) {
-    return NextResponse.json({ error: "Hunt not found" }, { status: 404 });
+    return NextResponse.json({ error: 'Hunt not found' }, { status: 404 });
   }
 
   if (hunt.is_private) {
     return NextResponse.json(
-      { error: "This hunt is private and cannot be embedded." },
+      { error: 'This hunt is private and cannot be embedded.' },
       { status: 403 }
     );
   }
@@ -56,8 +53,8 @@ export async function GET(
     {
       headers: {
         // Allow any origin to load embed data
-        "Access-Control-Allow-Origin": "*",
-        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
       },
     }
   );

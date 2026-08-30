@@ -1,9 +1,9 @@
-import { Bell, Network, Settings } from "lucide-react";
+import { Bell, Network, Settings } from 'lucide-react';
 
-import { Header } from "@/components/Header";
-import { NetworkSwitcher } from "@/components/NetworkSwitcher";
-import { NotificationSettings } from "@/components/NotificationSettings";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Header } from '@/components/Header';
+import { NetworkSwitcher } from '@/components/NetworkSwitcher';
+import { NotificationSettings } from '@/components/NotificationSettings';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function SettingsPage() {
   return (

@@ -6,13 +6,13 @@
  * fee-bump XDR the client can submit to the network.
  */
 
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
 
-import { withValidation } from "@/lib/api/withValidation";
-import { getPaymaster } from "@/lib/paymaster";
-import { paymasterSponsorBodySchema } from "@hunty/types/api-schemas";
+import { withValidation } from '@/lib/api/withValidation';
+import { getPaymaster } from '@/lib/paymaster';
+import { paymasterSponsorBodySchema } from '@hunty/types/api-schemas';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export const POST = withValidation(
   { body: paymasterSponsorBodySchema },

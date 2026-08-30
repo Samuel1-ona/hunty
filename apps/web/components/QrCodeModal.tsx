@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { QRCodeSVG } from 'qrcode.react';
 import React from 'react';

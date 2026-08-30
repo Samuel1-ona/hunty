@@ -12,11 +12,10 @@
   },
   "sideEffects": false,
   "scripts": {
-    "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit",
     "test": "vitest --run"
   },
-  "sideEffects": false,
   "peerDependencies": {
     "zod": "^4.0.0"
   },
@@ -28,7 +27,6 @@
   "devDependencies": {
     "eslint": "^9",
     "typescript": "^5",
-    "typescript-eslint": "^8",
     "vitest": "^4.0.18",
     "zod": "^4.3.6"
   }

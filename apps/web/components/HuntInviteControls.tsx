@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { Copy, Link2, RefreshCw, ShieldOff } from "lucide-react";
-import { type MouseEvent as ReactMouseEvent, useState } from "react";
-import { toast } from "sonner";
+import { Copy, Link2, RefreshCw, ShieldOff } from 'lucide-react';
+import { type MouseEvent as ReactMouseEvent, useState } from 'react';
+import { toast } from 'sonner';
 
-import { Button } from "@hunty/ui";
-import { buildHuntInviteUrl, generateHuntInvite, revokeHuntInvite } from "@/lib/huntStore";
-import type { HuntInvite, StoredHunt } from "@/lib/types";
+import { Button } from '@/components/ui/button';
+import { buildHuntInviteUrl, generateHuntInvite, revokeHuntInvite } from '@/lib/huntStore';
+import type { HuntInvite, StoredHunt } from '@/lib/types';
 
 interface HuntInviteControlsProps {
   hunt: StoredHunt;
@@ -19,7 +19,7 @@ function stopCardNavigation(event: ReactMouseEvent<HTMLElement>) {
 }
 
 async function copyInvite(huntId: number, invite: HuntInvite): Promise<boolean> {
-  if (typeof navigator === "undefined" || !navigator.clipboard) return false;
+  if (typeof navigator === 'undefined' || !navigator.clipboard) return false;
 
   try {
     const url = buildHuntInviteUrl(huntId, invite.token);
@@ -46,12 +46,12 @@ export function HuntInviteControls({ hunt, onRefresh }: HuntInviteControlsProps)
       onRefresh();
 
       if (await copyInvite(hunt.id, invite)) {
-        toast.success("Invite link generated and copied to clipboard");
+        toast.success('Invite link generated and copied to clipboard');
       } else {
-        toast.success("Invite link generated. Use Copy invite link to share it.");
+        toast.success('Invite link generated. Use Copy invite link to share it.');
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to generate invite link");
+      toast.error(error instanceof Error ? error.message : 'Failed to generate invite link');
     }
   };
 
@@ -60,24 +60,24 @@ export function HuntInviteControls({ hunt, onRefresh }: HuntInviteControlsProps)
     if (!hunt.invite || !inviteIsActive) return;
 
     if (await copyInvite(hunt.id, hunt.invite)) {
-      toast.success("Invite link copied to clipboard");
+      toast.success('Invite link copied to clipboard');
     } else {
-      toast.error("Failed to copy invite link");
+      toast.error('Failed to copy invite link');
     }
   };
 
   const handleRevoke = (event: ReactMouseEvent<HTMLButtonElement>) => {
     stopCardNavigation(event);
 
-    if (!window.confirm("Revoke this invite link? Anyone using it will lose access.")) {
+    if (!window.confirm('Revoke this invite link? Anyone using it will lose access.')) {
       return;
     }
 
     if (revokeHuntInvite(hunt.id)) {
       onRefresh();
-      toast.success("Invite link revoked");
+      toast.success('Invite link revoked');
     } else {
-      toast.error("No active invite link to revoke");
+      toast.error('No active invite link to revoke');
     }
   };
 
@@ -137,7 +137,7 @@ export function HuntInviteControls({ hunt, onRefresh }: HuntInviteControlsProps)
             size="sm"
             variant="outline"
             onClick={handleGenerate}
-            aria-label={`${inviteIsExpired ? "Generate new" : "Generate"} invite link for ${hunt.title}`}
+            aria-label={`${inviteIsExpired ? 'Generate new' : 'Generate'} invite link for ${hunt.title}`}
             className="border-violet-300 text-violet-700 hover:bg-violet-100 dark:border-violet-700 dark:text-violet-300"
           >
             {inviteIsExpired ? (
@@ -145,7 +145,7 @@ export function HuntInviteControls({ hunt, onRefresh }: HuntInviteControlsProps)
             ) : (
               <Link2 className="h-3.5 w-3.5" />
             )}
-            {inviteIsExpired ? "Generate new link" : "Generate invite link"}
+            {inviteIsExpired ? 'Generate new link' : 'Generate invite link'}
           </Button>
         )}
       </div>

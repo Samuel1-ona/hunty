@@ -6,29 +6,29 @@
  * Docs: https://xbull.app/docs/
  */
 
-import type { ActiveWalletAdapter } from "./types"
+import type { ActiveWalletAdapter } from './types';
 
 type XBullLike = {
-  getPublicKey: () => Promise<string>
-  signTransaction: (xdr: string, opts?: { network: string }) => Promise<string>
-}
+  getPublicKey: () => Promise<string>;
+  signTransaction: (xdr: string, opts?: { network: string }) => Promise<string>;
+};
 
 function getXBull(): XBullLike {
-  if (typeof window === "undefined") throw new Error("Browser environment required")
-  const wallet = (window as unknown as { xBullWallet?: XBullLike }).xBullWallet
+  if (typeof window === 'undefined') throw new Error('Browser environment required');
+  const wallet = (window as unknown as { xBullWallet?: XBullLike }).xBullWallet;
   if (!wallet) {
     throw new Error(
-      "xBull Wallet not found. Please install the xBull extension or open the xBull mobile app."
-    )
+      'xBull Wallet not found. Please install the xBull extension or open the xBull mobile app.'
+    );
   }
-  return wallet
+  return wallet;
 }
 
 /**
  * Fetch the connected xBull account's public key.
  */
 export async function getXBullPublicKey(): Promise<string> {
-  return getXBull().getPublicKey()
+  return getXBull().getPublicKey();
 }
 
 /**
@@ -36,7 +36,7 @@ export async function getXBullPublicKey(): Promise<string> {
  * Returns the signed transaction XDR.
  */
 export async function signWithXBull(xdr: string): Promise<string> {
-  return getXBull().signTransaction(xdr, { network: "TESTNET" })
+  return getXBull().signTransaction(xdr, { network: 'TESTNET' });
 }
 
 /**
@@ -44,8 +44,8 @@ export async function signWithXBull(xdr: string): Promise<string> {
  */
 export function createXBullAdapter(): ActiveWalletAdapter {
   return {
-    provider: "xbull",
+    provider: 'xbull',
     getPublicKey: getXBullPublicKey,
     signTransaction: signWithXBull,
-  }
+  };
 }

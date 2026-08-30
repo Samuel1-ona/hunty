@@ -1,21 +1,18 @@
-import { NextResponse } from "next/server"
+import { NextResponse } from 'next/server';
 
-import { getHuntById } from "@/lib/huntStore"
+import { getHuntById } from '@/lib/huntStore';
 
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const { id } = await params
-  const huntId = Number(id)
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const huntId = Number(id);
 
   if (Number.isNaN(huntId)) {
-    return NextResponse.json({ error: "Invalid hunt id" }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid hunt id' }, { status: 400 });
   }
 
-  const hunt = getHuntById(huntId)
+  const hunt = getHuntById(huntId);
   if (!hunt) {
-    return NextResponse.json({ error: "Hunt not found" }, { status: 404 })
+    return NextResponse.json({ error: 'Hunt not found' }, { status: 404 });
   }
 
   const svg = `
@@ -37,12 +34,12 @@ export async function GET(
       <text x="80" y="520" font-size="24" font-family="Arial, sans-serif" fill="#FFFFFF">Status: ${hunt.status}</text>
       <text x="80" y="580" font-size="24" font-family="Arial, sans-serif" fill="#FFFFFF">hunty.app</text>
     </svg>
-  `.trim()
+  `.trim();
 
   return new NextResponse(svg, {
     headers: {
-      "Content-Type": "image/svg+xml",
-      "Cache-Control": "public, max-age=600",
+      'Content-Type': 'image/svg+xml',
+      'Cache-Control': 'public, max-age=600',
     },
-  })
+  });
 }

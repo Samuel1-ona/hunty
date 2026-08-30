@@ -1,10 +1,10 @@
-"use client"
+'use client';
 
-import { useEffect, useMemo, useState } from "react"
-import Link from "next/link"
-import { Sparkles, Users } from "lucide-react"
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { Sparkles, Users } from 'lucide-react';
 
-import { Button } from "@hunty/ui"
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -12,26 +12,23 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@hunty/ui"
+} from '@/components/ui/card';
 import {
   STARTER_HUNT_TEMPLATES,
   getTemplateCategories,
   type HuntTemplate,
-} from "@/lib/huntTemplates"
-import {
-  getCommunityTemplates,
-  type CommunityHuntTemplate,
-} from "@/lib/communityTemplates"
-import { SubmitTemplateDialog } from "@/components/SubmitTemplateDialog"
+} from '@/lib/huntTemplates';
+import { getCommunityTemplates, type CommunityHuntTemplate } from '@/lib/communityTemplates';
+import { SubmitTemplateDialog } from '@/components/SubmitTemplateDialog';
 
-const ALL_CATEGORIES = "All"
+const ALL_CATEGORIES = 'All';
 
 function TemplateCard({
   template,
   community = false,
 }: {
-  template: HuntTemplate | CommunityHuntTemplate
-  community?: boolean
+  template: HuntTemplate | CommunityHuntTemplate;
+  community?: boolean;
 }) {
   return (
     <Card className="overflow-hidden rounded-3xl border border-white/80 bg-white/85 shadow-[0_20px_60px_-30px_rgba(15,23,42,0.35)] backdrop-blur">
@@ -52,10 +49,8 @@ function TemplateCard({
         <CardDescription className="mt-2 text-sm leading-6 text-slate-600">
           {template.description}
         </CardDescription>
-        {community && "author" in template && (
-          <p className="mt-2 text-xs font-medium text-slate-500">
-            Shared by {template.author}
-          </p>
+        {community && 'author' in template && (
+          <p className="mt-2 text-xs font-medium text-slate-500">Shared by {template.author}</p>
         )}
       </CardHeader>
 
@@ -82,57 +77,44 @@ function TemplateCard({
           asChild
           className="w-full rounded-2xl bg-[#0C0C4F] py-6 text-base font-semibold text-white hover:bg-slate-800"
         >
-          <Link
-            href={`/hunty?template=${template.slug}`}
-            aria-label={`Start ${template.title}`}
-          >
+          <Link href={`/hunty?template=${template.slug}`} aria-label={`Start ${template.title}`}>
             Start from Template
           </Link>
         </Button>
       </CardFooter>
     </Card>
-  )
+  );
 }
 
 export function HuntTemplatesGallery() {
-  const [activeCategory, setActiveCategory] = useState<string>(ALL_CATEGORIES)
-  const [communityTemplates, setCommunityTemplates] = useState<
-    CommunityHuntTemplate[]
-  >([])
+  const [activeCategory, setActiveCategory] = useState<string>(ALL_CATEGORIES);
+  const [communityTemplates, setCommunityTemplates] = useState<CommunityHuntTemplate[]>([]);
 
   // Community templates live in localStorage, so read them after mount to keep
   // the server-rendered markup and the first client render in sync.
   useEffect(() => {
-    setCommunityTemplates(getCommunityTemplates())
-  }, [])
+    setCommunityTemplates(getCommunityTemplates());
+  }, []);
 
-  const refreshCommunityTemplates = () =>
-    setCommunityTemplates(getCommunityTemplates())
+  const refreshCommunityTemplates = () => setCommunityTemplates(getCommunityTemplates());
 
-  const categories = useMemo(
-    () => [ALL_CATEGORIES, ...getTemplateCategories()],
-    [],
-  )
+  const categories = useMemo(() => [ALL_CATEGORIES, ...getTemplateCategories()], []);
 
   const visibleStarters = useMemo(
     () =>
       activeCategory === ALL_CATEGORIES
         ? STARTER_HUNT_TEMPLATES
-        : STARTER_HUNT_TEMPLATES.filter(
-            (template) => template.category === activeCategory,
-          ),
-    [activeCategory],
-  )
+        : STARTER_HUNT_TEMPLATES.filter((template) => template.category === activeCategory),
+    [activeCategory]
+  );
 
   const visibleCommunity = useMemo(
     () =>
       activeCategory === ALL_CATEGORIES
         ? communityTemplates
-        : communityTemplates.filter(
-            (template) => template.category === activeCategory,
-          ),
-    [activeCategory, communityTemplates],
-  )
+        : communityTemplates.filter((template) => template.category === activeCategory),
+    [activeCategory, communityTemplates]
+  );
 
   return (
     <>
@@ -143,7 +125,7 @@ export function HuntTemplatesGallery() {
           aria-label="Filter templates by category"
         >
           {categories.map((category) => {
-            const isActive = category === activeCategory
+            const isActive = category === activeCategory;
             return (
               <button
                 key={category}
@@ -153,13 +135,13 @@ export function HuntTemplatesGallery() {
                 onClick={() => setActiveCategory(category)}
                 className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
                   isActive
-                    ? "border-[#0C0C4F] bg-[#0C0C4F] text-white"
-                    : "border-slate-200 bg-white/80 text-slate-600 hover:border-slate-300 hover:text-slate-900"
+                    ? 'border-[#0C0C4F] bg-[#0C0C4F] text-white'
+                    : 'border-slate-200 bg-white/80 text-slate-600 hover:border-slate-300 hover:text-slate-900'
                 }`}
               >
                 {category}
               </button>
-            )
+            );
           })}
         </div>
 
@@ -199,8 +181,8 @@ export function HuntTemplatesGallery() {
         <div className="mt-14 flex flex-col items-center gap-3 rounded-3xl border border-dashed border-orange-200 bg-white/70 p-10 text-center">
           <Sparkles className="h-6 w-6 text-orange-500" />
           <p className="max-w-md text-slate-600">
-            Built a hunt you love? Share it as a community template so other
-            creators can start from your idea.
+            Built a hunt you love? Share it as a community template so other creators can start from
+            your idea.
           </p>
           <SubmitTemplateDialog
             categories={getTemplateCategories()}
@@ -209,5 +191,5 @@ export function HuntTemplatesGallery() {
         </div>
       )}
     </>
-  )
+  );
 }

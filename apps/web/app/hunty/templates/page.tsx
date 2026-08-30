@@ -1,24 +1,26 @@
-import { ArrowLeft, Sparkles } from "lucide-react"
-import type { Metadata } from "next"
-import Link from "next/link"
+import { ArrowLeft, Sparkles } from 'lucide-react';
+import type { Metadata } from 'next';
+import Link from 'next/link';
 
-import { Header } from "@/components/Header"
-import { Button } from "@hunty/ui"
-import { HuntTemplatesGallery } from "@/components/HuntTemplatesGallery"
+import { Header } from '@/components/Header';
+import { Button } from '@/components/ui/button';
+import { HuntTemplatesGallery } from '@/components/HuntTemplatesGallery';
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hunty.app"
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://hunty.app';
 
 export const metadata: Metadata = {
-  title: "Hunt Templates | Hunty",
-  description: "Browse starter scavenger hunt templates. Pick a template, customize the clues, and publish your own blockchain-powered treasure hunt.",
+  title: 'Hunt Templates | Hunty',
+  description:
+    'Browse starter scavenger hunt templates. Pick a template, customize the clues, and publish your own blockchain-powered treasure hunt.',
   openGraph: {
-    title: "Hunt Templates | Hunty",
-    description: "Browse starter scavenger hunt templates. Pick a template, customize the clues, and publish your own blockchain-powered treasure hunt.",
+    title: 'Hunt Templates | Hunty',
+    description:
+      'Browse starter scavenger hunt templates. Pick a template, customize the clues, and publish your own blockchain-powered treasure hunt.',
   },
   alternates: {
     canonical: `${baseUrl}/hunty/templates`,
   },
-}
+};
 
 export default function HuntTemplatesPage() {
   return (
@@ -46,12 +48,13 @@ export default function HuntTemplatesPage() {
             Start with a hunt idea, not a blank page
           </h1>
           <p className="text-lg text-slate-600">
-            Pick a starter, filter by category, load editable sample clues into the builder, and tailor everything before you publish.
+            Pick a starter, filter by category, load editable sample clues into the builder, and
+            tailor everything before you publish.
           </p>
         </div>
 
         <HuntTemplatesGallery />
       </div>
     </div>
-  )
+  );
 }

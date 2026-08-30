@@ -6,9 +6,9 @@
  * Promise that rejects without a `.catch()` is forwarded to Sentry before
  * the process has a chance to swallow it silently.
  */
-import * as Sentry from "@sentry/nextjs"
+import * as Sentry from '@sentry/nextjs';
 
-import { scrubSentryEvent } from "@/lib/sentry/scrub"
+import { scrubSentryEvent } from '@/lib/sentry/scrub';
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -24,10 +24,10 @@ Sentry.init({
 
   ignoreErrors: [
     // Next.js cancels in-flight requests on navigation — not a real error.
-    "NEXT_NOT_FOUND",
-    "NEXT_REDIRECT",
+    'NEXT_NOT_FOUND',
+    'NEXT_REDIRECT',
   ],
-})
+});
 
 // ---------------------------------------------------------------------------
 // Unhandled rejection handler (task #6)
@@ -35,10 +35,10 @@ Sentry.init({
 // Next.js does not install its own unhandledRejection handler in app-router
 // server components.  We attach one here so async errors that escape without
 // a catch block still appear in Sentry rather than just in the process log.
-if (typeof process !== "undefined") {
-  process.on("unhandledRejection", (reason: unknown) => {
+if (typeof process !== 'undefined') {
+  process.on('unhandledRejection', (reason: unknown) => {
     Sentry.captureException(reason instanceof Error ? reason : new Error(String(reason)), {
-      tags: { source: "unhandledRejection" },
-    })
-  })
+      tags: { source: 'unhandledRejection' },
+    });
+  });
 }

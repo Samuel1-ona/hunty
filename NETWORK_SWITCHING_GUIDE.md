@@ -22,6 +22,7 @@ Visual badges show the current network throughout the app:
 - **Corner Badge**: Fixed position indicator (optional)
 
 **Components:**
+
 - `NetworkIndicator.tsx` - Displays current network with visual styles
 - `TestnetWarning.tsx` - Warning banner for testnet usage
 
@@ -35,6 +36,7 @@ Access network settings via the Settings page (`/settings`):
 4. Confirm the switch (page will reload)
 
 **Components:**
+
 - `NetworkSwitcher.tsx` - Interactive network selection UI
 - `app/settings/page.tsx` - Settings page with network controls
 
@@ -47,6 +49,7 @@ The app attempts to detect the wallet's network configuration:
 - Prevents transaction failures due to network mismatches
 
 **Implementation:**
+
 - `lib/wallets/networkDetection.ts` - Wallet network detection utilities
 - `NetworkMismatchWarning.tsx` - Warning UI for network mismatches
 
@@ -143,7 +146,7 @@ The app determines the active network in this order:
 import { useNetwork } from "@/hooks/useNetwork"
 
 function MyComponent() {
-  const { 
+  const {
     networkType,      // "testnet" | "mainnet"
     isTestnet,        // boolean
     isMainnet,        // boolean
@@ -168,44 +171,44 @@ function MyComponent() {
 #### Getting Contract Addresses
 
 ```typescript
-import { getContracts, getRequiredAddress } from "@/lib/contracts/config"
+import { getContracts, getRequiredAddress } from '@/lib/contracts/config';
 
 // Get all contracts for current network
-const contracts = getContracts()
-console.log(contracts.HUNTY_CORE)
-console.log(contracts.REWARD_MANAGER)
-console.log(contracts.NFT_REWARD)
+const contracts = getContracts();
+console.log(contracts.HUNTY_CORE);
+console.log(contracts.REWARD_MANAGER);
+console.log(contracts.NFT_REWARD);
 
 // Get a specific required address (throws if not set)
-const rewardManager = getRequiredAddress("REWARD_MANAGER")
+const rewardManager = getRequiredAddress('REWARD_MANAGER');
 ```
 
 #### Network Type Utilities
 
 ```typescript
-import { 
+import {
   getSorobanNetworkType,
   setSorobanNetworkType,
-  getCurrentNetworkConfig 
-} from "@/lib/soroban/client"
+  getCurrentNetworkConfig,
+} from '@/lib/soroban/client';
 
 // Get current network
-const network = getSorobanNetworkType() // "testnet" | "mainnet"
+const network = getSorobanNetworkType(); // "testnet" | "mainnet"
 
 // Switch network programmatically
-setSorobanNetworkType("mainnet")
+setSorobanNetworkType('mainnet');
 
 // Get full network config
-const config = getCurrentNetworkConfig()
+const config = getCurrentNetworkConfig();
 // { rpcUrl, networkPassphrase, networkType }
 ```
 
 #### Validating Wallet Network
 
 ```typescript
-import { 
+import {
   checkWalletNetworkMatch,
-  validateNetworkBeforeTransaction 
+  validateNetworkBeforeTransaction
 } from "@/lib/wallets/networkDetection"
 
 // Check for network mismatch
@@ -287,22 +290,19 @@ app/
 
 ```typescript
 // Test network switching
-import { getSorobanNetworkType, setSorobanNetworkType } from "@/lib/soroban/client"
+import { getSorobanNetworkType, setSorobanNetworkType } from '@/lib/soroban/client';
 
 // Mock localStorage
 const localStorageMock = {
   getItem: jest.fn(),
   setItem: jest.fn(),
   removeItem: jest.fn(),
-}
-global.localStorage = localStorageMock as any
+};
+global.localStorage = localStorageMock as any;
 
 // Test setting network
-setSorobanNetworkType("mainnet")
-expect(localStorageMock.setItem).toHaveBeenCalledWith(
-  "stellar_network_preference",
-  "mainnet"
-)
+setSorobanNetworkType('mainnet');
+expect(localStorageMock.setItem).toHaveBeenCalledWith('stellar_network_preference', 'mainnet');
 ```
 
 ## Deployment
@@ -332,10 +332,12 @@ NEXT_PUBLIC_NFT_REWARD_ADDRESS_MAINNET=CPQR...
 For production apps, consider:
 
 1. **Separate Deployments**: Deploy testnet and mainnet versions separately
+
    - `testnet.hunty.app` → Testnet only
    - `hunty.app` → Mainnet only
 
 2. **Single Deployment with Toggle**: Allow runtime switching (current implementation)
+
    - Users can toggle between networks in settings
    - Useful for developers and power users
 
@@ -392,6 +394,7 @@ For production apps, consider:
 ## Support
 
 For issues or questions:
+
 - Open an issue on GitHub
 - Check existing documentation
 - Review Stellar network documentation: https://developers.stellar.org/docs

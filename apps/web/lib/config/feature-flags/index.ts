@@ -5,7 +5,7 @@ export {
   setStoredOverride,
   clearStoredOverride,
   clearAllStoredOverrides,
-} from "./evaluate"
+} from './evaluate';
 
 export {
   FEATURE_FLAG_DEFINITIONS,
@@ -14,4 +14,4 @@ export {
   type FeatureFlagMap,
   type FeatureFlagOverride,
   type FeatureFlagValue,
-} from "./definitions"
+} from './definitions';

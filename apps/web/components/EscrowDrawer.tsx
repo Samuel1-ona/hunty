@@ -1,24 +1,24 @@
-"use client";
+'use client';
 
-import { Search, Filter, ArrowUpDown, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Search, Filter, ArrowUpDown, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Button } from "@hunty/ui";
-import { Input } from "@/components/ui/input";
-import { getAllRewardEscrows } from "@/lib/contracts/rewardManager";
-import { getHuntById } from "@/lib/huntStore";
-import { getActiveWalletAdapter } from "@/lib/walletAdapter";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { getAllRewardEscrows } from '@/lib/contracts/rewardManager';
+import { getHuntById } from '@/lib/huntStore';
+import { getActiveWalletAdapter } from '@/lib/walletAdapter';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import type { RewardEscrow } from "@/lib/contracts/rewardManager";
+} from '@/components/ui/dropdown-menu';
+import type { RewardEscrow } from '@/lib/contracts/rewardManager';
 
-type EscrowStatus = "all" | "approved" | "active" | "disputed" | "resolved" | "released";
-type EscrowRole = "all" | "sender" | "receiver" | "disputeResolver";
-type DateSort = "newest" | "oldest";
+type EscrowStatus = 'all' | 'approved' | 'active' | 'disputed' | 'resolved' | 'released';
+type EscrowRole = 'all' | 'sender' | 'receiver' | 'disputeResolver';
+type DateSort = 'newest' | 'oldest';
 
 interface EscrowFilterState {
   status: EscrowStatus;
@@ -34,33 +34,33 @@ interface EscrowDrawerProps {
 
 function deriveStatus(escrow: RewardEscrow): string {
   if (escrow.balance <= 0 && escrow.distributions.length > 0) {
-    if (escrow.refunds.length > 0) return "disputed";
-    return "released";
+    if (escrow.refunds.length > 0) return 'disputed';
+    return 'released';
   }
   if (escrow.balance <= 0 && escrow.distributions.length === 0) {
-    return "resolved";
+    return 'resolved';
   }
   if (escrow.balance > 0) {
-    if (escrow.refunds.length > 0) return "disputed";
-    return "active";
+    if (escrow.refunds.length > 0) return 'disputed';
+    return 'active';
   }
-  return "approved";
+  return 'approved';
 }
 
 function deriveRole(escrow: RewardEscrow, walletAddress?: string): EscrowRole {
-  if (!walletAddress) return "sender";
+  if (!walletAddress) return 'sender';
   const normalizedWallet = walletAddress.toLowerCase();
   const normalizedCreator = escrow.creator.toLowerCase();
 
-  if (normalizedWallet === normalizedCreator) return "sender";
+  if (normalizedWallet === normalizedCreator) return 'sender';
 
   const allRecipients = [
     ...escrow.distributions.map((d) => d.to?.toLowerCase()),
     ...escrow.refunds.map((r) => r.to?.toLowerCase()),
   ];
-  if (allRecipients.includes(normalizedWallet)) return "receiver";
+  if (allRecipients.includes(normalizedWallet)) return 'receiver';
 
-  return "sender";
+  return 'sender';
 }
 
 function escrowsMatchFilters(
@@ -71,8 +71,8 @@ function escrowsMatchFilters(
   const status = deriveStatus(escrow);
   const role = deriveRole(escrow, walletAddress);
 
-  if (filters.status !== "all" && status !== filters.status) return false;
-  if (filters.role !== "all" && role !== filters.role) return false;
+  if (filters.status !== 'all' && status !== filters.status) return false;
+  if (filters.role !== 'all' && role !== filters.role) return false;
 
   if (filters.search.trim()) {
     const query = filters.search.toLowerCase().trim();
@@ -88,17 +88,17 @@ function escrowsMatchFilters(
 
 function sortEscrows(escrows: RewardEscrow[], sort: DateSort): RewardEscrow[] {
   return [...escrows].sort((a, b) => {
-    if (sort === "newest") return b.createdAt - a.createdAt;
+    if (sort === 'newest') return b.createdAt - a.createdAt;
     return a.createdAt - b.createdAt;
   });
 }
 
 export function EscrowDrawer({ open, onClose }: EscrowDrawerProps) {
   const [filters, setFilters] = useState<EscrowFilterState>({
-    status: "all",
-    role: "all",
-    dateSort: "newest",
-    search: "",
+    status: 'all',
+    role: 'all',
+    dateSort: 'newest',
+    search: '',
   });
   const [walletAddress, setWalletAddress] = useState<string | undefined>();
 
@@ -123,14 +123,14 @@ export function EscrowDrawer({ open, onClose }: EscrowDrawerProps) {
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
-    if (filters.status !== "all") count++;
-    if (filters.role !== "all") count++;
+    if (filters.status !== 'all') count++;
+    if (filters.role !== 'all') count++;
     if (filters.search.trim()) count++;
     return count;
   }, [filters]);
 
   const clearFilters = useCallback(() => {
-    setFilters({ status: "all", role: "all", dateSort: "newest", search: "" });
+    setFilters({ status: 'all', role: 'all', dateSort: 'newest', search: '' });
   }, []);
 
   return (
@@ -140,7 +140,7 @@ export function EscrowDrawer({ open, onClose }: EscrowDrawerProps) {
       )}
       <div
         className={`fixed right-0 top-0 z-50 h-full w-full max-w-md border-l border-slate-200 bg-white shadow-2xl transition-transform duration-300 ease-in-out dark:border-slate-800 dark:bg-slate-950 ${
-          open ? "translate-x-0" : "translate-x-full"
+          open ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         <div className="flex h-full flex-col">
@@ -176,7 +176,7 @@ export function EscrowDrawer({ open, onClose }: EscrowDrawerProps) {
                     <Button variant="outline" size="sm" className="h-8 gap-1 text-xs">
                       <Filter className="h-3 w-3" />
                       Status
-                      {filters.status !== "all" && (
+                      {filters.status !== 'all' && (
                         <span className="ml-0.5 rounded-full bg-blue-100 px-1.5 py-0 text-[10px] font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
                           1
                         </span>
@@ -185,12 +185,12 @@ export function EscrowDrawer({ open, onClose }: EscrowDrawerProps) {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     {[
-                      { value: "all", label: "All Statuses" },
-                      { value: "approved", label: "Approved" },
-                      { value: "active", label: "Active" },
-                      { value: "disputed", label: "Disputed" },
-                      { value: "resolved", label: "Resolved" },
-                      { value: "released", label: "Released" },
+                      { value: 'all', label: 'All Statuses' },
+                      { value: 'approved', label: 'Approved' },
+                      { value: 'active', label: 'Active' },
+                      { value: 'disputed', label: 'Disputed' },
+                      { value: 'resolved', label: 'Resolved' },
+                      { value: 'released', label: 'Released' },
                     ].map((option) => (
                       <DropdownMenuItem
                         key={option.value}
@@ -202,8 +202,8 @@ export function EscrowDrawer({ open, onClose }: EscrowDrawerProps) {
                         }
                         className={
                           filters.status === option.value
-                            ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                            : ""
+                            ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                            : ''
                         }
                       >
                         {option.label}
@@ -219,7 +219,7 @@ export function EscrowDrawer({ open, onClose }: EscrowDrawerProps) {
                     <Button variant="outline" size="sm" className="h-8 gap-1 text-xs">
                       <Filter className="h-3 w-3" />
                       Role
-                      {filters.role !== "all" && (
+                      {filters.role !== 'all' && (
                         <span className="ml-0.5 rounded-full bg-blue-100 px-1.5 py-0 text-[10px] font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
                           1
                         </span>
@@ -228,10 +228,10 @@ export function EscrowDrawer({ open, onClose }: EscrowDrawerProps) {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     {[
-                      { value: "all", label: "All Roles" },
-                      { value: "sender", label: "Sender" },
-                      { value: "receiver", label: "Receiver" },
-                      { value: "disputeResolver", label: "Resolver" },
+                      { value: 'all', label: 'All Roles' },
+                      { value: 'sender', label: 'Sender' },
+                      { value: 'receiver', label: 'Receiver' },
+                      { value: 'disputeResolver', label: 'Resolver' },
                     ].map((option) => (
                       <DropdownMenuItem
                         key={option.value}
@@ -243,8 +243,8 @@ export function EscrowDrawer({ open, onClose }: EscrowDrawerProps) {
                         }
                         className={
                           filters.role === option.value
-                            ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                            : ""
+                            ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                            : ''
                         }
                       >
                         {option.label}
@@ -262,8 +262,8 @@ export function EscrowDrawer({ open, onClose }: EscrowDrawerProps) {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     {[
-                      { value: "newest", label: "Most Recent" },
-                      { value: "oldest", label: "Oldest" },
+                      { value: 'newest', label: 'Most Recent' },
+                      { value: 'oldest', label: 'Oldest' },
                     ].map((option) => (
                       <DropdownMenuItem
                         key={option.value}
@@ -275,8 +275,8 @@ export function EscrowDrawer({ open, onClose }: EscrowDrawerProps) {
                         }
                         className={
                           filters.dateSort === option.value
-                            ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                            : ""
+                            ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                            : ''
                         }
                       >
                         {option.label}
@@ -303,9 +303,9 @@ export function EscrowDrawer({ open, onClose }: EscrowDrawerProps) {
             {filteredEscrows.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  {escrows.length === 0 ? "No escrows found" : "No escrows match your filters"}
+                  {escrows.length === 0 ? 'No escrows found' : 'No escrows match your filters'}
                 </p>
-                {filters.search.trim() || filters.status !== "all" || filters.role !== "all" ? (
+                {filters.search.trim() || filters.status !== 'all' || filters.role !== 'all' ? (
                   <Button variant="link" size="sm" onClick={clearFilters} className="mt-2 text-xs">
                     Clear filters
                   </Button>
@@ -339,15 +339,15 @@ export function EscrowDrawer({ open, onClose }: EscrowDrawerProps) {
                           </span>
                           <span
                             className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                              status === "active"
-                                ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
-                                : status === "released"
-                                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
-                                  : status === "disputed"
-                                    ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
-                                    : status === "resolved"
-                                      ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300"
-                                      : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                              status === 'active'
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+                                : status === 'released'
+                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                                  : status === 'disputed'
+                                    ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                                    : status === 'resolved'
+                                      ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300'
+                                      : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
                             }`}
                           >
                             {status}
@@ -358,17 +358,17 @@ export function EscrowDrawer({ open, onClose }: EscrowDrawerProps) {
                       <div className="mt-2 flex items-center justify-between">
                         <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400">
                           <span>
-                            Balance:{" "}
+                            Balance:{' '}
                             <span className="font-semibold text-slate-700 dark:text-slate-200">
                               {escrow.balance.toFixed(7)}
-                            </span>{" "}
+                            </span>{' '}
                             XLM
                           </span>
                           <span>
-                            Pool:{" "}
+                            Pool:{' '}
                             <span className="font-semibold text-slate-700 dark:text-slate-200">
                               {escrow.totalPool.toFixed(7)}
-                            </span>{" "}
+                            </span>{' '}
                             XLM
                           </span>
                         </div>
@@ -391,4 +391,3 @@ export function EscrowDrawer({ open, onClose }: EscrowDrawerProps) {
     </>
   );
 }
- 

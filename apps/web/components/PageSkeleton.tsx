@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from 'framer-motion';
 
 /**
  * Generic full-page loading skeleton shown by the root Suspense boundary
@@ -18,21 +18,19 @@ export function PageSkeleton() {
       role="status"
       aria-label="Loading page…"
       initial={shouldReduceMotion ? false : { opacity: 0 }}
-      animate={
-        shouldReduceMotion ? {} : { opacity: 1, transition: { duration: 0.2 } }
-      }
+      animate={shouldReduceMotion ? {} : { opacity: 1, transition: { duration: 0.2 } }}
       className="min-h-screen bg-gradient-to-tr from-blue-100 via-purple-50 to-[#f9f9ff] dark:from-slate-900 dark:via-slate-900 dark:to-slate-800"
     >
       {/* Simulated header bar */}
       <div className="max-w-[1600px] mx-auto px-14 pt-8 pb-6 flex items-center justify-between">
         <div
           className={`h-8 w-24 rounded-xl bg-slate-200 dark:bg-slate-700 ${
-            shouldReduceMotion ? "" : "animate-pulse"
+            shouldReduceMotion ? '' : 'animate-pulse'
           }`}
         />
         <div
           className={`h-8 w-32 rounded-xl bg-slate-200 dark:bg-slate-700 ${
-            shouldReduceMotion ? "" : "animate-pulse"
+            shouldReduceMotion ? '' : 'animate-pulse'
           }`}
         />
       </div>
@@ -42,7 +40,7 @@ export function PageSkeleton() {
         {/* Hero block */}
         <div
           className={`h-52 w-full rounded-3xl bg-slate-200 dark:bg-slate-700/60 ${
-            shouldReduceMotion ? "" : "animate-pulse"
+            shouldReduceMotion ? '' : 'animate-pulse'
           }`}
         />
 
@@ -52,11 +50,9 @@ export function PageSkeleton() {
             <div
               key={i}
               className={`h-64 rounded-2xl bg-slate-200 dark:bg-slate-700/60 ${
-                shouldReduceMotion ? "" : "animate-pulse"
+                shouldReduceMotion ? '' : 'animate-pulse'
               }`}
-              style={
-                shouldReduceMotion ? {} : { animationDelay: `${i * 60}ms` }
-              }
+              style={shouldReduceMotion ? {} : { animationDelay: `${i * 60}ms` }}
             />
           ))}
         </div>

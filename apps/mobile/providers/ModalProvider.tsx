@@ -7,7 +7,7 @@ import {
   BottomSheetModalProvider,
 } from '@gorhom/bottom-sheet';
 import { useTheme } from '@providers/ThemeProvider';
-import { type ModalConfig,useModalStore } from '@store/modalStore';
+import { type ModalConfig, useModalStore } from '@store/modalStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ConfirmationModalProps {

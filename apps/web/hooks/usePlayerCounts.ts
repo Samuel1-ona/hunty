@@ -1,10 +1,14 @@
-"use client"
+'use client';
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { PLAYER_COUNT_CACHE_TTL_MS, type PlayerCountResult,TRENDING_PLAYER_THRESHOLD } from "@/lib/types"
+import {
+  PLAYER_COUNT_CACHE_TTL_MS,
+  type PlayerCountResult,
+  TRENDING_PLAYER_THRESHOLD,
+} from '@/lib/types';
 
-import { getPlayerCountFromStorage, playerCountCache } from "./usePlayerCount"
+import { getPlayerCountFromStorage, playerCountCache } from './usePlayerCount';
 
 function buildResult(huntId: string, count: number, fetchedAt: number): PlayerCountResult {
   return {
@@ -14,7 +18,7 @@ function buildResult(huntId: string, count: number, fetchedAt: number): PlayerCo
     fetchedAt,
     isLoading: false,
     error: null,
-  }
+  };
 }
 
 function buildErrorResult(huntId: string, err: unknown): PlayerCountResult {
@@ -24,8 +28,8 @@ function buildErrorResult(huntId: string, err: unknown): PlayerCountResult {
     isTrending: false,
     fetchedAt: 0,
     isLoading: false,
-    error: err instanceof Error ? err.message : "Failed to fetch player count",
-  }
+    error: err instanceof Error ? err.message : 'Failed to fetch player count',
+  };
 }
 
 /**
@@ -50,79 +54,86 @@ function buildErrorResult(huntId: string, err: unknown): PlayerCountResult {
  *   clears the cache for these IDs and re-fetches — call on page mount/focus.
  */
 export function usePlayerCounts(huntIds: string[]): {
-  counts: Map<string, PlayerCountResult>
-  isLoading: boolean
-  refetch: () => void
+  counts: Map<string, PlayerCountResult>;
+  isLoading: boolean;
+  refetch: () => void;
 } {
-  const [counts, setCounts] = useState<Map<string, PlayerCountResult>>(new Map())
-  const [isLoading, setIsLoading] = useState(false)
+  const [counts, setCounts] = useState<Map<string, PlayerCountResult>>(new Map());
+  const [isLoading, setIsLoading] = useState(false);
   // Stable ref to avoid stale closure in refetch
-  const huntIdsRef = useRef(huntIds)
-  huntIdsRef.current = huntIds
+  const huntIdsRef = useRef(huntIds);
+  huntIdsRef.current = huntIds;
 
   const fetchCounts = useCallback(async (ids: string[], forceRefresh = false) => {
-    if (ids.length === 0) return
+    if (ids.length === 0) return;
 
     if (forceRefresh) {
-      ids.forEach((id) => playerCountCache.delete(id))
+      ids.forEach((id) => playerCountCache.delete(id));
     }
 
-    const now = Date.now()
+    const now = Date.now();
     const staleIds = ids.filter((id) => {
-      const cached = playerCountCache.get(id)
-      return !cached || now - cached.fetchedAt >= PLAYER_COUNT_CACHE_TTL_MS
-    })
+      const cached = playerCountCache.get(id);
+      return !cached || now - cached.fetchedAt >= PLAYER_COUNT_CACHE_TTL_MS;
+    });
 
     // Seed with cached values immediately
-    const next = new Map<string, PlayerCountResult>()
+    const next = new Map<string, PlayerCountResult>();
     ids.forEach((id) => {
-      const cached = playerCountCache.get(id)
+      const cached = playerCountCache.get(id);
       if (cached && now - cached.fetchedAt < PLAYER_COUNT_CACHE_TTL_MS) {
-        next.set(id, buildResult(id, cached.count, cached.fetchedAt))
+        next.set(id, buildResult(id, cached.count, cached.fetchedAt));
       } else {
-        next.set(id, { huntId: id, count: 0, isTrending: false, fetchedAt: 0, isLoading: true, error: null })
+        next.set(id, {
+          huntId: id,
+          count: 0,
+          isTrending: false,
+          fetchedAt: 0,
+          isLoading: true,
+          error: null,
+        });
       }
-    })
-    setCounts(new Map(next))
+    });
+    setCounts(new Map(next));
 
-    if (staleIds.length === 0) return
+    if (staleIds.length === 0) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     const settled = await Promise.allSettled(
       staleIds.map(async (id) => {
-        const count = getPlayerCountFromStorage(id)
-        const fetchedAt = Date.now()
-        playerCountCache.set(id, { count, fetchedAt })
-        return { id, count, fetchedAt }
+        const count = getPlayerCountFromStorage(id);
+        const fetchedAt = Date.now();
+        playerCountCache.set(id, { count, fetchedAt });
+        return { id, count, fetchedAt };
       })
-    )
+    );
 
     setCounts((prev) => {
-      const updated = new Map(prev)
+      const updated = new Map(prev);
       settled.forEach((outcome, i) => {
-        const id = staleIds[i]
-        if (outcome.status === "fulfilled") {
-          updated.set(id, buildResult(id, outcome.value.count, outcome.value.fetchedAt))
+        const id = staleIds[i];
+        if (outcome.status === 'fulfilled') {
+          updated.set(id, buildResult(id, outcome.value.count, outcome.value.fetchedAt));
         } else {
-          updated.set(id, buildErrorResult(id, outcome.reason))
+          updated.set(id, buildErrorResult(id, outcome.reason));
         }
-      })
-      return updated
-    })
+      });
+      return updated;
+    });
 
-    setIsLoading(false)
-  }, [])
+    setIsLoading(false);
+  }, []);
 
-  const huntIdsKey = huntIds.join(",")
+  const huntIdsKey = huntIds.join(',');
 
   useEffect(() => {
-    void fetchCounts(huntIdsRef.current)
-  }, [fetchCounts, huntIdsKey])
+    void fetchCounts(huntIdsRef.current);
+  }, [fetchCounts, huntIdsKey]);
 
   const refetch = useCallback(() => {
-    void fetchCounts(huntIdsRef.current, true)
-  }, [fetchCounts])
+    void fetchCounts(huntIdsRef.current, true);
+  }, [fetchCounts]);
 
-  return { counts, isLoading, refetch }
+  return { counts, isLoading, refetch };
 }

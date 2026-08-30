@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 /**
  * Client-side Web Push subscription helpers.
@@ -9,9 +9,9 @@
  * All public functions are safe to call in a browser context only.
  */
 
-import { logger } from "@/lib/logger"
+import { logger } from '@/lib/logger';
 
-const SW_PATH = "/sw.js"
+const SW_PATH = '/sw.js';
 
 // ─── Service Worker Registration ─────────────────────────────────────────────
 
@@ -20,19 +20,19 @@ const SW_PATH = "/sw.js"
  * Returns the service worker registration, or null if unavailable.
  */
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
-  if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
-    return null
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+    return null;
   }
 
   try {
     const registration = await navigator.serviceWorker.register(SW_PATH, {
-      scope: "/",
-    })
-    logger.info("[webPush] Service worker registered:", registration.scope)
-    return registration
+      scope: '/',
+    });
+    logger.info('[webPush] Service worker registered:', registration.scope);
+    return registration;
   } catch (error) {
-    logger.error("[webPush] Service worker registration failed:", error)
-    return null
+    logger.error('[webPush] Service worker registration failed:', error);
+    return null;
   }
 }
 
@@ -40,12 +40,12 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
  * Returns the active service worker registration, or null.
  */
 export async function getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration | null> {
-  if (typeof window === "undefined" || !("serviceWorker" in navigator)) return null
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return null;
   try {
-    const registration = await navigator.serviceWorker.getRegistration(SW_PATH)
-    return registration ?? null
+    const registration = await navigator.serviceWorker.getRegistration(SW_PATH);
+    return registration ?? null;
   } catch {
-    return null
+    return null;
   }
 }
 
@@ -56,19 +56,19 @@ export async function getServiceWorkerRegistration(): Promise<ServiceWorkerRegis
  */
 export function isPushSupported(): boolean {
   return (
-    typeof window !== "undefined" &&
-    "serviceWorker" in navigator &&
-    "PushManager" in window &&
-    "Notification" in window
-  )
+    typeof window !== 'undefined' &&
+    'serviceWorker' in navigator &&
+    'PushManager' in window &&
+    'Notification' in window
+  );
 }
 
 /**
  * Returns the current notification permission state.
  */
 export function getNotificationPermission(): NotificationPermission {
-  if (typeof window === "undefined" || !("Notification" in window)) return "denied"
-  return Notification.permission
+  if (typeof window === 'undefined' || !('Notification' in window)) return 'denied';
+  return Notification.permission;
 }
 
 /**
@@ -76,17 +76,17 @@ export function getNotificationPermission(): NotificationPermission {
  * Returns the resulting permission state.
  */
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
-  if (!("Notification" in window)) return "denied"
-  return Notification.requestPermission()
+  if (!('Notification' in window)) return 'denied';
+  return Notification.requestPermission();
 }
 
 // ─── Subscription Lifecycle ───────────────────────────────────────────────────
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4)
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/")
-  const raw = atob(base64)
-  return Uint8Array.from(raw, (c) => c.charCodeAt(0))
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
 }
 
 /**
@@ -97,37 +97,34 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
  * - The user to have granted notification permission
  */
 export async function subscribeToPush(): Promise<PushSubscription | null> {
-  const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+  const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   if (!vapidPublicKey) {
-    logger.error("[webPush] NEXT_PUBLIC_VAPID_PUBLIC_KEY is not set")
-    return null
+    logger.error('[webPush] NEXT_PUBLIC_VAPID_PUBLIC_KEY is not set');
+    return null;
   }
 
-  const registration = await getServiceWorkerRegistration()
-    ?? await registerServiceWorker()
+  const registration = (await getServiceWorkerRegistration()) ?? (await registerServiceWorker());
 
   if (!registration) {
-    logger.error("[webPush] No service worker registration available")
-    return null
+    logger.error('[webPush] No service worker registration available');
+    return null;
   }
 
   try {
     // Check for an existing subscription first
-    const existing = await registration.pushManager.getSubscription()
-    if (existing) return existing
+    const existing = await registration.pushManager.getSubscription();
+    if (existing) return existing;
 
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      // TypeScript's DOM lib currently narrows Uint8Array's backing buffer
-      // more strictly than browsers do for this Web Push API.
-      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as unknown as BufferSource,
-    })
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+    });
 
-    logger.info("[webPush] Push subscription created")
-    return subscription
+    logger.info('[webPush] Push subscription created');
+    return subscription;
   } catch (error) {
-    logger.error("[webPush] Failed to subscribe:", error)
-    return null
+    logger.error('[webPush] Failed to subscribe:', error);
+    return null;
   }
 }
 
@@ -136,16 +133,16 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
  * Returns true on success.
  */
 export async function unsubscribeFromPush(): Promise<boolean> {
-  const registration = await getServiceWorkerRegistration()
-  if (!registration) return false
+  const registration = await getServiceWorkerRegistration();
+  if (!registration) return false;
 
   try {
-    const subscription = await registration.pushManager.getSubscription()
-    if (!subscription) return true
-    return subscription.unsubscribe()
+    const subscription = await registration.pushManager.getSubscription();
+    if (!subscription) return true;
+    return subscription.unsubscribe();
   } catch (error) {
-    logger.error("[webPush] Failed to unsubscribe:", error)
-    return false
+    logger.error('[webPush] Failed to unsubscribe:', error);
+    return false;
   }
 }
 
@@ -153,12 +150,12 @@ export async function unsubscribeFromPush(): Promise<boolean> {
  * Returns the current PushSubscription, or null if not subscribed.
  */
 export async function getCurrentSubscription(): Promise<PushSubscription | null> {
-  const registration = await getServiceWorkerRegistration()
-  if (!registration) return null
+  const registration = await getServiceWorkerRegistration();
+  if (!registration) return null;
   try {
-    return registration.pushManager.getSubscription()
+    return registration.pushManager.getSubscription();
   } catch {
-    return null
+    return null;
   }
 }
 
@@ -172,43 +169,43 @@ export async function getCurrentSubscription(): Promise<PushSubscription | null>
  * alongside the wallet it belongs to so re-syncs and unsubscribes can
  * present it.
  */
-const OWNER_SECRET_STORAGE_KEY = "hunty-push-owner-secret"
+const OWNER_SECRET_STORAGE_KEY = 'hunty-push-owner-secret';
 
 interface StoredOwnerSecret {
-  walletAddress: string
-  ownerSecret: string
+  walletAddress: string;
+  ownerSecret: string;
 }
 
 function getStoredOwnerSecret(walletAddress: string): string | undefined {
-  if (typeof window === "undefined") return undefined
+  if (typeof window === 'undefined') return undefined;
   try {
-    const raw = localStorage.getItem(OWNER_SECRET_STORAGE_KEY)
-    if (!raw) return undefined
-    const parsed = JSON.parse(raw) as StoredOwnerSecret
-    return parsed.walletAddress === walletAddress ? parsed.ownerSecret : undefined
+    const raw = localStorage.getItem(OWNER_SECRET_STORAGE_KEY);
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw) as StoredOwnerSecret;
+    return parsed.walletAddress === walletAddress ? parsed.ownerSecret : undefined;
   } catch {
-    return undefined
+    return undefined;
   }
 }
 
 function setStoredOwnerSecret(walletAddress: string, ownerSecret: string): void {
-  if (typeof window === "undefined") return
+  if (typeof window === 'undefined') return;
   try {
-    const entry: StoredOwnerSecret = { walletAddress, ownerSecret }
-    localStorage.setItem(OWNER_SECRET_STORAGE_KEY, JSON.stringify(entry))
+    const entry: StoredOwnerSecret = { walletAddress, ownerSecret };
+    localStorage.setItem(OWNER_SECRET_STORAGE_KEY, JSON.stringify(entry));
   } catch (err) {
-    logger.warn("[webPush] Failed to persist push owner secret", err)
+    logger.warn('[webPush] Failed to persist push owner secret', err);
   }
 }
 
 function clearStoredOwnerSecret(walletAddress: string): void {
-  if (typeof window === "undefined") return
+  if (typeof window === 'undefined') return;
   try {
-    const raw = localStorage.getItem(OWNER_SECRET_STORAGE_KEY)
-    if (!raw) return
-    const parsed = JSON.parse(raw) as StoredOwnerSecret
+    const raw = localStorage.getItem(OWNER_SECRET_STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as StoredOwnerSecret;
     if (parsed.walletAddress === walletAddress) {
-      localStorage.removeItem(OWNER_SECRET_STORAGE_KEY)
+      localStorage.removeItem(OWNER_SECRET_STORAGE_KEY);
     }
   } catch {
     // Silently ignore
@@ -225,61 +222,54 @@ export async function syncSubscriptionToServer(
   subscription: PushSubscription,
   walletAddress: string,
   preferences?: {
-    enabled?: boolean
-    huntEvents?: boolean
-    rewards?: boolean
-    social?: boolean
-    achievements?: boolean
-    huntStart?: boolean
-    overtake?: boolean
-    huntCancelled?: boolean
-    playerRegistered?: boolean
-    firstCompletion?: boolean
+    huntStart?: boolean;
+    overtake?: boolean;
+    huntCancelled?: boolean;
+    playerRegistered?: boolean;
+    firstCompletion?: boolean;
   }
 ): Promise<boolean> {
   try {
-    const ownerSecret = getStoredOwnerSecret(walletAddress)
-    const res = await fetch("/api/push-tokens", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const ownerSecret = getStoredOwnerSecret(walletAddress);
+    const res = await fetch('/api/push-tokens', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         subscription: subscription.toJSON(),
         walletAddress,
         ...(ownerSecret ? { ownerSecret } : {}),
         ...(preferences ? { preferences } : {}),
       }),
-    })
-    if (!res.ok) return false
+    });
+    if (!res.ok) return false;
 
-    const data = (await res.json().catch(() => null)) as { ownerSecret?: string } | null
+    const data = (await res.json().catch(() => null)) as { ownerSecret?: string } | null;
     if (data?.ownerSecret) {
-      setStoredOwnerSecret(walletAddress, data.ownerSecret)
+      setStoredOwnerSecret(walletAddress, data.ownerSecret);
     }
-    return true
+    return true;
   } catch (error) {
-    logger.error("[webPush] Failed to sync subscription to server:", error)
-    return false
+    logger.error('[webPush] Failed to sync subscription to server:', error);
+    return false;
   }
 }
 
 /**
  * Removes the push subscription from the server.
  */
-export async function removeSubscriptionFromServer(
-  walletAddress: string
-): Promise<boolean> {
+export async function removeSubscriptionFromServer(walletAddress: string): Promise<boolean> {
   try {
-    const ownerSecret = getStoredOwnerSecret(walletAddress)
-    const res = await fetch("/api/push-tokens", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+    const ownerSecret = getStoredOwnerSecret(walletAddress);
+    const res = await fetch('/api/push-tokens', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ walletAddress, ownerSecret }),
-    })
-    if (res.ok) clearStoredOwnerSecret(walletAddress)
-    return res.ok
+    });
+    if (res.ok) clearStoredOwnerSecret(walletAddress);
+    return res.ok;
   } catch (error) {
-    logger.error("[webPush] Failed to remove subscription from server:", error)
-    return false
+    logger.error('[webPush] Failed to remove subscription from server:', error);
+    return false;
   }
 }
 
@@ -299,26 +289,26 @@ export async function enablePushNotifications(
   walletAddress: string
 ): Promise<PushSubscription | null> {
   if (!isPushSupported()) {
-    logger.warn("[webPush] Push notifications not supported in this browser")
-    return null
+    logger.warn('[webPush] Push notifications not supported in this browser');
+    return null;
   }
 
   // Register SW if needed
-  await registerServiceWorker()
+  await registerServiceWorker();
 
-  const permission = await requestNotificationPermission()
-  if (permission !== "granted") {
-    logger.warn("[webPush] Notification permission not granted:", permission)
-    return null
+  const permission = await requestNotificationPermission();
+  if (permission !== 'granted') {
+    logger.warn('[webPush] Notification permission not granted:', permission);
+    return null;
   }
 
-  const subscription = await subscribeToPush()
-  if (!subscription) return null
+  const subscription = await subscribeToPush();
+  if (!subscription) return null;
 
   // Initial sync without preferences — caller (usePushNotifications) will
   // re-sync with preferences immediately after this returns.
-  await syncSubscriptionToServer(subscription, walletAddress)
-  return subscription
+  await syncSubscriptionToServer(subscription, walletAddress);
+  return subscription;
 }
 
 /**
@@ -329,21 +319,16 @@ export async function enablePushNotifications(
 export async function syncPreferencesToServer(
   walletAddress: string,
   preferences: {
-    enabled?: boolean
-    huntEvents?: boolean
-    rewards?: boolean
-    social?: boolean
-    achievements?: boolean
-    huntStart?: boolean
-    overtake?: boolean
-    huntCancelled?: boolean
-    playerRegistered?: boolean
-    firstCompletion?: boolean
+    huntStart?: boolean;
+    overtake?: boolean;
+    huntCancelled?: boolean;
+    playerRegistered?: boolean;
+    firstCompletion?: boolean;
   }
 ): Promise<void> {
-  const subscription = await getCurrentSubscription()
-  if (!subscription) return
-  await syncSubscriptionToServer(subscription, walletAddress, preferences)
+  const subscription = await getCurrentSubscription();
+  if (!subscription) return;
+  await syncSubscriptionToServer(subscription, walletAddress, preferences);
 }
 
 /**
@@ -352,6 +337,6 @@ export async function syncPreferencesToServer(
  * 2. Remove from server
  */
 export async function disablePushNotifications(walletAddress: string): Promise<void> {
-  await unsubscribeFromPush()
-  await removeSubscriptionFromServer(walletAddress)
+  await unsubscribeFromPush();
+  await removeSubscriptionFromServer(walletAddress);
 }

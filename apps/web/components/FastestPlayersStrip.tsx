@@ -1,69 +1,71 @@
-"use client"
+'use client';
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from 'react';
 
-import Medal from "@/components/icons/Medal"
-import { Skeleton } from "@/components/ui/skeleton"
-import { get_hunt_fastest_players } from "@/lib/contracts/hunt"
-import { logger } from "@/lib/logger"
-import { truncateAddress } from "@/lib/walletAddress"
-import type { FastestPlayerDisplayEntry } from "@/lib/types"
+import Medal from '@/components/icons/Medal';
+import { Skeleton } from '@/components/ui/skeleton';
+import { get_hunt_fastest_players } from '@/lib/contracts/hunt';
+import { logger } from '@/lib/logger';
+import { truncateAddress } from '@/lib/walletAddress';
+import type { FastestPlayerDisplayEntry } from '@/lib/types';
 
 interface FastestPlayersStripProps {
-  huntId: number
+  huntId: number;
 }
 
 /** This strip has always used a 5 + 4 split. */
-const PLAYER_ADDRESS_FORMAT = { lead: 5, tail: 4 }
+const PLAYER_ADDRESS_FORMAT = { lead: 5, tail: 4 };
 
 const formatDuration = (seconds: number) => {
-  const hh = Math.floor(seconds / 3600)
-  const mm = Math.floor((seconds % 3600) / 60)
-  const ss = seconds % 60
+  const hh = Math.floor(seconds / 3600);
+  const mm = Math.floor((seconds % 3600) / 60);
+  const ss = seconds % 60;
 
   if (hh > 0) {
-    return `${hh}h ${mm.toString().padStart(2, "0")}m`
+    return `${hh}h ${mm.toString().padStart(2, '0')}m`;
   }
 
-  return `${mm.toString().padStart(2, "0")}m ${ss.toString().padStart(2, "0")}s`
-}
+  return `${mm.toString().padStart(2, '0')}m ${ss.toString().padStart(2, '0')}s`;
+};
 
 export function FastestPlayersStrip({ huntId }: FastestPlayersStripProps) {
-  const [data, setData] = useState<FastestPlayerDisplayEntry[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [data, setData] = useState<FastestPlayerDisplayEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const hasIndexer = Boolean(process.env.NEXT_PUBLIC_TORII_INDEXER_URL)
+  const hasIndexer = Boolean(process.env.NEXT_PUBLIC_TORII_INDEXER_URL);
 
   const fetchFastestPlayers = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const rawPlayers = await get_hunt_fastest_players(huntId)
-      const sorted = [...rawPlayers].sort((a, b) => a.completionTimeSeconds - b.completionTimeSeconds)
+      const rawPlayers = await get_hunt_fastest_players(huntId);
+      const sorted = [...rawPlayers].sort(
+        (a, b) => a.completionTimeSeconds - b.completionTimeSeconds
+      );
       const mapped: FastestPlayerDisplayEntry[] = sorted.map((player, index) => ({
         position: index + 1,
         name: player.name || truncateAddress(player.address, PLAYER_ADDRESS_FORMAT),
         completionTimeLabel: formatDuration(player.completionTimeSeconds),
         points: player.points,
         icon: <Medal position={index + 1} />,
-      }))
+      }));
 
-      setData(mapped)
+      setData(mapped);
     } catch (err) {
-      logger.error("Failed to fetch fastest players:", err)
-      setError("Unable to load fastest players right now.")
+      logger.error('Failed to fetch fastest players:', err);
+      setError('Unable to load fastest players right now.');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [huntId])
+  }, [huntId]);
 
   useEffect(() => {
-    fetchFastestPlayers()
-    const interval = setInterval(fetchFastestPlayers, 30000)
-    return () => clearInterval(interval)
-  }, [fetchFastestPlayers])
+    fetchFastestPlayers();
+    const interval = setInterval(fetchFastestPlayers, 30000);
+    return () => clearInterval(interval);
+  }, [fetchFastestPlayers]);
 
   return (
     <section className="mb-10">
@@ -74,38 +76,41 @@ export function FastestPlayersStrip({ huntId }: FastestPlayersStripProps) {
         </div>
         <p className="text-sm text-slate-400">
           {hasIndexer
-            ? "Polling Torii indexer for live completion times."
-            : "Using leaderboard fallback. Enable Torii indexer for live completion tracking."}
+            ? 'Polling Torii indexer for live completion times.'
+            : 'Using leaderboard fallback. Enable Torii indexer for live completion tracking.'}
         </p>
       </div>
 
       <div className="overflow-x-auto no-scrollbar border border-white/10 rounded-3xl bg-white/5 p-4">
         <div className="inline-flex min-w-full gap-4">
-          {isLoading
-            ? Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className="min-w-[220px] flex-shrink-0 rounded-3xl border border-slate-700/60 bg-slate-900/60 p-5 shadow-lg shadow-slate-950/20">
-                  <div className="mb-4 flex items-center justify-between gap-2">
-                    <Skeleton className="h-8 w-8 rounded-full bg-slate-700" />
-                    <Skeleton className="h-4 w-16 rounded-full bg-slate-700" />
-                  </div>
-                  <Skeleton className="mb-3 h-5 w-36 rounded-full bg-slate-700" />
-                  <Skeleton className="h-4 w-24 rounded-full bg-slate-700" />
+          {isLoading ? (
+            Array.from({ length: 4 }).map((_, index) => (
+              <div
+                key={index}
+                className="min-w-[220px] flex-shrink-0 rounded-3xl border border-slate-700/60 bg-slate-900/60 p-5 shadow-lg shadow-slate-950/20"
+              >
+                <div className="mb-4 flex items-center justify-between gap-2">
+                  <Skeleton className="h-8 w-8 rounded-full bg-slate-700" />
+                  <Skeleton className="h-4 w-16 rounded-full bg-slate-700" />
                 </div>
-              ))
-            : error
-            ? (
-              <div className="min-w-full rounded-3xl border border-red-500/20 bg-red-500/5 p-5 text-sm text-red-100">
-                {error}
+                <Skeleton className="mb-3 h-5 w-36 rounded-full bg-slate-700" />
+                <Skeleton className="h-4 w-24 rounded-full bg-slate-700" />
               </div>
-            )
-            : data.length === 0
-            ? (
-              <div className="min-w-full rounded-3xl border border-dashed border-slate-600/50 bg-slate-950/50 p-6 text-slate-300">
-                No completed hunts found yet. Be the first to finish and appear here.
-              </div>
-            )
-            : data.map((entry) => (
-              <div key={entry.position} className="min-w-[220px] flex-shrink-0 rounded-3xl border border-white/10 bg-slate-950/60 p-5 shadow-lg shadow-slate-950/30">
+            ))
+          ) : error ? (
+            <div className="min-w-full rounded-3xl border border-red-500/20 bg-red-500/5 p-5 text-sm text-red-100">
+              {error}
+            </div>
+          ) : data.length === 0 ? (
+            <div className="min-w-full rounded-3xl border border-dashed border-slate-600/50 bg-slate-950/50 p-6 text-slate-300">
+              No completed hunts found yet. Be the first to finish and appear here.
+            </div>
+          ) : (
+            data.map((entry) => (
+              <div
+                key={entry.position}
+                className="min-w-[220px] flex-shrink-0 rounded-3xl border border-white/10 bg-slate-950/60 p-5 shadow-lg shadow-slate-950/30"
+              >
                 <div className="mb-4 flex items-center gap-3">
                   <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-[#D9A700] via-[#FFCE55] to-[#F4F0CB] text-slate-950 shadow-sm">
                     {entry.position}
@@ -118,7 +123,9 @@ export function FastestPlayersStrip({ huntId }: FastestPlayersStripProps) {
                 <div className="space-y-3">
                   <div className="rounded-3xl bg-white/5 p-4">
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Time</p>
-                    <p className="mt-1 text-lg font-semibold text-white">{entry.completionTimeLabel}</p>
+                    <p className="mt-1 text-lg font-semibold text-white">
+                      {entry.completionTimeLabel}
+                    </p>
                   </div>
                   {entry.points !== undefined && (
                     <div className="rounded-3xl bg-white/5 p-4">
@@ -128,9 +135,10 @@ export function FastestPlayersStrip({ huntId }: FastestPlayersStripProps) {
                   )}
                 </div>
               </div>
-            ))}
+            ))
+          )}
         </div>
       </div>
     </section>
-  )
+  );
 }

@@ -1,35 +1,31 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Clock, Trash2, FileEdit, ChevronDown, ChevronUp } from "lucide-react"
-import { Button } from "@hunty/ui"
-import {
-  Card,
-  CardTitle,
-  CardDescription,
-} from "@hunty/ui"
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Clock, Trash2, FileEdit, ChevronDown, ChevronUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   listAllDrafts,
   deleteDraft,
   deleteDraftFromServer,
   fetchDraftsFromServer,
-} from "@/hooks/useHuntDraftAutoSave"
-import { useWallet } from "@/lib/context/WalletContext"
-import type { HuntDraftSave } from "@/lib/types"
+} from '@/hooks/useHuntDraftAutoSave';
+import { useWallet } from '@/lib/context/WalletContext';
+import type { HuntDraftSave } from '@/lib/types';
 
 /** Merge local and server drafts, deduped by draftId (newest copy wins), newest first. */
 function mergeDrafts(local: HuntDraftSave[], remote: HuntDraftSave[]): HuntDraftSave[] {
-  const byId = new Map<string, HuntDraftSave>()
+  const byId = new Map<string, HuntDraftSave>();
   for (const draft of [...local, ...remote]) {
-    const existing = byId.get(draft.draftId)
+    const existing = byId.get(draft.draftId);
     if (!existing || new Date(draft.savedAt) > new Date(existing.savedAt)) {
-      byId.set(draft.draftId, draft)
+      byId.set(draft.draftId, draft);
     }
   }
   return [...byId.values()].sort(
     (a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime()
-  )
+  );
 }
 
 /**
@@ -45,40 +41,40 @@ function mergeDrafts(local: HuntDraftSave[], remote: HuntDraftSave[]): HuntDraft
  * Collapses to a summary when there are many drafts.
  */
 export function DraftListPanel() {
-  const router = useRouter()
-  const { publicKey } = useWallet()
-  const [drafts, setDrafts] = useState<HuntDraftSave[]>([])
-  const [expanded, setExpanded] = useState(false)
+  const router = useRouter();
+  const { publicKey } = useWallet();
+  const [drafts, setDrafts] = useState<HuntDraftSave[]>([]);
+  const [expanded, setExpanded] = useState(false);
 
   const loadDrafts = async () => {
-    const local = listAllDrafts()
+    const local = listAllDrafts();
     if (!publicKey) {
-      setDrafts(local)
-      return
+      setDrafts(local);
+      return;
     }
-    const remote = await fetchDraftsFromServer(publicKey)
-    setDrafts(mergeDrafts(local, remote))
-  }
+    const remote = await fetchDraftsFromServer(publicKey);
+    setDrafts(mergeDrafts(local, remote));
+  };
 
   useEffect(() => {
-    void loadDrafts()
-  }, [publicKey])
+    void loadDrafts();
+  }, [publicKey]);
 
-  if (drafts.length === 0) return null
+  if (drafts.length === 0) return null;
 
-  const PREVIEW_COUNT = 3
-  const visibleDrafts = expanded ? drafts : drafts.slice(0, PREVIEW_COUNT)
-  const hasMore = drafts.length > PREVIEW_COUNT
+  const PREVIEW_COUNT = 3;
+  const visibleDrafts = expanded ? drafts : drafts.slice(0, PREVIEW_COUNT);
+  const hasMore = drafts.length > PREVIEW_COUNT;
 
   const handleResume = (draft: HuntDraftSave) => {
-    router.push(`/hunty?draftId=${draft.draftId}`)
-  }
+    router.push(`/hunty?draftId=${draft.draftId}`);
+  };
 
   const handleDelete = (draftId: string) => {
-    deleteDraft(draftId)
-    if (publicKey) void deleteDraftFromServer(draftId)
-    void loadDrafts()
-  }
+    deleteDraft(draftId);
+    if (publicKey) void deleteDraftFromServer(draftId);
+    void loadDrafts();
+  };
 
   return (
     <section aria-label="Auto-saved drafts" className="mt-10">
@@ -87,7 +83,7 @@ export function DraftListPanel() {
           Auto-saved Drafts
         </h2>
         <span className="text-xs text-slate-500">
-          {drafts.length} draft{drafts.length === 1 ? "" : "s"}
+          {drafts.length} draft{drafts.length === 1 ? '' : 's'}
         </span>
       </div>
 
@@ -123,35 +119,33 @@ export function DraftListPanel() {
         </Button>
       )}
     </section>
-  )
+  );
 }
 
 // ─── Sub-component ────────────────────────────────────────────────────────────
 
 interface DraftCardProps {
-  draft: HuntDraftSave
-  onResume: () => void
-  onDelete: () => void
+  draft: HuntDraftSave;
+  onResume: () => void;
+  onDelete: () => void;
 }
 
 function DraftCard({ draft, onResume, onDelete }: DraftCardProps) {
-  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-  const huntCount = draft.hunts.length
-  const savedAgo = formatTimeAgo(draft.savedAt)
+  const huntCount = draft.hunts.length;
+  const savedAgo = formatTimeAgo(draft.savedAt);
 
   return (
     <Card className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
       <div className="min-w-0 flex-1">
-        <CardTitle className="truncate text-base text-slate-800">
-          {draft.label}
-        </CardTitle>
+        <CardTitle className="truncate text-base text-slate-800">{draft.label}</CardTitle>
         <CardDescription className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
           <Clock className="h-3 w-3 shrink-0" aria-hidden />
           <span>Saved {savedAgo}</span>
           <span aria-hidden>·</span>
           <span>
-            {huntCount} clue card{huntCount === 1 ? "" : "s"}
+            {huntCount} clue card{huntCount === 1 ? '' : 's'}
           </span>
         </CardDescription>
       </div>
@@ -172,7 +166,10 @@ function DraftCard({ draft, onResume, onDelete }: DraftCardProps) {
             <Button
               size="sm"
               variant="destructive"
-              onClick={() => { onDelete(); setConfirmingDelete(false) }}
+              onClick={() => {
+                onDelete();
+                setConfirmingDelete(false);
+              }}
               aria-label={`Confirm delete draft "${draft.label}"`}
             >
               Delete
@@ -199,21 +196,21 @@ function DraftCard({ draft, onResume, onDelete }: DraftCardProps) {
         )}
       </div>
     </Card>
-  )
+  );
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatTimeAgo(isoString: string): string {
-  const diffMs = Date.now() - new Date(isoString).getTime()
-  const diffMins = Math.floor(diffMs / 60_000)
+  const diffMs = Date.now() - new Date(isoString).getTime();
+  const diffMins = Math.floor(diffMs / 60_000);
 
-  if (diffMins < 1) return "just now"
-  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
 
-  const diffHours = Math.floor(diffMins / 60)
-  if (diffHours < 24) return `${diffHours}h ago`
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
 
-  const diffDays = Math.floor(diffHours / 24)
-  return `${diffDays}d ago`
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
 }

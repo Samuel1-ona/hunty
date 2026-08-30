@@ -10,7 +10,7 @@ import {
   DEFAULT_MAX_FEE_PER_TX,
   DEFAULT_MAX_SPONSORED_TX,
   type PaymasterConfig,
-} from "./types";
+} from './types';
 
 /**
  * Returns the effective paymaster configuration.
@@ -31,10 +31,7 @@ export function getPaymasterConfig(): PaymasterConfig {
 /**
  * Utility to parse a numeric config value from the DB or env with a fallback.
  */
-export function parseNumericConfig(
-  raw: string | undefined | null,
-  fallback: number,
-): number {
+export function parseNumericConfig(raw: string | undefined | null, fallback: number): number {
   if (raw === undefined || raw === null) return fallback;
   const parsed = Number(raw);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;

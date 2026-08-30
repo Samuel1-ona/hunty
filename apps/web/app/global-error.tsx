@@ -1,23 +1,23 @@
-"use client"
+'use client';
 
-import * as Sentry from "@sentry/nextjs"
-import { useEffect } from "react"
+import * as Sentry from '@sentry/nextjs';
+import { useEffect } from 'react';
 
-import { logger } from "@/lib/logger"
+import { logger } from '@/lib/logger';
 
 export default function GlobalError({
   error,
   reset,
 }: {
-  error: Error & { digest?: string }
-  reset: () => void
+  error: Error & { digest?: string };
+  reset: () => void;
 }) {
   useEffect(() => {
-    logger.error("[GlobalError] Fatal error:", error)
+    logger.error('[GlobalError] Fatal error:', error);
     Sentry.captureException(error, {
-      tags: { boundary: "GlobalError", digest: error.digest },
-    })
-  }, [error])
+      tags: { boundary: 'GlobalError', digest: error.digest },
+    });
+  }, [error]);
 
   return (
     <html lang="en">
@@ -60,5 +60,5 @@ export default function GlobalError({
         </div>
       </body>
     </html>
-  )
+  );
 }

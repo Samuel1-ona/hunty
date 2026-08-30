@@ -1,13 +1,14 @@
-import { NextResponse } from "next/server"
-import { withValidation } from "@/lib/api/withValidation"
-import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit"
+import { referralLeaderboardQuerySchema } from '@hunty/types/api-schemas';
+import { NextResponse } from 'next/server';
+
+import { withValidation } from '@/lib/api/withValidation';
+import { getIP, rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import {
   getReferralLeaderboard,
   getReferralLeaderboardStats,
   getReferrerRank,
-} from "@/lib/referralStore"
-import { referralLeaderboardQuerySchema } from "@hunty/types/api-schemas"
-import type { ReferralLeaderboardPeriod } from "@/lib/types"
+} from '@/lib/referralStore';
+import type { ReferralLeaderboardPeriod } from '@/lib/types';
 
 /**
  * GET /api/v1/referrals/leaderboard
@@ -22,19 +23,17 @@ import type { ReferralLeaderboardPeriod } from "@/lib/types"
 export const GET = withValidation(
   { query: referralLeaderboardQuerySchema },
   async (req: Request, _context, { query }) => {
-    const ip = getIP(req)
-    const { success, reset } = await rateLimit(ip, { limit: 100, windowMs: 60_000 })
-    if (!success) return rateLimitResponse(reset)
+    const ip = getIP(req);
+    const { success, reset } = await rateLimit(ip, { limit: 100, windowMs: 60_000 });
+    if (!success) return rateLimitResponse(reset);
 
-    const period = (query.period ?? "all") as ReferralLeaderboardPeriod
-    const limit = query.limit ?? 50
+    const period = (query.period ?? 'all') as ReferralLeaderboardPeriod;
+    const limit = query.limit ?? 50;
 
-    const leaderboard = getReferralLeaderboard({ period, limit })
-    const stats = getReferralLeaderboardStats()
+    const leaderboard = getReferralLeaderboard({ period, limit });
+    const stats = getReferralLeaderboardStats();
 
-    const playerRank = query.address
-      ? getReferrerRank(query.address, period)
-      : null
+    const playerRank = query.address ? getReferrerRank(query.address, period) : null;
 
     return NextResponse.json({
       leaderboard,
@@ -42,6 +41,6 @@ export const GET = withValidation(
       ...(playerRank !== null ? { playerRank } : {}),
       period,
       generatedAt: Date.now(),
-    })
+    });
   }
-)
+);

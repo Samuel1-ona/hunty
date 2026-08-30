@@ -13,11 +13,11 @@ export {
   useWalletMachine,
   isValidTransition,
   getWalletStatusLabel,
-} from "./walletMachine";
+} from './walletMachine';
 
 export type {
   WalletStatus,
   WalletMachineState,
   WalletEvent,
   UseWalletMachineReturn,
-} from "./walletMachine";
+} from './walletMachine';

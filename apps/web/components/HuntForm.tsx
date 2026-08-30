@@ -1,71 +1,60 @@
-"use client";
+'use client';
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowUpDown, Eye, EyeOff, Minus, Plus, Trash2 } from "lucide-react";
-import React, { ChangeEvent, useCallback, useMemo, useRef, useState } from "react";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { z } from "zod";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { ArrowUpDown, Eye, EyeOff, Minus, Plus, Trash2 } from 'lucide-react';
+import React, { ChangeEvent, useCallback, useMemo, useRef, useState } from 'react';
+import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { z } from 'zod';
 
-import { Button } from "@hunty/ui";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { addCluesBatch } from "@/lib/contracts/hunt";
-import { sha256Hex } from "@/lib/crypto";
-import { parseClueCsv, type CsvRow, type CsvParseResult } from "@/lib/csv";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { addCluesBatch } from '@/lib/contracts/hunt';
+import { sha256Hex } from '@/lib/crypto';
 import {
   restoreHuntStoreSnapshot,
   saveCluesLocallyBatch,
   takeHuntStoreSnapshot,
   updateClueAnswer,
-} from "@/lib/huntStore";
-import { COVER_IMAGE_UPLOAD_ERROR_MESSAGE, uploadToIPFS } from "@/lib/ipfs";
-import { logger } from "@/lib/logger";
-import { withTransactionToast } from "@/lib/txToast";
-import type { CoverImageUploadState, HuntDraft } from "@/lib/types";
+} from '@/lib/huntStore';
+import { COVER_IMAGE_UPLOAD_ERROR_MESSAGE, uploadToIPFS } from '@/lib/ipfs';
+import { logger } from '@/lib/logger';
+import { withTransactionToast } from '@/lib/txToast';
+import type { CoverImageUploadState, HuntDraft } from '@/lib/types';
 
-import { ClueSortList } from "./ClueSortList";
-import { HuntCards } from "./HuntCards";
-import ToggleSwitch from "./ToggleButton";
-import { useIsFeatureEnabled } from "@/hooks/useFeatureFlag";
-import { attachMediaTypeToCid } from "@/lib/clueMedia";
+import { ClueSortList } from './ClueSortList';
+import { HuntCards } from './HuntCards';
+import ToggleSwitch from './ToggleButton';
+import { useIsFeatureEnabled } from '@/hooks/useFeatureFlag';
+import { attachMediaTypeToCid } from '@/lib/clueMedia';
 
 interface HuntFormProps {
-  hunt: HuntDraft
-  onUpdate: (field: string, value: string | number | undefined) => void
-  onRemove: () => void
-  huntId?: number
-  onCluesSaved?: (count: number) => void
-  onImageUploadStateChange?: (state: CoverImageUploadState) => void
+  hunt: HuntDraft;
+  onUpdate: (field: string, value: string | number | undefined) => void;
+  onRemove: () => void;
+  huntId?: number;
+  onCluesSaved?: (count: number) => void;
+  onImageUploadStateChange?: (state: CoverImageUploadState) => void;
   /** Called after a clue reorder so the parent can trigger draft auto-save. */
-  onClueReorder?: () => void
+  onClueReorder?: () => void;
 }
 
-const clueTranslationLocales = ["en", "es", "fr"] as const;
+const clueTranslationLocales = ['en', 'es', 'fr'] as const;
 
 const clueSchema = z.object({
-  question: z.string().min(1, "Question is required"),
-  answer: z.string().min(1, "Answer is required"),
-  points: z.number().min(1, "Points must be at least 1"),
+  question: z.string().min(1, 'Question is required'),
+  answer: z.string().min(1, 'Answer is required'),
+  points: z.number().min(1, 'Points must be at least 1'),
   hint: z.string(),
   hintCost: z.number().min(0),
-  difficulty: z.enum(["Easy", "Medium", "Hard"]).optional(),
+  difficulty: z.enum(['Easy', 'Medium', 'Hard']).optional(),
   mediaCid: z.string().optional(),
   questionTranslations: z.record(z.string(), z.string()).optional(),
   hintTranslations: z.record(z.string(), z.string()).optional(),
 });
 
 const cluesFormSchema = z.object({
-  clues: z.array(clueSchema).min(1, "At least one clue is required"),
+  clues: z.array(clueSchema).min(1, 'At least one clue is required'),
 });
 
 type CluesFormData = z.infer<typeof cluesFormSchema>;
@@ -85,14 +74,10 @@ export function HuntForm({
   const [showPreview, setShowPreview] = useState(false);
   const [showReorder, setShowReorder] = useState(false);
   const [linkEnabled, setLinkEnabled] = useState(false);
-  const [imageUploadState, setImageUploadState] = useState<CoverImageUploadState>("idle");
-  const dragDropEnabled = useIsFeatureEnabled("dragDropClues");
+  const [imageUploadState, setImageUploadState] = useState<CoverImageUploadState>('idle');
+  const dragDropEnabled = useIsFeatureEnabled('dragDropClues');
   const clueFileInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const [uploadingClueIndex, setUploadingClueIndex] = useState<number | null>(null);
-  const [csvDialogOpen, setCsvDialogOpen] = useState(false);
-  const [csvPreview, setCsvPreview] = useState<CsvParseResult | null>(null);
-  const [csvFileName, setCsvFileName] = useState<string | null>(null);
-  const csvInputRef = useRef<HTMLInputElement>(null);
 
   const {
     control,
@@ -100,41 +85,28 @@ export function HuntForm({
     reset,
     setValue,
     watch,
-    formState: { errors, submitCount },
+    formState: { errors },
   } = useForm<CluesFormData>({
     resolver: zodResolver(cluesFormSchema),
     defaultValues: {
       clues: [
         {
-          question: "",
-          answer: "",
+          question: '',
+          answer: '',
           points: 10,
-          hint: "",
+          hint: '',
           hintCost: 0,
-          mediaCid: "",
-          questionTranslations: { en: "", es: "", fr: "" },
-          hintTranslations: { en: "", es: "", fr: "" },
+          mediaCid: '',
+          questionTranslations: { en: '', es: '', fr: '' },
+          hintTranslations: { en: '', es: '', fr: '' },
         },
       ],
     },
   });
 
-  const errorCount = useMemo(() => {
-    let count = 0;
-    if (errors.clues?.message) count++;
-    if (Array.isArray(errors.clues)) {
-      errors.clues.forEach((err) => {
-        if (err) {
-          count += Object.keys(err).length;
-        }
-      });
-    }
-    return count;
-  }, [errors]);
-
   const { fields, append, remove, move } = useFieldArray({
     control,
-    name: "clues",
+    name: 'clues',
   });
 
   const updateImageUploadState = (state: CoverImageUploadState) => {
@@ -142,37 +114,37 @@ export function HuntForm({
     onImageUploadStateChange?.(state);
   };
 
-  const clueValues = watch("clues")
+  const clueValues = watch('clues');
 
   const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    updateImageUploadState("uploading");
+    updateImageUploadState('uploading');
     setIsUploading(true);
 
     try {
       const ipfsUri = await uploadToIPFS(file);
-      onUpdate("image", ipfsUri);
-      updateImageUploadState("succeeded");
+      onUpdate('image', ipfsUri);
+      updateImageUploadState('succeeded');
     } catch (error) {
-      logger.error("Error uploading image to IPFS:", error);
-      updateImageUploadState("failed");
+      logger.error('Error uploading image to IPFS:', error);
+      updateImageUploadState('failed');
       toast.error(COVER_IMAGE_UPLOAD_ERROR_MESSAGE);
     } finally {
       if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+        fileInputRef.current.value = '';
       }
       setIsUploading(false);
     }
   };
 
   const handleClearImage = () => {
-    onUpdate("image", "");
-    updateImageUploadState("idle");
+    onUpdate('image', '');
+    updateImageUploadState('idle');
 
     if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      fileInputRef.current.value = '';
     }
   };
 
@@ -182,14 +154,14 @@ export function HuntForm({
 
   const addClueRow = () => {
     append({
-      question: "",
-      answer: "",
+      question: '',
+      answer: '',
       points: 10,
-      hint: "",
+      hint: '',
       hintCost: 0,
-      mediaCid: "",
-      questionTranslations: { en: "", es: "", fr: "" },
-      hintTranslations: { en: "", es: "", fr: "" },
+      mediaCid: '',
+      questionTranslations: { en: '', es: '', fr: '' },
+      hintTranslations: { en: '', es: '', fr: '' },
     });
   };
 
@@ -199,53 +171,11 @@ export function HuntForm({
     }
   };
 
-  const handleCsvFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setCsvFileName(file.name)
-    const reader = new FileReader()
-    reader.onload = () => {
-      const text = typeof reader.result === "string" ? reader.result : ""
-      const result = parseClueCsv(text)
-      setCsvPreview(result)
-    }
-    reader.readAsText(file)
-  }
-
-  const handleCsvImport = () => {
-    if (!csvPreview) return
-    const validRows = csvPreview.rows.filter((row) => {
-      return row.question.trim() && row.answer.trim() && row.points >= 1
-    })
-    if (validRows.length === 0) {
-      toast.error("No valid clues to import")
-      return
-    }
-    for (const row of validRows) {
-      append({
-        question: row.question,
-        answer: row.answer,
-        points: row.points,
-        hint: row.hint || "",
-        hintCost: row.hintCost ?? 0,
-        difficulty: row.difficulty,
-        mediaCid: "",
-      })
-    }
-    toast.success(`Imported ${validRows.length} clue(s)`)
-    setCsvDialogOpen(false)
-    setCsvPreview(null)
-    setCsvFileName(null)
-    if (csvInputRef.current) {
-      csvInputRef.current.value = ""
-    }
-  }
-
   const clueSortItems = useMemo(
     () =>
       fields.map((field) => ({
         id: field.id,
-        label: field.question || "",
+        label: field.question || '',
       })),
     [fields]
   );
@@ -276,7 +206,7 @@ export function HuntForm({
       // Notify parent so draft auto-save is triggered
       onClueReorder?.();
     },
-    [fields, move, onClueReorder],
+    [fields, move, onClueReorder]
   );
 
   const onSaveClues = async (data: CluesFormData) => {
@@ -294,12 +224,12 @@ export function HuntForm({
         points: row.points,
         questionTranslations: Object.fromEntries(
           clueTranslationLocales
-            .map((locale) => [locale, row.questionTranslations?.[locale]?.trim() ?? ""])
+            .map((locale) => [locale, row.questionTranslations?.[locale]?.trim() ?? ''])
             .filter(([, value]) => value.length > 0)
         ),
         hintTranslations: Object.fromEntries(
           clueTranslationLocales
-            .map((locale) => [locale, row.hintTranslations?.[locale]?.trim() ?? ""])
+            .map((locale) => [locale, row.hintTranslations?.[locale]?.trim() ?? ''])
             .filter(([, value]) => value.length > 0)
         ),
         hint: row.hint?.trim() || undefined,
@@ -312,16 +242,16 @@ export function HuntForm({
 
       await withTransactionToast(
         async (setStage) => {
-          setStage("approving");
+          setStage('approving');
           return addCluesBatch(
             huntId,
             normalizedClues.map(({ huntId: _huntId, ...clue }) => clue)
           );
         },
         {
-          pending: "Pending — preparing clues…",
-          approving: "Approving — sign in your wallet…",
-          confirmed: "Clues confirmed!",
+          pending: 'Pending — preparing clues…',
+          approving: 'Approving — sign in your wallet…',
+          confirmed: 'Clues confirmed!',
         }
       );
 
@@ -333,7 +263,7 @@ export function HuntForm({
         try {
           updateClueAnswer(huntId, newId, hashed);
         } catch (e) {
-          logger.warn("Failed to update local clue answer with hash", e);
+          logger.warn('Failed to update local clue answer with hash', e);
         }
       }
 
@@ -341,14 +271,14 @@ export function HuntForm({
       reset({
         clues: [
           {
-            question: "",
-            answer: "",
+            question: '',
+            answer: '',
             points: 10,
-            hint: "",
+            hint: '',
             hintCost: 0,
-            mediaCid: "",
-            questionTranslations: { en: "", es: "", fr: "" },
-            hintTranslations: { en: "", es: "", fr: "" },
+            mediaCid: '',
+            questionTranslations: { en: '', es: '', fr: '' },
+            hintTranslations: { en: '', es: '', fr: '' },
           },
         ],
       });
@@ -361,35 +291,30 @@ export function HuntForm({
   };
 
   const handleClueMediaUpload = async (index: number, e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    setUploadingClueIndex(index)
+    setUploadingClueIndex(index);
     try {
-      const ipfsUri = await uploadToIPFS(file)
+      const ipfsUri = await uploadToIPFS(file);
       setValue(`clues.${index}.mediaCid`, attachMediaTypeToCid(ipfsUri, file.type), {
         shouldDirty: true,
         shouldTouch: true,
-      })
-      toast.success(`Attached ${file.type.split("/")[0] || "media"} to clue ${index + 1}.`)
+      });
+      toast.success(`Attached ${file.type.split('/')[0] || 'media'} to clue ${index + 1}.`);
     } catch (error) {
-      logger.error("Error uploading clue media to IPFS:", error)
-      toast.error("Failed to upload clue media. Please try again.")
+      logger.error('Error uploading clue media to IPFS:', error);
+      toast.error('Failed to upload clue media. Please try again.');
     } finally {
       if (clueFileInputRefs.current[index]) {
-        clueFileInputRefs.current[index]!.value = ""
+        clueFileInputRefs.current[index]!.value = '';
       }
-      setUploadingClueIndex(null)
+      setUploadingClueIndex(null);
     }
-  }
+  };
 
   return (
     <div className="space-y-4 print:space-y-0">
-      <div className="sr-only" role="alert" aria-live="assertive">
-        {submitCount > 0 && errorCount > 0
-          ? `Form submission failed with ${errorCount} error${errorCount === 1 ? "" : "s"}. (Attempt ${submitCount})`
-          : ""}
-      </div>
       <div className="flex items-center justify-between print:hidden">
         <h3 className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-2xl font-semibold text-transparent bg-clip-text">
           Hunt {hunt.id}
@@ -402,7 +327,7 @@ export function HuntForm({
             className="flex gap-1 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
           >
             {showPreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            {showPreview ? "Hide Preview" : "Preview"}
+            {showPreview ? 'Hide Preview' : 'Preview'}
           </Button>
           <Button
             onClick={onRemove}
@@ -437,8 +362,8 @@ export function HuntForm({
               hunts={[
                 {
                   id: hunt.id,
-                  title: hunt.title || "Untitled Hunt",
-                  description: hunt.description || "No description yet...",
+                  title: hunt.title || 'Untitled Hunt',
+                  description: hunt.description || 'No description yet...',
                   link: hunt.link,
                   code: hunt.code,
                   image: hunt.image,
@@ -456,7 +381,7 @@ export function HuntForm({
           placeholder="Title of the Hunt"
           aria-label="Title of the Hunt"
           value={hunt.title}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => onUpdate("title", e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => onUpdate('title', e.target.value)}
           className="w-full pl-6 py-3"
         />
 
@@ -465,7 +390,7 @@ export function HuntForm({
             placeholder="Description"
             aria-label="Hunt Description"
             value={hunt.description}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => onUpdate("description", e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => onUpdate('description', e.target.value)}
             className="w-full pl-6 py-3"
           />
           <Input
@@ -473,10 +398,10 @@ export function HuntForm({
             min={1}
             placeholder="Optional participant cap"
             aria-label="Participant cap"
-            value={hunt.maxParticipants ?? ""}
+            value={hunt.maxParticipants ?? ''}
             onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              const raw = e.target.value.trim()
-              onUpdate("maxParticipants", raw === "" ? undefined : Number(raw))
+              const raw = e.target.value.trim();
+              onUpdate('maxParticipants', raw === '' ? undefined : Number(raw));
             }}
             className="w-full pl-6 py-3"
           />
@@ -520,18 +445,18 @@ export function HuntForm({
             )}
           </div>
         </div>
-        {(hunt.image || imageUploadState === "failed") && (
+        {(hunt.image || imageUploadState === 'failed') && (
           <div className="flex items-center justify-between gap-3 text-sm">
             <span
               className={
-                imageUploadState === "failed"
-                  ? "text-red-500"
-                  : "text-slate-500 dark:text-slate-400"
+                imageUploadState === 'failed'
+                  ? 'text-red-500'
+                  : 'text-slate-500 dark:text-slate-400'
               }
             >
-              {imageUploadState === "failed"
-                ? "Cover image upload failed."
-                : "Cover image attached."}
+              {imageUploadState === 'failed'
+                ? 'Cover image upload failed.'
+                : 'Cover image attached.'}
             </span>
             <Button
               type="button"
@@ -540,7 +465,7 @@ export function HuntForm({
               onClick={handleClearImage}
               className="h-auto px-0 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
             >
-              {hunt.image ? "Remove cover image" : "Skip cover image"}
+              {hunt.image ? 'Remove cover image' : 'Skip cover image'}
             </Button>
           </div>
         )}
@@ -556,7 +481,7 @@ export function HuntForm({
             placeholder="Enter Code to Unlock next challenge"
             aria-label="Unlock Code"
             value={hunt.code}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => onUpdate("code", e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => onUpdate('code', e.target.value)}
             className="w-full pl-6 py-3"
           />
         </div>
@@ -567,127 +492,15 @@ export function HuntForm({
             <span className="text-xl font-semibold bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-transparent bg-clip-text">
               Clues
             </span>
-            <div className="flex items-center gap-2">
-              <Dialog open={csvDialogOpen} onOpenChange={setCsvDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-                  >
-                    Import CSV
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Import clues from CSV</DialogTitle>
-                    <DialogDescription>
-                      Upload a CSV file with columns: question, answer, points, hint, hintCost, difficulty.
-                      Header row is optional.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="flex flex-col gap-2">
-                      <Input
-                        ref={csvInputRef}
-                        type="file"
-                        accept=".csv,text/csv"
-                        onChange={handleCsvFileChange}
-                        className="text-sm"
-                      />
-                      {csvFileName && (
-                        <p className="text-xs text-slate-500">Selected: {csvFileName}</p>
-                      )}
-                    </div>
-                    {csvPreview && (
-                      <div className="space-y-2">
-                        <p className="text-xs text-slate-400">
-                          {csvPreview.rows.length} row(s) parsed, {csvPreview.errors.length} error(s)
-                        </p>
-                        <div className="max-h-60 overflow-y-auto border border-white/10 rounded-lg">
-                          <table className="w-full text-xs">
-                            <thead className="bg-white/5 text-slate-400">
-                              <tr>
-                                <th className="text-left px-2 py-1">#</th>
-                                <th className="text-left px-2 py-1">Question</th>
-                                <th className="text-left px-2 py-1">Answer</th>
-                                <th className="text-left px-2 py-1">Pts</th>
-                                <th className="text-left px-2 py-1">Hint</th>
-                                <th className="text-left px-2 py-1">Cost</th>
-                                <th className="text-left px-2 py-1">Diff</th>
-                                <th className="text-left px-2 py-1">Status</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {csvPreview.rows.map((row, idx) => {
-                                const rowErrors = csvPreview.errors.filter((e) => e.row === idx + 1)
-                                const isValid = rowErrors.length === 0
-                                return (
-                                  <tr key={idx} className={cn("border-t border-white/5", isValid ? "" : "bg-red-500/10")}>
-                                    <td className="px-2 py-1 text-slate-500">{idx + 1}</td>
-                                    <td className="px-2 py-1 text-slate-200 truncate max-w-[200px]">{row.question}</td>
-                                    <td className="px-2 py-1 text-slate-200 truncate max-w-[120px]">{row.answer}</td>
-                                    <td className="px-2 py-1 text-slate-200">{row.points}</td>
-                                    <td className="px-2 py-1 text-slate-400 truncate max-w-[150px]">{row.hint || "—"}</td>
-                                    <td className="px-2 py-1 text-slate-400">{row.hintCost ?? 0}</td>
-                                    <td className="px-2 py-1 text-slate-400">{row.difficulty || "—"}</td>
-                                    <td className="px-2 py-1">
-                                      {isValid ? (
-                                        <span className="text-emerald-400">Valid</span>
-                                      ) : (
-                                        <span className="text-red-400">{rowErrors.map((e) => e.message).join(", ")}</span>
-                                      )}
-                                    </td>
-                                  </tr>
-                                )
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                        {csvPreview.errors.length > 0 && (
-                          <p className="text-xs text-red-400">
-                            Fix the highlighted rows before importing, or note that invalid rows will be skipped.
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setCsvDialogOpen(false)
-                        setCsvPreview(null)
-                        setCsvFileName(null)
-                        if (csvInputRef.current) {
-                          csvInputRef.current.value = ""
-                        }
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={handleCsvImport}
-                      disabled={!csvPreview || csvPreview.rows.length === 0}
-                    >
-                      Import {csvPreview ? `(${csvPreview.rows.length})` : ""}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-              <Button
-                type="button"
-                onClick={addClueRow}
-                size="sm"
-                className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-white flex items-center gap-1 rounded-xl"
-              >
-                <Plus className="w-4 h-4" />
-                Add Clue
-              </Button>
-            </div>
+            <Button
+              type="button"
+              onClick={addClueRow}
+              size="sm"
+              className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-white flex items-center gap-1 rounded-xl"
+            >
+              <Plus className="w-4 h-4" />
+              Add Clue
+            </Button>
           </div>
 
           <div className="space-y-2">
@@ -696,8 +509,8 @@ export function HuntForm({
                 key={field.id}
                 className="flex flex-col gap-2 p-2 border border-slate-100 dark:border-white/5 rounded-lg bg-white/50 dark:bg-slate-900/50"
               >
-                <div className="flex gap-2 items-start">
-                  <span className="text-xs text-slate-400 dark:text-slate-500 w-4 shrink-0 mt-2">
+                <div className="flex gap-2 items-center">
+                  <span className="text-xs text-slate-400 dark:text-slate-500 w-4 shrink-0">
                     {index + 1}.
                   </span>
                   <div className="flex-1 flex flex-col">
@@ -708,7 +521,6 @@ export function HuntForm({
                         <Input
                           placeholder="Riddle / Question"
                           aria-label={`Clue ${index + 1} Question`}
-                          aria-invalid={!!errors.clues?.[index]?.question}
                           aria-describedby={
                             errors.clues?.[index]?.question
                               ? `clue-${index}-question-error`
@@ -738,7 +550,6 @@ export function HuntForm({
                         <Input
                           placeholder="Answer (use | for multiple)"
                           aria-label={`Clue ${index + 1} Answer`}
-                          aria-invalid={!!errors.clues?.[index]?.answer}
                           aria-describedby={
                             errors.clues?.[index]?.answer ? `clue-${index}-answer-error` : undefined
                           }
@@ -768,10 +579,6 @@ export function HuntForm({
                           placeholder="Pts"
                           aria-label={`Clue ${index + 1} Points`}
                           min={1}
-                          aria-invalid={!!errors.clues?.[index]?.points}
-                          aria-describedby={
-                            errors.clues?.[index]?.points ? `clue-${index}-points-error` : undefined
-                          }
                           value={f.value}
                           onChange={(e) => f.onChange(parseInt(e.target.value, 10) || 0)}
                           onBlur={f.onBlur}
@@ -781,16 +588,6 @@ export function HuntForm({
                         />
                       )}
                     />
-                    {errors.clues?.[index]?.points && (
-                      <span
-                        role="alert"
-                        aria-live="assertive"
-                        id={`clue-${index}-points-error`}
-                        className="text-red-500 text-xs mt-0.5"
-                      >
-                        {errors.clues[index].points.message}
-                      </span>
-                    )}
                   </div>
                   <Button
                     type="button"
@@ -820,7 +617,7 @@ export function HuntForm({
                             <Input
                               placeholder={`Question (${locale})`}
                               {...f}
-                              value={f.value ?? ""}
+                              value={f.value ?? ''}
                               className="pl-3 py-2 text-sm"
                             />
                           )}
@@ -832,7 +629,7 @@ export function HuntForm({
                             <Input
                               placeholder={`Hint (${locale})`}
                               {...f}
-                              value={f.value ?? ""}
+                              value={f.value ?? ''}
                               className="pl-3 py-2 text-sm"
                             />
                           )}
@@ -841,100 +638,52 @@ export function HuntForm({
                     ))}
                   </div>
                 </div>
-                <div className="flex gap-2 items-start pl-6">
-                  <div className="flex-1 flex flex-col">
-                    <Controller
-                      control={control}
-                      name={`clues.${index}.hint`}
-                      render={({ field: f }) => (
-                        <Input
-                          placeholder="Optional Hint Text"
-                          aria-invalid={!!errors.clues?.[index]?.hint}
-                          aria-describedby={
-                            errors.clues?.[index]?.hint ? `clue-${index}-hint-error` : undefined
-                          }
-                          {...f}
-                          className="w-full pl-3 py-2 text-sm"
-                        />
-                      )}
-                    />
-                    {errors.clues?.[index]?.hint && (
-                      <span
-                        role="alert"
-                        aria-live="assertive"
-                        id={`clue-${index}-hint-error`}
-                        className="text-red-500 text-xs mt-0.5"
-                      >
-                        {errors.clues[index].hint.message}
-                      </span>
+                <div className="flex gap-2 items-center pl-6">
+                  <Controller
+                    control={control}
+                    name={`clues.${index}.hint`}
+                    render={({ field: f }) => (
+                      <Input
+                        placeholder="Optional Hint Text"
+                        {...f}
+                        className="flex-1 pl-3 py-2 text-sm"
+                      />
                     )}
-                  </div>
-                  <div className="w-24 flex flex-col">
-                    <Controller
-                      control={control}
-                      name={`clues.${index}.hintCost`}
-                      render={({ field: f }) => (
-                        <Input
-                          type="number"
-                          placeholder="Hint Cost"
-                          min={0}
-                          aria-invalid={!!errors.clues?.[index]?.hintCost}
-                          aria-describedby={
-                            errors.clues?.[index]?.hintCost ? `clue-${index}-hintCost-error` : undefined
-                          }
-                          value={f.value}
-                          onChange={(e) => f.onChange(parseInt(e.target.value, 10) || 0)}
-                          onBlur={f.onBlur}
-                          name={f.name}
-                          ref={f.ref}
-                          className="w-full pl-3 py-2 text-sm"
-                        />
-                      )}
-                    />
-                    {errors.clues?.[index]?.hintCost && (
-                      <span
-                        role="alert"
-                        aria-live="assertive"
-                        id={`clue-${index}-hintCost-error`}
-                        className="text-red-500 text-xs mt-0.5"
-                      >
-                        {errors.clues[index].hintCost.message}
-                      </span>
+                  />
+                  <Controller
+                    control={control}
+                    name={`clues.${index}.hintCost`}
+                    render={({ field: f }) => (
+                      <Input
+                        type="number"
+                        placeholder="Hint Cost"
+                        min={0}
+                        value={f.value}
+                        onChange={(e) => f.onChange(parseInt(e.target.value, 10) || 0)}
+                        onBlur={f.onBlur}
+                        name={f.name}
+                        ref={f.ref}
+                        className="w-24 pl-3 py-2 text-sm"
+                      />
                     )}
-                  </div>
-                  <div className="w-28 flex flex-col">
-                    <Controller
-                      control={control}
-                      name={`clues.${index}.difficulty`}
-                      render={({ field: f }) => (
-                        <select
-                          aria-label={`Clue ${index + 1} Difficulty`}
-                          aria-invalid={!!errors.clues?.[index]?.difficulty}
-                          aria-describedby={
-                            errors.clues?.[index]?.difficulty ? `clue-${index}-difficulty-error` : undefined
-                          }
-                          value={f.value ?? ""}
-                          onChange={(e) => f.onChange(e.target.value || undefined)}
-                          className="w-full pl-3 py-2 text-sm rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                        >
-                          <option value="">Difficulty</option>
-                          <option value="Easy">Easy</option>
-                          <option value="Medium">Medium</option>
-                          <option value="Hard">Hard</option>
-                        </select>
-                      )}
-                    />
-                    {errors.clues?.[index]?.difficulty && (
-                      <span
-                        role="alert"
-                        aria-live="assertive"
-                        id={`clue-${index}-difficulty-error`}
-                        className="text-red-500 text-xs mt-0.5"
+                  />
+                  <Controller
+                    control={control}
+                    name={`clues.${index}.difficulty`}
+                    render={({ field: f }) => (
+                      <select
+                        aria-label={`Clue ${index + 1} Difficulty`}
+                        value={f.value ?? ''}
+                        onChange={(e) => f.onChange(e.target.value || undefined)}
+                        className="w-28 pl-3 py-2 text-sm rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                       >
-                        {errors.clues[index].difficulty.message}
-                      </span>
+                        <option value="">Difficulty</option>
+                        <option value="Easy">Easy</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Hard">Hard</option>
+                      </select>
                     )}
-                  </div>
+                  />
                   <input
                     ref={(node) => {
                       clueFileInputRefs.current[index] = node;
@@ -952,7 +701,7 @@ export function HuntForm({
                     onClick={() => clueFileInputRefs.current[index]?.click()}
                     disabled={uploadingClueIndex === index}
                   >
-                    {uploadingClueIndex === index ? "Uploading..." : "Add Media"}
+                    {uploadingClueIndex === index ? 'Uploading...' : 'Add Media'}
                   </Button>
                   {clueValues?.[index]?.mediaCid ? (
                     <Button
@@ -960,7 +709,7 @@ export function HuntForm({
                       variant="ghost"
                       size="sm"
                       onClick={() =>
-                        setValue(`clues.${index}.mediaCid`, "", {
+                        setValue(`clues.${index}.mediaCid`, '', {
                           shouldDirty: true,
                           shouldTouch: true,
                         })
@@ -989,7 +738,7 @@ export function HuntForm({
                 aria-controls="clue-reorder-panel"
               >
                 <ArrowUpDown className="w-4 h-4" />
-                {showReorder ? "Hide Reorder Panel" : "Reorder Clues"}
+                {showReorder ? 'Hide Reorder Panel' : 'Reorder Clues'}
               </button>
               {showReorder && (
                 <div
@@ -998,12 +747,12 @@ export function HuntForm({
                 >
                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
                     {dragDropEnabled
-                      ? "Drag clues or use the arrow buttons to reorder. Keyboard:"
-                      : "Use the arrow buttons to reorder clues. Keyboard:"}{" "}
+                      ? 'Drag clues or use the arrow buttons to reorder. Keyboard:'
+                      : 'Use the arrow buttons to reorder clues. Keyboard:'}{' '}
                     <kbd className="px-1 py-0.5 text-[10px] font-mono bg-slate-200 dark:bg-slate-700 rounded">
                       Alt
-                    </kbd>{" "}
-                    +{" "}
+                    </kbd>{' '}
+                    +{' '}
                     <kbd className="px-1 py-0.5 text-[10px] font-mono bg-slate-200 dark:bg-slate-700 rounded">
                       Arrow
                     </kbd>
@@ -1027,7 +776,7 @@ export function HuntForm({
                 disabled={isSavingClues}
                 className="bg-gradient-to-b from-[#39A437] to-[#194F0C] hover:bg-green-700 text-white px-5 py-2 rounded-xl disabled:opacity-50"
               >
-                {isSavingClues ? "Saving..." : "Save Clues"}
+                {isSavingClues ? 'Saving...' : 'Save Clues'}
               </Button>
             </div>
           )}
@@ -1036,4 +785,3 @@ export function HuntForm({
     </div>
   );
 }
- 

@@ -1,25 +1,19 @@
-"use client"
+'use client';
 
-import { type ReactNode } from "react"
-import { ErrorBoundary } from "@/components/ErrorBoundary"
+import { type ReactNode } from 'react';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 interface ComponentErrorBoundaryProps {
-  children: ReactNode
+  children: ReactNode;
   /** Name shown in the fallback UI and used for logging. */
-  componentName: string
+  componentName: string;
   /** Optional smaller fallback for inline use. */
-  compact?: boolean
+  compact?: boolean;
   /** Called when the boundary catches an error. */
-  onError?: (error: Error) => void
+  onError?: (error: Error) => void;
 }
 
-function CompactFallback({
-  componentName,
-  reset,
-}: {
-  componentName: string
-  reset: () => void
-}) {
+function CompactFallback({ componentName, reset }: { componentName: string; reset: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center p-6 text-center rounded-xl border border-dashed border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/50">
       <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-3">
@@ -48,16 +42,10 @@ function CompactFallback({
         Retry
       </button>
     </div>
-  )
+  );
 }
 
-function FullFallback({
-  componentName,
-  reset,
-}: {
-  componentName: string
-  reset: () => void
-}) {
+function FullFallback({ componentName, reset }: { componentName: string; reset: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[200px] p-8 text-center">
       <div className="w-14 h-14 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-4">
@@ -80,8 +68,7 @@ function FullFallback({
         {componentName} unavailable
       </h3>
       <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 max-w-sm">
-        This section encountered an error. You can retry or continue using the
-        rest of the page.
+        This section encountered an error. You can retry or continue using the rest of the page.
       </p>
       <button
         onClick={reset}
@@ -90,7 +77,7 @@ function FullFallback({
         Retry
       </button>
     </div>
-  )
+  );
 }
 
 /**
@@ -120,5 +107,5 @@ export function ComponentErrorBoundary({
     >
       {children}
     </ErrorBoundary>
-  )
+  );
 }

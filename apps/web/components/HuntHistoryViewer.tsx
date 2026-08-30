@@ -1,37 +1,37 @@
-"use client"
+'use client';
 
-import { ArrowRight, History } from "lucide-react"
-import Link from "next/link"
-import { useMemo, useState } from "react"
+import { ArrowRight, History } from 'lucide-react';
+import Link from 'next/link';
+import { useMemo, useState } from 'react';
 
-import { Button } from "@hunty/ui"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@hunty/ui"
-import { formatDuration } from "@/lib/huntAttemptHistory"
-import type { HuntAttemptRecord, HuntAttemptStatus } from "@/lib/types"
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatDuration } from '@/lib/huntAttemptHistory';
+import type { HuntAttemptRecord, HuntAttemptStatus } from '@/lib/types';
 
-type HuntHistoryFilter = "all" | HuntAttemptStatus
+type HuntHistoryFilter = 'all' | HuntAttemptStatus;
 
 const FILTER_LABELS: Record<HuntHistoryFilter, string> = {
-  all: "All",
-  completed: "Completed",
-  abandoned: "Abandoned",
-  in_progress: "In Progress",
-}
+  all: 'All',
+  completed: 'Completed',
+  abandoned: 'Abandoned',
+  in_progress: 'In Progress',
+};
 
 interface HuntHistoryViewerProps {
-  attempts: HuntAttemptRecord[]
+  attempts: HuntAttemptRecord[];
 }
 
 export function HuntHistoryViewer({ attempts }: HuntHistoryViewerProps) {
-  const [filter, setFilter] = useState<HuntHistoryFilter>("all")
+  const [filter, setFilter] = useState<HuntHistoryFilter>('all');
 
   const filteredAttempts = useMemo(() => {
-    if (filter === "all") return attempts
-    return attempts.filter((attempt) => attempt.status === filter)
-  }, [attempts, filter])
+    if (filter === 'all') return attempts;
+    return attempts.filter((attempt) => attempt.status === filter);
+  }, [attempts, filter]);
 
-  const completedCount = attempts.filter((attempt) => attempt.status === "completed").length
-  const abandonedCount = attempts.filter((attempt) => attempt.status === "abandoned").length
+  const completedCount = attempts.filter((attempt) => attempt.status === 'completed').length;
+  const abandonedCount = attempts.filter((attempt) => attempt.status === 'abandoned').length;
 
   return (
     <section aria-label="Hunt replay history" className="space-y-6">
@@ -52,13 +52,13 @@ export function HuntHistoryViewer({ attempts }: HuntHistoryViewerProps) {
 
       <div className="flex flex-wrap gap-2">
         {(Object.keys(FILTER_LABELS) as HuntHistoryFilter[])
-          .filter((key) => key !== "in_progress")
+          .filter((key) => key !== 'in_progress')
           .map((key) => (
             <Button
               key={key}
               type="button"
               size="sm"
-              variant={filter === key ? "default" : "outline"}
+              variant={filter === key ? 'default' : 'outline'}
               className="rounded-full"
               onClick={() => setFilter(key)}
             >
@@ -72,10 +72,10 @@ export function HuntHistoryViewer({ attempts }: HuntHistoryViewerProps) {
           <History className="mx-auto mb-3 h-8 w-8 text-slate-400" />
           <p>No hunt attempts match this filter yet.</p>
           <p className="text-sm mt-2">
-            Play a hunt from the{" "}
+            Play a hunt from the{' '}
             <Link href="/" className="text-indigo-600 underline underline-offset-2">
               arcade
-            </Link>{" "}
+            </Link>{' '}
             to build your history.
           </p>
         </div>
@@ -89,12 +89,12 @@ export function HuntHistoryViewer({ attempts }: HuntHistoryViewerProps) {
         </ul>
       )}
     </section>
-  )
+  );
 }
 
 function HuntAttemptListCard({ attempt }: { attempt: HuntAttemptRecord }) {
-  const isCompleted = attempt.status === "completed"
-  const statusLabel = isCompleted ? "Completed" : "Abandoned"
+  const isCompleted = attempt.status === 'completed';
+  const statusLabel = isCompleted ? 'Completed' : 'Abandoned';
 
   return (
     <Card className="border border-slate-200 bg-white/80 shadow-sm">
@@ -106,14 +106,14 @@ function HuntAttemptListCard({ attempt }: { attempt: HuntAttemptRecord }) {
             </CardTitle>
             <CardDescription className="mt-1">
               Attempt #{attempt.attemptNumber} · {attempt.clues.length} clue
-              {attempt.clues.length === 1 ? "" : "s"} recorded
+              {attempt.clues.length === 1 ? '' : 's'} recorded
             </CardDescription>
           </div>
           <span
             className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
               isCompleted
-                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                : "bg-amber-50 text-amber-700 border border-amber-200"
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                : 'bg-amber-50 text-amber-700 border border-amber-200'
             }`}
           >
             {statusLabel}
@@ -123,17 +123,16 @@ function HuntAttemptListCard({ attempt }: { attempt: HuntAttemptRecord }) {
       <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-4 text-xs md:text-sm text-slate-600">
           <span>
-            Total time:{" "}
+            Total time:{' '}
             <span className="font-semibold text-slate-800">
               {formatDuration(attempt.totalTimeSeconds)}
             </span>
           </span>
           <span>
-            Points:{" "}
-            <span className="font-semibold text-emerald-700">{attempt.totalPoints}</span>
+            Points: <span className="font-semibold text-emerald-700">{attempt.totalPoints}</span>
           </span>
           <span>
-            {isCompleted ? "Finished" : "Stopped"}:{" "}
+            {isCompleted ? 'Finished' : 'Stopped'}:{' '}
             <span className="font-medium text-slate-700">
               {new Date(attempt.completedAt ?? attempt.startedAt).toLocaleString()}
             </span>
@@ -147,7 +146,7 @@ function HuntAttemptListCard({ attempt }: { attempt: HuntAttemptRecord }) {
         </Button>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function StatBadge({
@@ -155,18 +154,20 @@ function StatBadge({
   value,
   tone,
 }: {
-  label: string
-  value: number
-  tone: "success" | "warning"
+  label: string;
+  value: number;
+  tone: 'success' | 'warning';
 }) {
   const toneClasses =
-    tone === "success"
-      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-      : "bg-amber-50 text-amber-700 border-amber-200"
+    tone === 'success'
+      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+      : 'bg-amber-50 text-amber-700 border-amber-200';
 
   return (
-    <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${toneClasses}`}>
+    <span
+      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${toneClasses}`}
+    >
       {label}: {value}
     </span>
-  )
+  );
 }

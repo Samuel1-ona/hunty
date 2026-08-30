@@ -1,9 +1,9 @@
-import type { PlayerStats } from "@/lib/types"
+import type { PlayerStats } from '@/lib/types';
 
-const PLAYER_STATS_KEY_PREFIX = "hunty_player_stats_"
+const PLAYER_STATS_KEY_PREFIX = 'hunty_player_stats_';
 
 function getStorageKey(address: string): string {
-  return `${PLAYER_STATS_KEY_PREFIX}${address}`
+  return `${PLAYER_STATS_KEY_PREFIX}${address}`;
 }
 
 function createEmptyStats(address: string): PlayerStats {
@@ -16,20 +16,20 @@ function createEmptyStats(address: string): PlayerStats {
     completedHuntsTracked: 0,
     averageCompletionTimeSeconds: 0,
     lastUpdated: Date.now(),
-  }
+  };
 }
 
 function readStats(address: string): PlayerStats {
-  if (typeof window === "undefined") {
-    return createEmptyStats(address)
+  if (typeof window === 'undefined') {
+    return createEmptyStats(address);
   }
 
   try {
-    const raw = localStorage.getItem(getStorageKey(address))
-    if (!raw) return createEmptyStats(address)
-    const parsed = JSON.parse(raw) as Partial<PlayerStats>
-    const totalCompletionTimeSeconds = parsed.totalCompletionTimeSeconds ?? 0
-    const completedHuntsTracked = parsed.completedHuntsTracked ?? 0
+    const raw = localStorage.getItem(getStorageKey(address));
+    if (!raw) return createEmptyStats(address);
+    const parsed = JSON.parse(raw) as Partial<PlayerStats>;
+    const totalCompletionTimeSeconds = parsed.totalCompletionTimeSeconds ?? 0;
+    const completedHuntsTracked = parsed.completedHuntsTracked ?? 0;
 
     return {
       ...createEmptyStats(address),
@@ -37,33 +37,31 @@ function readStats(address: string): PlayerStats {
       totalCompletionTimeSeconds,
       completedHuntsTracked,
       averageCompletionTimeSeconds:
-        completedHuntsTracked > 0
-          ? totalCompletionTimeSeconds / completedHuntsTracked
-          : 0,
-    }
+        completedHuntsTracked > 0 ? totalCompletionTimeSeconds / completedHuntsTracked : 0,
+    };
   } catch {
-    return createEmptyStats(address)
+    return createEmptyStats(address);
   }
 }
 
 function writeStats(stats: PlayerStats): void {
-  if (typeof window === "undefined") return
-  localStorage.setItem(getStorageKey(stats.address), JSON.stringify(stats))
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(getStorageKey(stats.address), JSON.stringify(stats));
 }
 
 export function get_player_stats(address: string): PlayerStats {
-  return readStats(address)
+  return readStats(address);
 }
 
 export function recordHuntCompletion(
   address: string,
   payload: {
-    huntId: number
-    pointsEarned: number
-    completionTimeSeconds: number
-  },
+    huntId: number;
+    pointsEarned: number;
+    completionTimeSeconds: number;
+  }
 ): PlayerStats {
-  const current = readStats(address)
+  const current = readStats(address);
   const next: PlayerStats = {
     ...current,
     totalHuntsCompleted: current.totalHuntsCompleted + 1,
@@ -76,24 +74,24 @@ export function recordHuntCompletion(
           (current.completedHuntsTracked + 1)
         : 0,
     lastUpdated: Date.now(),
-  }
+  };
 
-  writeStats(next)
-  return next
+  writeStats(next);
+  return next;
 }
 
 export function recordNftReceived(address: string): PlayerStats {
-  const current = readStats(address)
+  const current = readStats(address);
   const next: PlayerStats = {
     ...current,
     totalNftsReceived: current.totalNftsReceived + 1,
     lastUpdated: Date.now(),
-  }
-  writeStats(next)
-  return next
+  };
+  writeStats(next);
+  return next;
 }
 
 export function clearPlayerStats(address: string): void {
-  if (typeof window === "undefined") return
-  localStorage.removeItem(getStorageKey(address))
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(getStorageKey(address));
 }

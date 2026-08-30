@@ -1,7 +1,7 @@
-import { BarCodeScanner,Camera, CameraType, FlashMode } from 'expo-camera';
+import { BarCodeScanner, Camera, CameraType, FlashMode } from 'expo-camera';
 import { useRouter } from 'expo-router';
-import React, { useCallback,useEffect, useState } from 'react';
-import { ActivityIndicator,StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function QRCodeScanner({ onScanned }: { onScanned: (data: string) => void }) {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);

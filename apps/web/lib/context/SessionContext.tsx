@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, {
   createContext,
@@ -9,11 +9,11 @@ import React, {
   useMemo,
   useRef,
   useState,
-} from "react";
+} from 'react';
 
-import { useIsMounted } from "@/hooks/useIsMounted";
-import { useWallet } from "@/lib/context/WalletContext";
-import { logger } from "@/lib/logger";
+import { useIsMounted } from '@/hooks/useIsMounted';
+import { useWallet } from '@/lib/context/WalletContext';
+import { logger } from '@/lib/logger';
 import {
   clearAllSessionData,
   clearStoredSession,
@@ -26,7 +26,7 @@ import {
   setStoredSession,
   shouldRenewSession,
   type UserPreferences,
-} from "@/lib/session";
+} from '@/lib/session';
 
 interface SessionContextValue {
   session: Session | null;
@@ -41,7 +41,7 @@ interface SessionContextValue {
 
 const SessionContext = createContext<SessionContextValue | null>(null);
 
-const ACTIVITY_EVENTS = ["mousedown", "keydown", "touchstart", "scroll", "focus"];
+const ACTIVITY_EVENTS = ['mousedown', 'keydown', 'touchstart', 'scroll', 'focus'];
 
 const EXPIRY_CHECK_INTERVAL = 60_000;
 
@@ -61,7 +61,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const saved = getStoredSession();
     if (saved) {
       if (isSessionExpired(saved)) {
-        logger.info("Session expired on restore");
+        logger.info('Session expired on restore');
         clearStoredSession();
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setSession(null);
@@ -141,7 +141,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setSession((prev) => {
         if (!prev) return prev;
         if (isSessionExpired(prev)) {
-          logger.info("Session expired");
+          logger.info('Session expired');
           clearStoredSession();
           return null;
         }
@@ -206,7 +206,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 export function useSession(): SessionContextValue {
   const ctx = useContext(SessionContext);
   if (ctx == null) {
-    throw new Error("useSession must be used within a SessionProvider");
+    throw new Error('useSession must be used within a SessionProvider');
   }
   return ctx;
 }

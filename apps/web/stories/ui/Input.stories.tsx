@@ -1,23 +1,23 @@
-import type { Meta, StoryObj } from "@storybook/nextjs-vite"
-import { Input } from "@/components/ui/input"
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { Input } from '@/components/ui/input';
 
 const meta = {
-  title: "UI/Input",
+  title: 'UI/Input',
   component: Input,
-  tags: ["autodocs"],
+  tags: ['autodocs'],
   args: {
-    placeholder: "Enter hunt title",
+    placeholder: 'Enter hunt title',
   },
-} satisfies Meta<typeof Input>
+} satisfies Meta<typeof Input>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {}
+export const Default: Story = {};
 
 export const Ghost: Story = {
   args: {
-    variant: "ghost",
-    value: "Search spotlight hunts",
+    variant: 'ghost',
+    value: 'Search spotlight hunts',
   },
-}
+};

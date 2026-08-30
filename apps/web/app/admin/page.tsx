@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft,
   Star,
@@ -10,30 +10,30 @@ import {
   Sparkles,
   Shield,
   ShieldAlert,
-} from "lucide-react";
-import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
+} from 'lucide-react';
+import Link from 'next/link';
+import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
-import { Header } from "@/components/Header";
-import { HuntCoverImage } from "@/components/HuntCoverImage";
-import { Button } from "@hunty/ui";
-import { Card, CardDescription, CardTitle } from "@hunty/ui";
-import { getAllHuntsIncludingPrivate, setLocalFeaturedHunt } from "@/lib/huntStore";
-import type { StoredHunt } from "@/lib/types";
+import { Header } from '@/components/Header';
+import { HuntCoverImage } from '@/components/HuntCoverImage';
+import { Button } from '@/components/ui/button';
+import { Card, CardDescription, CardTitle } from '@/components/ui/card';
+import { getAllHuntsIncludingPrivate, setLocalFeaturedHunt } from '@/lib/huntStore';
+import type { StoredHunt } from '@/lib/types';
 
-function StatusBadge({ status }: { status: StoredHunt["status"] }) {
-  const config: Partial<Record<StoredHunt["status"], string>> = {
+function StatusBadge({ status }: { status: StoredHunt['status'] }) {
+  const config: Partial<Record<StoredHunt['status'], string>> = {
     Draft:
-      "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 border-amber-200 dark:border-amber-900/50",
+      'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 border-amber-200 dark:border-amber-900/50',
     PendingReview:
-      "bg-violet-100 dark:bg-violet-900/30 text-violet-800 dark:text-violet-300 border-violet-200 dark:border-violet-900/50",
+      'bg-violet-100 dark:bg-violet-900/30 text-violet-800 dark:text-violet-300 border-violet-200 dark:border-violet-900/50',
     Active:
-      "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50",
+      'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50',
     Completed:
-      "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-750",
+      'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-750',
     Cancelled:
-      "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-900/50",
+      'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-900/50',
   };
   const style = config[status] ?? config.Draft!;
   return (
@@ -47,14 +47,14 @@ function StatusBadge({ status }: { status: StoredHunt["status"] }) {
 
 export default function AdminPage() {
   const [hunts, setHunts] = useState<StoredHunt[]>([]);
-  const [filter, setFilter] = useState<"all" | "Active" | "Completed" | "Draft">("all");
+  const [filter, setFilter] = useState<'all' | 'Active' | 'Completed' | 'Draft'>('all');
 
   // Fetch featured hunt ID from server API
   const { data: featuredData, refetch: refetchFeatured } = useQuery({
-    queryKey: ["featuredHuntId"],
+    queryKey: ['featuredHuntId'],
     queryFn: async () => {
-      const res = await fetch("/api/admin/featured");
-      if (!res.ok) throw new Error("Failed to load featured hunt");
+      const res = await fetch('/api/admin/featured');
+      if (!res.ok) throw new Error('Failed to load featured hunt');
       return res.json() as Promise<{ featuredHuntId: number | null }>;
     },
   });
@@ -76,12 +76,12 @@ export default function AdminPage() {
 
     const promise = async () => {
       // 1. Persist on Server
-      const res = await fetch("/api/admin/featured", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/admin/featured', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ huntId }),
       });
-      if (!res.ok) throw new Error("Failed to set featured hunt on server");
+      if (!res.ok) throw new Error('Failed to set featured hunt on server');
 
       // 2. Sync client-side localStorage
       setLocalFeaturedHunt(huntId);
@@ -94,19 +94,19 @@ export default function AdminPage() {
     toast.promise(promise(), {
       loading: `Setting "${targetHunt.title}" as Hunt of the Week...`,
       success: `"${targetHunt.title}" is now the Hunt of the Week!`,
-      error: "Could not set featured hunt. Please try again.",
+      error: 'Could not set featured hunt. Please try again.',
     });
   };
 
   const handleClearFeatured = async () => {
     const promise = async () => {
       // 1. Clear on Server
-      const res = await fetch("/api/admin/featured", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/admin/featured', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ huntId: null }),
       });
-      if (!res.ok) throw new Error("Failed to clear featured hunt");
+      if (!res.ok) throw new Error('Failed to clear featured hunt');
 
       // 2. Sync client local storage
       setLocalFeaturedHunt(null);
@@ -117,18 +117,18 @@ export default function AdminPage() {
     };
 
     toast.promise(promise(), {
-      loading: "Clearing Hunt of the Week...",
-      success: "Hunt of the Week banner cleared successfully.",
-      error: "Failed to clear. Please try again.",
+      loading: 'Clearing Hunt of the Week...',
+      success: 'Hunt of the Week banner cleared successfully.',
+      error: 'Failed to clear. Please try again.',
     });
   };
 
   const handleTriggerRotation = async () => {
     const promise = async () => {
-      const res = await fetch("/api/admin/featured/rotate", { method: "POST" });
+      const res = await fetch('/api/admin/featured/rotate', { method: 'POST' });
       if (!res.ok) {
         const errorData = (await res.json()) as { error?: string };
-        throw new Error(errorData.error || "Rotation failed");
+        throw new Error(errorData.error || 'Rotation failed');
       }
       const data = (await res.json()) as { rotatedTo: number };
 
@@ -141,19 +141,19 @@ export default function AdminPage() {
     };
 
     toast.promise(promise(), {
-      loading: "Rotating Hunt of the Week...",
+      loading: 'Rotating Hunt of the Week...',
       success: (data) => {
         const rotatedHunt = hunts.find((h) => h.id === data.rotatedTo);
-        return `Weekly rotation complete! Rotated to: "${rotatedHunt?.title || "Next Hunt"}"`;
+        return `Weekly rotation complete! Rotated to: "${rotatedHunt?.title || 'Next Hunt'}"`;
       },
-      error: (err) => `${err?.message || "Failed to rotate featured hunt."}`,
+      error: (err) => `${err?.message || 'Failed to rotate featured hunt.'}`,
     });
   };
 
   const featuredHunt = hunts.find((h) => h.id === featuredHuntId);
 
   const filteredHunts = hunts.filter((h) => {
-    if (filter === "all") return true;
+    if (filter === 'all') return true;
     return h.status === filter;
   });
 
@@ -262,11 +262,11 @@ export default function AdminPage() {
                     </span>
                     <span
                       className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold border ${
-                        featuredHunt.rewardType === "XLM"
-                          ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-450 border-green-100 dark:border-green-900/30"
-                          : featuredHunt.rewardType === "NFT"
-                            ? "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-100 dark:border-purple-900/30"
-                            : "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-900/30"
+                        featuredHunt.rewardType === 'XLM'
+                          ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-450 border-green-100 dark:border-green-900/30'
+                          : featuredHunt.rewardType === 'NFT'
+                            ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-100 dark:border-purple-900/30'
+                            : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-900/30'
                       }`}
                     >
                       {featuredHunt.rewardType} Prize
@@ -297,17 +297,17 @@ export default function AdminPage() {
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <h2 className="text-xl font-bold text-slate-800 dark:text-white">All Hunts</h2>
             <div className="flex bg-slate-100 dark:bg-slate-850 p-1 rounded-xl w-full sm:w-auto">
-              {(["all", "Active", "Completed", "Draft"] as const).map((s) => (
+              {(['all', 'Active', 'Completed', 'Draft'] as const).map((s) => (
                 <button
                   key={s}
                   onClick={() => setFilter(s)}
                   className={`flex-1 px-4 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
                     filter === s
-                      ? "bg-white dark:bg-slate-700 text-[#3737A4] dark:text-indigo-400 shadow-sm"
-                      : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+                      ? 'bg-white dark:bg-slate-700 text-[#3737A4] dark:text-indigo-400 shadow-sm'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
                   }`}
                 >
-                  {s === "all" ? "All" : s}
+                  {s === 'all' ? 'All' : s}
                 </button>
               ))}
             </div>
@@ -323,15 +323,15 @@ export default function AdminPage() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {filteredHunts.map((hunt) => {
                 const isFeatured = hunt.id === featuredHuntId;
-                const isActive = hunt.status === "Active";
+                const isActive = hunt.status === 'Active';
 
                 return (
                   <Card
                     key={hunt.id}
                     className={`relative overflow-hidden rounded-2xl border bg-white dark:bg-slate-900 shadow-sm transition-all duration-300 ${
                       isFeatured
-                        ? "border-amber-400 dark:border-amber-500 shadow-amber-100/55 ring-1 ring-amber-300/40"
-                        : "border-slate-200 dark:border-slate-800 hover:border-slate-350 dark:hover:border-slate-700"
+                        ? 'border-amber-400 dark:border-amber-500 shadow-amber-100/55 ring-1 ring-amber-300/40'
+                        : 'border-slate-200 dark:border-slate-800 hover:border-slate-350 dark:hover:border-slate-700'
                     }`}
                   >
                     {isFeatured && (
@@ -362,10 +362,10 @@ export default function AdminPage() {
                         <Button
                           className={`w-full font-bold text-xs rounded-xl ${
                             isFeatured
-                              ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
+                              ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                               : isActive
-                                ? "bg-amber-450 hover:bg-amber-500 text-slate-950"
-                                : "bg-slate-100 dark:bg-slate-850 text-slate-400 cursor-not-allowed"
+                                ? 'bg-amber-450 hover:bg-amber-500 text-slate-950'
+                                : 'bg-slate-100 dark:bg-slate-850 text-slate-400 cursor-not-allowed'
                           }`}
                           disabled={isFeatured || !isActive}
                           onClick={() => handleSetFeatured(hunt.id)}
@@ -376,9 +376,9 @@ export default function AdminPage() {
                               Active Featured Hunt
                             </span>
                           ) : isActive ? (
-                            "Set as Hunt of the Week"
+                            'Set as Hunt of the Week'
                           ) : (
-                            "Must be Active to Feature"
+                            'Must be Active to Feature'
                           )}
                         </Button>
                       </div>
@@ -393,4 +393,3 @@ export default function AdminPage() {
     </div>
   );
 }
- 

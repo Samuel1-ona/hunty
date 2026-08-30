@@ -1,8 +1,8 @@
-"use client"
+'use client';
 
-import { type ReactNode } from "react"
-import { ErrorBoundary } from "@/components/ErrorBoundary"
-import { logger } from "@/lib/logger"
+import { type ReactNode } from 'react';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { logger } from '@/lib/logger';
 
 function PageErrorFallback({ error, reset }: { error: Error; reset: () => void }) {
   return (
@@ -30,12 +30,10 @@ function PageErrorFallback({ error, reset }: { error: Error; reset: () => void }
           </svg>
         </div>
 
-        <h1 className="text-4xl font-extrabold text-slate-800 dark:text-white mb-3">
-          Page Error
-        </h1>
+        <h1 className="text-4xl font-extrabold text-slate-800 dark:text-white mb-3">Page Error</h1>
         <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-8 max-w-md mx-auto">
-          This page encountered an unexpected error. You can try reloading it or
-          return to the main arcade.
+          This page encountered an unexpected error. You can try reloading it or return to the main
+          arcade.
           {error.digest && (
             <span className="block mt-2 font-mono text-xs text-zinc-600 dark:text-zinc-500">
               Error ID: {error.digest}
@@ -48,8 +46,19 @@ function PageErrorFallback({ error, reset }: { error: Error; reset: () => void }
             onClick={reset}
             className="inline-flex items-center gap-2 bg-[#3737A4] hover:bg-[#2a2a8a] text-white font-semibold px-6 py-3 rounded-lg text-sm transition-colors"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+              aria-hidden
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182"
+              />
             </svg>
             Try again
           </button>
@@ -62,13 +71,13 @@ function PageErrorFallback({ error, reset }: { error: Error; reset: () => void }
         </div>
       </main>
     </div>
-  )
+  );
 }
 
 interface PageErrorBoundaryProps {
-  children: ReactNode
+  children: ReactNode;
   /** Optional name for log identification. */
-  pageName?: string
+  pageName?: string;
 }
 
 /**
@@ -79,15 +88,13 @@ interface PageErrorBoundaryProps {
 export function PageErrorBoundary({ children, pageName }: PageErrorBoundaryProps) {
   return (
     <ErrorBoundary
-      boundaryName={pageName ? `PageBoundary:${pageName}` : "PageBoundary"}
+      boundaryName={pageName ? `PageBoundary:${pageName}` : 'PageBoundary'}
       onError={(error, errorInfo) => {
-        logger.error("[PageErrorBoundary]", error, errorInfo)
+        logger.error('[PageErrorBoundary]', error, errorInfo);
       }}
-      fallbackRender={({ error, reset }) => (
-        <PageErrorFallback error={error} reset={reset} />
-      )}
+      fallbackRender={({ error, reset }) => <PageErrorFallback error={error} reset={reset} />}
     >
       {children}
     </ErrorBoundary>
-  )
+  );
 }

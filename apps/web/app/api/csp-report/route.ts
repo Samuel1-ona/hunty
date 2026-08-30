@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
-import { ValidationError } from "@/lib/api/errors";
-import { withErrorHandling } from "@/lib/api/withErrorHandling";
-import { logger } from "@/lib/logger";
-import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { ValidationError } from '@/lib/api/errors';
+import { withErrorHandling } from '@/lib/api/withErrorHandling';
+import { logger } from '@/lib/logger';
+import { getIP, rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -29,7 +29,7 @@ const RATE_LIMIT_CONFIG = { limit: 30, windowMs: 60 * 1_000 };
  * during initial CSP tuning).
  */
 const SAMPLE_RATE = (() => {
-  const env = parseInt(process.env.CSP_REPORT_SAMPLE_RATE ?? "10", 10);
+  const env = parseInt(process.env.CSP_REPORT_SAMPLE_RATE ?? '10', 10);
   return Number.isFinite(env) && env > 0 ? env : 10;
 })();
 
@@ -44,18 +44,18 @@ const SAMPLE_RATE = (() => {
  * omit some of them; we only validate the shape of what is present.
  */
 const CspReportSchema = z.object({
-  "document-uri": z.string().max(2_048).optional(),
+  'document-uri': z.string().max(2_048).optional(),
   referrer: z.string().max(2_048).optional(),
-  "blocked-uri": z.string().max(2_048).optional(),
-  "violated-directive": z.string().max(256).optional(),
-  "effective-directive": z.string().max(256).optional(),
-  "original-policy": z.string().max(8_192).optional(),
-  disposition: z.enum(["enforce", "report"]).optional(),
-  "status-code": z.number().int().min(0).max(999).optional(),
-  "script-sample": z.string().max(40).optional(),
-  "source-file": z.string().max(2_048).optional(),
-  "line-number": z.number().int().min(0).optional(),
-  "column-number": z.number().int().min(0).optional(),
+  'blocked-uri': z.string().max(2_048).optional(),
+  'violated-directive': z.string().max(256).optional(),
+  'effective-directive': z.string().max(256).optional(),
+  'original-policy': z.string().max(8_192).optional(),
+  disposition: z.enum(['enforce', 'report']).optional(),
+  'status-code': z.number().int().min(0).max(999).optional(),
+  'script-sample': z.string().max(40).optional(),
+  'source-file': z.string().max(2_048).optional(),
+  'line-number': z.number().int().min(0).optional(),
+  'column-number': z.number().int().min(0).optional(),
 });
 
 /**
@@ -63,7 +63,7 @@ const CspReportSchema = z.object({
  *   { "csp-report": { ... } }
  */
 const CspReportEnvelopeSchema = z.object({
-  "csp-report": CspReportSchema,
+  'csp-report': CspReportSchema,
 });
 
 // ---------------------------------------------------------------------------
@@ -73,7 +73,7 @@ const CspReportEnvelopeSchema = z.object({
 export const POST = withErrorHandling(async (req: NextRequest) => {
   // 1. Rate limiting — applied before reading the body to keep overhead minimal.
   const ip = getIP(req);
-  const { success, reset } = await rateLimit(ip, RATE_LIMIT_CONFIG);
+  const { success, reset } = rateLimit(ip, RATE_LIMIT_CONFIG);
   if (!success) {
     return rateLimitResponse(reset);
   }
@@ -83,11 +83,11 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   const rawBody = await req.text();
 
   if (!rawBody) {
-    throw new ValidationError("Empty body");
+    throw new ValidationError('Empty body');
   }
 
-  if (Buffer.byteLength(rawBody, "utf8") > MAX_BODY_BYTES) {
-    throw new ValidationError("Payload too large");
+  if (Buffer.byteLength(rawBody, 'utf8') > MAX_BODY_BYTES) {
+    throw new ValidationError('Payload too large');
   }
 
   // 3. JSON parse.
@@ -95,14 +95,14 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   try {
     data = JSON.parse(rawBody);
   } catch {
-    throw new ValidationError("Invalid JSON body");
+    throw new ValidationError('Invalid JSON body');
   }
 
   // 4. Schema validation — reject structurally invalid reports immediately.
   const parsed = CspReportEnvelopeSchema.safeParse(data);
   if (!parsed.success) {
     // Return 400 but don't log attacker-controlled content verbatim.
-    throw new ValidationError("Invalid CSP report payload");
+    throw new ValidationError('Invalid CSP report payload');
   }
 
   // 5. Sampling — log only 1-in-SAMPLE_RATE reports to limit log volume.
@@ -110,16 +110,16 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   //    sampling per source, but random sampling is simpler and equally
   //    effective for aggregating signal across many reporters.
   if (Math.random() * SAMPLE_RATE < 1) {
-    const report = parsed.data["csp-report"];
-    logger.warn("CSP Violation Detected:", {
-      documentUri: report["document-uri"],
-      referrer: report["referrer"],
-      blockedUri: report["blocked-uri"],
-      violatedDirective: report["violated-directive"],
-      originalPolicy: report["original-policy"],
-      disposition: report["disposition"],
-      sourceFile: report["source-file"],
-      lineNumber: report["line-number"],
+    const report = parsed.data['csp-report'];
+    logger.warn('CSP Violation Detected:', {
+      documentUri: report['document-uri'],
+      referrer: report['referrer'],
+      blockedUri: report['blocked-uri'],
+      violatedDirective: report['violated-directive'],
+      originalPolicy: report['original-policy'],
+      disposition: report['disposition'],
+      sourceFile: report['source-file'],
+      lineNumber: report['line-number'],
     });
   }
 

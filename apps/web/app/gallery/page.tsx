@@ -1,27 +1,27 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
-import { EmptyState } from "@/components/QueryState";
-import { FilterBar } from "@/components/FilterBar";
-import { GalleryGridSkeleton } from "@/components/LoadingSkeletons";
-import { NftCard } from "@/components/NftCard";
-import { NftDetailModal, type NftRewardDetail } from "@/components/NftDetailModal";
-import { Badge } from "@hunty/ui";
-import { Card } from "@hunty/ui";
-import { ViewToggle } from "@/components/ViewToggle";
-import { usePlayerNfts } from "@/hooks/usePlayerNfts";
+import { EmptyState } from '@/components/QueryState';
+import { FilterBar } from '@/components/FilterBar';
+import { GalleryGridSkeleton } from '@/components/LoadingSkeletons';
+import { NftCard } from '@/components/NftCard';
+import { NftDetailModal, type NftRewardDetail } from '@/components/NftDetailModal';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { ViewToggle } from '@/components/ViewToggle';
+import { usePlayerNfts } from '@/hooks/usePlayerNfts';
 
 export default function GalleryPage() {
   const { address, nfts, loading, error } = usePlayerNfts();
   const [selectedNft, setSelectedNft] = useState<NftRewardDetail | null>(null);
-  const [view, setView] = useState<"grid" | "list">("grid");
+  const [view, setView] = useState<'grid' | 'list'>('grid');
   const [huntFilter, setHuntFilter] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<{ start?: string; end?: string }>({});
-  const [sort, setSort] = useState<"newest" | "rarest" | "alphabetical">("newest");
+  const [sort, setSort] = useState<'newest' | 'rarest' | 'alphabetical'>('newest');
 
   const filtered = nfts
-    .filter((n) => (huntFilter && huntFilter !== "All" ? n.huntName === huntFilter : true))
+    .filter((n) => (huntFilter && huntFilter !== 'All' ? n.huntName === huntFilter : true))
     .filter((n) => {
       if (!dateRange.start && !dateRange.end) return true;
       const earned = new Date(n.earnedAt).getTime();
@@ -30,7 +30,7 @@ export default function GalleryPage() {
       return afterStart && beforeEnd;
     })
     .sort((a, b) => {
-      if (sort === "newest") {
+      if (sort === 'newest') {
         return new Date(b.earnedAt).getTime() - new Date(a.earnedAt).getTime();
       } else {
         const rarityOrder: Record<string, number> = {
@@ -40,8 +40,8 @@ export default function GalleryPage() {
           Uncommon: 2,
           Common: 1,
         };
-        const aRarity = a.attributes.find((t) => t.trait_type === "Rarity")?.value ?? "Common";
-        const bRarity = b.attributes.find((t) => t.trait_type === "Rarity")?.value ?? "Common";
+        const aRarity = a.attributes.find((t) => t.trait_type === 'Rarity')?.value ?? 'Common';
+        const bRarity = b.attributes.find((t) => t.trait_type === 'Rarity')?.value ?? 'Common';
         return (rarityOrder[bRarity] ?? 0) - (rarityOrder[aRarity] ?? 0);
       }
     });
@@ -83,7 +83,7 @@ export default function GalleryPage() {
             description="Earn NFTs by completing hunts."
           />
         )}
-        {view === "grid" ? (
+        {view === 'grid' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {displayNfts.map((nft) => (
               <NftCard key={nft.id} nft={nft} onClick={setSelectedNft} />
@@ -96,8 +96,8 @@ export default function GalleryPage() {
                 <div className="flex items-center gap-4">
                   <img
                     src={
-                      nft.imageUri.startsWith("ipfs://")
-                        ? `/api/ipfs/${nft.imageUri.split("ipfs://")[1]}`
+                      nft.imageUri.startsWith('ipfs://')
+                        ? `/api/ipfs/${nft.imageUri.split('ipfs://')[1]}`
                         : nft.imageUri
                     }
                     alt={nft.name}
@@ -122,4 +122,3 @@ export default function GalleryPage() {
     </div>
   );
 }
- 

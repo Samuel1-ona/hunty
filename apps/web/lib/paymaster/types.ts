@@ -18,10 +18,10 @@ export const DEFAULT_MAX_FEE_PER_TX = 100_000; // 0.01 XLM
 
 /** Key used in the paymaster_config table for global overrides. */
 export const CONFIG_KEYS = {
-  MAX_SPONSORED_TX: "max_sponsored_tx",
-  MAX_BUDGET_PER_USER: "max_budget_per_user_stroops",
-  MAX_FEE_PER_TX: "max_fee_per_tx_stroops",
-  PAYMASTER_PUBLIC_KEY: "paymaster_public_key",
+  MAX_SPONSORED_TX: 'max_sponsored_tx',
+  MAX_BUDGET_PER_USER: 'max_budget_per_user_stroops',
+  MAX_FEE_PER_TX: 'max_fee_per_tx_stroops',
+  PAYMASTER_PUBLIC_KEY: 'paymaster_public_key',
 } as const;
 
 // ─── API Types ─────────────────────────────────────────────────────────────
@@ -86,7 +86,7 @@ export interface PaymasterUserRecord {
   sponsored_tx_count: number;
   total_budget_sponsored: number; // stroops
   max_sponsored_tx: number;
-  max_budget_per_user: number;    // stroops
+  max_budget_per_user: number; // stroops
   created_at: Date;
   updated_at: Date;
 }

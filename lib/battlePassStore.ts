@@ -1,5 +1,5 @@
-import { getSeasonById } from "./seasonStore";
-import type { Reward, Season } from "./types";
+import { getSeasonById } from './seasonStore';
+import type { Reward, Season } from './types';
 
 export const XP_PER_HUNT = 100;
 const DEFAULT_TIERS = 10;
@@ -59,22 +59,26 @@ export function awardXp(seasonId: number, address: string, xp: number): PlayerBa
   return progress;
 }
 
-export function claimTierReward(seasonId: number, address: string, tierIndex: number): PlayerBattlePassProgress {
+export function claimTierReward(
+  seasonId: number,
+  address: string,
+  tierIndex: number
+): PlayerBattlePassProgress {
   const season = getSeasonById(seasonId);
   if (!season) {
-    throw new Error("Season not found");
+    throw new Error('Season not found');
   }
   const tiers = getBattlePassTiers(season);
   if (tierIndex < 0 || tierIndex >= tiers.length) {
-    throw new Error("Invalid tier");
+    throw new Error('Invalid tier');
   }
   const tier = tiers[tierIndex];
   const progress = getOrCreateProgress(seasonId, address);
   if (progress.xp < tier.requiredXp) {
-    throw new Error("Tier not reached");
+    throw new Error('Tier not reached');
   }
   if (progress.claimedTiers.includes(tierIndex)) {
-    throw new Error("Already claimed");
+    throw new Error('Already claimed');
   }
   progress.claimedTiers.push(tierIndex);
   return progress;

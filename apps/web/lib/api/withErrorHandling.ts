@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { errorResponse, REQUEST_ID_HEADER } from "./response";
+import { NextResponse } from 'next/server';
+import { errorResponse, REQUEST_ID_HEADER } from './response';
 
 type RouteHandler<Context, Req extends Request = Request> = (
   req: Req,
@@ -42,4 +42,3 @@ export function withErrorHandling<Context = unknown, Req extends Request = Reque
     }
   };
 }
- 

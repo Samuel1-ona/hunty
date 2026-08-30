@@ -1,54 +1,53 @@
-"use client";
+'use client';
 
-import { useContext, useState, useCallback, useRef } from "react";
-import { CheckCircle2, Loader2, ExternalLink, AlertCircle, RefreshCw, Wallet } from "lucide-react";
-import { Button } from "@hunty/ui";
+import { useContext, useState, useCallback, useRef } from 'react';
+import { CheckCircle2, Loader2, ExternalLink, AlertCircle, RefreshCw, Wallet } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-import { AnimatedCheckmark } from "@/components/AnimatedCheckmark";
-import Coin from "@/components/icons/Coin";
-import { useXlmUsdPrice } from "@/hooks/useXlmUsdPrice";
-import { getStellarExplorerUrl } from "@/lib/constants";
-import { ClaimRejectedError, claimReward, ClaimTimeoutError } from "@/lib/contracts/rewardManager";
-import { markFirstHuntStep } from "@/lib/firstHuntGuide";
-import { logger } from "@/lib/logger";
-import { WalletContext } from "@/lib/context/WalletContext";
-import { recordNftReceived } from "@/lib/contracts/player-stats";
-import { cn } from "@/lib/utils";
+import { AnimatedCheckmark } from '@/components/AnimatedCheckmark';
+import Coin from '@/components/icons/Coin';
+import { useXlmUsdPrice } from '@/hooks/useXlmUsdPrice';
+import { getStellarExplorerUrl } from '@/lib/constants';
+import { ClaimRejectedError, claimReward, ClaimTimeoutError } from '@/lib/contracts/rewardManager';
+import { logger } from '@/lib/logger';
+import { WalletContext } from '@/lib/context/WalletContext';
+import { recordNftReceived } from '@/lib/contracts/player-stats';
+import { cn } from '@/lib/utils';
 
 type ClaimStage =
-  | "idle"
-  | "preparing"
-  | "approving"
-  | "confirming"
-  | "retrying"
-  | "success"
-  | "error";
+  | 'idle'
+  | 'preparing'
+  | 'approving'
+  | 'confirming'
+  | 'retrying'
+  | 'success'
+  | 'error';
 
 interface ClaimRewardFlowProps {
   huntId: number;
   rewardAmount: number;
-  rewardType?: "XLM" | "NFT" | "Both";
+  rewardType?: 'XLM' | 'NFT' | 'Both';
   onClaimed?: (txHash: string) => void;
 }
 
 const STAGE_LABELS: Record<ClaimStage, string> = {
-  idle: "",
-  preparing: "Preparing transaction…",
-  approving: "Approve in your wallet…",
-  confirming: "Confirming on-chain…",
-  retrying: "Retrying…",
-  success: "Reward claimed!",
-  error: "Claim failed",
+  idle: '',
+  preparing: 'Preparing transaction…',
+  approving: 'Approve in your wallet…',
+  confirming: 'Confirming on-chain…',
+  retrying: 'Retrying…',
+  success: 'Reward claimed!',
+  error: 'Claim failed',
 };
 
 export function ClaimRewardFlow({
   huntId,
   rewardAmount,
-  rewardType = "XLM",
+  rewardType = 'XLM',
   onClaimed,
 }: ClaimRewardFlowProps) {
   const wallet = useContext(WalletContext);
-  const [stage, setStage] = useState<ClaimStage>("idle");
+  const [stage, setStage] = useState<ClaimStage>('idle');
   const [txHash, setTxHash] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [claimed, setClaimed] = useState(false);
@@ -56,8 +55,8 @@ export function ClaimRewardFlow({
   const { price: xlmUsdPrice } = useXlmUsdPrice();
 
   const currencyFormatter = new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: "USD",
+    style: 'currency',
+    currency: 'USD',
     maximumFractionDigits: 2,
   });
 
@@ -69,7 +68,7 @@ export function ClaimRewardFlow({
     const controller = new AbortController();
     abortRef.current = controller;
 
-    setStage("preparing");
+    setStage('preparing');
     setErrorMessage(null);
     setTxHash(null);
 
@@ -77,17 +76,16 @@ export function ClaimRewardFlow({
       const result = await claimReward(huntId, {
         signal: controller.signal,
         onStage: (s) => {
-          if (s === "retrying") setStage("retrying");
+          if (s === 'retrying') setStage('retrying');
         },
       });
 
       if (controller.signal.aborted) return;
 
       setTxHash(result.txHash);
-      setStage("success");
+      setStage('success');
       setClaimed(true);
-      markFirstHuntStep("claim", { huntId });
-      if (wallet?.publicKey && rewardType !== "XLM") {
+      if (wallet?.publicKey && rewardType !== 'XLM') {
         recordNftReceived(wallet.publicKey);
       }
       onClaimed?.(result.txHash);
@@ -95,27 +93,27 @@ export function ClaimRewardFlow({
       if (controller.signal.aborted) return;
 
       if (err instanceof ClaimTimeoutError) {
-        setErrorMessage("Transaction timed out. Please try again.");
+        setErrorMessage('Transaction timed out. Please try again.');
       } else if (err instanceof ClaimRejectedError) {
-        setErrorMessage("Transaction was rejected in your wallet. Please try again.");
+        setErrorMessage('Transaction was rejected in your wallet. Please try again.');
       } else {
-        const msg = err instanceof Error ? err.message : "An unexpected error occurred";
+        const msg = err instanceof Error ? err.message : 'An unexpected error occurred';
         setErrorMessage(msg);
       }
 
-      setStage("error");
-      logger.error("Claim reward failed:", err);
+      setStage('error');
+      logger.error('Claim reward failed:', err);
     }
   }, [huntId, onClaimed, rewardType, wallet?.publicKey]);
 
   const handleRetry = useCallback(() => {
-    setStage("idle");
+    setStage('idle');
     setErrorMessage(null);
   }, []);
 
   const explorerUrl = txHash ? getStellarExplorerUrl(txHash) : null;
 
-  if (claimed && stage === "success" && txHash) {
+  if (claimed && stage === 'success' && txHash) {
     return (
       <div className="flex flex-col items-center gap-4 py-6">
         <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -160,7 +158,7 @@ export function ClaimRewardFlow({
     );
   }
 
-  if (stage === "error") {
+  if (stage === 'error') {
     return (
       <div className="flex flex-col items-center gap-4 py-6">
         <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
@@ -185,34 +183,34 @@ export function ClaimRewardFlow({
     );
   }
 
-  if (stage !== "idle") {
-    const isApprovingOrConfirming = stage === "approving" || stage === "confirming";
-    const isRetrying = stage === "retrying";
+  if (stage !== 'idle') {
+    const isApprovingOrConfirming = stage === 'approving' || stage === 'confirming';
+    const isRetrying = stage === 'retrying';
 
     return (
       <div className="flex flex-col items-center gap-4 py-6">
         <div
           className={cn(
-            "w-16 h-16 rounded-full flex items-center justify-center transition-colors duration-500",
-            isRetrying ? "bg-amber-100 dark:bg-amber-900/30" : "bg-indigo-100 dark:bg-indigo-900/30"
+            'w-16 h-16 rounded-full flex items-center justify-center transition-colors duration-500',
+            isRetrying ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-indigo-100 dark:bg-indigo-900/30'
           )}
         >
           {isApprovingOrConfirming ? (
             <Wallet
               className={cn(
-                "w-8 h-8",
+                'w-8 h-8',
                 isRetrying
-                  ? "text-amber-600 dark:text-amber-400"
-                  : "text-indigo-600 dark:text-indigo-400"
+                  ? 'text-amber-600 dark:text-amber-400'
+                  : 'text-indigo-600 dark:text-indigo-400'
               )}
             />
           ) : (
             <Loader2
               className={cn(
-                "w-8 h-8 animate-spin",
+                'w-8 h-8 animate-spin',
                 isRetrying
-                  ? "text-amber-600 dark:text-amber-400"
-                  : "text-indigo-600 dark:text-indigo-400"
+                  ? 'text-amber-600 dark:text-amber-400'
+                  : 'text-indigo-600 dark:text-indigo-400'
               )}
             />
           )}
@@ -221,35 +219,35 @@ export function ClaimRewardFlow({
         <div className="text-center">
           <p className="text-lg font-bold text-slate-800 dark:text-white">{STAGE_LABELS[stage]}</p>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            {isRetrying ? "Re-attempting the claim…" : "Please do not close this page."}
+            {isRetrying ? 'Re-attempting the claim…' : 'Please do not close this page.'}
           </p>
         </div>
 
         {!isRetrying && (
           <div className="flex items-center gap-1.5 mt-2">
             <div className="flex gap-1">
-              {["preparing", "approving", "confirming"].map((s) => {
-                const stageIndex = ["preparing", "approving", "confirming"].indexOf(s);
-                const currentIndex = ["preparing", "approving", "confirming"].indexOf(stage);
+              {['preparing', 'approving', 'confirming'].map((s) => {
+                const stageIndex = ['preparing', 'approving', 'confirming'].indexOf(s);
+                const currentIndex = ['preparing', 'approving', 'confirming'].indexOf(stage);
                 const isActive = stageIndex <= currentIndex;
                 const isCurrent = s === stage;
                 return (
                   <div
                     key={s}
                     className={cn(
-                      "w-2.5 h-2.5 rounded-full transition-all duration-500",
+                      'w-2.5 h-2.5 rounded-full transition-all duration-500',
                       isCurrent
-                        ? "bg-indigo-600 dark:bg-indigo-400 scale-125"
+                        ? 'bg-indigo-600 dark:bg-indigo-400 scale-125'
                         : isActive
-                          ? "bg-indigo-300 dark:bg-indigo-600"
-                          : "bg-slate-200 dark:bg-slate-700"
+                          ? 'bg-indigo-300 dark:bg-indigo-600'
+                          : 'bg-slate-200 dark:bg-slate-700'
                     )}
                   />
                 );
               })}
             </div>
             <span className="text-xs text-slate-400 dark:text-slate-500 ml-2">
-              {["preparing", "approving", "confirming"].indexOf(stage) + 1} of 3
+              {['preparing', 'approving', 'confirming'].indexOf(stage) + 1} of 3
             </span>
           </div>
         )}
@@ -281,4 +279,3 @@ export function ClaimRewardFlow({
     </div>
   );
 }
- 

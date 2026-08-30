@@ -5,6 +5,7 @@ This guide helps existing Hunty deployments migrate to the new network switching
 ## Overview
 
 The network switching feature introduces:
+
 - Runtime network selection (testnet/mainnet)
 - Network-specific contract addresses
 - Wallet network detection
@@ -15,6 +16,7 @@ The network switching feature introduces:
 ### Environment Variables
 
 **Old:**
+
 ```env
 NEXT_PUBLIC_HUNTY_CORE_ADDRESS=CA...
 NEXT_PUBLIC_REWARD_MANAGER_ADDRESS=CA...
@@ -22,6 +24,7 @@ NEXT_PUBLIC_NFT_REWARD_ADDRESS=CA...
 ```
 
 **New (Backwards Compatible):**
+
 ```env
 # Network-specific (recommended)
 NEXT_PUBLIC_HUNTY_CORE_ADDRESS_TESTNET=CA...
@@ -108,6 +111,7 @@ ENV NEXT_PUBLIC_HUNTY_CORE_ADDRESS_MAINNET=${HUNTY_CORE_MAINNET}
 ### Step 4: Test Migration
 
 1. **Local Testing:**
+
    ```bash
    npm run dev
    # Visit http://localhost:3000/settings
@@ -115,9 +119,10 @@ ENV NEXT_PUBLIC_HUNTY_CORE_ADDRESS_MAINNET=${HUNTY_CORE_MAINNET}
    ```
 
 2. **Verify Contract Loading:**
+
    ```typescript
-   import { getContracts } from "@/lib/contracts/config"
-   console.log(getContracts())
+   import { getContracts } from '@/lib/contracts/config';
+   console.log(getContracts());
    ```
 
 3. **Check Network Detection:**
@@ -170,6 +175,7 @@ npm run build
 **Cause:** Network-specific env vars not set
 
 **Solution:**
+
 ```bash
 # Set for active network
 NEXT_PUBLIC_HUNTY_CORE_ADDRESS_TESTNET=CA...
@@ -182,6 +188,7 @@ NEXT_PUBLIC_HUNTY_CORE_ADDRESS_MAINNET=CA...
 **Cause:** localStorage blocked or disabled
 
 **Solution:**
+
 - Check browser privacy settings
 - Enable cookies/localStorage
 - Use incognito mode to test
@@ -191,6 +198,7 @@ NEXT_PUBLIC_HUNTY_CORE_ADDRESS_MAINNET=CA...
 **Cause:** Wallet on different network than app
 
 **Solution:**
+
 - Switch wallet network in wallet settings
 - Or switch app network in Settings page
 
@@ -213,7 +221,7 @@ NEXT_PUBLIC_HUNTY_CORE_ADDRESS_MAINNET=CA...
 
 ```typescript
 // lib/featureFlags.ts
-export const ENABLE_NETWORK_SWITCHING = 
+export const ENABLE_NETWORK_SWITCHING =
   process.env.NEXT_PUBLIC_ENABLE_NETWORK_SWITCHING === "true"
 
 // In Settings page
@@ -232,23 +240,23 @@ export const ENABLE_NETWORK_SWITCHING =
 ### Analytics Example
 
 ```typescript
-import { analytics } from "@/lib/analytics"
+import { analytics } from '@/lib/analytics';
 
 // Track network switches
-setSorobanNetworkType(newNetwork)
-analytics.track("network_switched", {
+setSorobanNetworkType(newNetwork);
+analytics.track('network_switched', {
   from: currentNetwork,
   to: newNetwork,
-  timestamp: Date.now()
-})
+  timestamp: Date.now(),
+});
 
 // Track network mismatches
 if (mismatch) {
-  analytics.track("network_mismatch_detected", {
+  analytics.track('network_mismatch_detected', {
     appNetwork: mismatch.appNetwork,
     walletNetwork: mismatch.walletNetwork,
-    provider: walletProvider
-  })
+    provider: walletProvider,
+  });
 }
 ```
 
@@ -258,7 +266,7 @@ Before going live:
 
 - [ ] All contract addresses set for both networks
 - [ ] Testnet contracts functional
-- [ ] Mainnet contracts functional  
+- [ ] Mainnet contracts functional
 - [ ] Network switching works locally
 - [ ] Network switching works in staging
 - [ ] Visual indicators display correctly

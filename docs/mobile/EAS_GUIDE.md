@@ -87,6 +87,7 @@ cp .env.production.example .env.production
 ```
 
 In each file, configure the required variables:
+
 - `EAS_PROJECT_ID`: The project ID generated during `eas init`.
 - `EXPO_UPDATE_URL`: Set to `https://u.expo.dev/<your-eas-project-id>`.
 - `NEXT_PUBLIC_WC_PROJECT_ID`: Your WalletConnect project ID.
@@ -98,11 +99,11 @@ In each file, configure the required variables:
 
 The build environment is controlled by the configuration in [eas.json](file:///home/a-one/Desktop/Drip%20Project/hunty/apps/mobile/eas.json). Three profiles are configured:
 
-| Profile | Dev Client | Distribution | Output Type | Primary Use Case |
-| :--- | :--- | :--- | :--- | :--- |
-| **development** | ✓ Yes (Expo Dev Client) | Internal | Android APK / iOS Simulator build | Local debugging and daily development |
-| **preview** | ✗ No (Standalone app) | Internal | Android APK / iOS Ad-Hoc | QA testing, stakeholder previews, and demos |
-| **production** | ✗ No (Standalone app) | App Store / Play Store | Android AAB / iOS IPA | Submission to Google Play Store & Apple App Store |
+| Profile         | Dev Client              | Distribution           | Output Type                       | Primary Use Case                                  |
+| :-------------- | :---------------------- | :--------------------- | :-------------------------------- | :------------------------------------------------ |
+| **development** | ✓ Yes (Expo Dev Client) | Internal               | Android APK / iOS Simulator build | Local debugging and daily development             |
+| **preview**     | ✗ No (Standalone app)   | Internal               | Android APK / iOS Ad-Hoc          | QA testing, stakeholder previews, and demos       |
+| **production**  | ✗ No (Standalone app)   | App Store / Play Store | Android AAB / iOS IPA             | Submission to Google Play Store & Apple App Store |
 
 ---
 
@@ -111,12 +112,14 @@ The build environment is controlled by the configuration in [eas.json](file:///h
 Ensure you are in the `apps/mobile` directory before running any commands.
 
 ### All-Platform Commands
+
 ```bash
 pnpm run build:preview       # Build preview profile on all platforms
 pnpm run build:production    # Build production profile on all platforms
 ```
 
 ### Android-Specific Commands
+
 ```bash
 pnpm run build:android:dev       # Build Android development APK (uses Dev Client)
 pnpm run build:android:preview   # Build Android preview APK
@@ -124,6 +127,7 @@ pnpm run build:android:prod      # Build Android production AAB (App Bundle)
 ```
 
 ### iOS-Specific Commands
+
 ```bash
 pnpm run build:ios:dev           # Build iOS development simulator build
 pnpm run build:ios:preview       # Build iOS preview ad-hoc build
@@ -131,6 +135,7 @@ pnpm run build:ios:prod          # Build iOS production App Store build
 ```
 
 ### Custom Build Options
+
 ```bash
 # Build locally on your machine instead of Expo servers (requires SDKs)
 eas build --platform android --profile development --local
@@ -152,11 +157,11 @@ EAS Update allows you to push JavaScript and asset modifications directly to use
 
 Updates are scoped to channels which match the active build profiles:
 
-| Channel | Branch | Targeting Profile | Deployment Script |
-| :--- | :--- | :--- | :--- |
-| **development** | `development` | development | `pnpm run update:development` |
-| **preview** | `preview` | preview | `pnpm run update:preview` |
-| **production** | `production` | production | `pnpm run update:production` |
+| Channel         | Branch        | Targeting Profile | Deployment Script             |
+| :-------------- | :------------ | :---------------- | :---------------------------- |
+| **development** | `development` | development       | `pnpm run update:development` |
+| **preview**     | `preview`     | preview           | `pnpm run update:preview`     |
+| **production**  | `production`  | production        | `pnpm run update:production`  |
 
 ### Publishing Updates
 
@@ -172,13 +177,14 @@ eas update --branch production --message "v1.1.1: Fix map cluster centering"
 
 Our configuration uses the `"policy": "appVersion"` runtime version strategy. This ensures that updates are only delivered to devices with native builds matching the exact version policy they were built against.
 
-> [!IMPORTANT]
-> **When must you rebuild the native app (cannot use OTA update)?**
+> [!IMPORTANT] > **When must you rebuild the native app (cannot use OTA update)?**
+>
 > - Adding, upgrading, or removing native modules/dependencies.
 > - Upgrading the Expo SDK version.
 > - Modifying native configurations in `app.json` (such as plist/manifest changes, bundle ID, or permissions).
 >
 > **When are OTA updates sufficient?**
+>
 > - Modifying React Native components, hooks, or helper JS/TS logic.
 > - Modifying stylesheets or static assets.
 > - Changing non-native configurations (e.g., API endpoints, feature flags).
@@ -205,15 +211,19 @@ All signing credentials can be stored securely on Expo's encrypted servers and r
 ### iOS Credentials Setup
 
 #### Option 1: EAS-Managed (Recommended)
+
 Let EAS manage Apple Provisioning Profiles and Distribution Certificates automatically:
 
 ```bash
 eas credentials --platform ios
 ```
-*Provide your Apple ID, Apple developer password (or App Store Connect API Key), and Apple Team ID when prompted.*
+
+_Provide your Apple ID, Apple developer password (or App Store Connect API Key), and Apple Team ID when prompted._
 
 #### Option 2: Manual Upload
+
 If your organization manages credentials externally, you can import certificates manually using the EAS console or interactive CLI prompts:
+
 ```bash
 eas credentials --platform ios --local
 ```
@@ -302,13 +312,16 @@ To submit production builds automatically to Google Play via `eas submit`:
 EAS is built to run cleanly in continuous integration pipelines. Below is an example GitHub Actions configuration for automated production builds.
 
 ### Required GitHub Actions Secrets
+
 Configure these in your GitHub repository settings under `Settings → Secrets and Variables → Actions`:
+
 - `EXPO_TOKEN`: Your Expo access token.
 - `EAS_PROJECT_ID`: The projectId from `app.json`.
 - `ANDROID_KEYSTORE_BASE64`: Base64 encoded keystore file.
 - `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
 
 ### Sample GitHub Actions Workflow
+
 ```yaml
 name: Mobile App Production Build
 
@@ -363,8 +376,10 @@ jobs:
 ## 🆘 Troubleshooting & Common Fixes
 
 ### Build Fails with "Project Not Linked"
+
 **Error:** `Error: This Expo project is not linked to an EAS Build project`
-* **Fix:** Run `eas init` to link your local folder to an active Expo project. Check that `apps/mobile/app.json` has:
+
+- **Fix:** Run `eas init` to link your local folder to an active Expo project. Check that `apps/mobile/app.json` has:
   ```json
   {
     "expo": {
@@ -378,19 +393,25 @@ jobs:
   ```
 
 ### Build Fails with "Credentials Not Found"
+
 **Error:** `Error: No valid credentials for [Platform] on the EAS build profile...`
-* **Fix:** Re-authenticate and set up your keys by running `eas credentials --platform <ios|android>`.
+
+- **Fix:** Re-authenticate and set up your keys by running `eas credentials --platform <ios|android>`.
 
 ### OTA Update Not Appearing on Device
+
 1. **Verify App Version/Runtime Version:** The update's runtime version (built against version policies) must match the installed native app's runtime version exactly.
 2. **Verify Channel:** Ensure the native build was built under the profile configured to listen to that channel (e.g. preview build listening to preview update channel).
 3. **App Cache:** Force close the app, clear its memory, and launch it again. The app checks for updates on cold launch and applies them on the subsequent launch.
 
 ### iOS Build Fails with "Apple Team ID Required"
-* **Fix:** Make sure you've joined the Apple developer team and that you pass the correct credentials using `eas credentials --platform ios` to store your Apple Team ID in EAS.
+
+- **Fix:** Make sure you've joined the Apple developer team and that you pass the correct credentials using `eas credentials --platform ios` to store your Apple Team ID in EAS.
 
 ### Android Build Memory Issues
+
 For large asset packages or memory-intensive bundling, you may need to increase allocation. Customize the gradle command in `eas.json`:
+
 ```json
 "production": {
   "android": {
@@ -402,6 +423,7 @@ For large asset packages or memory-intensive bundling, you may need to increase 
 ---
 
 ## 🔗 Useful References
+
 - [Expo EAS Documentation](https://docs.expo.dev/eas/)
 - [EAS Build Reference](https://docs.expo.dev/build/introduction/)
 - [EAS Update Guide](https://docs.expo.dev/eas-update/introduction/)

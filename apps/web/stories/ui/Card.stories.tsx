@@ -1,11 +1,18 @@
-import type { Meta, StoryObj } from "@storybook/nextjs-vite"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@hunty/ui"
-import { Button } from "@hunty/ui"
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 const meta = {
-  title: "UI/Card",
+  title: 'UI/Card',
   component: Card,
-  tags: ["autodocs"],
+  tags: ['autodocs'],
   render: (args) => (
     <Card {...args} className="max-w-sm p-0">
       <CardHeader>
@@ -20,15 +27,15 @@ const meta = {
       </CardFooter>
     </Card>
   ),
-} satisfies Meta<typeof Card>
+} satisfies Meta<typeof Card>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {}
+export const Default: Story = {};
 
 export const Flat: Story = {
   args: {
-    variant: "flat",
+    variant: 'flat',
   },
-}
+};

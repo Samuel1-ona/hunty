@@ -1,6 +1,6 @@
-import type { ReactNode } from "react"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { WalletContext } from "@/lib/context/WalletContext"
+import type { ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { WalletContext } from '@/lib/context/WalletContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -8,10 +8,10 @@ const queryClient = new QueryClient({
       retry: false,
     },
   },
-})
+});
 
 export function withQueryClient(children: ReactNode) {
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }
 
 export function withWalletContext(children: ReactNode) {
@@ -19,14 +19,14 @@ export function withWalletContext(children: ReactNode) {
     <WalletContext.Provider
       value={{
         connected: true,
-        publicKey: "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
-        displayKey: "GAAAAA...AWHF",
+        publicKey: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF',
+        displayKey: 'GAAAAA...AWHF',
         connect: async () => ({}),
-        walletProvider: "freighter",
+        walletProvider: 'freighter',
         disconnect: () => {},
       }}
     >
       {children}
     </WalletContext.Provider>
-  )
+  );
 }

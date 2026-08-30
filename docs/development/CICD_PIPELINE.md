@@ -9,9 +9,11 @@ The CI/CD pipeline automates testing, building, and deployment to ensure code qu
 ## Pipeline Stages
 
 ### 1. Continuous Integration (CI)
+
 The main CI workflow (`ci.yml`) runs the following jobs in parallel for speed:
 
 #### Lint and Type Check
+
 - **Trigger**: Every PR and push to main/develop
 - **Tasks**:
   - ESLint: Checks code quality and style
@@ -19,6 +21,7 @@ The main CI workflow (`ci.yml`) runs the following jobs in parallel for speed:
 - **Status**: Blocks merging if failed
 
 #### Unit Tests & Coverage
+
 - **Trigger**: Every PR and push to main/develop
 - **Tasks**:
   - Runs Vitest test suite
@@ -27,6 +30,7 @@ The main CI workflow (`ci.yml`) runs the following jobs in parallel for speed:
 - **Status**: Blocks merging if failed
 
 #### Build Verification
+
 - **Trigger**: Every PR and push to main/develop
 - **Tasks**:
   - Builds the Next.js application
@@ -34,6 +38,7 @@ The main CI workflow (`ci.yml`) runs the following jobs in parallel for speed:
 - **Status**: Blocks merging if failed
 
 #### E2E Tests
+
 - **Trigger**: Every PR and push to main/develop
 - **Tasks**:
   - Installs Playwright browsers
@@ -42,12 +47,14 @@ The main CI workflow (`ci.yml`) runs the following jobs in parallel for speed:
 - **Status**: Continues on error (informational)
 
 #### CI Summary
+
 - **Trigger**: After all CI jobs complete
 - **Tasks**:
   - Verifies all jobs passed
   - Reports overall CI status
 
 ### 2. Staging Deployment
+
 Workflow: `deploy-staging.yml`
 
 - **Trigger**: Automatic on merge to `develop` branch
@@ -59,11 +66,13 @@ Workflow: `deploy-staging.yml`
   - Sends notifications
 
 **Setup Required**:
+
 - Configure your deployment provider (e.g., Vercel, custom server)
 - Add environment secrets for staging deployment
 - Update the deployment step in the workflow
 
 ### 3. Production Deployment
+
 Workflow: `deploy-production.yml`
 
 - **Trigger**: Manual via GitHub Actions UI (`workflow_dispatch`)
@@ -77,6 +86,7 @@ Workflow: `deploy-production.yml`
   - Sends notifications
 
 **Setup Required**:
+
 - Configure your deployment provider
 - Add environment secrets for production deployment
 - Set up required approval/environment protection rules
@@ -85,18 +95,22 @@ Workflow: `deploy-production.yml`
 ## Configuration
 
 ### Node.js and Dependencies
+
 - **Node.js Version**: 20 (LTS)
 - **Package Manager**: npm
 - **Cache**: Enabled for faster builds
 
 ### Test Coverage
+
 Coverage reports are generated in multiple formats:
+
 - `text`: Console output
 - `json`: Machine-readable format
 - `html`: Visual HTML reports in `coverage/` directory
 - `lcov`: For Codecov integration
 
 ### Artifact Retention
+
 - Playwright test artifacts: 30 days
 - Coverage reports: Latest only
 
@@ -123,8 +137,10 @@ npm run build
 ## Deployment Setup
 
 ### For Vercel
+
 1. Get Vercel tokens from vercel.com
 2. Add secrets to GitHub repository:
+
    - `VERCEL_TOKEN`: Your Vercel API token
    - `VERCEL_ORG_ID`: Your Vercel organization ID
    - `VERCEL_PROJECT_ID`: Your Vercel project ID
@@ -132,6 +148,7 @@ npm run build
 3. Uncomment Vercel steps in deployment workflows
 
 ### For Custom Deployment
+
 1. Create deployment scripts in `scripts/` directory
 2. Update workflow steps to call your scripts
 3. Add necessary secrets to GitHub repository
@@ -140,6 +157,7 @@ npm run build
 ## Monitoring and Troubleshooting
 
 ### Check Workflow Status
+
 1. Go to repository → Actions tab
 2. Click on specific workflow run to view details
 3. Expand job logs to see detailed output
@@ -147,15 +165,18 @@ npm run build
 ### Common Issues
 
 **Tests Failing Locally but Passing in CI**
+
 - Check Node.js version matches (v20)
 - Clear node_modules and reinstall: `rm -rf node_modules && npm ci`
 - Check for environment-specific code
 
 **Coverage not Uploading**
+
 - Ensure Codecov integration is set up
 - Check coverage files are being generated in CI
 
 **Deployment Failing**
+
 - Verify all required secrets are set in repository settings
 - Check deployment provider credentials are valid
 - Review deployment logs in workflow run details
@@ -163,6 +184,7 @@ npm run build
 ## Performance Optimization
 
 The pipeline is optimized for speed:
+
 - **Parallel Jobs**: Lint, test, build, and E2E run simultaneously
 - **Caching**: npm dependencies are cached between runs
 - **Conditional Steps**: E2E tests continue on error (informational)

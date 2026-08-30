@@ -1,8 +1,8 @@
-import { LockKeyhole } from "lucide-react";
-import type { ReactNode } from "react";
+import { LockKeyhole } from 'lucide-react';
+import type { ReactNode } from 'react';
 
-import { validateHuntInvite } from "@/lib/huntStore";
-import type { StoredHunt } from "@/lib/types";
+import { validateHuntInvite } from '@/lib/huntStore';
+import type { StoredHunt } from '@/lib/types';
 
 interface PrivateHuntAccessGateProps {
   hunt: StoredHunt;
@@ -11,9 +11,9 @@ interface PrivateHuntAccessGateProps {
 }
 
 const ACCESS_DENIED_MESSAGES = {
-  required: "This private hunt requires a valid invite link. Ask the creator for access.",
-  invalid: "This invite link is invalid or has been revoked. Ask the creator for a new link.",
-  expired: "This invite link has expired. Ask the creator for a new link.",
+  required: 'This private hunt requires a valid invite link. Ask the creator for access.',
+  invalid: 'This invite link is invalid or has been revoked. Ask the creator for a new link.',
+  expired: 'This invite link has expired. Ask the creator for a new link.',
 } as const;
 
 export function PrivateHuntAccessGate({ hunt, inviteToken, children }: PrivateHuntAccessGateProps) {

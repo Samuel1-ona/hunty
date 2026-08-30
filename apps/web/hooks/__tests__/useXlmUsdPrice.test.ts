@@ -1,14 +1,14 @@
-import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
-import { renderHook, waitFor } from "@testing-library/react";
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
+import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 
-import { useXlmUsdPrice } from "../useXlmUsdPrice";
+import { useXlmUsdPrice } from '../useXlmUsdPrice';
 
 const fetchMock = vi.fn();
 
-vi.stubGlobal("fetch", fetchMock);
+vi.stubGlobal('fetch', fetchMock);
 
-describe("useXlmUsdPrice", () => {
+describe('useXlmUsdPrice', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -17,8 +17,8 @@ describe("useXlmUsdPrice", () => {
     vi.resetAllMocks();
   });
 
-  it("loads the price from Coinbase successfully", async () => {
-    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ data: { amount: "0.123" } }) });
+  it('loads the price from Coinbase successfully', async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ data: { amount: '0.123' } }) });
 
     const { result } = renderHook(() => useXlmUsdPrice(60000));
 
@@ -28,13 +28,13 @@ describe("useXlmUsdPrice", () => {
     expect(result.current.error).toBeNull();
     expect(result.current.lastUpdated).toBeGreaterThan(0);
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.coinbase.com/v2/prices/XLM-USD/spot",
+      'https://api.coinbase.com/v2/prices/XLM-USD/spot',
       expect.any(Object)
     );
   });
 
-  it("falls back to CoinGecko when Coinbase fails", async () => {
-    fetchMock.mockRejectedValueOnce(new Error("coinbase down"));
+  it('falls back to CoinGecko when Coinbase fails', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('coinbase down'));
     fetchMock.mockResolvedValue({ ok: true, json: async () => ({ stellar: { usd: 0.456 } }) });
 
     const { result } = renderHook(() => useXlmUsdPrice(60000));
@@ -46,24 +46,24 @@ describe("useXlmUsdPrice", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it("sets an error when both sources fail", async () => {
-    fetchMock.mockRejectedValue(new Error("network error"));
+  it('sets an error when both sources fail', async () => {
+    fetchMock.mockRejectedValue(new Error('network error'));
 
     const { result } = renderHook(() => useXlmUsdPrice(60000));
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     expect(result.current.price).toBeNull();
-    expect(result.current.error).toContain("network error");
+    expect(result.current.error).toContain('network error');
     expect(result.current.lastUpdated).toBeNull();
   });
 
-  it("polls again after the polling interval", async () => {
+  it('polls again after the polling interval', async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ data: { amount: "0.789" } }),
+      json: async () => ({ data: { amount: '0.789' } }),
     });
-    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ data: { amount: "0.101" } }) });
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ data: { amount: '0.101' } }) });
 
     const { result } = renderHook(() => useXlmUsdPrice(500));
 
@@ -74,4 +74,3 @@ describe("useXlmUsdPrice", () => {
     await waitFor(() => expect(result.current.price).toBe(0.101), { timeout: 2000 });
   });
 });
- 

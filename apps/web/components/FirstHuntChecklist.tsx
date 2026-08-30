@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import { Check, ChevronDown, ChevronUp, Compass, Trophy, Wallet, X } from "lucide-react";
-import Link from "next/link";
-import { useMemo } from "react";
+import { Check, ChevronDown, ChevronUp, Compass, Trophy, Wallet, X } from 'lucide-react';
+import Link from 'next/link';
+import { useMemo } from 'react';
 
-import { Button } from "@/components/ui/button";
-import { useFirstHuntGuide } from "@/hooks/useFirstHuntGuide";
+import { Button } from '@/components/ui/button';
+import { useFirstHuntGuide } from '@/hooks/useFirstHuntGuide';
 import {
   FIRST_HUNT_STEPS,
-  getFirstHuntStepHref,
-  requestWalletConnect,
   type FirstHuntStepDefinition,
   type FirstHuntStepId,
-} from "@/lib/firstHuntGuide";
-import { cn } from "@/lib/utils";
+  getFirstHuntStepHref,
+  requestWalletConnect,
+} from '@/lib/firstHuntGuide';
+import { cn } from '@/lib/utils';
 
 const STEP_ICONS: Record<FirstHuntStepId, typeof Wallet> = {
   connect: Wallet,
@@ -35,7 +35,7 @@ function StepAction({
 
   if (!isNext) return null;
 
-  if (step.id === "connect") {
+  if (step.id === 'connect') {
     return (
       <Button
         type="button"
@@ -54,7 +54,9 @@ function StepAction({
       size="sm"
       className="h-7 rounded-lg bg-gradient-to-r from-[#3737A4] to-[#0C0C4F] px-2.5 text-[11px] font-bold text-white"
     >
-      <Link href={href}>{step.id === "claim" ? "Claim" : step.id === "solve" ? "Solve" : "Join"}</Link>
+      <Link href={href}>
+        {step.id === 'claim' ? 'Claim' : step.id === 'solve' ? 'Solve' : 'Join'}
+      </Link>
     </Button>
   );
 }
@@ -63,8 +65,8 @@ export function FirstHuntChecklist() {
   const { state, progress, isVisible, dismiss, setCollapsed } = useFirstHuntGuide();
 
   const heading = useMemo(() => {
-    if (progress.allComplete) return "First hunt complete";
-    return "Complete your first hunt";
+    if (progress.allComplete) return 'First hunt complete';
+    return 'Complete your first hunt';
   }, [progress.allComplete]);
 
   if (!isVisible) return null;
@@ -97,11 +99,13 @@ export function FirstHuntChecklist() {
       <div className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-2xl backdrop-blur-md dark:border-white/10 dark:bg-slate-950/95">
         <div className="mb-3 flex items-start justify-between gap-2">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">New player guide</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              New player guide
+            </p>
             <h2 className="text-sm font-bold text-slate-900 dark:text-white">{heading}</h2>
             <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
               {progress.allComplete
-                ? "You connected, joined, solved, and claimed."
+                ? 'You connected, joined, solved, and claimed.'
                 : `${progress.completedCount} of ${progress.total} steps done`}
             </p>
           </div>
@@ -135,22 +139,22 @@ export function FirstHuntChecklist() {
               <li
                 key={step.id}
                 data-testid={`first-hunt-step-${step.id}`}
-                data-complete={done ? "true" : "false"}
+                data-complete={done ? 'true' : 'false'}
                 className={cn(
-                  "flex items-start gap-3 rounded-xl border px-3 py-2.5",
+                  'flex items-start gap-3 rounded-xl border px-3 py-2.5',
                   done
-                    ? "border-emerald-200 bg-emerald-50/80 dark:border-emerald-800/60 dark:bg-emerald-950/20"
+                    ? 'border-emerald-200 bg-emerald-50/80 dark:border-emerald-800/60 dark:bg-emerald-950/20'
                     : isNext
-                      ? "border-[#3737A4]/30 bg-indigo-50/70 dark:border-indigo-500/30 dark:bg-indigo-950/20"
-                      : "border-slate-200 bg-slate-50 dark:border-white/5 dark:bg-slate-900/40"
+                      ? 'border-[#3737A4]/30 bg-indigo-50/70 dark:border-indigo-500/30 dark:bg-indigo-950/20'
+                      : 'border-slate-200 bg-slate-50 dark:border-white/5 dark:bg-slate-900/40'
                 )}
               >
                 <span
                   className={cn(
-                    "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
+                    'mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full',
                     done
-                      ? "bg-emerald-500 text-white"
-                      : "bg-white text-slate-400 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-white/10"
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-white text-slate-400 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-white/10'
                   )}
                   aria-hidden="true"
                 >
@@ -160,8 +164,10 @@ export function FirstHuntChecklist() {
                   <div className="flex items-center justify-between gap-2">
                     <p
                       className={cn(
-                        "text-xs font-semibold",
-                        done ? "text-emerald-800 dark:text-emerald-300" : "text-slate-800 dark:text-slate-100"
+                        'text-xs font-semibold',
+                        done
+                          ? 'text-emerald-800 dark:text-emerald-300'
+                          : 'text-slate-800 dark:text-slate-100'
                       )}
                     >
                       {step.title}

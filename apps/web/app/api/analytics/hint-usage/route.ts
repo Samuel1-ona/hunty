@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server"
-import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit"
-import { recordHintUsage, getHintUsageStats } from "@/lib/analytics"
-import { logger } from "@/lib/logger"
-import { withValidation } from "@/lib/api/withValidation"
-import { withErrorHandling } from "@/lib/api/withErrorHandling"
-import { hintUsageBodySchema, hintUsageQuerySchema } from "@hunty/types/api-schemas"
+import { NextResponse } from 'next/server';
+import { rateLimit, getIP, rateLimitResponse } from '@/lib/rate-limit';
+import { recordHintUsage, getHintUsageStats } from '@/lib/analytics';
+import { logger } from '@/lib/logger';
+import { withValidation } from '@/lib/api/withValidation';
+import { withErrorHandling } from '@/lib/api/withErrorHandling';
+import { hintUsageBodySchema, hintUsageQuerySchema } from '@hunty/types/api-schemas';
 
 /**
  * POST /api/analytics/hint-usage
@@ -16,20 +16,20 @@ import { hintUsageBodySchema, hintUsageQuerySchema } from "@hunty/types/api-sche
 export const POST = withValidation(
   { body: hintUsageBodySchema },
   async (req, _context, { body }) => {
-    const ip = getIP(req)
-    const { success, reset } = await rateLimit(ip, { limit: 60, windowMs: 60_000 })
-    if (!success) return rateLimitResponse(reset)
+    const ip = getIP(req);
+    const { success, reset } = await rateLimit(ip, { limit: 60, windowMs: 60_000 });
+    if (!success) return rateLimitResponse(reset);
 
     try {
-      await recordHintUsage(body.huntId, body.clueId, body.hintIndex, body.wallet.trim())
-      return NextResponse.json({ ok: true }, { status: 200 })
+      await recordHintUsage(body.huntId, body.clueId, body.hintIndex, body.wallet.trim());
+      return NextResponse.json({ ok: true }, { status: 200 });
     } catch (error) {
       // Analytics errors must never break gameplay
-      logger.error("Failed to record hint usage analytics:", error)
-      return NextResponse.json({ ok: true }, { status: 200 })
+      logger.error('Failed to record hint usage analytics:', error);
+      return NextResponse.json({ ok: true }, { status: 200 });
     }
   }
-)
+);
 
 /**
  * GET /api/analytics/hint-usage?huntId=<n>
@@ -38,21 +38,21 @@ export const POST = withValidation(
  * Intended for creator dashboards; no auth in this mock implementation.
  */
 export const GET = withErrorHandling(async (req: Request) => {
-  const { searchParams } = new URL(req.url)
-  const raw = Object.fromEntries(searchParams.entries())
-  const queryResult = hintUsageQuerySchema.safeParse(raw)
+  const { searchParams } = new URL(req.url);
+  const raw = Object.fromEntries(searchParams.entries());
+  const queryResult = hintUsageQuerySchema.safeParse(raw);
   if (!queryResult.success) {
     return NextResponse.json(
-      { error: "huntId query param is required and must be a positive integer" },
+      { error: 'huntId query param is required and must be a positive integer' },
       { status: 400 }
-    )
+    );
   }
 
   try {
-    const stats = await getHintUsageStats(queryResult.data.huntId)
-    return NextResponse.json({ huntId: queryResult.data.huntId, stats }, { status: 200 })
+    const stats = await getHintUsageStats(queryResult.data.huntId);
+    return NextResponse.json({ huntId: queryResult.data.huntId, stats }, { status: 200 });
   } catch (error) {
-    logger.error("Failed to fetch hint usage stats:", error)
-    return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
+    logger.error('Failed to fetch hint usage stats:', error);
+    return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 });
   }
-})
+});

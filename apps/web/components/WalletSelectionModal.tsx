@@ -1,8 +1,8 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { X, Loader2, ExternalLink } from "lucide-react"
-import { Button } from "@hunty/ui"
+import { useState } from 'react';
+import { X, Loader2, ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogClose,
@@ -10,103 +10,98 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import type { WalletProvider } from "@/lib/wallets/types"
-import { useWalletStore } from "@/lib/wallets/walletStore"
+} from '@/components/ui/dialog';
+import type { WalletProvider } from '@/lib/wallets/types';
+import { useWalletStore } from '@/lib/wallets/walletStore';
 
 // ── Wallet registry ──────────────────────────────────────────────────────────
 
 interface WalletOption {
-  id: WalletProvider
-  name: string
-  description: string
-  icon: string
-  color: string
-  installUrl: string
+  id: WalletProvider;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  installUrl: string;
 }
 
 const WALLET_OPTIONS: WalletOption[] = [
   {
-    id: "freighter",
-    name: "Freighter",
-    description: "Official Stellar browser extension by SDF",
-    icon: "🚀",
-    color: "from-slate-700 to-slate-900",
-    installUrl: "https://freighter.app",
+    id: 'freighter',
+    name: 'Freighter',
+    description: 'Official Stellar browser extension by SDF',
+    icon: '🚀',
+    color: 'from-slate-700 to-slate-900',
+    installUrl: 'https://freighter.app',
   },
   {
-    id: "albedo",
-    name: "Albedo",
-    description: "Delegated Stellar signer — no install required",
-    icon: "✨",
-    color: "from-indigo-600 to-violet-700",
-    installUrl: "https://albedo.link",
+    id: 'albedo',
+    name: 'Albedo',
+    description: 'Delegated Stellar signer — no install required',
+    icon: '✨',
+    color: 'from-indigo-600 to-violet-700',
+    installUrl: 'https://albedo.link',
   },
   {
-    id: "xbull",
-    name: "xBull Wallet",
-    description: "Feature-rich Stellar wallet for power users",
-    icon: "🐂",
-    color: "from-orange-500 to-red-600",
-    installUrl: "https://xbull.app",
+    id: 'xbull',
+    name: 'xBull Wallet',
+    description: 'Feature-rich Stellar wallet for power users',
+    icon: '🐂',
+    color: 'from-orange-500 to-red-600',
+    installUrl: 'https://xbull.app',
   },
-]
+];
 
 // ── Component ────────────────────────────────────────────────────────────────
 
 interface WalletSelectionModalProps {
   /** Controls whether the modal is shown */
-  isOpen: boolean
+  isOpen: boolean;
   /** Called when the user dismisses the modal */
-  onClose: () => void
+  onClose: () => void;
   /**
    * Called when the user picks a provider.
    * Should trigger the actual wallet connection and return an error string on
    * failure, or an empty object on success.
    */
-  onConnect: (provider: WalletProvider) => Promise<{ error?: string }>
+  onConnect: (provider: WalletProvider) => Promise<{ error?: string }>;
 }
 
-export function WalletSelectionModal({
-  isOpen,
-  onClose,
-  onConnect,
-}: WalletSelectionModalProps) {
-  const lastUsedProvider = useWalletStore((s) => s.lastUsedProvider)
-  const [connectingProvider, setConnectingProvider] =
-    useState<WalletProvider | null>(null)
-  const [error, setError] = useState<string | null>(null)
+export function WalletSelectionModal({ isOpen, onClose, onConnect }: WalletSelectionModalProps) {
+  const lastUsedProvider = useWalletStore((s) => s.lastUsedProvider);
+  const [connectingProvider, setConnectingProvider] = useState<WalletProvider | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Sort: last-used wallet appears first
   const sorted = [...WALLET_OPTIONS].sort((a, b) => {
-    if (a.id === lastUsedProvider) return -1
-    if (b.id === lastUsedProvider) return 1
-    return 0
-  })
+    if (a.id === lastUsedProvider) return -1;
+    if (b.id === lastUsedProvider) return 1;
+    return 0;
+  });
 
   const handleConnect = async (provider: WalletProvider) => {
-    setConnectingProvider(provider)
-    setError(null)
+    setConnectingProvider(provider);
+    setError(null);
 
-    const result = await onConnect(provider)
+    const result = await onConnect(provider);
 
     if (result.error) {
-      setError(result.error)
-      setConnectingProvider(null)
-      return
+      setError(result.error);
+      setConnectingProvider(null);
+      return;
     }
 
     // Success — parent updates wallet state; close modal
-    handleClose()
-  }
+    handleClose();
+  };
 
   const handleClose = () => {
-    setConnectingProvider(null)
-    setError(null)
-    onClose()
-  }
+    setConnectingProvider(null);
+    setError(null);
+    onClose();
+  };
 
-  const isConnecting = connectingProvider !== null
+  const isConnecting = connectingProvider !== null;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -147,16 +142,12 @@ export function WalletSelectionModal({
           )}
 
           {error && (
-            <ErrorBanner
-              error={error}
-              provider={connectingProvider}
-              wallets={WALLET_OPTIONS}
-            />
+            <ErrorBanner error={error} provider={connectingProvider} wallets={WALLET_OPTIONS} />
           )}
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 // ── Sub-components ───────────────────────────────────────────────────────────
@@ -168,11 +159,11 @@ function WalletButton({
   isThisConnecting,
   onClick,
 }: {
-  wallet: WalletOption
-  isLastUsed: boolean
-  isConnecting: boolean
-  isThisConnecting: boolean
-  onClick: () => void
+  wallet: WalletOption;
+  isLastUsed: boolean;
+  isConnecting: boolean;
+  isThisConnecting: boolean;
+  onClick: () => void;
 }) {
   return (
     <Button
@@ -201,13 +192,10 @@ function WalletButton({
         <div className="text-xs opacity-75 truncate">{wallet.description}</div>
       </div>
       {isThisConnecting && (
-        <Loader2
-          className="h-4 w-4 animate-spin ml-auto shrink-0"
-          aria-hidden="true"
-        />
+        <Loader2 className="h-4 w-4 animate-spin ml-auto shrink-0" aria-hidden="true" />
       )}
     </Button>
-  )
+  );
 }
 
 function ErrorBanner({
@@ -215,12 +203,12 @@ function ErrorBanner({
   provider,
   wallets,
 }: {
-  error: string
-  provider: WalletProvider | null
-  wallets: WalletOption[]
+  error: string;
+  provider: WalletProvider | null;
+  wallets: WalletOption[];
 }) {
-  const wallet = wallets.find((w) => w.id === provider)
-  const showInstallLink = error.toLowerCase().includes("not found") && wallet
+  const wallet = wallets.find((w) => w.id === provider);
+  const showInstallLink = error.toLowerCase().includes('not found') && wallet;
 
   return (
     <div
@@ -240,5 +228,5 @@ function ErrorBanner({
         </a>
       )}
     </div>
-  )
+  );
 }

@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import Server, { Account, Networks, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
-import { AlertTriangle, Code2, Loader2, X } from "lucide-react";
-import { useState } from "react";
+import Server, { Account, Networks, Operation, TransactionBuilder } from '@stellar/stellar-sdk';
+import { AlertTriangle, Code2, Loader2, X } from 'lucide-react';
+import { useState } from 'react';
 
-import { EmbedModal } from "@/components/EmbedModal";
-import { Button } from "@hunty/ui";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { logger } from "@/lib/logger";
-import { withSorobanRpcRetry } from "@/lib/soroban/rpcRetry";
-import type { StoredHunt } from "@/lib/types";
+import { EmbedModal } from '@/components/EmbedModal';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { logger } from '@/lib/logger';
+import { withSorobanRpcRetry } from '@/lib/soroban/rpcRetry';
+import type { StoredHunt } from '@/lib/types';
 
 async function cancelHuntOnChain(huntId: number): Promise<{ txHash: string }> {
-  if (typeof window === "undefined") throw new Error("Browser environment required");
+  if (typeof window === 'undefined') throw new Error('Browser environment required');
 
-  const RPC = process.env.NEXT_PUBLIC_SOROBAN_RPC_URL || "https://rpc.testnet.soroban.stellar.org";
+  const RPC = process.env.NEXT_PUBLIC_SOROBAN_RPC_URL || 'https://rpc.testnet.soroban.stellar.org';
   const server = new Server(RPC);
 
   const win = window as Window & {
@@ -24,7 +24,7 @@ async function cancelHuntOnChain(huntId: number): Promise<{ txHash: string }> {
   };
   const wallet = win.freighter ?? win.soroban ?? win.sorobanWallet;
   if (!wallet) {
-    throw new Error("No Soroban-compatible wallet detected (install Freighter or Soroban Wallet).");
+    throw new Error('No Soroban-compatible wallet detected (install Freighter or Soroban Wallet).');
   }
 
   const w = wallet as {
@@ -35,25 +35,25 @@ async function cancelHuntOnChain(huntId: number): Promise<{ txHash: string }> {
   let publicKey: string | undefined;
   if (w.getPublicKey) {
     publicKey = await w.getPublicKey();
-  } else if (typeof w.request === "function") {
+  } else if (typeof w.request === 'function') {
     try {
-      publicKey = await w.request({ method: "getPublicKey" });
+      publicKey = await w.request({ method: 'getPublicKey' });
     } catch {
       // ignore, publicKey remains undefined and error is thrown below
     }
   }
 
   if (!publicKey) {
-    throw new Error("Unable to obtain public key from wallet; ensure you are connected.");
+    throw new Error('Unable to obtain public key from wallet; ensure you are connected.');
   }
 
   const account = (await withSorobanRpcRetry(() => server.getAccount(publicKey))) as Account;
-  const payload = JSON.stringify({ action: "cancel_hunt", hunt_id: huntId });
+  const payload = JSON.stringify({ action: 'cancel_hunt', hunt_id: huntId });
   const key = `cancel_hunt:${Date.now()}`;
   const op = Operation.manageData({ name: key, value: payload });
 
   const tx = new TransactionBuilder(account, {
-    fee: "100",
+    fee: '100',
     networkPassphrase: Networks.TESTNET,
   })
     .addOperation(op)
@@ -68,10 +68,10 @@ async function cancelHuntOnChain(huntId: number): Promise<{ txHash: string }> {
   let signedXdr: string | undefined;
   if (sw.signTransaction) {
     signedXdr = await sw.signTransaction(tx.toXDR());
-  } else if (typeof sw.request === "function") {
+  } else if (typeof sw.request === 'function') {
     try {
       signedXdr = await sw.request({
-        method: "signTransaction",
+        method: 'signTransaction',
         params: { tx: tx.toXDR() },
       });
     } catch (err) {
@@ -81,14 +81,14 @@ async function cancelHuntOnChain(huntId: number): Promise<{ txHash: string }> {
 
   if (!signedXdr) {
     throw new Error(
-      "Wallet does not support signing via the detected API; please use Freighter or Soroban Wallet."
+      'Wallet does not support signing via the detected API; please use Freighter or Soroban Wallet.'
     );
   }
 
   const res = (await withSorobanRpcRetry(() => server.submitTransaction(signedXdr))) as {
     hash?: string;
   };
-  if (!res?.hash) throw new Error("Transaction submission failed");
+  if (!res?.hash) throw new Error('Transaction submission failed');
   return { txHash: res.hash };
 }
 
@@ -99,8 +99,8 @@ interface HuntControlsProps {
 }
 
 /** Returns true for statuses that can still be cancelled. */
-function isCancellable(status: StoredHunt["status"]): boolean {
-  return status === "Draft" || status === "Active";
+function isCancellable(status: StoredHunt['status']): boolean {
+  return status === 'Draft' || status === 'Active';
 }
 
 /** Returns true when the connected wallet is the hunt creator. */
@@ -141,14 +141,14 @@ function CancelModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold text-red-400">
             <AlertTriangle className="w-5 h-5 shrink-0" />
-            {step === 1 ? "Cancel Hunt?" : "Are you absolutely sure?"}
+            {step === 1 ? 'Cancel Hunt?' : 'Are you absolutely sure?'}
           </DialogTitle>
         </DialogHeader>
 
         {step === 1 ? (
           <div className="space-y-4">
             <p className="text-zinc-300 text-sm leading-relaxed">
-              You are about to cancel{" "}
+              You are about to cancel{' '}
               <span className="font-semibold text-white">&quot;{huntTitle}&quot;</span>. This will
               remove it from the active hunts list and cannot be undone.
             </p>
@@ -179,11 +179,11 @@ function CancelModal({
               <span className="font-bold text-red-400 uppercase tracking-wider text-xs block mb-1">
                 Final Warning
               </span>
-              This action will call{" "}
+              This action will call{' '}
               <code className="bg-red-900/50 px-1 rounded text-red-200 text-xs">
                 cancel_hunt({huntId})
-              </code>{" "}
-              on the Soroban contract. Once submitted to the blockchain it{" "}
+              </code>{' '}
+              on the Soroban contract. Once submitted to the blockchain it{' '}
               <span className="font-semibold text-white">cannot be reversed</span>.
             </div>
             <div className="flex justify-end gap-3 pt-1">
@@ -207,7 +207,7 @@ function CancelModal({
                     Cancelling…
                   </>
                 ) : (
-                  "Confirm Cancel"
+                  'Confirm Cancel'
                 )}
               </Button>
             </div>
@@ -255,7 +255,7 @@ export function HuntControls({ hunt, connectedPublicKey, onCancelled }: HuntCont
       setModalOpen(false);
       onCancelled?.(hunt.id, txHash);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Cancellation failed. Please try again.");
+      setError(err instanceof Error ? err.message : 'Cancellation failed. Please try again.');
     } finally {
       setIsCancelling(false);
     }
@@ -296,4 +296,3 @@ export function HuntControls({ hunt, connectedPublicKey, onCancelled }: HuntCont
     </>
   );
 }
- 

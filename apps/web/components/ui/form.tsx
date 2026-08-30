@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { AlertCircle } from "lucide-react";
-import * as React from "react";
+import { AlertCircle } from 'lucide-react';
+import * as React from 'react';
 import {
   Controller,
   type ControllerProps,
@@ -10,11 +10,11 @@ import {
   FormProvider,
   useFormContext,
   type UseFormReturn,
-} from "react-hook-form";
+} from 'react-hook-form';
 
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
-import { Input } from "./input";
+import { Input } from './input';
 
 const Form = FormProvider;
 
@@ -37,26 +37,22 @@ function FormField<
 
 function useFormField() {
   const fieldContext = React.useContext(FormFieldContext);
-  if (!fieldContext) throw new Error("useFormField must be used within <FormField>");
+  if (!fieldContext) throw new Error('useFormField must be used within <FormField>');
   const { getFieldState, formState } = useFormContext();
   const fieldState = getFieldState(fieldContext.name, formState);
   return { name: fieldContext.name, ...fieldState };
 }
 
-function FormItem({ className, ...props }: React.ComponentProps<"div">) {
-  return <div className={cn("space-y-1.5", className)} {...props} />;
+function FormItem({ className, ...props }: React.ComponentProps<'div'>) {
+  return <div className={cn('space-y-1.5', className)} {...props} />;
 }
 
-function FormLabel({ className, ...props }: React.ComponentProps<"label">) {
+function FormLabel({ className, ...props }: React.ComponentProps<'label'>) {
   const { error, name } = useFormField();
   return (
     <label
       htmlFor={name}
-      className={cn(
-        "text-sm font-medium leading-none",
-        error && "text-destructive",
-        className
-      )}
+      className={cn('text-sm font-medium leading-none', error && 'text-destructive', className)}
       {...props}
     />
   );
@@ -69,13 +65,13 @@ function FormControl({ ...props }: React.ComponentProps<typeof Input>) {
       id={name}
       aria-invalid={!!error}
       aria-describedby={error ? `${name}-error` : undefined}
-      className={cn(error && "border-destructive focus-visible:ring-destructive/30")}
+      className={cn(error && 'border-destructive focus-visible:ring-destructive/30')}
       {...props}
     />
   );
 }
 
-function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
+function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
   const { error, name } = useFormField();
   if (!error?.message) return null;
   return (
@@ -83,7 +79,7 @@ function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
       id={`${name}-error`}
       role="alert"
       aria-live="polite"
-      className={cn("flex items-center gap-1.5 text-sm text-destructive", className)}
+      className={cn('flex items-center gap-1.5 text-sm text-destructive', className)}
       {...props}
     >
       <AlertCircle className="size-3.5 shrink-0" />
@@ -92,14 +88,10 @@ function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
   );
 }
 
-function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
+function FormDescription({ className, ...props }: React.ComponentProps<'p'>) {
   const { name } = useFormField();
   return (
-    <p
-      id={`${name}-desc`}
-      className={cn("text-xs text-muted-foreground", className)}
-      {...props}
-    />
+    <p id={`${name}-desc`} className={cn('text-xs text-muted-foreground', className)} {...props} />
   );
 }
 
@@ -116,7 +108,7 @@ function FormErrorSummary({ errors, className }: FormErrorSummaryProps) {
       role="alert"
       aria-live="assertive"
       className={cn(
-        "rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive",
+        'rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive',
         className
       )}
     >

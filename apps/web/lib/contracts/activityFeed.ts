@@ -1,7 +1,7 @@
-import { getAllHunts } from "@/lib/huntStore"
-import type { ActivityEvent,ActivityEventType } from "@/lib/types"
+import { getAllHunts } from '@/lib/huntStore';
+import type { ActivityEvent, ActivityEventType } from '@/lib/types';
 
-export type { ActivityEvent,ActivityEventType }
+export type { ActivityEvent, ActivityEventType };
 
 /**
  * Anonymizes a Stellar public key for public display.
@@ -10,9 +10,9 @@ export type { ActivityEvent,ActivityEventType }
  */
 export function anonymizeAddress(address: string, prefixChars = 3, suffixChars = 4): string {
   if (!address || address.length <= prefixChars + suffixChars + 3) {
-    return address
+    return address;
   }
-  return `${address.slice(0, prefixChars)}...${address.slice(-suffixChars)}`
+  return `${address.slice(0, prefixChars)}...${address.slice(-suffixChars)}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -21,38 +21,38 @@ export function anonymizeAddress(address: string, prefixChars = 3, suffixChars =
 
 /** Pseudo-random Stellar-like public keys used in mock events. */
 const MOCK_ADDRESSES = [
-  "GDQP2KPQGKIHYJGXNUIYOMHARUARCA7DJT5FO2FFOOKY3B2WSQHG4W37",
-  "GBX7NQMGKPQFNILAJSQIMUPRQ9CXHXSWJYAAPQZFHKCFHAKFZV5H7YL2",
-  "GCT4MFQE2ZQKIHS4KMIUQZFVLXYB3NJPKXKQIKMHZYHULKDKXQFZSLP3",
-  "GDEF7QHZRJLXKIAOPQMN5VBCWETYU23HIAJZXCVBNM456789QWERTYUI",
-  "GFA27MNBVCXZASDFGHJKLQWERTYUIOP1234567890ZXCVBNMASDFGHJKL",
-  "GCA18LKJHGFDSAPOIUYTREWQ0987654321MNBVCXZASDFGHJKLPOIUYTR",
-  "GHST9QWERTYUIOPASDFGHJKLZXCVBNM1234567890QWERTYUIOPASDFGH",
-  "GJKL3ASDFGHJKLZXCVBNMQWERTYUIOP0987654321ASDFGHJKLZXCVBNM",
-]
+  'GDQP2KPQGKIHYJGXNUIYOMHARUARCA7DJT5FO2FFOOKY3B2WSQHG4W37',
+  'GBX7NQMGKPQFNILAJSQIMUPRQ9CXHXSWJYAAPQZFHKCFHAKFZV5H7YL2',
+  'GCT4MFQE2ZQKIHS4KMIUQZFVLXYB3NJPKXKQIKMHZYHULKDKXQFZSLP3',
+  'GDEF7QHZRJLXKIAOPQMN5VBCWETYU23HIAJZXCVBNM456789QWERTYUI',
+  'GFA27MNBVCXZASDFGHJKLQWERTYUIOP1234567890ZXCVBNMASDFGHJKL',
+  'GCA18LKJHGFDSAPOIUYTREWQ0987654321MNBVCXZASDFGHJKLPOIUYTR',
+  'GHST9QWERTYUIOPASDFGHJKLZXCVBNM1234567890QWERTYUIOPASDFGH',
+  'GJKL3ASDFGHJKLZXCVBNMQWERTYUIOP0987654321ASDFGHJKLZXCVBNM',
+];
 
-const EVENT_TYPES: ActivityEventType[] = ["HuntCompleted", "ClueCompleted", "HuntSponsored"]
+const EVENT_TYPES: ActivityEventType[] = ['HuntCompleted', 'ClueCompleted', 'HuntSponsored'];
 
 /**
  * Generates a deterministic but varied set of mock activity events
  * seeded from real hunt titles in localStorage, so the feed looks authentic.
  */
 function generateMockEvents(limit: number): ActivityEvent[] {
-  const hunts = getAllHunts().filter((h) => h.status === "Active" || h.status === "Completed")
-  const now = Math.floor(Date.now() / 1000)
+  const hunts = getAllHunts().filter((h) => h.status === 'Active' || h.status === 'Completed');
+  const now = Math.floor(Date.now() / 1000);
 
   // Build a varied pool of events
-  const events: ActivityEvent[] = []
+  const events: ActivityEvent[] = [];
 
   for (let i = 0; i < Math.max(limit, 10); i++) {
     const hunt = hunts[i % (hunts.length || 1)] ?? {
       id: 1,
-      title: "City Secrets",
-    }
-    const address = MOCK_ADDRESSES[i % MOCK_ADDRESSES.length]
-    const type = EVENT_TYPES[i % EVENT_TYPES.length]
+      title: 'City Secrets',
+    };
+    const address = MOCK_ADDRESSES[i % MOCK_ADDRESSES.length];
+    const type = EVENT_TYPES[i % EVENT_TYPES.length];
     // Space events out over the last 30 minutes
-    const timestamp = now - i * 90 - Math.floor(i * 47)
+    const timestamp = now - i * 90 - Math.floor(i * 47);
 
     const eventData: ActivityEvent = {
       id: `mock-event-${i}`,
@@ -61,17 +61,17 @@ function generateMockEvents(limit: number): ActivityEvent[] {
       huntId: hunt.id,
       timestamp,
       type,
-    }
+    };
 
     // Add amount for sponsored events
-    if (type === "HuntSponsored") {
-      eventData.amount = Math.floor(Math.random() * 50) + 10
+    if (type === 'HuntSponsored') {
+      eventData.amount = Math.floor(Math.random() * 50) + 10;
     }
 
-    events.push(eventData)
+    events.push(eventData);
   }
 
-  return events.slice(0, limit)
+  return events.slice(0, limit);
 }
 
 /**
@@ -85,7 +85,7 @@ function generateMockEvents(limit: number): ActivityEvent[] {
  */
 export async function getRecentActivity(limit = 10): Promise<ActivityEvent[]> {
   // Simulate network latency
-  await new Promise((resolve) => setTimeout(resolve, 600))
+  await new Promise((resolve) => setTimeout(resolve, 600));
 
-  return generateMockEvents(limit)
+  return generateMockEvents(limit);
 }

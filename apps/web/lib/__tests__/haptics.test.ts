@@ -24,12 +24,7 @@ vi.mock('expo-haptics', () => ({
   selectionAsync: vi.fn(),
 }));
 
-import {
-  hapticTriggers,
-  triggerImpact,
-  triggerNotification,
-  triggerSelection,
-} from '../haptics';
+import { hapticTriggers, triggerImpact, triggerNotification, triggerSelection } from '../haptics';
 
 describe('Haptics Platform Safety', () => {
   it('does not throw errors on unsupported OS (web)', async () => {

@@ -1,4 +1,4 @@
-import { StatsCardSkeleton } from "@/components/LoadingSkeletons"
+import { StatsCardSkeleton } from '@/components/LoadingSkeletons';
 
 export default function CreatorStatsLoading() {
   return (
@@ -7,5 +7,5 @@ export default function CreatorStatsLoading() {
         <StatsCardSkeleton count={3} />
       </div>
     </div>
-  )
+  );
 }

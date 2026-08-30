@@ -8,10 +8,10 @@
  * Server-side only — do not import from client components.
  */
 
-import type { WebPushSubscriptionRecord } from "./types"
+import type { WebPushSubscriptionRecord } from './types';
 
 /** Keyed by subscription endpoint for O(1) deduplication and removal. */
-const store = new Map<string, WebPushSubscriptionRecord>()
+const store = new Map<string, WebPushSubscriptionRecord>();
 
 // ─── Mutation ─────────────────────────────────────────────────────────────────
 
@@ -23,34 +23,34 @@ const store = new Map<string, WebPushSubscriptionRecord>()
 export function upsertSubscription(
   subscription: PushSubscriptionJSON,
   walletAddress: string,
-  preferences?: WebPushSubscriptionRecord["preferences"]
+  preferences?: WebPushSubscriptionRecord['preferences']
 ): void {
-  if (!subscription.endpoint) return
+  if (!subscription.endpoint) return;
 
-  const existing = store.get(subscription.endpoint)
+  const existing = store.get(subscription.endpoint);
   store.set(subscription.endpoint, {
     subscription,
     walletAddress: walletAddress.toLowerCase(),
     registeredAt: existing?.registeredAt ?? Date.now(),
     preferences: preferences ?? existing?.preferences,
-  })
+  });
 }
 
 /**
  * Removes a subscription by endpoint URL.
  */
 export function removeSubscription(endpoint: string): void {
-  store.delete(endpoint)
+  store.delete(endpoint);
 }
 
 /**
  * Removes all subscriptions for a wallet address.
  */
 export function removeSubscriptionsForWallet(walletAddress: string): void {
-  const target = walletAddress.toLowerCase()
+  const target = walletAddress.toLowerCase();
   for (const [endpoint, record] of store) {
     if (record.walletAddress === target) {
-      store.delete(endpoint)
+      store.delete(endpoint);
     }
   }
 }
@@ -60,33 +60,29 @@ export function removeSubscriptionsForWallet(walletAddress: string): void {
 /**
  * Returns all subscriptions for a given wallet address.
  */
-export function getSubscriptionsForWallet(
-  walletAddress: string
-): WebPushSubscriptionRecord[] {
-  const target = walletAddress.toLowerCase()
-  return [...store.values()].filter((r) => r.walletAddress === target)
+export function getSubscriptionsForWallet(walletAddress: string): WebPushSubscriptionRecord[] {
+  const target = walletAddress.toLowerCase();
+  return [...store.values()].filter((r) => r.walletAddress === target);
 }
 
 /**
  * Returns all subscriptions for a list of wallet addresses.
  */
-export function getSubscriptionsByWallets(
-  walletAddresses: string[]
-): WebPushSubscriptionRecord[] {
-  const targets = new Set(walletAddresses.map((w) => w.toLowerCase()))
-  return [...store.values()].filter((r) => targets.has(r.walletAddress))
+export function getSubscriptionsByWallets(walletAddresses: string[]): WebPushSubscriptionRecord[] {
+  const targets = new Set(walletAddresses.map((w) => w.toLowerCase()));
+  return [...store.values()].filter((r) => targets.has(r.walletAddress));
 }
 
 /**
  * Returns all stored subscription records (admin / diagnostics use only).
  */
 export function getAllSubscriptions(): WebPushSubscriptionRecord[] {
-  return [...store.values()]
+  return [...store.values()];
 }
 
 /**
  * Returns the total number of stored subscriptions.
  */
 export function getSubscriptionCount(): number {
-  return store.size
+  return store.size;
 }

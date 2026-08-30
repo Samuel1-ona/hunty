@@ -21,11 +21,11 @@ export const options = {
   preAllocatedVUs: 50,
   maxVUs: 500,
   stages: [
-    { duration: '2m', target: 10 },   // warm up
-    { duration: '5m', target: 50 },   // moderate
-    { duration: '5m', target: 100 },  // high
-    { duration: '5m', target: 200 },  // stress
-    { duration: '5m', target: 300 },  // breakpoint search
+    { duration: '2m', target: 10 }, // warm up
+    { duration: '5m', target: 50 }, // moderate
+    { duration: '5m', target: 100 }, // high
+    { duration: '5m', target: 200 }, // stress
+    { duration: '5m', target: 300 }, // breakpoint search
   ],
 
   // Abort scenario if error rate climbs above 10%

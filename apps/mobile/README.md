@@ -8,45 +8,45 @@ for file-based navigation, and connects to the Stellar blockchain via
 
 ### Development
 
-| Script | Description |
-| --- | --- |
-| `start` | Start the Expo dev server |
+| Script    | Description                        |
+| --------- | ---------------------------------- |
+| `start`   | Start the Expo dev server          |
 | `android` | Start and open on Android emulator |
-| `ios` | Start and open on iOS simulator |
-| `web` | Start and open in a web browser |
+| `ios`     | Start and open on iOS simulator    |
+| `web`     | Start and open in a web browser    |
 
 ### Code quality
 
-| Script | Description |
-| --- | --- |
-| `lint` | ESLint for `.js/.jsx/.ts/.tsx` |
-| `lint:fix` | ESLint with auto-fix |
-| `format` | Prettier write |
-| `format:check` | Prettier check (CI) |
-| `test` | Jest (passes with no tests) |
+| Script         | Description                    |
+| -------------- | ------------------------------ |
+| `lint`         | ESLint for `.js/.jsx/.ts/.tsx` |
+| `lint:fix`     | ESLint with auto-fix           |
+| `format`       | Prettier write                 |
+| `format:check` | Prettier check (CI)            |
+| `test`         | Jest (passes with no tests)    |
 
 ### Store & assets
 
-| Script | Description |
-| --- | --- |
+| Script           | Description                              |
+| ---------------- | ---------------------------------------- |
 | `store:validate` | Validate App Store / Play Store metadata |
-| `store:generate` | Generate store listing assets |
+| `store:generate` | Generate store listing assets            |
 
 ### E2E
 
-| Script | Description |
-| --- | --- |
-| `test:e2e` | Run Maestro E2E flows |
+| Script              | Description                           |
+| ------------------- | ------------------------------------- |
+| `test:e2e`          | Run Maestro E2E flows                 |
 | `test:e2e:validate` | Validate Maestro baseline screenshots |
 
 ### EAS Build / Submit / Update
 
-| Script | Description |
-| --- | --- |
-| `build:android` / `build:ios` / `build:all` | EAS production builds |
-| `build:*:dev` / `build:*:preview` | Development & preview builds |
-| `submit:*` | Submit builds to app stores |
-| `update:development` / `update:preview` / `update:production` | OTA updates |
+| Script                                                        | Description                  |
+| ------------------------------------------------------------- | ---------------------------- |
+| `build:android` / `build:ios` / `build:all`                   | EAS production builds        |
+| `build:*:dev` / `build:*:preview`                             | Development & preview builds |
+| `submit:*`                                                    | Submit builds to app stores  |
+| `update:development` / `update:preview` / `update:production` | OTA updates                  |
 
 ## Key dependencies
 
@@ -66,4 +66,3 @@ For instructions on building, signing, and deploying the mobile app, see the fol
 - **[EAS Build & Update Guide](../../docs/mobile/EAS_GUIDE.md)** — Comprehensive guide on EAS configuration, credentials, OTA updates, and release workflows.
 - **[EAS Quick Reference](../../docs/mobile/QUICK_REFERENCE.md)** — Fast command lookup for builds, updates, and troubleshooting.
 - **[Android Keystore Protocol](../../docs/mobile/ANDROID_KEYSTORE.md)** — Secure keystore generation, backup, and rotation guide.
-

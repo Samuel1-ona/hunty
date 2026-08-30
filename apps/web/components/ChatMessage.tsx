@@ -1,22 +1,22 @@
-import { Flag, MoreHorizontal, UserX } from "lucide-react"
-import React from "react"
+import { Flag, MoreHorizontal, UserX } from 'lucide-react';
+import React from 'react';
 
-import { Button } from "@hunty/ui"
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import type { ChatMessage as ChatMessageType } from "@/lib/types"
+} from '@/components/ui/dropdown-menu';
+import type { ChatMessage as ChatMessageType } from '@/lib/types';
 
 interface ChatMessageProps {
-  message: ChatMessageType
-  currentUserAddress?: string
-  isCreator?: boolean
-  onDelete?: (messageId: string) => void
-  onMute?: (address: string) => void
-  onReport?: (messageId: string, reason: string) => void
+  message: ChatMessageType;
+  currentUserAddress?: string;
+  isCreator?: boolean;
+  onDelete?: (messageId: string) => void;
+  onMute?: (address: string) => void;
+  onReport?: (messageId: string, reason: string) => void;
 }
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({
@@ -32,19 +32,21 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
       <div className="py-2 px-3 text-sm text-slate-400 italic">
         <span>Message deleted</span>
       </div>
-    )
+    );
   }
 
-  const isCurrentUser = message.senderAddress === currentUserAddress
+  const isCurrentUser = message.senderAddress === currentUserAddress;
   const time = new Date(message.timestamp).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  })
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
   return (
     <div
       className={`flex gap-3 py-2 px-3 rounded-lg ${
-        isCurrentUser ? "ml-auto bg-blue-50 dark:bg-blue-900/20 max-w-[80%]" : "mr-auto bg-slate-50 dark:bg-slate-800 max-w-[80%]"
+        isCurrentUser
+          ? 'ml-auto bg-blue-50 dark:bg-blue-900/20 max-w-[80%]'
+          : 'mr-auto bg-slate-50 dark:bg-slate-800 max-w-[80%]'
       }`}
     >
       <div className="flex-1">
@@ -63,7 +65,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {onReport && (
-                    <DropdownMenuItem onClick={() => onReport(message.id, "Inappropriate content")}>
+                    <DropdownMenuItem onClick={() => onReport(message.id, 'Inappropriate content')}>
                       <Flag className="mr-2 h-4 w-4" />
                       Report
                     </DropdownMenuItem>
@@ -89,5 +91,5 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
         </p>
       </div>
     </div>
-  )
-}
+  );
+};

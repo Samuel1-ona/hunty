@@ -1,29 +1,29 @@
-"use client"
+'use client';
 
-import { Clock, Users } from "lucide-react"
-import React from "react"
+import { Clock, Users } from 'lucide-react';
+import React from 'react';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@hunty/ui"
-import type { WaitlistEntry } from "@/lib/types"
-import { getWaitlistForHunt, getWaitlistPosition } from "@/lib/waitlist"
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { WaitlistEntry } from '@/lib/types';
+import { getWaitlistForHunt, getWaitlistPosition } from '@/lib/waitlist';
 
 interface WaitlistDisplayProps {
-  huntId: number
-  currentPlayers: number
-  maxCapacity?: number
-  playerAddress?: string
+  huntId: number;
+  currentPlayers: number;
+  maxCapacity?: number;
+  playerAddress?: string;
 }
 
 export function WaitlistDisplay({
   huntId,
   currentPlayers,
   maxCapacity,
-  playerAddress
+  playerAddress,
 }: WaitlistDisplayProps) {
-  const waitlist = getWaitlistForHunt(huntId)
-  const position = playerAddress ? getWaitlistPosition(huntId, playerAddress) : null
+  const waitlist = getWaitlistForHunt(huntId);
+  const position = playerAddress ? getWaitlistPosition(huntId, playerAddress) : null;
 
-  if (!maxCapacity) return null
+  if (!maxCapacity) return null;
 
   return (
     <div className="space-y-3">
@@ -48,9 +48,7 @@ export function WaitlistDisplay({
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <p className="text-2xl font-bold text-slate-900 dark:text-white">
-              {waitlist.length}
-            </p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-white">{waitlist.length}</p>
           </CardContent>
         </Card>
       </div>
@@ -66,5 +64,5 @@ export function WaitlistDisplay({
         </div>
       )}
     </div>
-  )
+  );
 }

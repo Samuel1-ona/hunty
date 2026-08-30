@@ -3,10 +3,10 @@
  * Handles achievement logic and storage.
  */
 
-import { logger } from "@/lib/logger";
+import { logger } from '@/lib/logger';
 
-import type { AchievementId } from "./config";
-import { ACHIEVEMENTS, PROGRESS_THRESHOLDS } from "./config";
+import type { AchievementId } from './config';
+import { ACHIEVEMENTS } from './config';
 
 export interface EarnedAchievement {
   id: AchievementId;
@@ -16,20 +16,7 @@ export interface EarnedAchievement {
 export interface PlayerAchievements {
   address: string;
   earned: EarnedAchievement[];
-  pinned: AchievementId[];
   lastUpdated: number;
-}
-
-export type AchievementProgressStats = {
-  totalHuntsCompleted: number;
-  totalHuntsWon: number;
-  totalNftsEarned: number;
-};
-
-export interface AchievementProgress {
-  achievementId: AchievementId;
-  current: number;
-  target: number;
 }
 
 /**
@@ -41,7 +28,7 @@ const getStorageKey = (address: string): string => `hunty_achievements_${address
  * Get all earned achievements for a player
  */
 export function getEarnedAchievements(address: string): EarnedAchievement[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === 'undefined') return [];
 
   try {
     const stored = localStorage.getItem(getStorageKey(address));
@@ -49,7 +36,7 @@ export function getEarnedAchievements(address: string): EarnedAchievement[] {
     const data = JSON.parse(stored) as PlayerAchievements;
     return data.earned || [];
   } catch (error) {
-    logger.error("Failed to load achievements:", error);
+    logger.error('Failed to load achievements:', error);
     return [];
   }
 }
@@ -66,7 +53,7 @@ export function hasAchievement(address: string, achievementId: AchievementId): b
  * Award an achievement to a player
  */
 export function awardAchievement(address: string, achievementId: AchievementId): boolean {
-  if (typeof window === "undefined") return false;
+  if (typeof window === 'undefined') return false;
 
   // Check if already earned
   if (hasAchievement(address, achievementId)) {
@@ -84,7 +71,6 @@ export function awardAchievement(address: string, achievementId: AchievementId):
       data = {
         address,
         earned: [],
-        pinned: [],
         lastUpdated: Date.now(),
       };
     }
@@ -98,7 +84,7 @@ export function awardAchievement(address: string, achievementId: AchievementId):
     localStorage.setItem(key, JSON.stringify(data));
     return true;
   } catch (error) {
-    logger.error("Failed to award achievement:", error);
+    logger.error('Failed to award achievement:', error);
     return false;
   }
 }
@@ -120,44 +106,44 @@ export function checkAndAwardAchievements(
   const newAchievements: AchievementId[] = [];
 
   // First hunt completed
-  if (stats.totalHuntsCompleted >= 1 && !hasAchievement(address, "first_hunt_completed")) {
-    if (awardAchievement(address, "first_hunt_completed")) {
-      newAchievements.push("first_hunt_completed");
+  if (stats.totalHuntsCompleted >= 1 && !hasAchievement(address, 'first_hunt_completed')) {
+    if (awardAchievement(address, 'first_hunt_completed')) {
+      newAchievements.push('first_hunt_completed');
     }
   }
 
   // First win
-  if (stats.totalHuntsWon >= 1 && !hasAchievement(address, "first_win")) {
-    if (awardAchievement(address, "first_win")) {
-      newAchievements.push("first_win");
+  if (stats.totalHuntsWon >= 1 && !hasAchievement(address, 'first_win')) {
+    if (awardAchievement(address, 'first_win')) {
+      newAchievements.push('first_win');
     }
   }
 
   // Five wins
-  if (stats.totalHuntsWon >= 5 && !hasAchievement(address, "five_wins")) {
-    if (awardAchievement(address, "five_wins")) {
-      newAchievements.push("five_wins");
+  if (stats.totalHuntsWon >= 5 && !hasAchievement(address, 'five_wins')) {
+    if (awardAchievement(address, 'five_wins')) {
+      newAchievements.push('five_wins');
     }
   }
 
   // Ten wins
-  if (stats.totalHuntsWon >= 10 && !hasAchievement(address, "ten_wins")) {
-    if (awardAchievement(address, "ten_wins")) {
-      newAchievements.push("ten_wins");
+  if (stats.totalHuntsWon >= 10 && !hasAchievement(address, 'ten_wins')) {
+    if (awardAchievement(address, 'ten_wins')) {
+      newAchievements.push('ten_wins');
     }
   }
 
   // Twenty-five wins
-  if (stats.totalHuntsWon >= 25 && !hasAchievement(address, "twenty_five_wins")) {
-    if (awardAchievement(address, "twenty_five_wins")) {
-      newAchievements.push("twenty_five_wins");
+  if (stats.totalHuntsWon >= 25 && !hasAchievement(address, 'twenty_five_wins')) {
+    if (awardAchievement(address, 'twenty_five_wins')) {
+      newAchievements.push('twenty_five_wins');
     }
   }
 
   // First NFT
-  if (stats.totalNftsEarned >= 1 && !hasAchievement(address, "first_nft")) {
-    if (awardAchievement(address, "first_nft")) {
-      newAchievements.push("first_nft");
+  if (stats.totalNftsEarned >= 1 && !hasAchievement(address, 'first_nft')) {
+    if (awardAchievement(address, 'first_nft')) {
+      newAchievements.push('first_nft');
     }
   }
 
@@ -165,24 +151,24 @@ export function checkAndAwardAchievements(
   if (
     stats.fastestCompletionSeconds !== undefined &&
     stats.fastestCompletionSeconds <= 300 &&
-    !hasAchievement(address, "speed_hunter")
+    !hasAchievement(address, 'speed_hunter')
   ) {
-    if (awardAchievement(address, "speed_hunter")) {
-      newAchievements.push("speed_hunter");
+    if (awardAchievement(address, 'speed_hunter')) {
+      newAchievements.push('speed_hunter');
     }
   }
 
   // Veteran (50 hunts completed)
-  if (stats.totalHuntsCompleted >= 50 && !hasAchievement(address, "veteran")) {
-    if (awardAchievement(address, "veteran")) {
-      newAchievements.push("veteran");
+  if (stats.totalHuntsCompleted >= 50 && !hasAchievement(address, 'veteran')) {
+    if (awardAchievement(address, 'veteran')) {
+      newAchievements.push('veteran');
     }
   }
 
   // Legend (100 wins)
-  if (stats.totalHuntsWon >= 100 && !hasAchievement(address, "legend")) {
-    if (awardAchievement(address, "legend")) {
-      newAchievements.push("legend");
+  if (stats.totalHuntsWon >= 100 && !hasAchievement(address, 'legend')) {
+    if (awardAchievement(address, 'legend')) {
+      newAchievements.push('legend');
     }
   }
 
@@ -212,38 +198,14 @@ export function getAllAchievementsWithStatus(address: string) {
 }
 
 /**
- * Returns progress for incomplete, measurable achievements. The caller
- * supplies the existing on-chain profile stats, avoiding duplicate fetches.
- */
-export function getAchievementProgress(
-  address: string,
-  stats: AchievementProgressStats
-): AchievementProgress[] {
-  const earnedIds = new Set(getEarnedAchievements(address).map((achievement) => achievement.id));
-
-  return Object.entries(PROGRESS_THRESHOLDS).flatMap(([id, threshold]) => {
-    const achievementId = id as AchievementId;
-    if (!threshold || earnedIds.has(achievementId)) return [];
-
-    return [
-      {
-        achievementId,
-        current: Math.min(stats[threshold.stat], threshold.target),
-        target: threshold.target,
-      },
-    ];
-  });
-}
-
-/**
  * Clear all achievements for a player (for testing)
  */
 export function clearAchievements(address: string): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
 
   try {
     localStorage.removeItem(getStorageKey(address));
   } catch (error) {
-    logger.error("Failed to clear achievements:", error);
+    logger.error('Failed to clear achievements:', error);
   }
 }

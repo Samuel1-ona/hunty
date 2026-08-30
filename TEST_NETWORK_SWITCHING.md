@@ -48,11 +48,13 @@ Visit: http://localhost:3000
 ### 1. Header Network Indicator
 
 **Test:**
+
 - [ ] Yellow "TESTNET" badge visible in header (right side)
 - [ ] Badge is responsive on mobile
 - [ ] Badge updates when network changes
 
 **Expected Result:**
+
 ```
 [TESTNET] badge with yellow background in header navigation bar
 ```
@@ -60,6 +62,7 @@ Visit: http://localhost:3000
 ### 2. Testnet Warning Banner
 
 **Test:**
+
 - [ ] Yellow banner appears at top of page
 - [ ] Banner shows "You're on Stellar Testnet"
 - [ ] "Dismiss" button works
@@ -67,6 +70,7 @@ Visit: http://localhost:3000
 - [ ] Banner reappears on new session
 
 **Expected Result:**
+
 ```
 ╔════════════════════════════════════════════════════════╗
 ║ ⚠️  You're on Stellar Testnet                          ║
@@ -78,17 +82,20 @@ Visit: http://localhost:3000
 ### 3. Settings Page Access
 
 **Test:**
+
 - [ ] "Settings" link visible in header navigation (desktop)
 - [ ] "Settings" link in wallet dropdown menu
 - [ ] Settings page loads at `/settings`
 
 **Path:**
+
 1. Click "Settings" in header navigation
 2. Should navigate to `/settings`
 
 ### 4. Network Switcher Component
 
 **Test:**
+
 - [ ] Current network clearly indicated
 - [ ] Testnet option shows yellow styling
 - [ ] Mainnet option shows green styling
@@ -96,6 +103,7 @@ Visit: http://localhost:3000
 - [ ] Inactive network is clickable
 
 **Expected UI:**
+
 ```
 ┌─────────────────────────────────────┐
 │ Current Network: Testnet            │
@@ -110,6 +118,7 @@ Visit: http://localhost:3000
 ### 5. Network Switch Confirmation
 
 **Test:**
+
 - [ ] Click "Mainnet" in network switcher
 - [ ] Confirmation modal appears
 - [ ] Modal explains the switch
@@ -117,6 +126,7 @@ Visit: http://localhost:3000
 - [ ] "Switch & Reload" button triggers reload
 
 **Expected Modal:**
+
 ```
 ┌──────────────────────────────────────────┐
 │ ⚠️  Switch to Mainnet?                   │
@@ -133,6 +143,7 @@ Visit: http://localhost:3000
 ### 6. Network Persistence
 
 **Test:**
+
 - [ ] Switch to mainnet
 - [ ] Page reloads automatically
 - [ ] Green "MAINNET" badge now visible
@@ -140,6 +151,7 @@ Visit: http://localhost:3000
 - [ ] Open new tab - network preference persists
 
 **Expected:**
+
 ```
 Testnet → Switch → Reload → Mainnet (persisted)
 ```
@@ -152,27 +164,29 @@ Testnet → Switch → Reload → Mainnet (persisted)
 // Open browser console (F12)
 
 // Test 1: Check current network
-import { getSorobanNetworkType } from "./lib/soroban/client"
-console.log("Current network:", getSorobanNetworkType())
+import { getSorobanNetworkType } from './lib/soroban/client';
+console.log('Current network:', getSorobanNetworkType());
 // Expected: "testnet" or "mainnet"
 
 // Test 2: Check contracts
-import { getContracts } from "./lib/contracts/config"
-console.log("Contracts:", getContracts())
+import { getContracts } from './lib/contracts/config';
+console.log('Contracts:', getContracts());
 // Expected: Object with HUNTY_CORE, REWARD_MANAGER, NFT_REWARD
 
 // Test 3: Verify network-specific addresses
-console.log("Core address:", getContracts().HUNTY_CORE)
+console.log('Core address:', getContracts().HUNTY_CORE);
 // Should match TESTNET or MAINNET env var based on active network
 ```
 
 ### 8. Wallet Connection (with Freighter)
 
 **Prerequisites:**
+
 - Install Freighter wallet extension
 - Set Freighter to testnet
 
 **Test:**
+
 - [ ] Connect Freighter wallet
 - [ ] No network mismatch warning (both on testnet)
 - [ ] Switch Freighter to mainnet
@@ -180,6 +194,7 @@ console.log("Core address:", getContracts().HUNTY_CORE)
 - [ ] "Go to Settings" link works
 
 **Expected Mismatch Warning:**
+
 ```
 ┌──────────────────────────────────────────┐
 │ ⚠️  Network Mismatch Detected            │
@@ -195,6 +210,7 @@ console.log("Core address:", getContracts().HUNTY_CORE)
 ### 9. Cross-Tab Synchronization
 
 **Test:**
+
 - [ ] Open app in Tab 1
 - [ ] Open app in Tab 2
 - [ ] Switch network in Tab 1
@@ -205,6 +221,7 @@ console.log("Core address:", getContracts().HUNTY_CORE)
 ### 10. Mobile Responsiveness
 
 **Test on Mobile/Narrow Window:**
+
 - [ ] Network badge visible and readable
 - [ ] Settings accessible from menu
 - [ ] Network switcher buttons properly sized
@@ -218,32 +235,33 @@ console.log("Core address:", getContracts().HUNTY_CORE)
 Create `lib/soroban/client.test.ts`:
 
 ```typescript
-import { getSorobanNetworkType, setSorobanNetworkType } from "./client"
+import { getSorobanNetworkType, setSorobanNetworkType } from './client';
 
-describe("Network Switching", () => {
+describe('Network Switching', () => {
   beforeEach(() => {
-    localStorage.clear()
-  })
+    localStorage.clear();
+  });
 
-  it("should default to testnet", () => {
-    expect(getSorobanNetworkType()).toBe("testnet")
-  })
+  it('should default to testnet', () => {
+    expect(getSorobanNetworkType()).toBe('testnet');
+  });
 
-  it("should persist network preference", () => {
-    setSorobanNetworkType("mainnet")
-    expect(localStorage.getItem("stellar_network_preference")).toBe("mainnet")
-    expect(getSorobanNetworkType()).toBe("mainnet")
-  })
+  it('should persist network preference', () => {
+    setSorobanNetworkType('mainnet');
+    expect(localStorage.getItem('stellar_network_preference')).toBe('mainnet');
+    expect(getSorobanNetworkType()).toBe('mainnet');
+  });
 
-  it("should switch back to testnet", () => {
-    setSorobanNetworkType("mainnet")
-    setSorobanNetworkType("testnet")
-    expect(getSorobanNetworkType()).toBe("testnet")
-  })
-})
+  it('should switch back to testnet', () => {
+    setSorobanNetworkType('mainnet');
+    setSorobanNetworkType('testnet');
+    expect(getSorobanNetworkType()).toBe('testnet');
+  });
+});
 ```
 
 Run tests:
+
 ```bash
 pnpm test
 ```
@@ -253,34 +271,35 @@ pnpm test
 Create `e2e/network-switching.spec.ts`:
 
 ```typescript
-import { test, expect } from "@playwright/test"
+import { test, expect } from '@playwright/test';
 
-test.describe("Network Switching", () => {
-  test("should show testnet indicator by default", async ({ page }) => {
-    await page.goto("/")
-    await expect(page.locator('[data-testid="network-indicator"]')).toContainText("TESTNET")
-  })
+test.describe('Network Switching', () => {
+  test('should show testnet indicator by default', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('[data-testid="network-indicator"]')).toContainText('TESTNET');
+  });
 
-  test("should allow switching networks", async ({ page }) => {
-    await page.goto("/settings")
-    
+  test('should allow switching networks', async ({ page }) => {
+    await page.goto('/settings');
+
     // Click mainnet option
-    await page.click('text=Mainnet')
-    
+    await page.click('text=Mainnet');
+
     // Confirm modal should appear
-    await expect(page.locator('text=Switch to Mainnet?')).toBeVisible()
-    
+    await expect(page.locator('text=Switch to Mainnet?')).toBeVisible();
+
     // Click confirm
-    await page.click('text=Switch & Reload')
-    
+    await page.click('text=Switch & Reload');
+
     // Page should reload and show mainnet
-    await page.waitForLoadState("networkidle")
-    await expect(page.locator('[data-testid="network-indicator"]')).toContainText("MAINNET")
-  })
-})
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('[data-testid="network-indicator"]')).toContainText('MAINNET');
+  });
+});
 ```
 
 Run E2E tests:
+
 ```bash
 pnpm e2e
 ```
@@ -291,26 +310,26 @@ Open browser console and test these commands:
 
 ```javascript
 // 1. Check current network
-localStorage.getItem("stellar_network_preference")
+localStorage.getItem('stellar_network_preference');
 
 // 2. Manually switch to mainnet
-localStorage.setItem("stellar_network_preference", "mainnet")
-location.reload()
+localStorage.setItem('stellar_network_preference', 'mainnet');
+location.reload();
 
 // 3. Switch back to testnet
-localStorage.setItem("stellar_network_preference", "testnet")
-location.reload()
+localStorage.setItem('stellar_network_preference', 'testnet');
+location.reload();
 
 // 4. Clear preference (use env var default)
-localStorage.removeItem("stellar_network_preference")
-location.reload()
+localStorage.removeItem('stellar_network_preference');
+location.reload();
 
 // 5. Check contract addresses (in console after page load)
 // This requires importing in the browser - better to add a debug function
 window.__DEBUG_NETWORK__ = () => {
-  console.log("Network:", getSorobanNetworkType())
-  console.log("Contracts:", getContracts())
-}
+  console.log('Network:', getSorobanNetworkType());
+  console.log('Contracts:', getContracts());
+};
 ```
 
 ## Common Issues & Solutions
@@ -318,11 +337,13 @@ window.__DEBUG_NETWORK__ = () => {
 ### Issue: Network badge not showing
 
 **Check:**
+
 1. Is component imported in Header?
 2. Is the component client-side? (has "use client")
 3. Check browser console for errors
 
 **Solution:**
+
 ```typescript
 // In Header.tsx, verify import:
 import { NetworkIndicator } from "./NetworkIndicator"
@@ -334,11 +355,13 @@ import { NetworkIndicator } from "./NetworkIndicator"
 ### Issue: Settings page 404
 
 **Check:**
+
 - File exists at `app/settings/page.tsx`
 - No routing conflicts
 - Development server restarted
 
 **Solution:**
+
 ```bash
 # Restart dev server
 pnpm dev
@@ -347,25 +370,29 @@ pnpm dev
 ### Issue: Network not persisting
 
 **Check:**
+
 - localStorage enabled in browser
 - Not in incognito mode (unless localStorage allowed)
 - Check browser privacy settings
 
 **Solution:**
+
 ```javascript
 // Test localStorage
-localStorage.setItem("test", "123")
-console.log(localStorage.getItem("test")) // Should print "123"
+localStorage.setItem('test', '123');
+console.log(localStorage.getItem('test')); // Should print "123"
 ```
 
 ### Issue: Contract addresses not loading
 
 **Check:**
+
 1. Environment variables set correctly
 2. .env.local file in project root
 3. Dev server restarted after env changes
 
 **Solution:**
+
 ```bash
 # Verify env vars
 echo $NEXT_PUBLIC_HUNTY_CORE_ADDRESS_TESTNET
@@ -389,11 +416,11 @@ Expected impact: +15-20KB (network switching components)
 
 ```javascript
 // In browser console
-performance.mark("network-check-start")
-const network = getSorobanNetworkType()
-performance.mark("network-check-end")
-performance.measure("network-check", "network-check-start", "network-check-end")
-console.log(performance.getEntriesByName("network-check"))
+performance.mark('network-check-start');
+const network = getSorobanNetworkType();
+performance.mark('network-check-end');
+performance.measure('network-check', 'network-check-start', 'network-check-end');
+console.log(performance.getEntriesByName('network-check'));
 ```
 
 Expected: <1ms for network check
@@ -401,6 +428,7 @@ Expected: <1ms for network check
 ## Accessibility Testing
 
 ### Keyboard Navigation
+
 - [ ] Tab to network badge
 - [ ] Tab to settings link
 - [ ] Tab through network switcher
@@ -408,12 +436,14 @@ Expected: <1ms for network check
 - [ ] Esc to close modal
 
 ### Screen Reader Testing
+
 - [ ] Network badge announces current network
 - [ ] Testnet warning is announced
 - [ ] Modal has proper ARIA labels
 - [ ] Focus management in modal
 
 ### Color Contrast
+
 - [ ] Yellow badge text readable
 - [ ] Green badge text readable
 - [ ] Warning text has sufficient contrast
@@ -437,11 +467,13 @@ Before marking complete:
 ## Next Steps After Testing
 
 1. **If tests pass:**
+
    - Deploy to production
    - Monitor analytics
    - Collect user feedback
 
 2. **If tests fail:**
+
    - Document issues
    - Create bug tickets
    - Fix and retest
