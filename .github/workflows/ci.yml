@@ -29,6 +29,28 @@ jobs:
       - name: Lint and typecheck
         run: pnpm turbo run lint typecheck --filter=${{ matrix.workspace }}
 
+  # ─── Root typecheck verification ─────────────────────────────────────
+  typecheck:
+    name: Root Typecheck (all packages)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set packageManager from .tool-versions
+        run: |
+          PNPM_VERSION=$(grep '^pnpm ' .tool-versions | awk '{print $2}')
+          npm pkg set packageManager="pnpm@$PNPM_VERSION"
+
+      - name: Setup Node.js with pnpm
+        uses: ./.github/actions/setup-node-pnpm
+
+      - name: Run root typecheck and assert all packages
+        run: |
+          pnpm typecheck 2>&1 | tee /tmp/typecheck.log
+          # Assert that all 5 packages executed the typecheck task
+          grep -E "Tasks: +5 successful" /tmp/typecheck.log
+
   # ─── Workspace tests ──────────────────────────────────────────────────
   test:
     name: Tests — ${{ matrix.workspace }}
