@@ -23,6 +23,25 @@ All API endpoints are subject to rate limiting.
   - `X-RateLimit-Reset`: Unix timestamp when the limit resets.
   - `Retry-After`: Seconds to wait before retrying.
 
+## Request Body Size Limits
+
+All POST, PUT, and PATCH endpoints that accept JSON bodies enforce a maximum payload size limit.
+
+- **Default Limit**: 1 MB (1,048,576 bytes).
+- **Enforcement**: Enforced automatically on all validated endpoints via `withValidation`. Payloads exceeding the limit (evaluated via `Content-Length` or while streaming chunks) are rejected early.
+- **Error Response (`413 Payload Too Large`)**:
+
+```json
+{
+  "error": "Request body exceeds maximum allowed size of 1048576 bytes",
+  "code": "PAYLOAD_TOO_LARGE",
+  "details": {
+    "maxBodySize": 1048576,
+    "receivedSize": 1500000
+  }
+}
+```
+
 ---
 
 ## Endpoints

@@ -121,6 +121,13 @@ export const RATE_LIMITS = {
   ADMIN_IP_LIMIT: 20,
 } as const
 
+// ─── API Body Size Limits ───────────────────────────────────────────────────
+
+export const BODY_SIZE_LIMITS = {
+  /** Default maximum request body size in bytes (1MB). */
+  DEFAULT_MAX_BODY_SIZE_BYTES: 1024 * 1024, // 1,048,576 bytes
+} as const
+
 // ─── Feature Flags ──────────────────────────────────────────────────────────
 
 /**
