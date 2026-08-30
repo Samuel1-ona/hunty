@@ -4,6 +4,7 @@ export type ApiErrorCode =
   | "FORBIDDEN"
   | "NOT_FOUND"
   | "CONFLICT"
+  | "PAYLOAD_TOO_LARGE"
   | "RATE_LIMITED"
   | "BAD_GATEWAY"
   | "SERVICE_UNAVAILABLE"
@@ -60,6 +61,13 @@ export class NotFoundError extends AppError {
 export class ConflictError extends AppError {
   constructor(message = "Conflict", details?: Record<string, unknown>) {
     super(message, 409, "CONFLICT", details)
+  }
+}
+
+/** 413 - the request body exceeds the maximum allowed size. */
+export class PayloadTooLargeError extends AppError {
+  constructor(message = "Payload too large", details?: Record<string, unknown>) {
+    super(message, 413, "PAYLOAD_TOO_LARGE", details)
   }
 }
 
