@@ -16,6 +16,7 @@
     "test:coverage": "vitest --run --coverage",
     "e2e": "playwright test",
     "smoke": "playwright test --config=playwright.smoke.config.ts",
+    "security:test": "playwright test --config=playwright.security.config.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "perf:budget": "node scripts/check-performance-budgets.mjs",

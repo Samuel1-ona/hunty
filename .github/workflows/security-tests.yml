@@ -13,31 +13,47 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "pnpm"
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @hunty/web exec playwright install --with-deps chromium
+
+      - name: Dependency vulnerability scan
+        # --audit-level=moderate exits non-zero for moderate+ vulnerabilities.
+        # No || true: a real vulnerability should fail the job.
+        run: pnpm audit --audit-level=moderate
 
       - name: Build Next.js app
-        run: npm run build
+        run: pnpm --filter @hunty/web build
 
       - name: Start Next.js app in background
         run: |
-          npm start &
-          npx wait-on http://localhost:3000 --timeout 30000
-
-      - name: Dependency vulnerability scan
-        run: npm audit --audit-level=moderate || true
+          pnpm --filter @hunty/web start &
+          npx wait-on http://localhost:3000 --timeout 60000
 
       - name: Run Playwright security tests
-        run: npm run security:test || true
+        # No || true: test failures must fail the job.
+        run: pnpm security:test
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
 
       - name: OWASP ZAP baseline scan
         uses: zaproxy/action-baseline@v0.8.0
         with:
           target: "http://localhost:3000"
-        continue-on-error: true # prevents workflow failure if ZAP fails
-        # NOTE: The ZAP baseline expects a running server; we started it above.
+        # ZAP is a best-effort supplementary scan. It may report informational
+        # findings that are not actionable failures. Keep continue-on-error
+        # ONLY for this step; all other failures above are fatal.
+        continue-on-error: true
