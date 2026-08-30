@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { getSeasonById } from "@/lib/seasonStore";
-import { getBattlePassTiers, getPlayerProgress, claimTierReward } from "@/lib/battlePassStore";
-import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
+import { z } from "zod";
+
 import { NotFoundError, ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
 import { withValidation } from "@/lib/api/withValidation";
-import { z from "zod";
+import { claimTierReward, getBattlePassTiers, getPlayerProgress } from "@/lib/battlePassStore";
+import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { getSeasonById } from "@/lib/seasonStore";
 
 type Context = { params: Promise<{ id: string }> };
 
