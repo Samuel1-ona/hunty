@@ -24,7 +24,7 @@ import { toast } from "sonner";
 import { NetworkIndicator } from "./NetworkIndicator";
 
 import { NotificationPanel } from "@/components/NotificationPanel";
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 import { useIsMounted } from "@/hooks/useIsMounted";
 import { useWallet } from "@/lib/context/WalletContext";
 import { OPEN_WALLET_EVENT } from "@/lib/firstHuntGuide";

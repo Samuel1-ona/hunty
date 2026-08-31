@@ -3,7 +3,7 @@
 import { AlertCircle, CheckCircle2, Loader2,Send } from "lucide-react"
 import React, { useState } from "react"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import {
   Dialog,
   DialogContent,

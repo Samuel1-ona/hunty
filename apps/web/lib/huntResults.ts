@@ -29,6 +29,48 @@ export interface HuntResultsSummary {
   rewardDistribution: Reward[];
 }
 
+/**
+ * Per-player result summary for a single completed hunt, used to render the
+ * shareable result-card OG image on completion.
+ */
+export interface HuntPlayerResult {
+  /** 1-based rank position among ranked finishers, or null when absent. */
+  rank: number | null;
+  /** Completion time in seconds, derived from completedAt - startedAt, or null. */
+  completionTimeSeconds: number | null;
+}
+
+/**
+ * Derives a single player's rank and completion time from the hunt's progress
+ * entries. Ranking mirrors `buildHuntResultsSummary` (points descending) so the
+ * result card always agrees with the results page leaderboard.
+ */
+export function getPlayerHuntResult(
+  entries: StoredProgressEntry[],
+  wallet: string,
+): HuntPlayerResult {
+  const normalized = wallet.trim().toLowerCase();
+  const progress = entries.find((entry) => entry.wallet.toLowerCase() === normalized);
+
+  const ranked = [...entries]
+    .filter((entry) => entry.totalPoints > 0 || entry.completed)
+    .sort((a, b) => b.totalPoints - a.totalPoints);
+
+  const rankIndex = ranked.findIndex(
+    (entry) => entry.wallet.toLowerCase() === normalized,
+  );
+
+  const completionTimeSeconds =
+    progress && progress.completedAt && progress.startedAt
+      ? Math.max(0, Math.round((progress.completedAt - progress.startedAt) / 1000))
+      : null;
+
+  return {
+    rank: rankIndex === -1 ? null : rankIndex + 1,
+    completionTimeSeconds,
+  };
+}
+
 export function buildHuntResultsSummary(
   hunt: Pick<StoredHunt, "playerCount" | "rewardDistribution">,
   entries: StoredProgressEntry[]

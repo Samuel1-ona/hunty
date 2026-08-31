@@ -7,7 +7,7 @@ import { useEffect, useState } from "react"
 import { Header } from "@/components/Header"
 import { LeaderboardExport } from "@/components/LeaderboardExport"
 import { LeaderboardTable } from "@/components/LeaderBoardTable"
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import { getHuntById } from "@/lib/huntStore"
 import type { StoredHunt } from "@/lib/types"
 

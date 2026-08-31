@@ -187,7 +187,7 @@ function LeaderboardTableComponent({
           icon={<Trophy className="w-10 h-10 text-slate-500 dark:text-slate-400" />}
           title="No results for these filters"
           description="Try adjusting the time period, category, or difficulty to see more players."
-          action={{ label: "Clear filters", href: "/leaderboard" }}
+          action={{ label: "Clear filters", onPress: () => window.location.href = "/leaderboard" }}
         />
       </div>
     );

@@ -6,8 +6,8 @@ import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import { Header } from "@/components/Header"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { Button } from "@hunty/ui"
+import { Card } from "@hunty/ui"
 
 interface FlaggedUser {
   wallet: string

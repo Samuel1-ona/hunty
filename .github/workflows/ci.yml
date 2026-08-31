@@ -29,6 +29,22 @@ jobs:
       - name: Lint and typecheck
         run: pnpm turbo run lint typecheck --filter=${{ matrix.workspace }}
 
+  # ─── Merge-conflict damage check ───────────────────────────────────────
+  merge-damage-check:
+    name: Merge Conflict Damage Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js with pnpm
+        uses: ./.github/actions/setup-node-pnpm
+
+      - name: Parse every TypeScript file with esbuild
+        run: |
+          find . -type f \( -name '*.ts' -o -name '*.tsx' \) ! -path '*/node_modules/*' -print0 | \
+            xargs -0 -r npx --yes esbuild --outdir=/tmp/esbuild-parse-check --log-level=error
+
   # ─── Workspace tests ──────────────────────────────────────────────────
   test:
     name: Tests — ${{ matrix.workspace }}
@@ -181,7 +197,7 @@ jobs:
   ci-summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [quality, test, coverage, mutation, build, e2e, visual-regression]
+    needs: [quality, test, coverage, mutation, build, e2e, visual-regression, merge-damage-check]
     if: always()
     steps:
       - name: Check CI status
@@ -192,7 +208,8 @@ jobs:
              [ "${{ needs.mutation.result }}" = "failure" ] || \
              [ "${{ needs.build.result }}" = "failure" ] || \
              [ "${{ needs.e2e.result }}" = "failure" ] || \
-             [ "${{ needs.visual-regression.result }}" = "failure" ]; then
+             [ "${{ needs.visual-regression.result }}" = "failure" ] || \
+             [ "${{ needs.merge-damage-check.result }}" = "failure" ]; then
             echo "❌ CI Pipeline Failed"
             exit 1
           fi

@@ -620,6 +620,19 @@ export async function registerPlayer(
       if (typeof window !== "undefined") {
         localStorage.setItem(`hunt_registered_${huntId}_${playerAddress}`, "true")
         consumePendingReferral(playerAddress)
+
+        const creatorAddress = getHuntById(huntId)?.creator ?? getHuntById(huntId)?.ownerAddress
+        if (creatorAddress) {
+          await fetch("/api/v1/webhooks/events", {
+            method: "POST",
+            headers: { "content-type": "application/json", "x-wallet-address": playerAddress },
+            body: JSON.stringify({
+              type: "hunt.joined",
+              creatorAddress,
+              data: { huntId, playerAddress, transactionHash: res.hash },
+            }),
+          }).catch(() => undefined)
+        }
       }
       
       // Clear cache after successful registration

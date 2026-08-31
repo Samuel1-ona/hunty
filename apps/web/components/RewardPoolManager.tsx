@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { depositToPool, getHuntById, getHuntPool, isPoolLow,setDistributionPlan, withdrawUnclaimedRewards } from "@/lib/huntStore"

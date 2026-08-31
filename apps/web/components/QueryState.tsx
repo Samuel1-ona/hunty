@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
 import type { UseQueryResult } from "@tanstack/react-query";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 
 interface StateAction {
   label: string;

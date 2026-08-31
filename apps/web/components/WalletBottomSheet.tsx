@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useEffect,useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 import { cn } from "@/lib/utils";
 import type { WalletProvider } from "@/lib/walletAdapter";
 

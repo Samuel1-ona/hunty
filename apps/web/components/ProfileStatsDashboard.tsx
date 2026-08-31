@@ -3,7 +3,7 @@
 import { Award, Layers, Medal, Sparkles, Star, Target, Trophy } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@hunty/ui";
 import type { PlayerProfileStats } from "@/lib/playerProfileStats";
 
 interface ProfileStatsDashboardProps {

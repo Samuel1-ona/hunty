@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { Header } from "@/components/Header"
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import { HuntTemplatesGallery } from "@/components/HuntTemplatesGallery"
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hunty.app"

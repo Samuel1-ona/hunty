@@ -10,8 +10,6 @@ import {
 } from '../../services/notifications/badgeService';
 import * as Notifications from 'expo-notifications';
 
-import { getBadgeCount, incrementBadge, resetBadge } from '../../services/notifications/badgeService';
-
 jest.mock('expo-notifications');
 jest.mock('@react-native-async-storage/async-storage');
 

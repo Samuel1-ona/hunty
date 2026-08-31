@@ -209,6 +209,7 @@ See [turbo.json](./turbo.json) for the full task pipeline configuration.
 - This project is managed with **pnpm workspaces** and **Turborepo**; the lockfile is `pnpm-lock.yaml`.
 - On-chain reward flows require wallet integrations and a local or testnet Stellar environment.
 - The `@hunty/types` and `@hunty/ui` packages use `workspace:*` protocol so local changes propagate immediately during development.
+- Duplicate import issues from merge conflicts have been resolved (e.g., CluesList.tsx in commit d65a7807).
 
 ## Roadmap
 

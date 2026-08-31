@@ -1,6 +1,5 @@
-import path from "path";
-
 import react from "@vitejs/plugin-react";
+import path from "path";
 import { defineConfig } from "vitest/config";
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
@@ -52,6 +51,14 @@ export default defineConfig({
     // aliases by prefix, so @hunty/types would otherwise swallow
     // @hunty/types/api-schemas.
     alias: [
+      // @upstash/redis is an optional runtime dependency not installed in the
+      // dev/test environment.  Redirect it to a lightweight stub so Vite's
+      // static import-analysis does not fail when it encounters the dynamic
+      // `await import("@upstash/redis")` inside lib/rate-limit.ts.
+      {
+        find: "@upstash/redis",
+        replacement: path.resolve(__dirname, "./__mocks__/@upstash/redis.ts"),
+      },
       {
         find: "@hunty/types/api-schemas",
         replacement: path.resolve(__dirname, "../../packages/types/src/api-schemas.ts"),
@@ -68,4 +75,3 @@ export default defineConfig({
     ],
   },
 });
-
