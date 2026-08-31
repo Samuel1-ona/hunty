@@ -82,6 +82,8 @@ Not sure where to start? That's totally fine! Here are some ways to find the per
 
 Head over to [GitHub Issues](https://github.com/Samuel1-ona/Hunty-contract/issues) and look for labels that match your experience level:
 
+When opening a new issue, use the repository's [bug report template](.github/ISSUE_TEMPLATE/bug_report.md) for reproducible problems or [feature request template](.github/ISSUE_TEMPLATE/feature_request.md) for proposed improvements. Complete every relevant section so maintainers have enough context to respond.
+
 - **good first issue** 🟢 - Perfect if you're new! These are designed to be approachable and help you learn the codebase
 - **enhancement** 🟡 - Adding new features or improving existing ones
 - **bug** 🔴 - Something's broken and needs fixing
@@ -111,6 +113,8 @@ git checkout -b fix/your-bug-fix
 ```
 
 **Pro tip:** Make your branch name descriptive. `feature/add-multi-answer-support` is way better than `feature/stuff`!
+
+Use `feature/<short-description>` for new capabilities and `fix/<short-description>` for bug fixes. Keep the description lowercase and hyphen-separated, and limit each branch to one focused change.
 
 ### 2. Make Your Changes
 
@@ -169,6 +173,10 @@ You can also create the PR from the GitHub UI after pushing. In your PR descript
 - Why you changed it
 - How to test it
 - Any questions or concerns you have
+
+GitHub will prefill the repository's [pull request template](.github/pull_request_template.md). Complete its checklist to confirm that typechecking, linting, and the relevant tests were run before requesting review.
+
+Use a concise, action-oriented PR title. In the description, explain why the change is needed, summarize the main changes, link the related issue, provide verification steps, and include screenshots for visual changes.
 
 ## Maintainer automation scripts
 
