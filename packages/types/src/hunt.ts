@@ -64,8 +64,10 @@ export interface StoredHunt {
   /** Unix timestamp in seconds — when the hunt ends. */
   endTime?: number;
   /**
-   * How long (in seconds) after `endTime` the creator can reclaim unclaimed
-   * rewards. Defaults to 0 (immediately after the hunt ends) when omitted.
+   * Grace period in seconds after `endTime` during which unclaimed rewards
+   * remain escrowed. Once this window expires the creator may call the
+   * refund endpoint to reclaim the remaining escrow balance.
+   * Defaults to 604800 (7 days) when not explicitly set.
    * Must be a non-negative integer.
    */
   gracePeriodSeconds?: number;
@@ -80,17 +82,15 @@ export interface StoredHunt {
   /** Active editorial banner showcase at the top of the Arcade. */
   isFeaturedOfWeek?: boolean;
   /**
-   * Grace period in seconds after `endTime` during which unclaimed rewards
-   * remain escrowed. Once this window expires the creator may call the
-   * refund endpoint to reclaim the remaining escrow balance.
-   * Defaults to 604800 (7 days) when not explicitly set.
-   */
-  gracePeriodSeconds?: number;
-  /**
    * Sponsors that have contributed to this hunt's reward pool.
    * Each entry is the sponsor's Stellar wallet address.
    */
   sponsors?: string[];
+  /**
+   * When true, players can use AR mode to reveal clues in camera view.
+   * This is an opt-in feature per hunt.
+   */
+  arEnabled?: boolean;
 }
 
 /** Lightweight hunt projection used by list/detail views. */
