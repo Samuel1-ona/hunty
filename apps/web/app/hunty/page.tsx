@@ -1223,3 +1223,7 @@ export default function CreateGame() {
   );
 }
  
+
+"use client";
+
+export { default } from "./create-game-content";

@@ -203,7 +203,7 @@ jobs:
   ci-summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [quality, test, coverage, mutation, build, e2e, visual-regression]
+    needs: [quality, test, coverage, mutation, build, e2e, visual-regression, typecheck]
     if: always()
     steps:
       - name: Check CI status
@@ -214,7 +214,8 @@ jobs:
              [ "${{ needs.mutation.result }}" = "failure" ] || \
              [ "${{ needs.build.result }}" = "failure" ] || \
              [ "${{ needs.e2e.result }}" = "failure" ] || \
-             [ "${{ needs.visual-regression.result }}" = "failure" ]; then
+             [ "${{ needs.visual-regression.result }}" = "failure" ] || \
+             [ "${{ needs.typecheck.result }}" = "failure" ]; then
             echo "❌ CI Pipeline Failed"
             exit 1
           fi

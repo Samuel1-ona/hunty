@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { buildHuntResultsSummary, HUNT_RESULTS_LEADERBOARD_LIMIT } from "@/lib/huntResults";
+import {
+  buildHuntResultsSummary,
+  getPlayerHuntResult,
+  HUNT_RESULTS_LEADERBOARD_LIMIT,
+} from "@/lib/huntResults";
 import type { StoredProgressEntry } from "@/lib/progressData";
 
 function makeEntry(overrides: Partial<StoredProgressEntry> = {}): StoredProgressEntry {
@@ -18,6 +22,55 @@ function makeEntry(overrides: Partial<StoredProgressEntry> = {}): StoredProgress
     ...overrides,
   };
 }
+
+describe("getPlayerHuntResult", () => {
+  it("returns the player's rank by points and completion time", () => {
+    const entries = [
+      makeEntry({ wallet: "GABC...WALLET", totalPoints: 20, completed: true, startedAt: 1_000_000, completedAt: 1_006_000 }),
+      makeEntry({ wallet: "GABC...WINNER", totalPoints: 90, completed: true }),
+    ];
+
+    const result = getPlayerHuntResult(entries, "GABC...WALLET");
+
+    expect(result.rank).toBe(2);
+    expect(result.completionTimeSeconds).toBe(6);
+  });
+
+  it("ranks by points descending, matching the results-page leaderboard", () => {
+    const entries = [
+      makeEntry({ wallet: "first", totalPoints: 40, completed: true }),
+      makeEntry({ wallet: "second", totalPoints: 10, completed: true }),
+      makeEntry({ wallet: "third", totalPoints: 5, completed: true }),
+    ];
+
+    expect(getPlayerHuntResult(entries, "second").rank).toBe(2);
+    expect(getPlayerHuntResult(entries, "third").rank).toBe(3);
+  });
+
+  it("matches wallets case-insensitively", () => {
+    const entries = [makeEntry({ wallet: "GABCupper", totalPoints: 10, completed: true })];
+
+    expect(getPlayerHuntResult(entries, "gabcUPPER").rank).toBe(1);
+  });
+
+  it("returns null rank when the wallet is absent from the ranked board", () => {
+    const entries = [makeEntry({ wallet: "someone-else", totalPoints: 10, completed: true })];
+
+    expect(getPlayerHuntResult(entries, "nobody").rank).toBeNull();
+  });
+
+  it("returns null completion time when the player never completed", () => {
+    const entries = [makeEntry({ wallet: "abc", totalPoints: 10, completed: false, completedAt: null })];
+
+    expect(getPlayerHuntResult(entries, "abc").completionTimeSeconds).toBeNull();
+  });
+
+  it("excludes non-scoring, non-finishing players from the rank but still resolves rank as null", () => {
+    const entries = [makeEntry({ wallet: "ghost", totalPoints: 0, completed: false })];
+
+    expect(getPlayerHuntResult(entries, "ghost").rank).toBeNull();
+  });
+});
 
 describe("buildHuntResultsSummary", () => {
   it("ranks entries by points, highest first", () => {

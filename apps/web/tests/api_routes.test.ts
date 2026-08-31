@@ -10,6 +10,7 @@ import { GET as getHuntById } from '@/app/api/v1/hunts/[id]/route';
 import { GET as getLeaderboard } from '@/app/api/v1/hunts/[id]/leaderboard/route';
 import { GET as getPublicLeaderboard } from '@/app/api/v1/hunts/[id]/leaderboard/public/route';
 import { GET as getLeaderboardOgImage } from '@/app/api/og/leaderboard/route';
+import { GET as getResultOgImage } from '@/app/api/og/result/route';
 
 function handlerToExpress(handler: unknown) {
   return async (req: any, res: any) => {
@@ -110,6 +111,13 @@ describe('API Integration Tests', () => {
   it('GET /api/og/leaderboard returns an image response', async () => {
     const app = request(handlerToExpress(getLeaderboardOgImage));
     const response = await app.get('/api/og/leaderboard?huntId=123&wallet=GABC123');
+    expect(response.status).toBe(200);
+    expect(response.headers['content-type']).toContain('image');
+  });
+
+  it('GET /api/og/result returns a result-card image response on completion', async () => {
+    const app = request(handlerToExpress(getResultOgImage));
+    const response = await app.get('/api/og/result?huntId=3&wallet=GABC123&rank=2&time=300');
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('image');
   });

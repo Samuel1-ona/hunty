@@ -189,6 +189,7 @@ const ROUTE_MANIFEST: RouteEntry[] = [
   // ── og ───────────────────────────────────────────────────────────────
   { file: "og/hunt/[id]/route.ts",                  path: "/api/og/hunt/[id]",                  methods: ["GET"],           auth: "public" },
   { file: "og/leaderboard/route.ts",                path: "/api/og/leaderboard",                methods: ["GET"],           auth: "public" },
+  { file: "og/result/route.ts",                     path: "/api/og/result",                     methods: ["GET"],           auth: "public" },
 
   // ── push ─────────────────────────────────────────────────────────────
   // Requires PUSH_API_SECRET or ADMIN_API_SECRET as a bearer token; see

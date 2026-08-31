@@ -1,11 +1,9 @@
 import { ClueMarkdownRenderer } from '@components/ClueMarkdownRenderer';
 import { ThemedCustomText, ThemedView } from '@components/themed';
-import type { Clue, StoredHunt } from '@lib/types';
+import type { Clue, StoredHunt } from '@hunty/types';
 import { useTheme } from '@providers/ThemeProvider';
 import { getHuntById, getHuntClues } from '@store/huntStore';
 import { usePlayerStore } from '@store/useStore';
-import type { Clue, StoredHunt } from '@hunty/types';
-import { ClueMarkdownRenderer } from '@components/ClueMarkdownRenderer';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
