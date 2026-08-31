@@ -1,0 +1,244 @@
+{
+  "common": {
+    "appName": "Hunty",
+    "loading": "Chargement...",
+    "error": "Une erreur s'est produite",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "back": "Retour",
+    "next": "Suivant",
+    "continue": "Continuer",
+    "confirm": "Confirmer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "view": "Voir",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "sort": "Trier",
+    "submit": "Soumettre",
+    "reset": "Réinitialiser",
+    "noResults": "Aucun résultat trouvé",
+    "skipToContent": "Passer au contenu",
+    "yes": "Oui",
+    "no": "Non"
+  },
+  "a11y": {
+    "homeLink": "Accueil de Hunty",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu",
+    "closeSearch": "Fermer la recherche",
+    "search": "Rechercher",
+    "notifications": "Notifications",
+    "unreadCount": "{count} non lue(s)",
+    "copyWalletAddress": "Copier l'adresse du portefeuille",
+    "viewOnExplorer": "Voir le portefeuille sur l'explorateur Stellar",
+    "takeTour": "Lancer la visite",
+    "addToFavorites": "Ajouter aux favoris",
+    "removeFromFavorites": "Retirer des favoris",
+    "submitAnswer": "Soumettre la réponse",
+    "clearSelection": "Effacer la sélection",
+    "copyHuntId": "Copier l'ID de la chasse {id}",
+    "selectHunt": "Sélectionner la chasse {title}",
+    "removeClueRow": "Supprimer la ligne d'indice {row}",
+    "mainNav": "Navigation principale",
+    "searchInput": "Rechercher des chasses, créateurs, récompenses",
+    "trendingHunt": "Chasse tendance",
+    "clueAudio": "Audio de l'indice",
+    "clueVideo": "Vidéo de l'indice"
+  },
+  "header": {
+    "connectWallet": "Connecter le portefeuille",
+    "connectedWallet": "Portefeuille connecté",
+    "copyAddress": "Copier l'adresse",
+    "copied": "Copié !",
+    "disconnectWallet": "Déconnecter le portefeuille",
+    "balance": "Solde"
+  },
+  "home": {
+    "title": "L'Ultime Arcade de Jeux Web3",
+    "metaTitle": "Hunty - Jeu de Chasse au Trésor Décentralisé",
+    "metaDescription": "Créez des chasses au trésor palpitantes avec plusieurs indices et défis. Impliquez les joueurs dans des chasses au trésor immersives et récompensez-les avec des tokens XLM ou des NFTs exclusifs sur la blockchain Stellar.",
+    "createGame": "Créer un Jeu",
+    "myHunts": "Mes Chasses",
+    "leaderboard": "Classement",
+    "playGame": "Jouer",
+    "enterGameLink": "Entrer le Lien du Jeu",
+    "gameLinkPlaceholder": "https://www.galagorch.com/g/***",
+    "howToPlay": "Comment Jouer à Hunty",
+    "hintToUnlock": "Indice Pour Débloquer",
+    "enterCodePlaceholder": "Entrez le code pour débloquer",
+    "globalLeaderboard": "Classement Mondial",
+    "discoveryArcade": "Arcade de Découverte",
+    "discoverySubtitle": "Trouvez le défi parfait pour vous",
+    "olderInactiveHunts": "Anciennes / Chasses Inactives",
+    "loadingArchive": "Chargement de l'archive...",
+    "loadingMoreHunts": "Chargement de plus de chasses...",
+    "endOfArchive": "Vous avez atteint la fin de l'archive des chasses.",
+    "noInactiveHunts": "Aucune chasse inactive pour le moment.",
+    "noActiveHunts": "Aucune chasse active disponible pour le moment.",
+    "noSearchResults": "Aucune chasse ne correspond à votre recherche.",
+    "beFirstToCreate": "Soyez le premier à en créer une !",
+    "searchTitle": "Rechercher par titre..."
+  },
+  "hunt": {
+    "clue": "Indice",
+    "clues": "Indices",
+    "reward": "Récompense",
+    "trending": "Tendance",
+    "play": "Jouer",
+    "watchLive": "Regarder en Direct",
+    "players": "joueurs",
+    "player": "joueur",
+    "status": {
+      "active": "Actif",
+      "completed": "Terminé",
+      "inactive": "Inactif"
+    }
+  },
+  "filters": {
+    "allPrizes": "Tous les Prix",
+    "all": "Tous",
+    "live": "En Direct",
+    "ended": "Terminé",
+    "newestFirst": "Plus Récents",
+    "oldestFirst": "Plus Anciens",
+    "mostClues": "Plus d'Indices",
+    "fewestClues": "Moins d'Indices",
+    "results": "{count} résultat",
+    "resultsPlural": "{count} résultats",
+    "loadedOf": "{visible} sur {total} chargés"
+  },
+  "wallet": {
+    "connectTitle": "Connecter un portefeuille",
+    "noWalletOptions": "Aucune option de portefeuille disponible.",
+    "walletAddress": "Adresse du portefeuille",
+    "displayName": "Définir un Nom d'Affichage (optionnel)",
+    "displayNamePlaceholder": "NomAffichage"
+  },
+  "navigation": {
+    "home": "Accueil",
+    "dashboard": "Tableau de Bord",
+    "profile": "Profil",
+    "settings": "Paramètres",
+    "help": "Aide",
+    "admin": "Admin"
+  },
+  "dashboard": {
+    "title": "Tableau de Bord",
+    "myHunts": "Mes Chasses",
+    "createNew": "Créer une Nouvelle Chasse",
+    "noHunts": "Vous n'avez pas encore créé de chasses."
+  },
+  "profile": {
+    "title": "Profil",
+    "editProfile": "Modifier le Profil",
+    "username": "Nom d'utilisateur",
+    "email": "E-mail",
+    "walletAddress": "Adresse du Portefeuille",
+    "joinedDate": "Inscrit le",
+    "huntsCreated": "Chasses Créées",
+    "huntsCompleted": "Chasses Terminées"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "language": "Langue",
+    "selectLanguage": "Sélectionner la Langue",
+    "theme": "Thème",
+    "darkMode": "Mode Sombre",
+    "lightMode": "Mode Clair",
+    "systemDefault": "Par Défaut du Système",
+    "notifications": "Notifications",
+    "account": "Compte",
+    "privacy": "Confidentialité",
+    "security": "Sécurité"
+  },
+  "footer": {
+    "rights": "Tous droits réservés.",
+    "privacyPolicy": "Politique de Confidentialité",
+    "termsOfService": "Conditions d'Utilisation",
+    "contact": "Contact",
+    "stayInHunt": "Restez dans la chasse",
+    "getUpdates": "Recevez des mises à jour sur les produits, de nouvelles chasses et des conseils de créateurs.",
+    "subscribe": "S'abonner",
+    "thanksForSubscribing": "Merci de vous être abonné.",
+    "description": "Créez, découvrez et complétez des chasses au trésor Web3 propulsées par les récompenses Stellar.",
+    "builtOnStellar": "Construit sur Stellar",
+    "helpAndTroubleshooting": "Aide et Dépannage"
+  },
+  "errors": {
+    "notFound": "Page non trouvée",
+    "serverError": "Erreur du serveur",
+    "unauthorized": "Non autorisé",
+    "networkError": "Erreur réseau. Veuillez réessayer."
+  },
+  "language": {
+    "en": "Anglais",
+    "es": "Espagnol",
+    "fr": "Français"
+  },
+  "firstHuntGuide": {
+    "badge": "Guide nouveau joueur",
+    "title": "Terminez votre première chasse",
+    "titleDone": "Première chasse terminée",
+    "progress": "{completed} sur {total} étapes terminées",
+    "doneDescription": "Vous vous êtes connecté, inscrit, avez résolu et réclamé.",
+    "launcher": "Première chasse",
+    "dismiss": "Fermer le guide de première chasse",
+    "minimize": "Réduire le guide de première chasse",
+    "open": "Ouvrir le guide de première chasse",
+    "connectAction": "Connecter",
+    "joinAction": "Rejoindre",
+    "solveAction": "Résoudre",
+    "claimAction": "Réclamer",
+    "steps": {
+      "connect": {
+        "title": "Connecter le portefeuille",
+        "description": "Liez un portefeuille Stellar pour rejoindre des chasses et recevoir des récompenses."
+      },
+      "join": {
+        "title": "Rejoindre une chasse",
+        "description": "Inscrivez-vous à une chasse active depuis l'arcade."
+      },
+      "solve": {
+        "title": "Résoudre un indice",
+        "description": "Débloquez votre premier indice et commencez à marquer des points."
+      },
+      "claim": {
+        "title": "Réclamer votre récompense",
+        "description": "Récupérez des XLM ou un NFT après avoir terminé la chasse."
+      }
+    }
+  },
+  "playGame": {
+    "lockedClue": "Verrouillé jusqu'à ce que l'indice précédent soit résolu.",
+    "timeExpired": "Temps écoulé — progression soumise automatiquement",
+    "retry": "Réessayer",
+    "goBack": "Retour",
+    "noClues": "Aucun indice disponible pour cette chasse pour le moment.",
+    "huntEnded": "Chasse terminée",
+    "finalScore": "Score final",
+    "goHome": "Accueil",
+    "editGame": "Modifier le jeu",
+    "onlyYouSeeThis": "(Seul vous pouvez voir ceci)",
+    "play": "Jouer",
+    "reset": "Réinitialiser",
+    "shareLink": "Partager le lien",
+    "moreCards": "cartes supplémentaires"
+  },
+  "dateTime": {
+    "d": "j",
+    "h": "h",
+    "m": "m",
+    "s": "s",
+    "daysLong": "jours",
+    "hoursLong": "heures",
+    "minutesLong": "minutes",
+    "secondsLong": "secondes"
+  },
+  "scheduling": {
+    "startMustBeFuture": "L'heure de début doit être dans le futur.",
+    "endMustBeAfterStart": "L'heure de fin doit être postérieure à l'heure de début.",
+    "endMustBeAfterNow": "L'heure de fin doit être postérieure à l'heure actuelle."
+  }
+}

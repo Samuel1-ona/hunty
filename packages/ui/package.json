@@ -1,0 +1,53 @@
+{
+  "name": "@hunty/ui",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared UI component library for the Hunty monorepo (web + native)",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./web": "./src/web/index.ts",
+    "./native": "./src/native/index.ts",
+    "./tokens": "./src/tokens/index.ts",
+    "./hooks": "./src/hooks/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "test": "vitest --run"
+  },
+  "dependencies": {
+    "@hunty/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@hunty/config": "workspace:*",
+    "@react-native-async-storage/async-storage": "^2.0.0",
+    "@types/react-native": "^0.73.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-native": "^0.73.0",
+    "tailwind-merge": "^3.3.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "typescript": "^5",
+    "vitest": "^4.0.18"
+  },
+  "peerDependencies": {
+    "@react-native-async-storage/async-storage": ">=1.0.0",
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "react-native": ">=0.72.0"
+  },
+  "peerDependenciesMeta": {
+    "@react-native-async-storage/async-storage": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "react-native": {
+      "optional": true
+    }
+  }
+}

@@ -1,7 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -11,18 +11,29 @@
 !.yarn/versions
 
 # testing
-/coverage
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Visual regression baselines (tracked)
+!/e2e/screenshots/
 
 # next.js
-/.next/
-/out/
+.next/
+out/
+*.compiled.js
+
+# turborepo
+.turbo/
+
+# mutation testing artifacts
+mutation-report/
+.stryker-tmp/
 
 # production
-/build
+build/
 
 # misc
 .DS_Store
@@ -36,10 +47,19 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+.env.local
+!.env.example
 
 # vercel
 .vercel
 
+# data dumps
+/issues.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# build logs
+*_log.txt
+build_log*

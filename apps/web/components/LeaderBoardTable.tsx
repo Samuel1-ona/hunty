@@ -1,0 +1,277 @@
+"use client";
+
+import { Trophy } from "lucide-react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+
+import { EmptyState } from "@/components/QueryState";
+import Medal from "@/components/icons/Medal";
+import { LeaderboardTableSkeleton } from "@/components/LoadingSkeletons";
+import { SeasonInfo } from "@/components/SeasonInfo";
+import { useWalletStore } from "@/store/useStore";
+import { WalletAddress } from "@/components/WalletAddress";
+import { WalletIdenticon } from "@/components/WalletIdenticon";
+import { truncateAddress } from "@/lib/walletAddress";
+import { detectRankChanges } from "@/lib/notifications/rankTracker";
+import { get_hunt_leaderboard } from "@/lib/contracts/hunt";
+import { logger } from "@/lib/logger";
+import { handleRankNotifications } from "@/lib/notifications/notificationService";
+import { getActiveSeason } from "@/lib/seasonStore";
+import type { LeaderboardDisplayEntry, LeaderboardFilters } from "@/lib/types";
+import type { LeaderboardEntry } from "@/lib/types";
+import { cn } from "@/lib/utils";
+
+const DEFAULT_FILTERS: LeaderboardFilters = {
+  timePeriod: "all",
+  category: "all",
+  difficulty: "all",
+  metric: "points",
+};
+
+function getTimeCutoff(period: LeaderboardFilters["timePeriod"]): number {
+  const now = Math.floor(Date.now() / 1000);
+  if (period === "today") return now - 86400;
+  if (period === "week") return now - 86400 * 7;
+  if (period === "month") return now - 86400 * 30;
+  return 0;
+}
+
+interface LeaderboardTableProps {
+  huntId?: number;
+  data?: LeaderboardDisplayEntry[];
+  isLoading?: boolean;
+  huntTitle?: string;
+  filters?: Partial<LeaderboardFilters>;
+}
+
+function LeaderboardTableComponent({
+  huntId,
+  data: initialData,
+  isLoading: initialLoading = false,
+  huntTitle,
+  filters: filterOverrides,
+}: LeaderboardTableProps) {
+  const filters: LeaderboardFilters = useMemo(
+    () => ({ ...DEFAULT_FILTERS, ...filterOverrides }),
+    [filterOverrides]
+  );
+
+  const [rawData, setRawData] = useState(initialData || []);
+  const [isLoading, setIsLoading] = useState(initialLoading);
+  const [error, setError] = useState<string | null>(null);
+  const [activeSeason, setActiveSeason] = useState<ReturnType<typeof getActiveSeason>>(null);
+  const walletAddress = useWalletStore((state) => state.walletAddress);
+
+  const fetchLeaderboard = useCallback(async () => {
+    if (huntId === undefined) return;
+
+    try {
+      if (rawData.length === 0) setIsLoading(true);
+
+      const fetched = await get_hunt_leaderboard(huntId);
+
+      // Detect rank changes and fire notifications using previous state
+      if (walletAddress && huntTitle) {
+        try {
+          const rankChanges = detectRankChanges(
+            huntId,
+            huntTitle,
+            walletAddress,
+            rawData as unknown as LeaderboardEntry[]
+          );
+          if (rankChanges.length > 0) {
+            handleRankNotifications(rankChanges);
+          }
+        } catch (err) {
+          logger.error("Failed to detect rank changes:", err);
+        }
+      }
+
+      const mapped: LeaderboardDisplayEntry[] = fetched.map((entry, index) => ({
+        position: index + 1,
+        name: entry.name || truncateAddress(entry.address),
+        points: entry.points,
+        completionCount: entry.completionCount,
+        completedAt: entry.completedAt,
+        category: entry.category,
+        difficulty: entry.difficulty,
+        address: entry.address,
+        hasDisplayName: Boolean(entry.name),
+        icon: <Medal position={index + 1} />,
+      }));
+
+      setRawData(mapped);
+      setError(null);
+    } catch (err) {
+      logger.error("Failed to fetch leaderboard:", err);
+      setError("Failed to load leaderboard data.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [huntId, rawData, walletAddress, huntTitle]);
+
+  useEffect(() => {
+    if (huntId === undefined) return;
+    // Wrapped so setState calls inside fetchLeaderboard (isLoading/rawData)
+    // happen from a nested async function rather than synchronously in the
+    // effect body itself — see react-hooks/set-state-in-effect.
+    (async () => {
+      await fetchLeaderboard();
+    })();
+    const interval = setInterval(fetchLeaderboard, 30000);
+    return () => clearInterval(interval);
+  }, [huntId, fetchLeaderboard]);
+
+  useEffect(() => {
+    // Deferred to a microtask (see above) so this stays effect-only and
+    // doesn't run during SSR/the initial client render — getActiveSeason()
+    // reads localStorage, so computing it eagerly via lazy useState would
+    // diverge from the server-rendered HTML and cause a hydration mismatch.
+    (async () => {
+      setActiveSeason(getActiveSeason());
+    })();
+  }, []);
+
+  const data = useMemo(() => {
+    const cutoff = getTimeCutoff(filters.timePeriod);
+
+    let filtered = rawData.filter((entry) => {
+      if (
+        filters.timePeriod !== "all" &&
+        entry.completedAt !== undefined &&
+        entry.completedAt < cutoff
+      )
+        return false;
+      if (filters.category !== "all" && entry.category !== filters.category) return false;
+      if (filters.difficulty !== "all" && entry.difficulty !== filters.difficulty) return false;
+      return true;
+    });
+
+    if (filters.metric === "completions") {
+      filtered = [...filtered].sort((a, b) => (b.completionCount ?? 0) - (a.completionCount ?? 0));
+    } else {
+      filtered = [...filtered].sort((a, b) => b.points - a.points);
+    }
+
+    return filtered.map((entry, index) => ({
+      ...entry,
+      position: index + 1,
+      icon: <Medal position={index + 1} />,
+    }));
+  }, [rawData, filters]);
+
+  const containerClass = "rounded-none max-w-2xl mx-auto";
+
+  if (error) {
+    return (
+      <div
+        className={cn(
+          containerClass,
+          "p-8 text-center bg-white dark:bg-slate-900 rounded-xl border border-red-200 dark:border-red-900/30"
+        )}
+      >
+        <p className="text-red-500 dark:text-red-400 font-medium">{error}</p>
+        <button
+          onClick={() => fetchLeaderboard()}
+          className="mt-4 text-sm text-[#3737A4] dark:text-blue-400 hover:underline"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
+
+  if (!isLoading && data.length === 0) {
+    return (
+      <div className={cn(containerClass, "p-0")}>
+        <EmptyState
+          icon={<Trophy className="w-10 h-10 text-slate-500 dark:text-slate-400" />}
+          title="No results for these filters"
+          description="Try adjusting the time period, category, or difficulty to see more players."
+          action={{ label: "Clear filters", onPress: () => window.location.href = "/leaderboard" }}
+        />
+      </div>
+    );
+  }
+
+  const metricLabel = filters.metric === "completions" ? "Completions" : "Points Won";
+
+  return (
+    <div className={containerClass}>
+      {activeSeason && (
+        <div className="mb-4">
+          <SeasonInfo season={activeSeason} showRewards={false} />
+        </div>
+      )}
+      <table className="w-full rounded-none border-l border-[#808080] dark:border-slate-700 border-collapse">
+        <thead>
+          <tr className="bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] text-white">
+            <th className="px-4 py-2 text-center border border-r-2 border-white">Position</th>
+            <th className="px-4 py-2 text-left border border-r-2 border-white">
+              Display Name / Wallet Address
+            </th>
+            <th className="px-4 py-2 text-center">{metricLabel}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {isLoading && data.length === 0 ? (
+            <LeaderboardTableSkeleton />
+          ) : (
+            data.map((entry, index) => {
+              const isTop3 = entry.position <= 3;
+              const rowClass = isTop3
+                ? "bg-slate-50 dark:bg-blue-900/10 font-bold"
+                : "bg-white dark:bg-slate-900";
+
+              return (
+                <tr key={index} className={rowClass}>
+                  <td className="px-4 py-2 flex items-center justify-center gap-2 text-center border-r-2 border-[#808080] dark:border-slate-700 border-b-2">
+                    <span>{entry.icon}</span>
+                    <span className="text-[16px] bg-gradient-to-b from-[#576065] to-[#787884] dark:from-slate-200 dark:to-slate-400 bg-clip-text text-transparent">
+                      {entry.position}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2 border-r-2 border-[#808080] dark:border-slate-700 border-b-2">
+                    {entry.address ? (
+                      <div className="flex items-center gap-2 min-w-0">
+                        <WalletIdenticon
+                          address={entry.address}
+                          size={26}
+                          className="flex-shrink-0"
+                        />
+                        <div className="flex flex-col min-w-0">
+                          {entry.hasDisplayName && (
+                            <span className="text-[16px] bg-gradient-to-b from-[#576065] to-[#787884] dark:from-slate-200 dark:to-slate-400 bg-clip-text text-transparent">
+                              {entry.name}
+                            </span>
+                          )}
+                          <WalletAddress
+                            address={entry.address}
+                            showIdenticon={false}
+                            addressClassName={cn(
+                              "text-slate-500 dark:text-slate-400",
+                              entry.hasDisplayName ? "text-xs" : "text-sm"
+                            )}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-[16px] bg-gradient-to-b from-[#576065] to-[#787884] dark:from-slate-200 dark:to-slate-400 bg-clip-text text-transparent">
+                        {entry.name}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2 text-center border border-b-2 border-[#808080] dark:border-slate-700 text-[16px] bg-gradient-to-b from-[#576065] to-[#787884] dark:from-slate-200 dark:to-slate-400 bg-clip-text text-transparent">
+                    {filters.metric === "completions" ? (entry.completionCount ?? 0) : entry.points}
+                  </td>
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export const LeaderboardTable = memo(LeaderboardTableComponent);
+ 

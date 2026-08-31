@@ -1,0 +1,168 @@
+import { toast } from "sonner";
+
+import { announceSr } from "@/components/SrAnnouncer";
+import { mapContractError } from "@/lib/contracts/errors";
+import { settleWalletBalance } from "@/lib/wallet/balanceEvents";
+
+// ─── Stage type ───────────────────────────────────────────────────────────────
+
+/**
+ * The lifecycle stages of a blockchain transaction shown to the user.
+ *
+ *   pending   → wallet popup is about to open / we are waiting for the user
+ *   approving → user is reviewing the transaction inside the wallet
+ *   confirmed → transaction landed on-chain
+ *   failed    → transaction rejected or errored
+ */
+export type TxStage = "pending" | "approving" | "confirmed" | "failed";
+
+/** Call this inside your transaction function to advance the visible stage. */
+export type SetStageFn = (stage: Extract<TxStage, "pending" | "approving">) => void;
+
+// ─── Message config ───────────────────────────────────────────────────────────
+
+export type TxToastMessages = {
+  /** Shown immediately — "Pending" state. Default: "Waiting for wallet…" */
+  pending?: string;
+  /** Shown after setStage("approving") — wallet popup is open. Default: "Approve in your wallet…" */
+  approving?: string;
+  /** Shown on success — "Confirmed" state. Default: "Transaction confirmed!" */
+  confirmed?: string;
+};
+
+const DEFAULTS: Required<TxToastMessages> = {
+  pending: "Pending — waiting for wallet…",
+  approving: "Approving — sign in your wallet…",
+  confirmed: "Confirmed!",
+};
+
+/** Toast ids for in-flight transaction stages that should be cleared on disconnect. */
+const pendingToastIds = new Set<string | number>();
+
+/**
+ * Generation counter bumped on disconnect so in-flight `withTransactionToast`
+ * calls can detect that the wallet session was torn down mid-flight.
+ */
+let disconnectGeneration = 0;
+
+/**
+ * Cancel any pending / approving transaction toasts and reconcile optimistic
+ * balance state. Called when the user disconnects their wallet.
+ */
+export function cancelPendingTransactions(): void {
+  disconnectGeneration += 1;
+
+  for (const id of pendingToastIds) {
+    toast.dismiss(id);
+  }
+  pendingToastIds.clear();
+
+  // Also dismiss any other sonner toasts so the UI never hangs after disconnect.
+  toast.dismiss();
+  settleWalletBalance();
+}
+
+/** @internal Exposed for tests */
+export function getDisconnectGeneration(): number {
+  return disconnectGeneration;
+}
+
+// ─── Main function ────────────────────────────────────────────────────────────
+
+/**
+ * Wraps a blockchain write operation in a three-stage sonner toast lifecycle:
+ *
+ *   1. **Pending**   — shown immediately before the wallet popup opens.
+ *   2. **Approving** — call `setStage("approving")` inside `fn` to trigger this.
+ *   3. **Confirmed** — shown automatically when the promise resolves.
+ *   4. **Failed**    — wallet rejection shows a yellow warning; all other errors
+ *                      show a red error toast with a human-readable message.
+ *
+ * The loading toast is always resolved (via its id) on both success and failure,
+ * so the UI never hangs in a loading state.
+ *
+ * Usage:
+ * ```ts
+ * await withTransactionToast(
+ *   async (setStage) => {
+ *     setStage("approving")          // right before the wallet call
+ *     return await contract.doThing()
+ *   },
+ *   { confirmed: "Hunt activated!" }
+ * )
+ * ```
+ *
+ * Existing zero-arg callers `() => contract.call()` continue to work — they
+ * will show Pending → Confirmed without an explicit Approving transition.
+ */
+export async function withTransactionToast<T>(
+  fn: (setStage: SetStageFn) => Promise<T>,
+  messages: TxToastMessages = {}
+): Promise<T> {
+  const msgs: Required<TxToastMessages> = { ...DEFAULTS, ...messages };
+  const startedAtGeneration = disconnectGeneration;
+
+  // Stage 1 — Pending
+  announceSr(msgs.pending);
+  const toastId = toast.loading(msgs.pending);
+  pendingToastIds.add(toastId);
+
+  const setStage: SetStageFn = (stage) => {
+    if (stage === "approving") {
+      announceSr(msgs.approving);
+      // Update the same toast in-place so it doesn't flicker
+      toast.loading(msgs.approving, { id: toastId });
+    }
+  };
+
+  const releaseToast = () => {
+    pendingToastIds.delete(toastId);
+  };
+
+  try {
+    const result = await fn(setStage);
+
+    // Wallet was disconnected while this tx was in flight — skip success UI.
+    if (startedAtGeneration !== disconnectGeneration) {
+      releaseToast();
+      return result;
+    }
+
+    // Stage 3 — Confirmed
+    announceSr(msgs.confirmed);
+    toast.success(msgs.confirmed, { id: toastId });
+    releaseToast();
+
+    // The transaction landed, so any optimistic balance shown while it was in
+    // flight is now reconciled against chain state.
+    settleWalletBalance();
+
+    return result;
+  } catch (err) {
+    releaseToast();
+
+    // Disconnect already dismissed toasts and settled balance — don't re-toast.
+    if (startedAtGeneration !== disconnectGeneration) {
+      throw err;
+    }
+
+    const mapped = mapContractError(err);
+
+    // A failed or rejected transaction also has to clear an optimistic value —
+    // otherwise a predicted spend stays on screen for a payment that never
+    // happened, until the next poll tick.
+    settleWalletBalance();
+
+    if (mapped.isUserRejection) {
+      // Yellow warning — user intentionally cancelled, not an error.
+      announceSr("Transaction cancelled");
+      toast.warning(mapped.message, { id: toastId });
+    } else {
+      announceSr("Failed: " + mapped.message);
+      toast.error(mapped.message, { id: toastId });
+    }
+
+    // Re-throw so callers can run their own cleanup (e.g. reset isPublishing).
+    throw err;
+  }
+}

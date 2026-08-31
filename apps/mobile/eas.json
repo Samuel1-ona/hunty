@@ -1,0 +1,105 @@
+{
+  "cli": {
+    "version": ">= 8.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "channel": "development",
+      "runtimeVersion": "1.0.0-development",
+      "env": {
+        "APP_ENV": "development"
+      },
+      "android": {
+        "buildType": "apk",
+        "credentialsSource": "remote"
+      },
+      "ios": {
+        "simulator": true,
+        "buildConfiguration": "Debug",
+        "credentialsSource": "remote"
+      }
+    },
+    "preview": {
+      "developmentClient": false,
+      "distribution": "internal",
+      "channel": "preview",
+      "runtimeVersion": "1.0.0-preview",
+      "env": {
+        "APP_ENV": "preview"
+      },
+      "android": {
+        "buildType": "apk",
+        "credentialsSource": "remote"
+      },
+      "ios": {
+        "simulator": false,
+        "buildConfiguration": "Release",
+        "credentialsSource": "remote"
+      }
+    },
+    "production": {
+      "developmentClient": false,
+      "distribution": "store",
+      "channel": "production",
+      "runtimeVersion": "1.0.0",
+      "env": {
+        "APP_ENV": "production"
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "credentialsSource": "remote"
+      },
+      "ios": {
+        "simulator": false,
+        "buildConfiguration": "Release",
+        "credentialsSource": "remote"
+      }
+    }
+  },
+  "update": {
+    "development": {
+      "branch": "development",
+      "channel": "development",
+      "message": "Development OTA update",
+      "platforms": ["android", "ios"]
+    },
+    "preview": {
+      "branch": "preview",
+      "channel": "preview",
+      "message": "Preview OTA update",
+      "platforms": ["android", "ios"]
+    },
+    "production": {
+      "branch": "production",
+      "channel": "production",
+      "message": "Production OTA update",
+      "platforms": ["android", "ios"]
+    }
+  },
+  "submit": {
+    "preview": {
+      "android": {
+        "serviceAccountKeyPath": "./store/google-play-service-account.json",
+        "track": "internal"
+      },
+      "ios": {
+        "appleId": "${EXPO_APPLE_ID}",
+        "ascAppId": "${EXPO_ASC_APP_ID}",
+        "appleTeamId": "${EXPO_APPLE_TEAM_ID}"
+      }
+    },
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "./store/google-play-service-account.json",
+        "track": "production"
+      },
+      "ios": {
+        "appleId": "${EXPO_APPLE_ID}",
+        "ascAppId": "${EXPO_ASC_APP_ID}",
+        "appleTeamId": "${EXPO_APPLE_TEAM_ID}"
+      }
+    }
+  }
+}

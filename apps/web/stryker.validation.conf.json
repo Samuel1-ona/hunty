@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-core-schema.json",
+  "testRunner": "vitest",
+  "coverageAnalysis": "off",
+  "mutate": ["lib/clueAnswerValidation.ts"],
+  "ignorePatterns": [
+    "**/*",
+    "!lib/clueAnswerValidation.ts",
+    "!lib/__tests__/clueAnswerValidation.test.ts",
+    "!vitest.config.ts",
+    "!vitest.setup.ts",
+    "!tsconfig.json"
+  ],
+  "reporters": ["html", "clear-text", "progress"],
+  "htmlReporter": {
+    "fileName": "mutation-report/validation/mutation.html"
+  },
+  "thresholds": {
+    "high": 95,
+    "low": 80,
+    "break": 85
+  },
+  "concurrency": 2,
+  "timeoutMS": 10000,
+  "tsconfigFile": "tsconfig.json",
+  "vitest": {
+    "related": false,
+    "configFile": "vitest.config.ts"
+  }
+}
