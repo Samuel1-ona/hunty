@@ -14,25 +14,19 @@ import {
 } from "@/lib/walletConnect"
 
 export function useWalletConnect() {
-  const [state, setState] = useState<WalletConnectState>({
-    connected: false,
-    connecting: false,
-    session: null,
-    qrCode: null,
-    error: null,
+  const [state, setState] = useState<WalletConnectState>(() => {
+    const session = getActiveWalletConnectSession()
+    const connected = isWalletConnectConnected()
+    return {
+      connected: connected && !!session,
+      session: session || null,
+      uri: null,
+      qrCode: null,
+      error: null,
+    }
   })
 
   useEffect(() => {
-    const session = getActiveWalletConnectSession()
-    const connected = isWalletConnectConnected()
-    if (connected && session) {
-      setState((prev) => ({
-        ...prev,
-        connected: true,
-        session,
-      }))
-    }
-
     const unsub = subscribeWalletConnect((newState) => {
       setState(newState)
     })

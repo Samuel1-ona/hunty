@@ -6,7 +6,7 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hunty.app";
 
 export async function GET(
   req: Request,
-  { params : { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
   const huntId = parseInt(id, 10);
@@ -38,7 +38,7 @@ export async function GET(
         name: entry.name || entry.address,
         points: entry.points,
         completionCount: entry.completionCount ?? 0,
-      }));
+      })),
       summary: {
         topRankName: topEntry?.name || topEntry?.address || "No entries yet",
         topRankPoints: topEntry?.points ?? 0,
