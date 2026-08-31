@@ -1,9 +1,7 @@
 import { ThemedButton, ThemedCustomText, ThemedView } from '@components/themed';
-import { useHaptics } from '@hooks/useHaptics';
-import type { StoredHunt } from '@lib/types';
 import { useTheme } from '@providers/ThemeProvider';
 import { useToast } from '@providers/ToastProvider';
-import { getAllHunts } from '@store/huntStore';
+import { getAllHunts, joinHunt } from '@store/huntStore';
 import { usePlayerStore, useWalletStore } from '@store/useStore';
 import type { StoredHunt } from '@hunty/types';
 import { useRouter } from 'expo-router';
@@ -19,9 +17,8 @@ function rewardLabel(hunt: StoredHunt) {
 export default function HuntsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const haptics = useHaptics();
   const { showToast } = useToast();
-  const { network } = useWalletStore();
+  const { network, walletAddress } = useWalletStore();
   const { currentProgress, setProgress } = usePlayerStore();
   const [hunts, setHunts] = useState<StoredHunt[]>([]);
   const [loadingHuntId, setLoadingHuntId] = useState<number | null>(null);
@@ -41,7 +38,7 @@ export default function HuntsScreen() {
     [hunts.length],
   );
 
-  const handleJoinHunt = (hunt: StoredHunt) => {
+  const handleJoinHunt = async (hunt: StoredHunt) => {
     if (loadingHuntId !== null) return;
 
     if (network === 'mainnet') {
@@ -50,24 +47,40 @@ export default function HuntsScreen() {
       return;
     }
 
-    setLoadingHuntId(hunt.id);
-    setProgress({
-      hunt_id: hunt.id,
-      player: 'GD72...3W9A',
-      current_clue_index: 0,
-      completed: false,
-      reward_claimed: false,
-    });
+    if (!walletAddress) {
+      showToast({ message: 'Connect your wallet before joining a hunt.', type: 'warning' });
+      return;
+    }
 
-    router.push({
-      pathname: '/transaction/pending',
-      params: {
-        action: 'join',
-        huntId: String(hunt.id),
-        huntTitle: hunt.title,
-      },
-    });
-    setLoadingHuntId(null);
+    setLoadingHuntId(hunt.id);
+
+    try {
+      await joinHunt(hunt.id);
+
+      setProgress({
+        hunt_id: hunt.id,
+        player: walletAddress,
+        current_clue_index: 0,
+        completed: false,
+        reward_claimed: false,
+      });
+
+      router.push({
+        pathname: '/transaction/pending',
+        params: {
+          action: 'join',
+          huntId: String(hunt.id),
+          huntTitle: hunt.title,
+        },
+      });
+    } catch {
+      showToast({
+        message: 'Unable to prepare this hunt for offline play right now.',
+        type: 'error',
+      });
+    } finally {
+      setLoadingHuntId(null);
+    }
   };
 
   return (
@@ -179,7 +192,7 @@ export default function HuntsScreen() {
                     if (isCurrent) {
                       router.push(`/details?huntId=${hunt.id}`);
                     } else {
-                      handleJoinHunt(hunt);
+                      void handleJoinHunt(hunt);
                     }
                   }}
                 />

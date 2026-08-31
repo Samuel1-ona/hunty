@@ -75,9 +75,11 @@ const mockClues = [
   { id: 3, huntId: 2, question: 'Q3', answer: 'A3', points: 8 },
 ];
 
+const mockWallet = 'GABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890ABCDEFGHJKLMN';
+
 describe('huntStore', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(null);
     (SecureStore.setItemAsync as jest.Mock).mockResolvedValue(undefined);
     (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
@@ -260,44 +262,269 @@ describe('huntStore', () => {
   });
 
   describe('queueClueAnswer / getQueuedAnswers / processQueuedAnswers', () => {
-    it('queues an answer and retrieves it', async () => {
+    it('persists a complete offline queue record', async () => {
+      const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000);
       (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(null);
-      await queueClueAnswer(1, 1, 'spiral mural');
 
-      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-        'hunty_clue_queue',
-        JSON.stringify([{ huntId: 1, clueId: 1, answer: 'spiral mural' }]),
-      );
+      await queueClueAnswer(1, 1, 'spiral mural', mockWallet, { hintsUsed: 2 });
 
-      (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(
-        JSON.stringify([{ huntId: 1, clueId: 1, answer: 'spiral mural' }]),
-      );
-      const queued = await getQueuedAnswers();
-      expect(queued).toHaveLength(1);
-      expect(queued[0].answer).toBe('spiral mural');
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith('hunty_clue_queue', expect.any(String));
+      const persisted = JSON.parse((AsyncStorage.setItem as jest.Mock).mock.calls[0][1]);
+      expect(persisted).toEqual([
+        {
+          id: expect.any(String),
+          huntId: 1,
+          clueId: 1,
+          answer: 'spiral mural',
+          wallet: mockWallet,
+          clientTimestamp: 1_700_000_000_000,
+          hintsUsed: 2,
+        },
+      ]);
+
+      nowSpy.mockRestore();
     });
 
-    it('appends to an existing queue', async () => {
-      const existing = [{ huntId: 1, clueId: 1, answer: 'first' }];
+    it('replaces an older entry for the same wallet hunt and clue', async () => {
+      const existing = [
+        {
+          id: 'older',
+          huntId: 1,
+          clueId: 1,
+          answer: 'first',
+          wallet: mockWallet,
+          clientTimestamp: 10,
+          hintsUsed: 0,
+        },
+      ];
       (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(JSON.stringify(existing));
-      await queueClueAnswer(1, 2, 'second');
+
+      await queueClueAnswer(1, 1, 'second', mockWallet, {
+        clientTimestamp: 20,
+        hintsUsed: 1,
+        id: 'newer',
+      });
+
+      const written = JSON.parse((AsyncStorage.setItem as jest.Mock).mock.calls[0][1]);
+      expect(written).toEqual([
+        {
+          id: 'newer',
+          huntId: 1,
+          clueId: 1,
+          answer: 'second',
+          wallet: mockWallet,
+          clientTimestamp: 20,
+          hintsUsed: 1,
+        },
+      ]);
+    });
+
+    it('keeps the lexically later id when timestamps tie for the same wallet hunt and clue', async () => {
+      const existing = [
+        {
+          id: 'entry-a',
+          huntId: 1,
+          clueId: 1,
+          answer: 'first',
+          wallet: mockWallet,
+          clientTimestamp: 10,
+          hintsUsed: 0,
+        },
+      ];
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(JSON.stringify(existing));
+
+      await queueClueAnswer(1, 1, 'second', mockWallet, {
+        clientTimestamp: 10,
+        hintsUsed: 0,
+        id: 'entry-z',
+      });
+
+      const written = JSON.parse((AsyncStorage.setItem as jest.Mock).mock.calls[0][1]);
+      expect(written).toEqual([
+        expect.objectContaining({
+          id: 'entry-z',
+          answer: 'second',
+        }),
+      ]);
+    });
+
+    it('keeps entries for different wallets or clues side by side', async () => {
+      const existing = [
+        {
+          id: 'wallet-a',
+          huntId: 1,
+          clueId: 1,
+          answer: 'first',
+          wallet: mockWallet,
+          clientTimestamp: 10,
+          hintsUsed: 0,
+        },
+      ];
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(JSON.stringify(existing));
+
+      await queueClueAnswer(1, 2, 'second', `${mockWallet}X`, {
+        clientTimestamp: 11,
+        hintsUsed: 0,
+        id: 'wallet-b',
+      });
 
       const written = JSON.parse((AsyncStorage.setItem as jest.Mock).mock.calls[0][1]);
       expect(written).toHaveLength(2);
     });
 
-    it('processQueuedAnswers clears the queue', async () => {
-      (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(
-        JSON.stringify([{ huntId: 1, clueId: 1, answer: 'done' }]),
-      );
-      await processQueuedAnswers();
-      expect(AsyncStorage.removeItem).toHaveBeenCalledWith('hunty_clue_queue');
-    });
-
-    it('getQueuedAnswers returns empty array on error', async () => {
-      (AsyncStorage.getItem as jest.Mock).mockRejectedValue(new Error('fail'));
+    it('returns an empty array when persisted queue data is malformed', async () => {
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValue('not-json');
       const queued = await getQueuedAnswers();
       expect(queued).toEqual([]);
+    });
+
+    it('rejects when an offline answer cannot be persisted', async () => {
+      (AsyncStorage.setItem as jest.Mock).mockRejectedValueOnce(new Error('storage full'));
+
+      await expect(queueClueAnswer(1, 1, 'answer', mockWallet)).rejects.toThrow('storage full');
+    });
+
+    it('submits queued entries in deterministic order', async () => {
+      const submitter = jest.fn().mockResolvedValue({ ok: true, status: 200 });
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(
+        JSON.stringify([
+          {
+            id: 'entry-b',
+            huntId: 1,
+            clueId: 1,
+            answer: 'later-id',
+            wallet: mockWallet,
+            clientTimestamp: 10,
+            hintsUsed: 0,
+          },
+          {
+            id: 'entry-a',
+            huntId: 1,
+            clueId: 2,
+            answer: 'earlier-id',
+            wallet: mockWallet,
+            clientTimestamp: 10,
+            hintsUsed: 1,
+          },
+        ]),
+      );
+
+      await processQueuedAnswers(submitter);
+
+      expect(submitter.mock.calls.map((call) => call[0].id)).toEqual(['entry-a', 'entry-b']);
+    });
+
+    it('removes accepted submissions from the queue and reports them as synced', async () => {
+      const submitter = jest.fn().mockResolvedValue({ ok: true, status: 200 });
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(
+        JSON.stringify([
+          {
+            id: 'entry-a',
+            huntId: 1,
+            clueId: 1,
+            answer: 'done',
+            wallet: mockWallet,
+            clientTimestamp: 10,
+            hintsUsed: 0,
+          },
+        ]),
+      );
+
+      const result = await processQueuedAnswers(submitter);
+
+      expect(result).toEqual({ synced: 1, pending: 0, discarded: 0, rejected: [] });
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith('hunty_clue_queue', JSON.stringify([]));
+    });
+
+    it('keeps retryable failures queued while later independent entries still sync', async () => {
+      const submitter = jest
+        .fn()
+        .mockResolvedValueOnce({ ok: false, status: 503 })
+        .mockResolvedValueOnce({ ok: true, status: 200 });
+      const queue = [
+        {
+          id: 'retry-me',
+          huntId: 1,
+          clueId: 1,
+          answer: 'first',
+          wallet: mockWallet,
+          clientTimestamp: 10,
+          hintsUsed: 0,
+        },
+        {
+          id: 'sync-me',
+          huntId: 1,
+          clueId: 2,
+          answer: 'second',
+          wallet: mockWallet,
+          clientTimestamp: 20,
+          hintsUsed: 1,
+        },
+      ];
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(JSON.stringify(queue));
+
+      const result = await processQueuedAnswers(submitter);
+
+      expect(result).toEqual({ synced: 1, pending: 1, discarded: 0, rejected: [] });
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+        'hunty_clue_queue',
+        JSON.stringify([queue[0]]),
+      );
+    });
+
+    it('drops permanent client failures and reports them as discarded', async () => {
+      const submitter = jest.fn().mockResolvedValue({ ok: false, status: 400 });
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(
+        JSON.stringify([
+          {
+            id: 'bad-entry',
+            huntId: 1,
+            clueId: 1,
+            answer: 'bad',
+            wallet: mockWallet,
+            clientTimestamp: 10,
+            hintsUsed: 0,
+          },
+        ]),
+      );
+
+      const result = await processQueuedAnswers(submitter);
+
+      expect(result).toEqual({
+        synced: 0,
+        pending: 0,
+        discarded: 1,
+        rejected: [expect.objectContaining({ id: 'bad-entry' })],
+      });
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith('hunty_clue_queue', JSON.stringify([]));
+    });
+
+    it('treats an HTTP 200 incorrect answer as an authoritative rejection', async () => {
+      const submitter = jest.fn().mockResolvedValue({ ok: true, status: 200, correct: false });
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(
+        JSON.stringify([
+          {
+            id: 'server-rejected',
+            huntId: 1,
+            clueId: 1,
+            clueIndex: 0,
+            answer: 'stale answer',
+            wallet: mockWallet,
+            clientTimestamp: 10,
+            hintsUsed: 0,
+          },
+        ]),
+      );
+
+      const result = await processQueuedAnswers(submitter);
+
+      expect(result).toEqual({
+        synced: 0,
+        pending: 0,
+        discarded: 1,
+        rejected: [expect.objectContaining({ id: 'server-rejected', clueIndex: 0 })],
+      });
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith('hunty_clue_queue', JSON.stringify([]));
     });
   });
 
@@ -341,11 +568,17 @@ describe('huntStore', () => {
 
   describe('joinHunt', () => {
     beforeEach(() => {
-      (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(JSON.stringify(mockHunts));
+      (SecureStore.getItemAsync as jest.Mock)
+        .mockResolvedValueOnce(JSON.stringify(mockHunts))
+        .mockResolvedValueOnce(JSON.stringify(mockClues));
     });
 
-    it('schedules an expiry notification for the hunt', async () => {
+    it('caches only the joined hunt clues and schedules expiry when the hunt has an end time', async () => {
       await joinHunt(1);
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+        'hunty_clues_hunt_1',
+        JSON.stringify(mockClues.filter((clue) => clue.huntId === 1)),
+      );
       expect(scheduleHuntExpiryNotification).toHaveBeenCalledWith(1, 'City Secrets', 99999);
     });
 
@@ -354,34 +587,25 @@ describe('huntStore', () => {
       expect(scheduleHuntExpiryNotification).not.toHaveBeenCalled();
     });
 
-    it('does nothing when hunt has no endTime', async () => {
+    it('caches clues even when the hunt has no endTime', async () => {
       const huntsNoEnd = [{ ...mockHunts[1], endTime: undefined }];
-      (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(JSON.stringify(huntsNoEnd));
+      (SecureStore.getItemAsync as jest.Mock).mockReset();
+      (SecureStore.getItemAsync as jest.Mock)
+        .mockResolvedValueOnce(JSON.stringify(huntsNoEnd))
+        .mockResolvedValueOnce(JSON.stringify(mockClues));
       await joinHunt(2);
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+        'hunty_clues_hunt_2',
+        JSON.stringify(mockClues.filter((clue) => clue.huntId === 2)),
+      );
       expect(scheduleHuntExpiryNotification).not.toHaveBeenCalled();
     });
-  });
 
-  describe('submission path (offline queue + process)', () => {
-    it('queues answers offline and clears them on process', async () => {
-      (AsyncStorage.getItem as jest.Mock)
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(
-          JSON.stringify([
-            { huntId: 1, clueId: 1, answer: 'spiral mural' },
-            { huntId: 1, clueId: 2, answer: 'lantern statue' },
-          ]),
-        );
+    it('rejects joining when clues cannot be cached', async () => {
+      (AsyncStorage.setItem as jest.Mock).mockRejectedValueOnce(new Error('storage full'));
 
-      await queueClueAnswer(1, 1, 'spiral mural');
-      await queueClueAnswer(1, 2, 'lantern statue');
-
-      const queued = await getQueuedAnswers();
-      expect(queued).toHaveLength(2);
-
-      await processQueuedAnswers();
-      expect(AsyncStorage.removeItem).toHaveBeenCalledWith('hunty_clue_queue');
+      await expect(joinHunt(1)).rejects.toThrow('storage full');
+      expect(scheduleHuntExpiryNotification).not.toHaveBeenCalled();
     });
   });
 

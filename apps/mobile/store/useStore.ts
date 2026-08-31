@@ -8,10 +8,16 @@
  *   const { currentProgress, setProgress } = usePlayerStore()
  */
 
-import { create } from "zustand"
-import { persist, type PersistStorage } from "zustand/middleware"
-import * as SecureStore from "expo-secure-store"
-import type { PlayerProgress } from "@hunty/types"
+import { create } from 'zustand';
+import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
+import * as SecureStore from 'expo-secure-store';
+import type { PlayerProgress } from '@hunty/types';
+
+const secureStorage: StateStorage = {
+  getItem: async (key) => (await SecureStore.getItemAsync(key)) ?? null,
+  setItem: async (key, value) => SecureStore.setItemAsync(key, value),
+  removeItem: async (key) => SecureStore.deleteItemAsync(key),
+};
 
 // ─── Wallet Store ─────────────────────────────────────────────────────────────
 
@@ -63,26 +69,12 @@ export const useWalletStore = create<WalletState>()(
     }),
     {
       name: 'hunty-wallet',
-      // Use SecureStore for mobile persistence
-      storage: {
-        getItem: async (key: string) => {
-          const value = await SecureStore.getItemAsync(key);
-          return value ?? null;
-        },
-        setItem: async (key: string, value: string) => {
-          await SecureStore.setItemAsync(key, value);
-        },
-        removeItem: async (key: string) => {
-          await SecureStore.deleteItemAsync(key);
-        },
-      } as unknown as PersistStorage<
-        Pick<WalletState, "walletAddress" | "network" | "watchOnlyAddress">
-      >,
+      storage: createJSONStorage(() => secureStorage),
       // Persist wallet identity + network; balance is fetched on demand.
       partialize: (state) => ({
-          walletAddress: state.walletAddress,
-          network: state.network,
-          watchOnlyAddress: state.watchOnlyAddress,
+        walletAddress: state.walletAddress,
+        network: state.network,
+        watchOnlyAddress: state.watchOnlyAddress,
       }),
     },
   ),
@@ -101,6 +93,7 @@ interface PlayerState {
   updateClueIndex: (index: number) => void;
   markClueCompleted: (huntId: number, clueIndex: number) => void;
   getCompletedClues: (huntId: number) => Set<number>;
+  rejectClueSubmission: (huntId: number, clueIndex: number) => void;
   markCompleted: () => void;
   clearProgress: () => void;
 }
@@ -140,6 +133,25 @@ export const usePlayerStore = create<PlayerState>()(
         return get().completedClues[huntId] || new Set();
       },
 
+      rejectClueSubmission: (huntId, clueIndex) =>
+        set((state) => {
+          const completed = new Set(state.completedClues[huntId] || []);
+          completed.delete(clueIndex);
+          const currentProgress =
+            state.currentProgress?.hunt_id === huntId
+              ? {
+                  ...state.currentProgress,
+                  current_clue_index: Math.min(state.currentProgress.current_clue_index, clueIndex),
+                  completed: false,
+                }
+              : state.currentProgress;
+
+          return {
+            currentProgress,
+            completedClues: { ...state.completedClues, [huntId]: completed },
+          };
+        }),
+
       markCompleted: () =>
         set((state) =>
           state.currentProgress
@@ -151,41 +163,21 @@ export const usePlayerStore = create<PlayerState>()(
     }),
     {
       name: 'hunty-player-progress',
-      storage: {
-        getItem: async (key: string) => {
-          const value = await SecureStore.getItemAsync(key);
-          if (!value) return null;
-          // Parse and convert Sets back
-          const parsed = JSON.parse(value);
-          const converted = {
-            ...parsed,
-            completedClues: Object.fromEntries(
-              Object.entries(parsed.completedClues as Record<string, unknown[]>).map(([k, v]) => [
-                k,
-                new Set(v),
-              ]),
-            ),
-          };
-          return JSON.stringify(converted);
+      storage: createJSONStorage(() => secureStorage, {
+        replacer: (_key, value) =>
+          value instanceof Set ? { __huntySet: Array.from(value) } : value,
+        reviver: (_key, value) => {
+          if (
+            value &&
+            typeof value === 'object' &&
+            '__huntySet' in value &&
+            Array.isArray(value.__huntySet)
+          ) {
+            return new Set(value.__huntySet);
+          }
+          return value;
         },
-        setItem: async (key: string, value: string) => {
-          // Convert Sets to arrays for storage
-          const parsed = JSON.parse(value);
-          const converted = {
-            ...parsed,
-            completedClues: Object.fromEntries(
-              Object.entries(parsed.completedClues as Record<string, unknown>).map(([k, v]) => [
-                k,
-                Array.from((v as Set<number>) ?? []),
-              ]),
-            ),
-          };
-          await SecureStore.setItemAsync(key, JSON.stringify(converted));
-        },
-        removeItem: async (key: string) => {
-          await SecureStore.deleteItemAsync(key);
-        },
-      } as unknown as PersistStorage<PlayerState>,
+      }),
     },
   ),
 );
@@ -205,18 +197,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'hunty-settings',
-      storage: {
-        getItem: async (key: string) => {
-          const value = await SecureStore.getItemAsync(key);
-          return value ?? null;
-        },
-        setItem: async (key: string, value: string) => {
-          await SecureStore.setItemAsync(key, value);
-        },
-        removeItem: async (key: string) => {
-          await SecureStore.deleteItemAsync(key);
-        },
-      } as unknown as PersistStorage<SettingsState>,
+      storage: createJSONStorage(() => secureStorage),
     },
   ),
 );

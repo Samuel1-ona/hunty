@@ -16,9 +16,9 @@ interface StackHeaderProps {
   };
   options: {
     title?: string;
-    headerTitle?: string | ((props: HeaderRenderArgs) => React.ReactNode);
+    headerTitle?: unknown;
     headerTintColor?: string;
-    headerRight?: (props: HeaderRenderArgs) => React.ReactNode;
+    headerRight?: unknown;
   };
   route: {
     name: string;
@@ -37,7 +37,13 @@ export function StackHeader({ navigation, options, route }: StackHeaderProps) {
   const canGoBack = navigation.canGoBack();
   const tintColor = options.headerTintColor || '#ffffff';
   const title = getTitle(options, route.name);
-  const rightAction = options.headerRight?.({ tintColor, canGoBack });
+  const rightAction =
+    typeof options.headerRight === 'function'
+      ? (options.headerRight as (props: HeaderRenderArgs) => React.ReactNode)({
+          tintColor,
+          canGoBack,
+        })
+      : null;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.primary, paddingTop: insets.top }]}>

@@ -6,18 +6,18 @@ import { StackHeader } from '@components/navigation/StackHeader';
 import { ThemedButton, ThemedCustomText } from '@components/themed';
 import { initializeSentry, Sentry } from '@config/sentry';
 import { useBackHandler } from '@hooks/useBackHandler';
+import { useFonts } from '@hooks/useFonts';
 import { useSyncQueue } from '@hooks/useSyncQueue';
 import { ModalProvider } from '@providers/ModalProvider';
 import { NotificationsProvider } from '@providers/NotificationsProvider';
 import ReactQueryProvider from '@providers/ReactQueryProvider';
-import { useTheme } from '@providers/ThemeProvider';
+import { ThemeProvider, useTheme } from '@providers/ThemeProvider';
 import { ToastProvider, useToast } from '@providers/ToastProvider';
 import { WalletSecurityProvider } from '@providers/WalletSecurityProvider';
 import { Web3Provider } from '@providers/Web3Provider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useWalletStore } from '@store/useStore';
 import { hideSplashScreen, initializeSplashScreen } from '@utils/splashScreenManager';
-import { useFonts } from 'expo-font';
 import * as Linking from 'expo-linking';
 import * as Notifications from 'expo-notifications';
 import { type ErrorBoundaryProps, Stack, useRouter } from 'expo-router';
@@ -66,8 +66,6 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 }
 
 export default function RootLayout() {
-  // Initialize sync queue handling
-  useSyncQueue();
   return (
     <ReactQueryProvider>
       <ThemeProvider>
@@ -90,6 +88,8 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
+  useSyncQueue();
+
   const router = useRouter();
   const { showToast } = useToast();
   const { setNetwork } = useWalletStore();
