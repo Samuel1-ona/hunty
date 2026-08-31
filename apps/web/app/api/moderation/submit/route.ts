@@ -1,56 +1,54 @@
-import { NextResponse } from "next/server"
-import { submitHuntForModeration } from "@/lib/moderation/dbStore"
-import type { StoredHunt } from "@/lib/types"
-import { withErrorHandling } from "@/lib/api/withErrorHandling"
-import { AuthError, RateLimitError, ValidationError } from "@/lib/api/errors"
-import { getIP, rateLimit } from "@/lib/rate-limit"
+import { NextResponse } from "next/server";
+import { submitHuntForModeration } from "@/lib/moderation/dbStore";
+import type { StoredHunt } from "@/lib/types";
+import { withErrorHandling } from "@/lib/api/withErrorHandling";
+import { AuthError, RateLimitError, ValidationError } from "@/lib/api/errors";
+import { getIP, rateLimit } from "@/lib/rate-limit";
+import { verifySignedMessage } from "@/lib/signature";
 
-export const POST = withErrorHandling(async (req: NextRequest) => {
-  const ip = getIP(req)
-  const wallet = req.headers.get("x-wallet-address")?.trim()
+export const POST = withErrorHandling(async (req: Request) => {
+  const ip = getIP(req);
+  const wallet = req.headers.get("x-wallet-address")?.trim();
 
   if (!wallet) {
-    throw new AuthError("Wallet address required", { header: "x-wallet-address" })
+    throw new AuthError("Wallet address required", { header: "x-wallet-address" });
   }
 
-  const walletResult = rateLimit(`submit_wallet:${wallet}`, { limit: 10, windowMs: 60 * 1000 })
+  const walletResult = rateLimit(`submit_wallet:${wallet}`, { limit: 10, windowMs: 60 * 1000 });
   if (!walletResult.success) {
     throw new RateLimitError("Too many submissions from this wallet", {
       reset: walletResult.reset,
       remaining: walletResult.remaining,
-    })
+    });
   }
 
-  const ipResult = rateLimit(`submit_ip:${ip}`, { limit: 100, windowMs: 60 * 1000 })
+  const ipResult = rateLimit(`submit_ip:${ip}`, { limit: 100, windowMs: 60 * 1000 });
   if (!ipResult.success) {
     throw new RateLimitError("Too many submissions from this IP", {
       reset: ipResult.reset,
       remaining: ipResult.remaining,
-    })
+    });
   }
 
-  let body: { hunt?: StoredHunt }
+  let body: { hunt?: StoredHint; challenge?: string; signature?: string };
   try {
-    body = await req.json()
+    body = await req.json();
   } catch {
-    throw new ValidationError("Invalid request body")
+    throw new ValidationError("Invalid request body");
   }
 
-  const hunt = body.hunt
-  if (!hunt?.id || !hunt.title) {
-    throw new ValidationError("hunt with id and title is required")
+  const { hunt, challenge, signature } = body ?? {};
+  if (!hunt?.id || !hunt?.title) {
+    throw new ValidationError("hunt with id and title is required");
+  }
+  if (!challenge || !signature) {
+    throw new ValidationError("challenge and signature are required");
   }
 
-  const submission = await submitHuntForModeration(hunt, wallet)
-  return NextResponse.json({ success: true, submission })
-})
-import { withValidation } from "@/lib/api/withValidation"
-import { moderationSubmitBodySchema } from "@hunty/types/api-schemas"
-
-export const POST = withValidation(
-  { body: moderationSubmitBodySchema },
-  async (_req, _context, { body }) => {
-    const submission = await submitHuntForModeration(body.hunt as StoredHunt)
-    return NextResponse.json({ success: true, submission })
+  if (!verifySignedMessage({ address: wallet, challenge, signature, purpose: "moderation-submit" })) {
+    throw new AuthError("Invalid signature", { wallet });
   }
-)
+
+  const submission = await submitHuntForModeration(hunt, wallet);
+  return NextResponse.json({ success: true, submission });
+});
