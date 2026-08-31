@@ -3,9 +3,16 @@ import { CluesList } from '@components/CluesList';
 import { QRScanner } from '@components/QRScanner';
 import { ThemedCustomText, ThemedView } from '@components/themed';
 import { useHaptics } from '@hooks/useHaptics';
+import { matchesClueAnswer } from '@lib/clueAnswerVerification';
+import { verifyQrAgainstClue } from '@lib/qrCodeDecryptor';
 import { useTheme } from '@providers/ThemeProvider';
-import { getHuntById, getHuntClues } from '@store/huntStore';
-import { usePlayerStore } from '@store/useStore';
+import {
+  isRetryableAnswerStatus,
+  submitClueAnswer as submitClueAnswerRequest,
+} from '@services/answersApi';
+import { getHuntById, getHuntClues, queueClueAnswer } from '@store/huntStore';
+import { usePlayerStore, useWalletStore } from '@store/useStore';
+import NetInfo from '@react-native-community/netinfo';
 import type { Clue, StoredHunt } from '@hunty/types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -17,13 +24,15 @@ export default function NestedScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const haptics = useHaptics();
+  const { walletAddress } = useWalletStore();
   const { huntId, clueIndex } = useLocalSearchParams<{ huntId?: string; clueIndex?: string }>();
   const [hunt, setHunt] = useState<StoredHunt | null>(null);
   const [clues, setClues] = useState<Clue[]>([]);
   const [answer, setAnswer] = useState('');
+  const [isOnline, setIsOnline] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
-  const { markClueCompleted, getCompletedClues } = usePlayerStore();
+  const { currentProgress, markClueCompleted, getCompletedClues } = usePlayerStore();
   const [showCluesDropdown] = useState(true);
 
   const hId = Number(huntId);
@@ -40,10 +49,15 @@ export default function NestedScreen() {
   }, [hId]);
 
   useEffect(() => {
-    setAnswer('');
-  }, [idx]);
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setIsOnline(Boolean(state.isConnected) && state.isInternetReachable !== false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const navigateToClue = (clueIdx: number) => {
+    setAnswer('');
     router.replace(`/nested?huntId=${hId}&clueIndex=${clueIdx}`);
   };
 
@@ -64,6 +78,10 @@ export default function NestedScreen() {
 
     setIsSubmitting(true);
     try {
+      const normalizedAnswer = submittedAnswer.trim();
+      const playerWallet =
+        currentProgress?.hunt_id === hId ? walletAddress || currentProgress.player : walletAddress;
+
       const locationCheck = await verifyClueGeofence(clue);
       if (!locationCheck.allowed) {
         Alert.alert('Location required', locationCheck.reason);
@@ -72,26 +90,78 @@ export default function NestedScreen() {
       }
 
       if (fromQr) {
-        const qrCheck = await verifyQrAgainstClue(submittedAnswer, clue, hId);
+        const qrCheck = await verifyQrAgainstClue(normalizedAnswer, clue, hId);
         if (!qrCheck.match) {
           Alert.alert('Invalid QR code', qrCheck.reason);
           return;
         }
-      } else if (!(await matchesClueAnswer(submittedAnswer, clue, hId))) {
+      } else if (!(await matchesClueAnswer(normalizedAnswer, clue, hId))) {
         Alert.alert('Incorrect', 'Try again');
         haptics.triggerNotification('error');
         return;
       }
 
-      markClueCompleted(hId, idx);
-      if (isLast) {
-        haptics.triggerImpact('heavy');
-        Alert.alert('Complete!', 'You finished the hunt!');
-        router.replace(`/details?huntId=${hId}`);
-      } else {
+      if (!playerWallet) {
+        Alert.alert('Wallet required', 'Connect your wallet before submitting this clue.');
+        haptics.triggerNotification('error');
+        return;
+      }
+
+      const advanceLocally = () => {
+        markClueCompleted(hId, idx);
+        if (isLast) {
+          haptics.triggerImpact('heavy');
+          Alert.alert('Complete!', 'You finished the hunt!');
+          router.replace(`/details?huntId=${hId}`);
+          return;
+        }
+
         haptics.triggerNotification('success');
         navigateToClue(idx + 1);
+      };
+
+      const queueAnswer = async () => {
+        await queueClueAnswer(hId, clue.id, normalizedAnswer, playerWallet, { clueIndex: idx });
+        advanceLocally();
+        Alert.alert('Queued', 'Answer saved offline. It will sync when you reconnect.');
+      };
+
+      if (!isOnline) {
+        await queueAnswer();
+        return;
       }
+
+      try {
+        const { body, ok, status } = await submitClueAnswerRequest({
+          huntId: hId,
+          clueId: clue.id,
+          answer: normalizedAnswer,
+          wallet: playerWallet,
+          clientTimestamp: Date.now(),
+          hintsUsed: 0,
+        });
+        if (!ok) {
+          if (isRetryableAnswerStatus(status)) {
+            await queueAnswer();
+            return;
+          }
+
+          Alert.alert('Submission failed', 'Please try again in a moment.');
+          haptics.triggerNotification('error');
+          return;
+        }
+
+        if (body?.correct === false) {
+          Alert.alert('Incorrect', 'Try again');
+          haptics.triggerNotification('error');
+          return;
+        }
+      } catch {
+        await queueAnswer();
+        return;
+      }
+
+      advanceLocally();
     } finally {
       setIsSubmitting(false);
     }
