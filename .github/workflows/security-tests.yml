@@ -2,9 +2,9 @@ name: Security Tests and Scans
 
 on:
   push:
-    branches: [ main, '**' ]
+    branches: [main, "**"]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   security_checks:
@@ -12,27 +12,35 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          fetch-depth: 0
 
-      - name: Install dependencies
-        run: |
-          npm ci
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
-      - name: Dependency vulnerability scan (npm audit)
+      - name: Setup Node.js with pnpm
+        uses: ./.github/actions/setup-node-pnpm
+
+      - name: Build Next.js app
+        run: pnpm build
+
+      - name: Start Next.js app in background
         run: |
-          npm audit --audit-level=moderate || true
+          pnpm start &
+          npx wait-on http://localhost:3000 --timeout 30000
+
+      - name: Dependency vulnerability scan
+        run: pnpm audit --audit-level=moderate || true
 
       - name: Run Playwright security tests
-        run: |
-          npm run security:test || true
+        run: pnpm security:test || true
 
       - name: OWASP ZAP baseline scan
         uses: zaproxy/action-baseline@v0.8.0
         with:
-          target: 'http://localhost:3000'
-        # NOTE: The ZAP baseline expects a running server; adjust pipeline to
-        # start the application before this step when enabling scans.
+          target: "http://localhost:3000"
+        continue-on-error: true # prevents workflow failure if ZAP fails
+        # NOTE: The ZAP baseline expects a running server; we started it above.

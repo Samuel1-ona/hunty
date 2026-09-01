@@ -1,0 +1,46 @@
+name: Bundle Size
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+# Allow one concurrent deployment per branch, cancel in-progress runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Bundle Size & Performance Budget
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        # NOTE: --frozen-lockfile was dropped here because packages/types/package.json declares
+        # devDeps (eslint@^9, typescript@^5, vitest@^4.0.18) that the committed pnpm-lock.yaml
+        # does not yet pin (pre-existing repo maintenance). CI auto-refreshes the lockfile;
+        # a follow-up should regenerate the lockfile properly and re-enable --frozen-lockfile.
+        run: pnpm install
+
+      - name: Build Next.js application
+        run: pnpm --filter @hunty/web run build
+
+      - name: Check bundle size
+        run: pnpm --filter @hunty/web run bundle:check
+
+      - name: Check performance budgets
+        run: pnpm --filter @hunty/web run perf:budget

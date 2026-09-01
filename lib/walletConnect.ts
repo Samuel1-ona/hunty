@@ -6,6 +6,7 @@ import { buildApprovedNamespaces, getSdkError } from "@walletconnect/utils"
 import type { SessionTypes } from "@walletconnect/types"
 import QRCode from "qrcode"
 import { logger } from "@/lib/logger"
+import { getSorobanNetworkType, getSorobanNetworkPassphrase } from "@/lib/soroban/client"
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -14,7 +15,15 @@ const WALLET_CONNECT_RELAY_URL = "wss://relay.walletconnect.com"
 const WALLET_CONNECT_SESSION_KEY = "hunty_wc_session"
 
 const STELLAR_NAMESPACE = "stellar"
-const STELLAR_CHAIN = "stellar:pubnet"
+
+/**
+ * Get the appropriate chain ID based on current network
+ */
+function getStellarChainId(): string {
+  const networkType = getSorobanNetworkType()
+  return networkType === "mainnet" ? "stellar:pubnet" : "stellar:testnet"
+}
+
 const STELLAR_METHODS = [
   "stellar_signAndSubmitXDR",
   "stellar_signXDR",
@@ -124,7 +133,7 @@ export async function initWalletConnect(): Promise<void> {
         proposal: proposal.params,
         supportedNamespaces: {
           [STELLAR_NAMESPACE]: {
-            chains: [STELLAR_CHAIN],
+            chains: [getStellarChainId()],
             methods: STELLAR_METHODS,
             events: STELLAR_EVENTS,
             accounts: [],
@@ -197,7 +206,7 @@ export async function connectWalletConnect(): Promise<WalletConnectQR> {
   const { uri, approval } = await web3wallet!.connect({
     requiredNamespaces: {
       [STELLAR_NAMESPACE]: {
-        chains: [STELLAR_CHAIN],
+        chains: [getStellarChainId()],
         methods: STELLAR_METHODS,
         events: STELLAR_EVENTS,
       },
@@ -273,19 +282,21 @@ export function openWalletDeepLink(walletName: string, uri: string): void {
 
 export async function signTransactionWalletConnect(
   xdr: string,
-  networkPassphrase: string = "Public Global Stellar Network ; September 2015"
+  networkPassphrase?: string
 ): Promise<string> {
   if (!web3wallet || !currentSession) {
     throw new Error("No active WalletConnect session")
   }
 
   const topic = currentSession.topic
-  const chainId = STELLAR_CHAIN
+  const chainId = getStellarChainId()
   const account = currentSession.namespaces[STELLAR_NAMESPACE]?.accounts[0]
 
   if (!account) {
     throw new Error("No Stellar account found in WalletConnect session")
   }
+
+  const passphrase = networkPassphrase || getSorobanNetworkPassphrase()
 
   const request = {
     topic,
@@ -294,7 +305,7 @@ export async function signTransactionWalletConnect(
       method: "stellar_signXDR",
       params: {
         xdr,
-        networkPassphrase,
+        networkPassphrase: passphrase,
         account: account.split(":")[2],
       },
     },
@@ -319,8 +330,10 @@ export async function signAndSubmitTransactionWalletConnect(
   }
 
   const topic = currentSession.topic
-  const chainId = STELLAR_CHAIN
+  const chainId = getStellarChainId()
   const account = currentSession.namespaces[STELLAR_NAMESPACE]?.accounts[0]
+
+  const passphrase = networkPassphrase || getSorobanNetworkPassphrase()
 
   const request = {
     topic,
@@ -329,7 +342,7 @@ export async function signAndSubmitTransactionWalletConnect(
       method: "stellar_signAndSubmitXDR",
       params: {
         xdr,
-        networkPassphrase,
+        networkPassphrase: passphrase,
         account: account?.split(":")[2],
       },
     },

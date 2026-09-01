@@ -1,0 +1,49 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "lint": {
+      "dependsOn": ["^lint"],
+      "inputs": ["$TURBO_DEFAULT$", "**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx", "**/*.json"]
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck"],
+      "inputs": ["$TURBO_DEFAULT$", "**/*.ts", "**/*.tsx"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$"]
+    },
+    "test:coverage": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$"],
+      "outputs": ["coverage/**"]
+    },
+    "test:mutation": {
+      "dependsOn": ["^build", "^test"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "stryker.registration.conf.json",
+        "stryker.scoring.conf.json",
+        "stryker.validation.conf.json"
+      ],
+      "outputs": ["mutation-report/**"]
+    },
+    "e2e": { "dependsOn": ["^build"], "inputs": ["$TURBO_DEFAULT$"] },
+    "smoke": { "dependsOn": ["^build"], "inputs": ["$TURBO_DEFAULT$"] },
+    "perf:budget": { "dependsOn": ["^build"], "inputs": ["$TURBO_DEFAULT$"] },
+    "bundle:check": { "dependsOn": ["^build"], "inputs": ["$TURBO_DEFAULT$"] },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "clean": {
+      "cache": false
+    }
+  }
+}

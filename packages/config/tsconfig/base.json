@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Base",
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    // strict: true enables the full suite of strict type-checking flags:
+    //   strictNullChecks, strictFunctionTypes, strictBindCallApply,
+    //   strictPropertyInitialization, noImplicitAny, noImplicitThis,
+    //   alwaysStrict, useUnknownInCatchVariables.
+    // All workspaces must keep this enabled. If you need to suppress a
+    // specific error, use a narrowly-scoped @ts-ignore with a justification
+    // comment — do NOT disable strict globally.
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true
+  },
+  "exclude": ["node_modules"]
+}
