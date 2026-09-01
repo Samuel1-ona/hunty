@@ -1,0 +1,28 @@
+# Build outputs
+.next/
+out/
+build/
+dist/
+
+# Dependencies
+node_modules/
+mobile/node_modules/
+
+# Generated files
+coverage/
+pnpm-lock.yaml
+package-lock.json
+mobile/pnpm-lock.yaml
+mobile/package-lock.json
+
+# Environment files
+.env*
+!.env.example
+
+# Static assets
+public/
+mobile/assets/
+
+# Test snapshots
+**/__snapshots__/
+e2e/screenshots/

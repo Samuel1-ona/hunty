@@ -1,0 +1,24 @@
+{
+  "extends": "@hunty/config/tsconfig/react-native.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@lib/*": ["./lib/*"],
+      "@store/*": ["./store/*"],
+      "@providers/*": ["./providers/*"],
+      "@components/*": ["./components/*"],
+      "@services/*": ["./services/*"],
+      "@hooks/*": ["./hooks/*"],
+      "@utils/*": ["./utils/*"],
+      "@config/*": ["./config/*"],
+      "@app/*": ["./app/*"],
+      "@shared/*": ["./shared/*"],
+      "@hunty/types": ["../../packages/types/src/index.ts"],
+      "@hunty/types/*": ["../../packages/types/src/*"],
+      "@hunty/ui": ["../../packages/ui/src/index.ts"],
+      "@hunty/ui/native": ["../../packages/ui/src/native/index.ts"],
+      "@hunty/ui/tokens": ["../../packages/ui/src/tokens/index.ts"]
+    }
+  }
+}

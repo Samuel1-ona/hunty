@@ -1,0 +1,37 @@
+{
+  "extends": "@hunty/config/tsconfig/nextjs.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@/components": ["./components"],
+      "@/components/*": ["./components/*"],
+      "@/lib": ["./lib"],
+      "@/lib/*": ["./lib/*"],
+      "@/hooks": ["./hooks"],
+      "@/hooks/*": ["./hooks/*"],
+      "@/store": ["./store"],
+      "@/store/*": ["./store/*"],
+      "@/types": ["./types"],
+      "@/types/*": ["./types/*"],
+      "@hunty/types": ["../../packages/types/src/index.ts"],
+      "@hunty/types/*": ["../../packages/types/src/*"],
+      "@stellar/stellar-sdk": ["../../node_modules/@stellar/stellar-sdk"],
+      "@stellar/*": ["../../node_modules/@stellar/*"],
+      "@stellar/freighter-api": ["../../node_modules/@stellar/freighter-api"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "mobile/**/*",
+    "stories/**/*",
+    "**/*.stories.ts",
+    "**/*.stories.tsx",
+    "**/__tests__/**/*",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ]
+}

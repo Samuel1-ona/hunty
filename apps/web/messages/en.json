@@ -1,0 +1,244 @@
+{
+  "common": {
+    "appName": "Hunty",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "continue": "Continue",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "submit": "Submit",
+    "reset": "Reset",
+    "noResults": "No results found",
+    "skipToContent": "Skip to content",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "a11y": {
+    "homeLink": "Hunty home",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "closeSearch": "Close search",
+    "search": "Search",
+    "notifications": "Notifications",
+    "unreadCount": "{count} unread",
+    "copyWalletAddress": "Copy wallet address",
+    "viewOnExplorer": "View wallet on Stellar explorer",
+    "takeTour": "Take onboarding tour",
+    "addToFavorites": "Add to favorites",
+    "removeFromFavorites": "Remove from favorites",
+    "submitAnswer": "Submit answer",
+    "clearSelection": "Clear selection",
+    "copyHuntId": "Copy hunt ID {id}",
+    "selectHunt": "Select hunt {title}",
+    "removeClueRow": "Remove clue row {row}",
+    "mainNav": "Main navigation",
+    "searchInput": "Search hunts, creators, rewards",
+    "trendingHunt": "Trending hunt",
+    "clueAudio": "Clue audio",
+    "clueVideo": "Clue video"
+  },
+  "header": {
+    "connectWallet": "Connect Wallet",
+    "connectedWallet": "Connected wallet",
+    "copyAddress": "Copy address",
+    "copied": "Copied!",
+    "disconnectWallet": "Disconnect wallet",
+    "balance": "Balance"
+  },
+  "home": {
+    "title": "The Ultimate Web3 Game Arcade",
+    "metaTitle": "Hunty - Decentralized Scavenger Hunt Game",
+    "metaDescription": "Create thrilling scavenger hunts with multiple clues and challenges. Engage players in immersive treasure hunts and reward them with XLM tokens or exclusive NFTs on the Stellar blockchain.",
+    "createGame": "Create Game",
+    "myHunts": "My Hunts",
+    "leaderboard": "Leaderboard",
+    "playGame": "Play Game",
+    "enterGameLink": "Enter Game Link",
+    "gameLinkPlaceholder": "https://www.galagorch.com/g/***",
+    "howToPlay": "How To Play Hunty",
+    "hintToUnlock": "Hint To Unlock",
+    "enterCodePlaceholder": "Enter code to unlock",
+    "globalLeaderboard": "Global Leaderboard",
+    "discoveryArcade": "Discovery Arcade",
+    "discoverySubtitle": "Find the perfect challenge for you",
+    "olderInactiveHunts": "Older / Inactive Hunts",
+    "loadingArchive": "Loading archive...",
+    "loadingMoreHunts": "Loading more hunts...",
+    "endOfArchive": "You've reached the end of the hunt archive.",
+    "noInactiveHunts": "No inactive hunts yet.",
+    "noActiveHunts": "No active hunts available right now.",
+    "noSearchResults": "No hunts match your search query.",
+    "beFirstToCreate": "Be the first to create one!",
+    "searchTitle": "Search title..."
+  },
+  "hunt": {
+    "clue": "Clue",
+    "clues": "Clues",
+    "reward": "Reward",
+    "trending": "Trending",
+    "play": "Play",
+    "watchLive": "Watch Live",
+    "players": "players",
+    "player": "player",
+    "status": {
+      "active": "Active",
+      "completed": "Completed",
+      "inactive": "Inactive"
+    }
+  },
+  "filters": {
+    "allPrizes": "All Prizes",
+    "all": "All",
+    "live": "Live",
+    "ended": "Ended",
+    "newestFirst": "Newest First",
+    "oldestFirst": "Oldest First",
+    "mostClues": "Most Clues",
+    "fewestClues": "Fewest Clues",
+    "results": "{count} result",
+    "resultsPlural": "{count} results",
+    "loadedOf": "{visible} of {total} loaded"
+  },
+  "wallet": {
+    "connectTitle": "Connect a wallet",
+    "noWalletOptions": "No wallet options available.",
+    "walletAddress": "Wallet Address",
+    "displayName": "Set a Display Name (optional)",
+    "displayNamePlaceholder": "DisplayName"
+  },
+  "navigation": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "settings": "Settings",
+    "help": "Help",
+    "admin": "Admin"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "myHunts": "My Hunts",
+    "createNew": "Create New Hunt",
+    "noHunts": "You haven't created any hunts yet."
+  },
+  "profile": {
+    "title": "Profile",
+    "editProfile": "Edit Profile",
+    "username": "Username",
+    "email": "Email",
+    "walletAddress": "Wallet Address",
+    "joinedDate": "Joined",
+    "huntsCreated": "Hunts Created",
+    "huntsCompleted": "Hunts Completed"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "selectLanguage": "Select Language",
+    "theme": "Theme",
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode",
+    "systemDefault": "System Default",
+    "notifications": "Notifications",
+    "account": "Account",
+    "privacy": "Privacy",
+    "security": "Security"
+  },
+  "footer": {
+    "rights": "All rights reserved.",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "contact": "Contact",
+    "stayInHunt": "Stay in the hunt",
+    "getUpdates": "Get product updates, new hunt drops, and creator tips.",
+    "subscribe": "Subscribe",
+    "thanksForSubscribing": "Thanks for subscribing.",
+    "description": "Create, discover, and complete Web3 scavenger hunts powered by Stellar rewards.",
+    "builtOnStellar": "Built on Stellar",
+    "helpAndTroubleshooting": "Help & Troubleshooting"
+  },
+  "errors": {
+    "notFound": "Page not found",
+    "serverError": "Server error",
+    "unauthorized": "Unauthorized",
+    "networkError": "Network error. Please try again."
+  },
+  "language": {
+    "en": "English",
+    "es": "Spanish",
+    "fr": "French"
+  },
+  "firstHuntGuide": {
+    "badge": "New player guide",
+    "title": "Complete your first hunt",
+    "titleDone": "First hunt complete",
+    "progress": "{completed} of {total} steps done",
+    "doneDescription": "You connected, joined, solved, and claimed.",
+    "launcher": "First hunt",
+    "dismiss": "Dismiss first hunt checklist",
+    "minimize": "Minimize first hunt checklist",
+    "open": "Open first hunt checklist",
+    "connectAction": "Connect",
+    "joinAction": "Join",
+    "solveAction": "Solve",
+    "claimAction": "Claim",
+    "steps": {
+      "connect": {
+        "title": "Connect wallet",
+        "description": "Link a Stellar wallet so you can join hunts and receive rewards."
+      },
+      "join": {
+        "title": "Join a hunt",
+        "description": "Register for an active scavenger hunt from the arcade."
+      },
+      "solve": {
+        "title": "Solve a clue",
+        "description": "Unlock your first clue and start scoring points."
+      },
+      "claim": {
+        "title": "Claim your reward",
+        "description": "Collect XLM or an NFT after you finish the hunt."
+      }
+    }
+  },
+  "playGame": {
+    "lockedClue": "Locked until the previous clue is solved.",
+    "timeExpired": "Time's up — progress auto-submitted",
+    "retry": "Retry",
+    "goBack": "Go Back",
+    "noClues": "No clues available for this hunt yet.",
+    "huntEnded": "Hunt Ended",
+    "finalScore": "Final score",
+    "goHome": "Go Home",
+    "editGame": "Edit Game",
+    "onlyYouSeeThis": "(Only You Can See This)",
+    "play": "Play",
+    "reset": "Reset",
+    "shareLink": "Share Link",
+    "moreCards": "more cards"
+  },
+  "dateTime": {
+    "d": "d",
+    "h": "h",
+    "m": "m",
+    "s": "s",
+    "daysLong": "days",
+    "hoursLong": "hours",
+    "minutesLong": "minutes",
+    "secondsLong": "seconds"
+  },
+  "scheduling": {
+    "startMustBeFuture": "Start time must be in the future.",
+    "endMustBeAfterStart": "End time must be after the start time.",
+    "endMustBeAfterNow": "End time must be after the current time."
+  }
+}
