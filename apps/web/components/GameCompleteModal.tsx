@@ -199,6 +199,8 @@ export function GameCompleteModal({
 
             <div className="flex flex-col gap-3 pt-2">
               <GameCompleteShare
+                latestAttempt={latestAttempt}
+                rewardReceipt={rewardReceipt}
                 huntId={huntId}
                 playerAddress={playerAddress}
                 reward={reward}

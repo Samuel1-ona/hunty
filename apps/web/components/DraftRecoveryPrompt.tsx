@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { AlertTriangle, X, RotateCcw } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import { listAllDrafts, deleteDraft, markDraftRecovered } from "@/hooks/useHuntDraftAutoSave"
 import type { HuntDraftSave } from "@/lib/types"
 

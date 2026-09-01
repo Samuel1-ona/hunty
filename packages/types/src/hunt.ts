@@ -63,12 +63,6 @@ export interface StoredHunt {
   startTime?: number;
   /** Unix timestamp in seconds — when the hunt ends. */
   endTime?: number;
-  /**
-   * How long (in seconds) after `endTime` the creator can reclaim unclaimed
-   * rewards. Defaults to 0 (immediately after the hunt ends) when omitted.
-   * Must be a non-negative integer.
-   */
-  gracePeriodSeconds?: number;
   creatorEmail?: string;
   emailNotifications?: boolean;
   /** When true, the hunt is hidden from the public arcade grid. */

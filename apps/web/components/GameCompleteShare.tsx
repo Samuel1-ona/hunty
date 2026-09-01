@@ -8,7 +8,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { AchievementCertificate } from "@/components/AchievementCertificate"
+import type { HuntAttemptRecord, RewardReceipt } from "@/lib/types"
+import { buildResultCardImageUrl } from "@/lib/downloadAsImage"
 import {
   buildDeepLink,
   downloadElementAsImage,
@@ -32,11 +33,13 @@ export function GameCompleteShare({
   playerAddress,
   reward,
   hasProgressData,
+  latestAttempt,
+  rewardReceipt,
 }: GameCompleteShareProps) {
   const certificateRef = useRef<HTMLDivElement>(null)
   const [isGenerating, setIsGenerating] = useState(false)
 
-  const handleShareAchievement = async (
+  const handleShareResultCard = async (
     platform?: "twitter" | "farcaster" | "telegram" | "whatsapp"
   ) => {
     if (!certificateRef.current) return
@@ -84,14 +87,14 @@ export function GameCompleteShare({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="center" className="w-[200px] rounded-xl">
           <DropdownMenuItem
-            onClick={() => handleShareAchievement("twitter")}
+            onClick={() => handleShareResultCard("twitter")}
             className="flex items-center gap-2 cursor-pointer py-2.5"
           >
             <Twitter className="w-4 h-4 text-sky-500" />
             Share on Twitter / X
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() => handleShareAchievement("farcaster")}
+            onClick={() => handleShareResultCard("farcaster")}
             className="flex items-center gap-2 cursor-pointer py-2.5"
           >
             <Image
@@ -104,43 +107,30 @@ export function GameCompleteShare({
             Share on Farcaster
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() => handleShareAchievement("telegram")}
+            onClick={() => handleShareResultCard("telegram")}
             className="flex items-center gap-2 cursor-pointer py-2.5"
           >
             <MessageCircle className="w-4 h-4 text-cyan-600" />
             Share on Telegram
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() => handleShareAchievement("whatsapp")}
+            onClick={() => handleShareResultCard("whatsapp")}
             className="flex items-center gap-2 cursor-pointer py-2.5"
           >
             <MessageCircle className="w-4 h-4 text-emerald-600" />
             Share on WhatsApp
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() => handleShareAchievement()}
+            onClick={() => handleShareResultCard()}
             className="flex items-center gap-2 cursor-pointer py-2.5 border-t mt-1"
           >
             <Download className="w-4 h-4 text-slate-500" />
-            Download Image Only
+            Download Result Card
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Hidden Achievement Certificate for capture */}
-      <div className="fixed left-[-9999px] top-0 pointer-events-none">
-        <AchievementCertificate
-          ref={certificateRef}
-          playerName={
-            playerAddress
-              ? `${playerAddress.slice(0, 6)}...${playerAddress.slice(-4)}`
-              : "Explorer"
-          }
-          huntTitle={hasProgressData ? `Hunt #${huntId}` : "Scavenger Hunt"}
-          points={reward}
-          rank={1}
-        />
-      </div>
+      
     </>
   )
 }

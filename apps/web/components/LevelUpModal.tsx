@@ -4,7 +4,7 @@ import confetti from "canvas-confetti"
 import { useReducedMotion } from "framer-motion"
 import { useEffect } from "react"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { getLevelTierForXp } from "@/lib/level"
 import type { LevelTier } from "@/lib/level/config"

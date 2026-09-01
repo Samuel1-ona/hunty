@@ -73,7 +73,7 @@ const CspReportEnvelopeSchema = z.object({
 export const POST = withErrorHandling(async (req: NextRequest) => {
   // 1. Rate limiting — applied before reading the body to keep overhead minimal.
   const ip = getIP(req);
-  const { success, reset } = rateLimit(ip, RATE_LIMIT_CONFIG);
+  const { success, reset } = await rateLimit(ip, RATE_LIMIT_CONFIG);
   if (!success) {
     return rateLimitResponse(reset);
   }

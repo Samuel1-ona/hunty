@@ -4,7 +4,7 @@ import { Download, FileJson, Loader2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 import { Input } from "@/components/ui/input";
 
 interface LeaderboardExportProps {

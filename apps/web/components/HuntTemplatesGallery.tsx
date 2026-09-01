@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { Sparkles, Users } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import {
   Card,
   CardContent,
@@ -12,7 +12,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@hunty/ui"
 import {
   STARTER_HUNT_TEMPLATES,
   getTemplateCategories,

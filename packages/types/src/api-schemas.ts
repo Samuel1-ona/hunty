@@ -176,6 +176,34 @@ export const pushTokenDeleteBodySchema = z
     message: "token or walletAddress is required",
   });
 
+// ─── Webhooks ───────────────────────────────────────────────────────────────
+
+export const webhookEventSchema = z.enum(["hunt.published", "hunt.joined", "hunt.completed"])
+
+export const webhookCreateBodySchema = z.object({
+  creatorAddress: stellarAddressSchema,
+  url: z.string().url().max(2048),
+  events: z.array(webhookEventSchema).min(1).max(3),
+})
+
+export const webhookUpdateBodySchema = z.object({
+  url: z.string().url().max(2048).optional(),
+  events: z.array(webhookEventSchema).min(1).max(3).optional(),
+  active: z.boolean().optional(),
+}).refine((body) => body.url !== undefined || body.events !== undefined || body.active !== undefined, {
+  message: "At least one field is required",
+})
+
+export const webhookQuerySchema = z.object({
+  creatorAddress: stellarAddressSchema,
+})
+
+export const webhookEmitBodySchema = z.object({
+  type: webhookEventSchema,
+  creatorAddress: stellarAddressSchema,
+  data: z.record(z.string(), z.unknown()),
+})
+
 // ─── Moderation / Submit ─────────────────────────────────────────────────────
 
 // ─── Notification preferences ────────────────────────────────────────────────
@@ -295,19 +323,6 @@ export const huntVersionRestoreBodySchema = z.object({
 
 export const huntVersionsQuerySchema = z.object({
   actorAddress: nonEmptyStringSchema,
-})
-
-// ─── v1 / Hunts / [id] / Refund ──────────────────────────────────────────────
-
-/**
- * POST /api/v1/hunts/[id]/refund
- *
- * Allows a hunt creator to reclaim the unclaimed reward balance once the hunt
- * has ended AND the grace period (set at hunt creation) has elapsed.
- */
-export const huntRefundBodySchema = z.object({
-  /** Stellar G-address of the creator requesting the refund. */
-  creatorAddress: stellarAddressSchema,
 })
 
 // ─── v1 / Hunts / [id] / Collaborators ───────────────────────────────────────
@@ -443,17 +458,6 @@ export const draftPatchBodySchema = z.object({
   recovered: z.boolean().optional(),
 });
 
-// ─── v1 / Hunts / [id] / Refund ──────────────────────────────────────────────
-
-/**
- * POST /api/v1/hunts/[id]/refund
- * Called by the creator after the grace period to reclaim unclaimed rewards.
- * `creatorAddress` is verified against the hunt's creator on the server.
- */
-export const huntRefundBodySchema = z.object({
-  creatorAddress: nonEmptyStringSchema,
-})
-
 // ─── v1 / Hunts / [id] / Sponsor ─────────────────────────────────────────────
 
 /**
@@ -561,6 +565,7 @@ export const apiSchemas = {
   huntArchiveBody: huntArchiveBodySchema,
   huntDeleteBody: huntDeleteBodySchema,
   huntRefundBody: huntRefundBodySchema,
+  huntSponsorBody: huntSponsorBodySchema,
   collaboratorsBody: collaboratorsBodySchema,
   presencePingBody: presencePingBodySchema,
   presenceQuery: presenceQuerySchema,
@@ -578,10 +583,7 @@ export const apiSchemas = {
   draftPatchBody: draftPatchBodySchema,
   paymasterSponsorBody: paymasterSponsorBodySchema,
   paymasterAdminConfigBody: paymasterAdminConfigBodySchema,
-  huntRefundBody: huntRefundBodySchema,
-  huntSponsorBody: huntSponsorBodySchema,
   referralLeaderboardQuery: referralLeaderboardQuerySchema,
   referralTrackBody: referralTrackBodySchema,
   referralPayoutBody: referralPayoutBodySchema,
-} as const
 } as const;
