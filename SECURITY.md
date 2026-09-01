@@ -1,55 +1,49 @@
-# Security Policy
+# Contracts: Answer Hashing Scheme
 
-We take the security of our users and the integrity of the Hunty platform seriously. If you have discovered a vulnerability, please report it to us privately.
+This document describes the client-side and contract-side conventions for hashing hunt/clue answers.
 
-## Reporting a Vulnerability
+Goal
+----
+Prevent precomputation (rainbow table) attacks on stored answers by including a hunt-specific salt when hashing answers prior to storing them on-chain.
 
-### Private Reporting Channels
+Hashing Scheme
+--------------
+- Normalization: the user's plain-text answer is normalized by trimming whitespace and converting to lowercase.
+- Salt: a hunt-specific salt is constructed as `${huntId}_${clueId}` where `huntId` and `clueId` are integer identifiers assigned by the system.
+- Digest: compute the lowercase hex SHA-256 digest of the concatenated normalized answer and salt:
 
-We encourage you to use the **GitHub Private Vulnerability Reporting** feature. This is the preferred and primary channel for reporting vulnerabilities in our repository.
+```
+hashed = SHA256( normalized_answer + `${huntId}_${clueId}` )
+```
 
-To report a vulnerability privately, please follow these steps:
-1. Navigate to the main page of the repository.
-2. Click on the **Security** tab.
-3. Click on the **Report a vulnerability** button.
-4. Fill out the report form and submit.
+Implementation Notes
+--------------------
+- Client-side (creation): when a creator adds a clue, the client persists the clue locally to obtain a stable `clueId`, then computes `hashed` using the scheme above and submits the hashed value to the contract via the existing `add_clue` flow. The local storage record is updated to contain the hashed answer.
+- Client-side (verification): when a player submits an answer, the client sends the plain-text answer to the contract invocation (or the helper `submitAnswer` in the mock). The contract (or the server-side verification mock) normalizes the incoming answer, appends the same salt (`huntId_clueId`) and computes `SHA256(normalized + salt)` to compare with the stored hashed value.
+- Backwards compatibility: the contract verification accepts both legacy plain-text stored answers (pipe-separated list) and the new hashed form. If the stored answer matches the hex-SHA256 pattern, the verifier checks the computed hash; otherwise it falls back to comparing normalized plaintext answers.
 
-## Supported Versions
+Security Considerations
+-----------------------
+- The salt prevents simple rainbow-table attacks that only precompute hashes of common words; salts must be unguessable across different hunts only to the extent that `huntId`/`clueId` are not easily enumerated — this scheme intentionally uses deterministic ids for reproducibility. For stronger protection consider adding a creator-specific or server-side random nonce stored off-chain.
+- Keep the normalization rules consistent between creation and verification (trim + lowercase). Any divergence will cause valid answers to fail verification.
 
-We currently support and provide security updates for the latest stable release of the Hunty application.
+Developer Example (JS)
+----------------------
+```js
+// normalize
+const normalized = answer.trim().toLowerCase()
+const salt = `${huntId}_${clueId}`
+const hashed = await sha256Hex(normalized + salt) // returns lowercase hex
+// submit `hashed` as the stored answer
+```
 
-## Scope
+Migration / Testing
+-------------------
+- Existing hunts with plaintext answers continue to work; the verifier checks stored values and applies the correct verification method.
+- Unit tests were added/updated to validate the hashing and verification flow in the mock `submitAnswer` implementation.
 
-This security policy applies to all code within the `Samuel1-ona/hunty` repository.
-
-### In Scope
-*   Smart contract interactions and wallet integration logic.
-*   API endpoints and backend services.
-*   Application authentication and session management.
-
-### Out of Scope
-*   Third-party dependencies (we use automated auditing; please report vulnerabilities in dependencies to the respective maintainers. See our Dependency Vulnerability Management section below for how we handle them).
-*   Physical security of client infrastructure.
-*   Social engineering or phishing attacks against our users.
-
-## Expected Response Time
-
-We strive to respond to all vulnerability reports within **48 hours**. We appreciate your patience and diligence in helping us maintain a secure platform.
-
-## Dependency Vulnerability Management
-
-We use automated dependency scanning with `pnpm audit` in our continuous integration pipeline to detect known vulnerabilities in third-party dependencies. The CI job fails when high or critical severity vulnerabilities are present.
-
-### Accepting a Finding
-
-In some cases, a dependency vulnerability may have no available fix, or the risk may be deemed acceptable due to mitigations. To accept a finding, the following process must be followed:
-
-1. Open a GitHub issue documenting the finding, including the dependency name, version, vulnerability ID (e.g., CVE), and severity.
-2. Provide a justification for why the vulnerability is acceptable, including any mitigating factors or the absence of a patched release.
-3. The issue must be reviewed and approved by at least one maintainer.
-4. Once approved, the issue is linked from the repository’s security audit log or a dedicated tracking issue.
-
-This process ensures that any deviation from the security baseline is documented and intentional.
-
----
-*Note to maintainers: Please ensure that "Private vulnerability reporting" is enabled in your repository settings under Security & analysis.
+References
+----------
+- Code: `lib/crypto.ts` (cross-env SHA-256 helper)
+- Submission & verification: `lib/contracts/hunt.ts`
+- Local storage helpers: `lib/huntStore.ts`
