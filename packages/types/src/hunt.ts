@@ -63,7 +63,6 @@ export interface StoredHunt {
   startTime?: number;
   /** Unix timestamp in seconds — when the hunt ends. */
   endTime?: number;
-
   creatorEmail?: string;
   emailNotifications?: boolean;
   /** When true, the hunt is hidden from the public arcade grid. */
