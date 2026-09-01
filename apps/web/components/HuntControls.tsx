@@ -5,7 +5,7 @@ import { AlertTriangle, Code2, Loader2, X } from "lucide-react";
 import { useState } from "react";
 
 import { EmbedModal } from "@/components/EmbedModal";
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { logger } from "@/lib/logger";
 import { withSorobanRpcRetry } from "@/lib/soroban/rpcRetry";

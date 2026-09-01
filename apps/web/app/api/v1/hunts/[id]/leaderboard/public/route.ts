@@ -43,7 +43,7 @@ export async function GET(
         topRankName: topEntry?.name || topEntry?.address || "No entries yet",
         topRankPoints: topEntry?.points ?? 0,
         playerCount,
-        lastUpdated: new Date().toISoString(),
+        lastUpdated: new Date().toISOString(),
       },
       embedUrl: `${baseUrl}/api/og/leaderboard?huntId=${huntId}`,
       shareUrl: `${baseUrl}/hunt/${huntId}/leaderboard`,

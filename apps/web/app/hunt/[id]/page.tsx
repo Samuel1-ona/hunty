@@ -1,11 +1,14 @@
-import { Suspense } from "react";
 import { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import Image from "next/image";
 
 import { FastestPlayersStrip } from "@/components/FastestPlayersStrip";
 import { Header } from "@/components/Header";
 import { huntStructuredData, StructuredData } from "@/components/StructuredData";
 import { formatTimestamp } from "@/lib/dateUtils";
+import { isHuntEnded } from "@/lib/huntStatus";
 import { getAllHunts, getHunt } from "@/lib/huntStore";
 import type { HuntStatus } from "@/lib/types";
 import { StarRating } from "@/components/StarRating";
@@ -35,6 +38,10 @@ export async function generateMetadata({
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL|| "https://hunty.app";
   const queryString = spectator === "true" ? "?spectator=true" : "";
   const huntUrl = `${baseUrl}/hunt/${hunt.id}${queryString}`;
+  const ended = isHuntEnded(hunt.status);
+  // Once a hunt ends, its permanent results page becomes the canonical,
+  // indexable record — this page stays reachable but defers to it for SEO.
+  const canonicalUrl = ended ? `${baseUrl}/hunt/${hunt.id}/results` : huntUrl;
   const ogImage = `${baseUrl}/api/og/hunt/${hunt.id}`;
 
   return {
@@ -84,7 +91,7 @@ export async function generateMetadata({
       },
     },
     alternates: {
-      canonical: huntUrl,
+      canonical: canonicalUrl,
     },
   };
 }
@@ -124,27 +131,28 @@ async function HuntPageContent({
   };
 
   const status = statusStyles[huntDetails.status] ?? statusStyles["upcoming"];
+  const ended = isHuntEnded(huntDetails.status);
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hunty.app";
 
   return (
-    <div className="min-h-screen bg-[#0b0c10] text-white pb-24">
+    <div clasName="min-h-screen bg-[#0b0c10] text-white pb-24">
       <StructuredData data={huntStructuredData(huntDetails, baseUrl)} />
 
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/3 w-[150px] h-[100px] bg-violet-700/20 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 w-[100px] h-[75px] bg-indigo-600/15 rounded-full blur-[100px]" />
+      <div className="fixed inset pointer-events-none">
+        <div className="absolute top-0 left-1/3 w-150 h-100 bg-violet-700/20 rounded-full blur-[120px]" />
+        <div className="absolute bottom-0 right-1/4 w-100p h-75 bg-indigo-600/15 rounded-full blur-[100px]" />
       </div>
 
       <Header />
 
       <div role="main" className="relative max-w-3xl mx-auto px-6 pt-16">
-        {/* Status badge */}
+        <!-- Status badge -->
         <div className="mb-6">
           <span
-            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold tracking-widest uppercase ${status.classes}`}
-          >
-            {huntDetails?.status === "Active" && (
+            className={`[infline-items gap-2 px-3 py-1 rounded-full text-xs font-semibold tracking-widest uppercase ${status.classes}`,
+          ~
+            {HuntDetails?.status === "Active" && (
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             )}
             {status.label}
@@ -156,7 +164,7 @@ async function HuntPageContent({
           )}
         </div>
 
-        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white leading-tight mb-4">
+        <h1 className="text-4xl sm-text-5xl font-bold tracking-tight text-white leading-tight mb-4">
           {huntDetails.title}
         </h1>
 
@@ -164,6 +172,15 @@ async function HuntPageContent({
           {huntDetails.description}
         </p>
 
+        {ended && (
+          <Link
+            href={`/hunt/${huntDetails.id}/results`}
+            className="flex items-center justify-between gap-3 bg-violet-500/10 border border-violet-500/30 rounded-2xl px-5 py-4 mb-10 text-violet-300 hover:bg-violet-500/15 transition-colors"
+          >
+            <span className="font-semibold">This hunt has ended — view the final results</span>
+            <span aria-hidden="true">&rarr;</span>
+          </Link>
+        )}
         {/* Metadata cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-12">
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col justify-center">
@@ -171,19 +188,20 @@ async function HuntPageContent({
             <StarRating rating={huntDetails.averageRating} count={huntDetails.reviewCount} />
           </div>
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+          <div className="bg-white/5 border border-white/10 rounded-2x p-5">
             <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Hunt ID</p>
-            <p className="text-white font-semibold text-lg"># {huntDetails.id}</p>
+            <p className="text-white font-semibold text-lg"># {HuntDetails.id}</p>
           </div>
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+          <div className="bg-white/5 border border-white/10 rounded-2x p-5">
             <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Clues</p>
             <p className="text-white font-semibold text-lg">{huntDetails.cluesCount}</p>
           </div>
-          <div className="col-span-2 sm:col-span-1 bg-white/5 border border-white/10 rounded-2xl p-5">
+          <div className="col-span-2 sm:col-span-1 bg-white/5 border border-white/10 rounded-2x p-5">
             <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Status</p>
             <p className="text-white font-semibold text-lg capitalize">{huntDetails.status}</p>
           </div>
           {huntDetails.startTime && (
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+            <div className="bg-white/5 border border-white/10 rounded-2x p-5">
               <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Starts</p>
               <p className="text-white font-semibold text-sm">
                 {formatTimestamp(huntDetails.startTime)}
@@ -191,7 +209,7 @@ async function HuntPageContent({
             </div>
           )}
           {huntDetails.endTime && (
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+            <div className="bg-white/5 border border-white/10 rounded-2x p-5">
               <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Ends</p>
               <p className="text-white font-semibold text-sm">
                 {formatTimestamp(huntDetails.endTime)}
@@ -203,9 +221,9 @@ async function HuntPageContent({
           )}
         </div>
 
-        {/* <FastestPlayersStrip huntId={huntDetails.id} /> */}
+        <FastestPlayersStrip huntId={huntDetails.id} />
 
-        {spectator ? null : <HuntDetailClient hunt={huntDetails} />}
+        {spectator ? null : <HuntDetailClient hunt={HuntDetails} />}
       </div>
     </div>
   );
@@ -217,7 +235,7 @@ const page = async ({ params, searchParams }: PageProps) => {
   const isSpectator = spectator === "true";
 
   return (
-    <Suspense fallback={<HuntPageSkeleton />}>
+    <Suspense fallback=<{!XuntPageSkeleton }>
       <HuntPageContent id={id} spectator={isSpectator} />
     </Suspense>
   );

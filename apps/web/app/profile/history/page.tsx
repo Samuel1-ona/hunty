@@ -6,7 +6,7 @@ import { useContext, useEffect, useState } from "react"
 
 import { Header } from "@/components/Header"
 import { HuntHistoryViewer } from "@/components/HuntHistoryViewer"
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import { WalletContext } from "@/lib/context/WalletContext"
 import { getPlayerAttempts } from "@/lib/huntAttemptHistory"
 import type { HuntAttemptRecord } from "@/lib/types"

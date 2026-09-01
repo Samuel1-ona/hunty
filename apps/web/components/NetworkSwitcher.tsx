@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { getSorobanNetworkType, setSorobanNetworkType } from "@/lib/soroban/client"
 import { AlertTriangle, CheckCircle2, Globe, RefreshCw } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 
 export function NetworkSwitcher() {
   const [currentNetwork, setCurrentNetwork] = useState<"testnet" | "mainnet">("testnet")

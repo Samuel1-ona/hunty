@@ -10,14 +10,16 @@ import {
   Compass,
   RefreshCw,
   Search,
+  UserCheck,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { queryCachePolicy, queryKeys } from "@/lib/queryKeys"
-import { useRefreshByUser } from "@/useRefreshByUser"
 import { HuntFeedCard, HuntFeedCardGridSkeleton } from "@/components/HuntFeedCard"
 import { EmptyState } from "@/components/EmptyState"
 import type { HuntAgeClassification, StoredHunt, HuntFeedCategory } from "@/lib/types"
 import { getDistanceMeters } from "@/lib/locationServices"
+import { getStoredSession } from "@/lib/session"
+import { useRefreshByUser } from "@/hooks/useRefreshByUser"
 
 // ─── Constants ───────────────────────────────────────────────────────────
 
@@ -50,6 +52,12 @@ const CATEGORIES: {
     label: "Featured",
     icon: <Star className="w-4 h-4" />,
     description: "Editor's picks this week",
+  },
+  {
+    key: "following",
+    label: "Following",
+    icon: <UserCheck className="w-4 h-4" />,
+    description: "New hunts from creators you follow",
   },
 ]
 
@@ -112,6 +120,11 @@ const CATEGORY_EMPTY: Record<HuntFeedCategory, {
     title: "No featured hunts right now",
     description: "Check back later for featured hunts picked by our editors.",
     icon: <Star className="w-10 h-10 text-purple-500" />,
+  },
+  following: {
+    title: "No hunts from creators you follow",
+    description: "Follow creators to see their new hunts here. Tap Follow on a creator's profile.",
+    icon: <UserCheck className="w-10 h-10 text-emerald-500" />,
   },
 }
 
@@ -252,8 +265,26 @@ export function HuntFeed({
     queryFn: async ({ pageParam }) => {
       const cursorVal = pageParam !== null ? String(pageParam) : ""
 
+      // The "following" filter scopes the feed to creators the current player
+      // follows. It is not a server-side category, so we request the "new"
+      // category and pass the follower wallet via `following`.
+      const effectiveCategory = activeCategory === "following" ? "new" : activeCategory
+
       // For the "nearby" category, pass coordinates if available
-      let url = `/api/v1/hunts?limit=${FEED_PAGE_SIZE}&cursor=${cursorVal}&status=Active&category=${activeCategory}&sortBy=newest&ageClassification=${ageClassification}`
+      let url = `/api/v1/hunts?limit=${FEED_PAGE_SIZE}&cursor=${cursorVal}&status=Active&category=${effectiveCategory}&sortBy=newest&ageClassification=${ageClassification}`
+
+      if (activeCategory === "following") {
+        const session = getStoredSession()
+        const followerWallet = session?.publicKey
+        if (!followerWallet) {
+          return {
+            data: [] as StoredHunt[],
+            pagination: { total: 0, limit: FEED_PAGE_SIZE, cursor: null, nextCursor: null },
+            category: activeCategory,
+          }
+        }
+        url += `&following=${encodeURIComponent(followerWallet)}`
+      }
 
       // Try to include geolocation for nearby
       if (activeCategory === "nearby") {
@@ -534,7 +565,7 @@ export function HuntFeed({
             description={emptyState.description}
             action={{
               label: "Browse all hunts",
-              href: "/",
+              onPress: () => window.location.href = "/",
             }}
           />
         ) : (

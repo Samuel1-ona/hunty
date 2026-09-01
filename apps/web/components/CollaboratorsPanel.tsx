@@ -9,7 +9,7 @@ import {
   type CollaborationActivityEntry,
   type HuntCollaborator,
 } from "@/lib/collaboration"
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
