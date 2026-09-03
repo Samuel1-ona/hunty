@@ -7,15 +7,13 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./schemas": "./src/schemas.ts"
-  },
-  "scripts": {
-    "test": "vitest run"
+    "./schemas": "./src/schemas.ts",
+    "./api-schemas": "./src/api-schemas.ts"
   },
   "sideEffects": false,
   "scripts": {
-    "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
     "test": "vitest --run"
   },
   "peerDependencies": {
@@ -29,6 +27,8 @@
   "devDependencies": {
     "eslint": "^9",
     "typescript": "^5",
-    "vitest": "^4.0.18"
+    "typescript-eslint": "^8",
+    "vitest": "^4.0.18",
+    "zod": "^4.3.6"
   }
 }

@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-import { ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
+import { withValidation } from "@/lib/api/withValidation";
 import { assertAdminAuth } from "@/lib/api/adminAuth";
 import { readFeaturedId, writeFeaturedId } from "@/lib/featuredHuntDb";
+import { adminFeaturedBodySchema } from "@hunty/types/api-schemas";
 
 /**
  * GET /api/admin/featured
@@ -25,17 +26,11 @@ export const GET = withErrorHandling(async (req: Request) => {
  * Persists the featured hunt ID to the database.  Any database failure
  * propagates as an HTTP 500 rather than being silently ignored.
  */
-export const POST = withErrorHandling(async (req: NextRequest) => {
-  assertAdminAuth(req);
-  let body: { huntId?: number | null };
-  try {
-    body = (await req.json()) as { huntId: number | null };
-  } catch {
-    throw new ValidationError("Invalid request payload");
+export const POST = withValidation(
+  { body: adminFeaturedBodySchema },
+  async (req, _context, { body }) => {
+    assertAdminAuth(req);
+    await writeFeaturedId(body.huntId ?? null);
+    return NextResponse.json({ success: true, featuredHuntId: body.huntId ?? null });
   }
-
-  const { huntId } = body;
-  await writeFeaturedId(huntId ?? null);
-
-  return NextResponse.json({ success: true, featuredHuntId: huntId ?? null });
-});
+);

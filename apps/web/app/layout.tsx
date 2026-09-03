@@ -10,7 +10,9 @@ import { Footer } from "@/components/Footer";
 import { FavoriteNotifications } from "@/components/FavoriteNotifications";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { PageTransitionWrapper } from "@/components/PageTransitionWrapper";
+import { FirstHuntChecklist } from "@/components/FirstHuntChecklist";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import { TestnetWarning } from "@/components/NetworkIndicator";
 
 import Providers from "./providers";
 
@@ -102,12 +104,14 @@ export default function RootLayout({
       </head>
       <body className={`${hankenGrotesk.variable} antialiased`} suppressHydrationWarning>
         <Providers>
+          <TestnetWarning />
           <a href="#main-content" className="skip-to-content">
             Skip to content
           </a>
           <TxToaster />
           <FavoriteNotifications />
           <PWAInstallPrompt />
+          <FirstHuntChecklist />
           <EnvironmentIndicator />
           <main id="main-content">
             <Suspense fallback={<PageSkeleton />}>
@@ -120,4 +124,3 @@ export default function RootLayout({
     </html>
   );
 }
- 

@@ -1,26 +1,16 @@
-import { useCallback,useState } from 'react';
+import { useCallback, useState } from "react"
 
-import { logger } from '@/lib/logger';
-
-/**
- * A hook to handle pull-to-refresh state for async actions (e.g., React Query refetch).
- */
-export function useRefreshByUser(refetch: () => Promise<unknown>) {
-  const [isRefreshing, setIsRefreshing] = useState(false);
+export function useRefreshByUser<T>(refetch: () => Promise<T>) {
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   const onRefresh = useCallback(async () => {
-    setIsRefreshing(true);
+    setIsRefreshing(true)
     try {
-      await refetch();
-    } catch (error) {
-      logger.error('Refresh operation failed:', error);
+      await refetch()
     } finally {
-      setIsRefreshing(false);
+      setIsRefreshing(false)
     }
-  }, [refetch]);
+  }, [refetch])
 
-  return {
-    isRefreshing,
-    onRefresh,
-  };
+  return { isRefreshing, onRefresh }
 }

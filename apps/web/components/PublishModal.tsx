@@ -1,7 +1,7 @@
 "use client"
 
 import Coin from "@/components/icons/Coin"
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 interface PublishModalProps {
   isOpen: boolean

@@ -12,6 +12,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
       - name: Setup Node.js with pnpm
         uses: ./.github/actions/setup-node-pnpm
@@ -34,4 +42,5 @@ jobs:
         uses: zaproxy/action-baseline@v0.8.0
         with:
           target: "http://localhost:3000"
-        continue-on-error: true
+        continue-on-error: true # prevents workflow failure if ZAP fails
+        # NOTE: The ZAP baseline expects a running server; we started it above.

@@ -13,6 +13,7 @@ import {
   Menu,
   PlusCircle,
   Search,
+  Settings as SettingsIcon,
   User,
   X,
 } from "lucide-react";
@@ -20,11 +21,13 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { NetworkIndicator } from "./NetworkIndicator";
 
 import { NotificationPanel } from "@/components/NotificationPanel";
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 import { useIsMounted } from "@/hooks/useIsMounted";
 import { useWallet } from "@/lib/context/WalletContext";
+import { OPEN_WALLET_EVENT } from "@/lib/firstHuntGuide";
 import { getUnreadNotificationCount } from "@/lib/notifications/rankTracker";
 import {
   createWeeklyDigestNotification,
@@ -33,6 +36,7 @@ import {
 import { cn } from "@/lib/utils";
 import { getStellarAccountExplorerUrl } from "@/lib/walletAddress";
 
+import { GasSponsorshipIndicator } from "./GasSponsorshipIndicator";
 import { LanguageSelector } from "./LanguageSelector";
 import { ThemeToggle } from "./ThemeToggle";
 import { WalletAddress } from "./WalletAddress";
@@ -77,6 +81,12 @@ const NAV_ITEMS = [
     href: "/profile",
     mega: null,
   },
+  {
+    label: "Settings",
+    icon: SettingsIcon,
+    href: "/settings",
+    mega: null,
+  },
 ];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -98,14 +108,14 @@ function SearchBar({ open, onClose }: { open: boolean; onClose: () => void }) {
           <input
             ref={inputRef}
             type="search"
-            aria-label="Search hunts, creators, rewards"
+            aria-label={a11y("searchInput")}
             placeholder="Search hunts, creators, rewards…"
             className="flex-1 bg-transparent text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none text-base"
             onKeyDown={(e) => e.key === "Escape" && onClose()}
           />
           <button
             onClick={onClose}
-            aria-label="Close search"
+            aria-label={a11y("closeSearch")}
             className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
           >
             <X className="w-4 h-4" />
@@ -180,7 +190,7 @@ function MobileMenu({
         </span>
         <button
           onClick={onClose}
-          aria-label="Close menu"
+            aria-label={a11y("closeMenu")}
           className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5"
         >
           <X className="w-6 h-6 text-slate-700 dark:text-slate-300" />
@@ -234,6 +244,9 @@ function MobileMenu({
                 Disconnect
               </button>
             </div>
+            <div className="px-4 pb-3 bg-slate-50 dark:bg-slate-900">
+              <GasSponsorshipIndicator />
+            </div>
           </div>
         ) : (
           <Button
@@ -255,6 +268,7 @@ function MobileMenu({
 
 export function Header() {
   const t = useTranslations("header");
+  const a11y = useTranslations("a11y");
   const mounted = useIsMounted();
   const { connected, displayKey, publicKey, connect, disconnect, walletProvider } = useWallet();
 
@@ -292,6 +306,12 @@ export function Header() {
     if (shouldSendWeeklyDigest()) {
       createWeeklyDigestNotification();
     }
+  }, []);
+
+  useEffect(() => {
+    const openWallet = () => setModalOpen(true);
+    window.addEventListener(OPEN_WALLET_EVENT, openWallet);
+    return () => window.removeEventListener(OPEN_WALLET_EVENT, openWallet);
   }, []);
 
   // Close dropdowns on outside click
@@ -352,13 +372,13 @@ export function Header() {
           <Link
             href="/"
             className="flex-shrink-0 text-2xl md:text-3xl font-black bg-gradient-to-br from-[#2F2FFF] to-[#E87785] bg-clip-text text-transparent mr-2"
-            aria-label="Hunty home"
+              aria-label={a11y("homeLink")}
           >
             Hunty
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1 flex-1" aria-label="Main navigation">
+          <nav className="hidden md:flex items-center gap-1 flex-1" aria-label={a11y("mainNav")}>
             {NAV_ITEMS.map(({ label, href, mega, icon: Icon }) => (
               <div
                 key={label}
@@ -395,13 +415,16 @@ export function Header() {
 
           {/* Right side actions */}
           <div className="flex items-center gap-2 ml-auto">
+            {/* Network Indicator */}
+            <NetworkIndicator variant="pill" showIcon={true} />
+
             {/* Search */}
             <button
               onClick={() => {
                 setSearchOpen((v) => !v);
                 setNotifOpen(false);
               }}
-              aria-label="Search"
+              aria-label={a11y("search")}
               className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-[#3737A4] dark:hover:text-indigo-400 transition-colors"
             >
               <Search className="w-5 h-5" />
@@ -414,7 +437,11 @@ export function Header() {
                   setNotifOpen((v) => !v);
                   setSearchOpen(false);
                 }}
-                aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
+                aria-label={
+                  unreadCount > 0
+                    ? `${a11y("notifications")}, ${a11y("unreadCount", { count: unreadCount })}`
+                    : a11y("notifications")
+                }
                 className="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-[#3737A4] dark:hover:text-indigo-400 transition-colors"
               >
                 <Bell className="w-5 h-5" />
@@ -485,10 +512,13 @@ export function Header() {
                           <p className="text-white font-mono text-xs break-all">{publicKey}</p>
                         </div>
                       </div>
+                      <div className="px-4 pt-3">
+                        <GasSponsorshipIndicator />
+                      </div>
                       <div className="p-2 flex flex-col gap-1">
                         <button
                           onClick={handleCopy}
-                          aria-label="Copy wallet address"
+                          aria-label={a11y("copyWalletAddress")}
                           className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-left"
                         >
                           {copied ? (
@@ -504,7 +534,7 @@ export function Header() {
                             href={getStellarAccountExplorerUrl(publicKey)}
                             target="_blank"
                             rel="noreferrer noopener"
-                            aria-label="View wallet address on Stellar explorer"
+                            aria-label={a11y("viewOnExplorer")}
                             className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-left"
                           >
                             <ExternalLink className="w-4 h-4 text-slate-400 flex-shrink-0" />
@@ -524,12 +554,21 @@ export function Header() {
                             );
                             setDropdownOpen(false);
                           }}
-                          aria-label="Take onboarding tour"
+                          aria-label={a11y("takeTour")}
                           className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-left"
                         >
                           <HelpCircle className="w-4 h-4 text-slate-400 flex-shrink-0" />
                           <span>Take Tour</span>
                         </button>
+
+                        <Link
+                          href="/settings"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-left"
+                        >
+                          <SettingsIcon className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                          <span>Settings</span>
+                        </Link>
 
                         <div className="h-px bg-slate-100 dark:bg-white/5 mx-3" />
                         <button
@@ -557,7 +596,7 @@ export function Header() {
             {/* Mobile hamburger */}
             <button
               onClick={() => setMobileOpen(true)}
-              aria-label="Open menu"
+              aria-label={a11y("openMenu")}
               className="md:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
             >
               <Menu className="w-6 h-6" />

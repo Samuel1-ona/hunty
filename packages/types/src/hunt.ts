@@ -73,6 +73,16 @@ export interface StoredHunt {
   coverImageCid?: string;
   /** Active editorial banner showcase at the top of the Arcade. */
   isFeaturedOfWeek?: boolean;
+  /**
+   * Sponsors that have contributed to this hunt's reward pool.
+   * Each entry is the sponsor's Stellar wallet address.
+   */
+  sponsors?: string[];
+  /**
+   * When true, players can use AR mode to reveal clues in camera view.
+   * This is an opt-in feature per hunt.
+   */
+  arEnabled?: boolean;
 }
 
 /** Lightweight hunt projection used by list/detail views. */

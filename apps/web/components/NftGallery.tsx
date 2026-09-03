@@ -6,8 +6,8 @@ import Image from "next/image";
 import React, { useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/QueryState";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@hunty/ui";
+import { Card, CardContent } from "@hunty/ui";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -84,7 +84,7 @@ export function NftGallery({ nfts }: NftGalleryProps) {
         }
         title="Complete hunts to earn NFTs"
         description="Your NFT gallery is empty right now. Finish a scavenger hunt to unlock your first collectible reward."
-        action={{ label: "Browse hunts", href: "/" }}
+        action={{ label: "Browse hunts", onPress: () => window.location.href = "/" }}
       />
     );
   }

@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Copy, Share2, ImageIcon, Code2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 import { Header } from "@/components/Header";
 import { LeaderboardTable } from "@/components/LeaderBoardTable";
 import { useWalletStore } from "@/store/useStore";

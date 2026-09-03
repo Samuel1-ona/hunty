@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Plus, Send, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import {

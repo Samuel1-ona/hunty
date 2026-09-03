@@ -8,10 +8,31 @@
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": ["^lint"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "**/*.js",
+        "**/*.jsx",
+        "**/*.ts",
+        "**/*.tsx",
+        "**/*.json",
+        "eslint.config.*",
+        ".eslintrc*",
+        "$TURBO_ROOT$/eslint.config.mjs"
+      ],
+      "outputs": []
     },
     "typecheck": {
-      "dependsOn": ["^typecheck"]
+      "dependsOn": ["^typecheck"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "**/*.ts",
+        "**/*.tsx",
+        "**/*.d.ts",
+        "tsconfig.json",
+        "tsconfig*.json"
+      ],
+      "outputs": []
     },
     "test": {
       "dependsOn": ["^build"],
@@ -31,6 +52,40 @@
         "stryker.validation.conf.json"
       ],
       "outputs": ["mutation-report/**"]
+    },
+    "e2e": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "playwright.config.ts",
+        "e2e/**"
+      ],
+      "outputs": ["playwright-report/**", "test-results/**"],
+      "passThroughEnv": ["CI"]
+    },
+    "smoke": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "playwright.smoke.config.ts",
+        "e2e/smoke/**"
+      ],
+      "outputs": ["playwright-report/**", "test-results/**"],
+      "passThroughEnv": ["CI", "SMOKE_BASE_URL", "DEPLOYMENT_URL"]
+    },
+    "perf:budget": {
+      "dependsOn": ["build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "scripts/check-performance-budgets.mjs"
+      ]
+    },
+    "bundle:check": {
+      "dependsOn": ["build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "scripts/check-bundle-size.mjs"
+      ]
     },
     "dev": {
       "cache": false,

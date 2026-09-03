@@ -44,22 +44,3 @@ jobs:
 
       - name: Check performance budgets
         run: pnpm --filter @hunty/web run perf:budget
-      - name: Setup Node.js with pnpm
-        uses: ./.github/actions/setup-node-pnpm
-
-      - name: Build Next.js application
-        run: pnpm build
-
-      - name: Check bundle size
-        run: pnpm bundle:check
-        working-directory: apps/web
-
-      - name: Check performance budgets
-        run: pnpm perf:budget
-        working-directory: apps/web
-
-      - name: Generate bundle report
-        run: node scripts/generate-bundle-report.mjs
-        working-directory: apps/web
-
-# TODO: reintroduce bundle-report + PR-comment steps once apps/web/scripts/generate-bundle-report.mjs and apps/web/bundle-report.md exist (currently missing). See PR #1013.

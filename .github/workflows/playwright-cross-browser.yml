@@ -27,15 +27,18 @@ jobs:
         with:
           working-directory: apps/web
 
+      # Browser versions are pinned in apps/web/package.json (@playwright/test version)
+      # and playwright.config.ts. The version is locked to ensure reproducible test runs.
+      # See PLAYWRIGHT_BROWSERS.md for version management details.
       - name: Install Playwright browsers (Chromium only)
         working-directory: apps/web
-        run: npx playwright install chromium --with-deps
+        run: pnpm exec playwright install chromium --with-deps
 
       - name: Run axe accessibility audit
         working-directory: apps/web
         env:
           CI: true
-        run: npx playwright test e2e/a11y-audit.spec.ts --project=chromium-desktop --reporter=github
+        run: pnpm exec playwright test e2e/a11y-audit.spec.ts --project=chromium-desktop --reporter=github
 
       - name: Upload axe reports
         if: always()
@@ -61,6 +64,9 @@ jobs:
       - name: Setup Node.js with pnpm
         uses: ./.github/actions/setup-node-pnpm
 
+      # Browser versions are pinned in apps/web/package.json (@playwright/test version)
+      # and playwright.config.ts. The version is locked to ensure reproducible test runs.
+      # See PLAYWRIGHT_BROWSERS.md for version management details.
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps
 

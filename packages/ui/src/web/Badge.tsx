@@ -14,6 +14,10 @@ const badgeVariants = cva(
         warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
         error: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
         gray: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+        default: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+        secondary: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+        destructive: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
+        outline: "text-foreground border border-input",
       },
     },
     defaultVariants: { variant: "gray" },
@@ -23,12 +27,16 @@ const badgeVariants = cva(
 export interface BadgeProps
   extends React.ComponentProps<"span">,
     VariantProps<typeof badgeVariants>,
-    Omit<SharedBadgeProps, "variant"> {}
+    Omit<SharedBadgeProps, "variant"> {
+      children?: React.ReactNode;
+    }
 
-export function Badge({ label, variant, className, testID, ...props }: BadgeProps) {
+export function Badge({ label, children, variant, className, testID, ...props }: BadgeProps) {
   return (
     <span data-testid={testID} className={cn(badgeVariants({ variant }), className)} {...props}>
-      {label}
+      {label ?? children}
     </span>
   );
 }
+
+export { badgeVariants };

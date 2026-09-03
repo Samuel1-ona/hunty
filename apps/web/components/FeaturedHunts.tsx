@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import { ArrowRight,Clock, Sparkles, Trophy } from "lucide-react"
 
 import { HuntCoverImage } from "@/components/HuntCoverImage"
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getFeaturedHunts } from "@/lib/huntStore"
 import { queryCachePolicy, queryKeys } from "@/lib/queryKeys"

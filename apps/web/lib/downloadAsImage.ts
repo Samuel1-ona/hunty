@@ -36,6 +36,24 @@ export function buildHuntOgImageUrl(huntId: number): string {
   return buildDeepLink(`/api/og/hunt/${huntId}`)
 }
 
+/**
+ * Build the URL for a player's result-card OG image (rank, time, hunt name)
+ * generated on hunt completion.
+ */
+export function buildResultCardImageUrl(
+  huntId: number,
+  wallet: string,
+  options?: { rank?: number; time?: number },
+): string {
+  const params = new URLSearchParams({
+    huntId: String(huntId),
+    wallet,
+  })
+  if (options?.rank != null) params.set("rank", String(options.rank))
+  if (options?.time != null) params.set("time", String(options.time))
+  return buildDeepLink(`/api/og/result?${params.toString()}`)
+}
+
 export async function copyShareLink(url: string): Promise<boolean> {
   if (typeof navigator === "undefined" || !navigator.clipboard) return false
   try {

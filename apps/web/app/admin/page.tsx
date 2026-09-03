@@ -17,8 +17,8 @@ import { toast } from "sonner";
 
 import { Header } from "@/components/Header";
 import { HuntCoverImage } from "@/components/HuntCoverImage";
-import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { Button } from "@hunty/ui";
+import { Card, CardDescription, CardTitle } from "@hunty/ui";
 import { getAllHuntsIncludingPrivate, setLocalFeaturedHunt } from "@/lib/huntStore";
 import type { StoredHunt } from "@/lib/types";
 

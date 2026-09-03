@@ -13,6 +13,7 @@ import { getActiveWalletAdapter } from "@/lib/walletAdapter";
 import { sha256Hex } from "@/lib/crypto";
 import { logger } from "@/lib/logger";
 import { isOnline, queueProgressUpdate } from "@/lib/offlineSync";
+import { getRuntimeLocale, resolveLocalizedText } from "@/lib/clueLocalization";
 
 import type {
   ClueDifficulty,
@@ -44,6 +45,8 @@ export type ClueInput = {
   question: string;
   answer: string;
   points: number;
+  questionTranslations?: Partial<Record<string, string>>;
+  hintTranslations?: Partial<Record<string, string>>;
   hint?: string;
   hintCost?: number;
   difficulty?: ClueDifficulty;
@@ -79,6 +82,8 @@ export async function createHunt(
   /** Overall difficulty tag persisted with the on-chain hunt metadata. */
   difficulty?: HuntDifficulty,
   maxParticipants?: number,
+  /** Seconds after the hunt ends before unclaimed rewards can be reclaimed. */
+  gracePeriodSeconds?: number,
 ): Promise<CreateHuntResult> {
   if (typeof window === "undefined") throw new Error("Browser environment required");
 
@@ -100,6 +105,7 @@ export async function createHunt(
     ...(sequential ? { sequential: true } : {}),
     ...(difficulty ? { difficulty } : {}),
     ...(maxParticipants !== undefined ? { max_participants: maxParticipants } : {}),
+    ...(gracePeriodSeconds !== undefined ? { grace_period_seconds: gracePeriodSeconds } : {}),
   });
 
   const publicKey = await wallet.getPublicKey();
@@ -130,6 +136,16 @@ export async function createHunt(
     hash?: string;
   };
   if (!res || !res.hash) throw new Error("Transaction submission failed");
+
+  await fetch("/api/v1/webhooks/events", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-wallet-address": creator },
+    body: JSON.stringify({
+      type: "hunt.published",
+      creatorAddress: creator,
+      data: { title, transactionHash: res.hash },
+    }),
+  }).catch(() => undefined);
 
   return { txHash: res.hash };
 }
@@ -239,6 +255,12 @@ export async function addCluesBatch(
     question: clue.question.trim(),
     answer: clue.answer.trim(),
     points: clue.points,
+    ...(clue.questionTranslations && Object.keys(clue.questionTranslations).length > 0
+      ? { question_translations: Object.fromEntries(Object.entries(clue.questionTranslations).filter(([, value]) => typeof value === "string" && value.trim())) }
+      : {}),
+    ...(clue.hintTranslations && Object.keys(clue.hintTranslations).length > 0
+      ? { hint_translations: Object.fromEntries(Object.entries(clue.hintTranslations).filter(([, value]) => typeof value === "string" && value.trim())) }
+      : {}),
     ...(clue.hint?.trim() ? { hint: clue.hint.trim() } : {}),
     ...(clue.hintCost !== undefined ? { hint_cost: clue.hintCost } : {}),
     ...(clue.difficulty ? { difficulty: clue.difficulty } : {}),
@@ -510,12 +532,15 @@ export async function get_clue_info(huntId: number, clueId: number): Promise<Clu
       }
     }
 
+    const locale = typeof window !== "undefined" ? window.location.pathname.match(/^\/([a-z]{2})(?:\/|$)/i)?.[1] ?? navigator.language : "en";
     return {
       id: clue.id,
-      question: clue.question,
+      question: resolveLocalizedText(clue.questionTranslations, locale, clue.question),
       points: clue.points,
+      questionTranslations: clue.questionTranslations,
+      hintTranslations: clue.hintTranslations,
       hints: clue.hints,
-      hint: clue.hint,
+      hint: resolveLocalizedText(clue.hintTranslations, locale, clue.hint),
       hintCost: clue.hintCost,
       difficulty: clue.difficulty,
     };

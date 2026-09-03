@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server"
 import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit"
+import { ValidationError } from "@/lib/api/errors"
+import { withValidation } from "@/lib/api/withValidation"
+import { withErrorHandling } from "@/lib/api/withErrorHandling"
 import {
   acceptInvite,
   ensureOwner,
@@ -9,10 +12,26 @@ import {
   removeCollaborator,
   transferOwnership,
   updateCollaboratorRole,
-  type CollaboratorRole,
 } from "@/lib/collaboration"
+import {
+  dbAcceptInvite,
+  dbEnsureOwner,
+  dbGetActiveEditors,
+  dbGetCollaborators,
+  dbGetRoleForWallet,
+  dbInviteCollaborator,
+  dbPingPresence,
+  dbRemoveCollaborator,
+  dbSaveCollaborators,
+  dbTransferOwnership,
+  dbUpdateCollaboratorRole,
+} from "@/lib/collaborationDb"
+import { collaboratorsBodySchema } from "@hunty/types/api-schemas"
+import { z } from "zod"
 
 type RouteContext = { params: Promise<{ id: string }> }
+
+const paramsSchema = z.object({ id: z.string() })
 
 function parseHuntId(id: string): number | null {
   const n = Number(id)
@@ -23,7 +42,7 @@ function parseHuntId(id: string): number | null {
  * GET /api/v1/hunts/:id/collaborators
  * List collaborators + recent activity for a hunt.
  */
-export async function GET(req: Request, context: RouteContext) {
+export const GET = withErrorHandling(async (req: Request, context: RouteContext) => {
   const ip = getIP(req)
   const { success, reset } = await rateLimit(ip, { limit: 100, windowMs: 60_000 })
   if (!success) return rateLimitResponse(reset)
@@ -31,92 +50,64 @@ export async function GET(req: Request, context: RouteContext) {
   const { id } = await context.params
   const huntId = parseHuntId(id)
   if (huntId == null) {
-    return NextResponse.json({ error: "Invalid hunt id" }, { status: 400 })
+    throw new ValidationError("Invalid hunt id", { id })
   }
 
+  const collaborators = await dbGetCollaborators(huntId)
   return NextResponse.json({
-    collaborators: getCollaborators(huntId),
+    collaborators,
     activity: getActivityLog(huntId, 50),
   })
-}
+})
 
 /**
  * POST /api/v1/hunts/:id/collaborators
  * Actions: invite | accept | update_role | remove | transfer | ensure_owner
  */
-export async function POST(req: Request, context: RouteContext) {
-  const ip = getIP(req)
-  const { success, reset } = await rateLimit(ip, { limit: 40, windowMs: 60_000 })
-  if (!success) return rateLimitResponse(reset)
+export const POST = withValidation(
+  { body: collaboratorsBodySchema, params: paramsSchema },
+  async (req, _context, { body, params }) => {
+    const ip = getIP(req)
+    const { success, reset } = await rateLimit(ip, { limit: 40, windowMs: 60_000 })
+    if (!success) return rateLimitResponse(reset)
 
-  const { id } = await context.params
-  const huntId = parseHuntId(id)
-  if (huntId == null) {
-    return NextResponse.json({ error: "Invalid hunt id" }, { status: 400 })
-  }
+    const huntId = parseHuntId(params!.id)
+    if (huntId == null) {
+      throw new ValidationError("Invalid hunt id", { id: params!.id })
+    }
 
-  let body: {
-    action?: string
-    actorAddress?: string
-    walletAddress?: string
-    role?: CollaboratorRole
-    newOwnerAddress?: string
-  }
-  try {
-    body = await req.json()
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
-  }
-
-  const actor = body.actorAddress?.trim()
-  if (!actor) {
-    return NextResponse.json({ error: "actorAddress is required" }, { status: 400 })
-  }
-
-  switch (body.action) {
-    case "ensure_owner": {
-      const owner = ensureOwner(huntId, actor)
-      return NextResponse.json({ ok: true, collaborator: owner })
-    }
-    case "invite": {
-      if (!body.walletAddress) {
-        return NextResponse.json({ error: "walletAddress is required" }, { status: 400 })
+    switch (body.action) {
+      case "ensure_owner": {
+        const owner = await dbEnsureOwner(huntId, body.actorAddress)
+        await dbSaveCollaborators(huntId, [owner, ...(await dbGetCollaborators(huntId)).filter((c) => c.walletAddress !== body.actorAddress)])
+        return NextResponse.json({ ok: true, collaborator: owner })
       }
-      const role = body.role === "viewer" ? "viewer" : "editor"
-      const result = inviteCollaborator(huntId, actor, body.walletAddress, role)
-      if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
-      return NextResponse.json({ ok: true, collaborator: result.collaborator })
-    }
-    case "accept": {
-      const ok = acceptInvite(huntId, actor)
-      if (!ok) return NextResponse.json({ error: "Invite not found" }, { status: 404 })
-      return NextResponse.json({ ok: true })
-    }
-    case "update_role": {
-      if (!body.walletAddress || (body.role !== "editor" && body.role !== "viewer")) {
-        return NextResponse.json({ error: "walletAddress and role required" }, { status: 400 })
+      case "invite": {
+        const role = body.role === "viewer" ? "viewer" : "editor"
+        const result = await dbInviteCollaborator(huntId, body.actorAddress, body.walletAddress, role)
+        if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
+        return NextResponse.json({ ok: true, collaborator: result.collaborator })
       }
-      const result = updateCollaboratorRole(huntId, actor, body.walletAddress, body.role)
-      if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
-      return NextResponse.json({ ok: true, collaborator: result.collaborator })
-    }
-    case "remove": {
-      if (!body.walletAddress) {
-        return NextResponse.json({ error: "walletAddress is required" }, { status: 400 })
+      case "accept": {
+        const ok = await dbAcceptInvite(huntId, body.actorAddress)
+        if (!ok) return NextResponse.json({ error: "Invite not found" }, { status: 404 })
+        return NextResponse.json({ ok: true })
       }
-      const result = removeCollaborator(huntId, actor, body.walletAddress)
-      if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
-      return NextResponse.json({ ok: true })
-    }
-    case "transfer": {
-      if (!body.newOwnerAddress) {
-        return NextResponse.json({ error: "newOwnerAddress is required" }, { status: 400 })
+      case "update_role": {
+        const result = await dbUpdateCollaboratorRole(huntId, body.actorAddress, body.walletAddress, body.role)
+        if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
+        return NextResponse.json({ ok: true, collaborator: result.collaborator })
       }
-      const result = transferOwnership(huntId, actor, body.newOwnerAddress)
-      if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
-      return NextResponse.json({ ok: true })
+      case "remove": {
+        const result = await dbRemoveCollaborator(huntId, body.actorAddress, body.walletAddress)
+        if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
+        return NextResponse.json({ ok: true })
+      }
+      case "transfer": {
+        const result = await dbTransferOwnership(huntId, body.actorAddress, body.newOwnerAddress)
+        if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
+        return NextResponse.json({ ok: true })
+      }
     }
-    default:
-      return NextResponse.json({ error: "Unknown action" }, { status: 400 })
   }
-}
+)
