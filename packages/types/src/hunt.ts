@@ -63,14 +63,6 @@ export interface StoredHunt {
   startTime?: number;
   /** Unix timestamp in seconds — when the hunt ends. */
   endTime?: number;
-  /**
-   * Grace period in seconds after `endTime` during which unclaimed rewards
-   * remain escrowed. Once this window expires the creator may call the
-   * refund endpoint to reclaim the remaining escrow balance.
-   * Defaults to 604800 (7 days) when not explicitly set.
-   * Must be a non-negative integer.
-   */
-  gracePeriodSeconds?: number;
   creatorEmail?: string;
   emailNotifications?: boolean;
   /** When true, the hunt is hidden from the public arcade grid. */

@@ -14,12 +14,12 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { queryCachePolicy, queryKeys } from "@/lib/queryKeys"
-import { useRefreshByUser } from "@/useRefreshByUser"
 import { HuntFeedCard, HuntFeedCardGridSkeleton } from "@/components/HuntFeedCard"
 import { EmptyState } from "@/components/EmptyState"
 import type { HuntAgeClassification, StoredHunt, HuntFeedCategory } from "@/lib/types"
 import { getDistanceMeters } from "@/lib/locationServices"
 import { getStoredSession } from "@/lib/session"
+import { useRefreshByUser } from "@/hooks/useRefreshByUser"
 
 // ─── Constants ───────────────────────────────────────────────────────────
 

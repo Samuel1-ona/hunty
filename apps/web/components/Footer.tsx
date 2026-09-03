@@ -132,7 +132,6 @@ export function Footer() {
               <h2 className="text-sm font-bold text-slate-900 dark:text-white">
                 {t("stayInHunt")}
               </h2>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Stay in the hunt</h2>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
                 {t("getUpdates")}
               </p>
