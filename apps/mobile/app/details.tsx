@@ -6,7 +6,7 @@ import { getHuntById, getHuntClues } from '@store/huntStore';
 import { usePlayerStore } from '@store/useStore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 export default function DetailsScreen() {
   const router = useRouter();
@@ -14,6 +14,7 @@ export default function DetailsScreen() {
   const { huntId } = useLocalSearchParams<{ huntId?: string }>();
   const [hunt, setHunt] = useState<StoredHunt | null>(null);
   const [clues, setClues] = useState<Clue[]>([]);
+  const [arEnabled, setArEnabled] = useState(false);
   const { getCompletedClues } = usePlayerStore();
 
   const hId = Number(huntId);
@@ -39,6 +40,7 @@ export default function DetailsScreen() {
     return { xlm, nftCount };
   }, [clues.length, hunt?.rewardType]);
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const creatorAddress = useMemo(() => {
     if (hunt?.creatorEmail) {
       const username = hunt.creatorEmail.split('@')[0] || 'creator';
@@ -49,16 +51,23 @@ export default function DetailsScreen() {
 
   useEffect(() => {
     Promise.all([getHuntById(hId), getHuntClues(hId)]).then(([fetchedHunt, fetchedClues]) => {
-      if (fetchedHunt) setHunt(fetchedHunt);
+      if (fetchedHunt) {
+        setHunt(fetchedHunt);
+        setArEnabled(fetchedHunt.arEnabled || false);
+      }
       setClues(fetchedClues);
     });
   }, [hId]);
 
-  const handleStart = () => router.push(`/nested?huntId=${hId}&clueIndex=0`);
+  const handleStart = () => router.push(`/nested?huntId=${hId}&clueIndex=0&arEnabled=${arEnabled}`);
 
   const handleResume = () => {
     const next = clues.findIndex((_, i) => !completedClues.has(i));
-    router.push(`/nested?huntId=${hId}&clueIndex=${next >= 0 ? next : 0}`);
+    router.push(`/nested?huntId=${hId}&clueIndex=${next >= 0 ? next : 0}&arEnabled=${arEnabled}`);
+  };
+
+  const handleArToggle = (value: boolean) => {
+    setArEnabled(value);
   };
 
   if (!hunt) return <View style={styles.container} />;
@@ -94,6 +103,30 @@ export default function DetailsScreen() {
             reward before rival hunters do.
           </ThemedCustomText>
         </View>
+
+        {hunt.arEnabled && (
+          <View
+            style={[
+              styles.arToggleCard,
+              { backgroundColor: colors.primary + '10', borderColor: colors.primary + '30' },
+            ]}
+          >
+            <ThemedCustomText variant="label" weight="700" style={styles.sectionTitle}>
+              AR Clue Reveal
+            </ThemedCustomText>
+            <View style={styles.arToggleRow}>
+              <ThemedCustomText variant="body" style={styles.arToggleText}>
+                Use camera to reveal clues in AR
+              </ThemedCustomText>
+              <Switch
+                value={arEnabled}
+                onValueChange={handleArToggle}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor={arEnabled ? colors.primary : colors.text}
+              />
+            </View>
+          </View>
+        )}
 
         <View style={styles.metaContainer}>
           <View
@@ -341,6 +374,22 @@ const styles = StyleSheet.create({
   },
   loreText: {
     lineHeight: 20,
+  },
+  arToggleCard: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 12,
+  },
+  arToggleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  arToggleText: {
+    flex: 1,
+    marginRight: 12,
   },
   prizeCard: {
     marginHorizontal: 16,
