@@ -1,7 +1,5 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import Link from "next/link";
 import {
   ArrowUpRight,
   BadgeCheck,
@@ -12,8 +10,9 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
-
+import { FormEvent, useState } from "react";
 
 const footerSections = [
   {
@@ -63,8 +62,8 @@ const socialLinks = [
 ];
 
 export function Footer() {
-  const t = useTranslations("footer")
-  const commonT = useTranslations("common")
+  const t = useTranslations("footer");
+  const commonT = useTranslations("common");
   const [email, setEmail] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
 
@@ -132,6 +131,7 @@ export function Footer() {
               <h2 className="text-sm font-bold text-slate-900 dark:text-white">
                 {t("stayInHunt")}
               </h2>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Stay in the hunt</h2>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
                 {t("getUpdates")}
               </p>
@@ -177,7 +177,9 @@ export function Footer() {
 
         <div className="mt-10 flex flex-col gap-5 border-t border-slate-200 pt-6 text-sm text-slate-500 dark:border-white/10 dark:text-slate-400 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
-            <p>&copy; {new Date().getFullYear()} {commonT("appName")}. {t("rights")}</p>
+            <p>
+              &copy; {new Date().getFullYear()} {commonT("appName")}. {t("rights")}
+            </p>
             <Link
               href="/help"
               className="inline-flex items-center gap-1.5 transition-colors hover:text-[#3737A4] dark:hover:text-blue-300"

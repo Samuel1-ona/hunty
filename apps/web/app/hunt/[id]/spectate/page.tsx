@@ -1,3 +1,10 @@
-import SpectatorLeaderboard from "/components/SpectatorLeaderboard";
+import SpectatorLeaderboard from "@/components/SpectatorLeaderboard";
 
-interface PageProps {\n  params: Promise<{ id: string }>;\n}\n\nexport default async function SpectatePage({ params }: PageProps) {\n  const { id } = await params;\n  return <SpectatorLeaderboard huntId={id} />;\n}"
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default async function SpectatePage({ params }: PageProps) {
+  const { id } = await params;
+  return <SpectatorLeaderboard huntId={Number(id)} />;
+}

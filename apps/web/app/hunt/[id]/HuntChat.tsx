@@ -1,1 +1,14 @@
-"use client"\n\nimport { useWallet } from "@/lib/wallet"\nimport { ChatWindow } from "@/components/ChatWindow"\n\ninterface HuntChatProps {\n  huntId: number\n  creatorAddress?: string\n}\n\nexport function HuntChat({ huntId, creatorAddress }: HuntChatProps) {\n  const { address } = useWallet()\n  return <ChatWindow huntId={huntId} currentUserAddress={address} creatorAddress={creatorAddress} />\n}\n
+"use client"
+
+import { useWallet } from "@/lib/wallet"
+import { ChatWindow } from "@/components/ChatWindow"
+
+interface HuntChatProps {
+  huntId: number
+  creatorAddress?: string
+}
+
+export function HuntChat({ huntId, creatorAddress }: HuntChatProps) {
+  const { address } = useWallet()
+  return <ChatWindow huntId={huntId} currentUserAddress={address} creatorAddress={creatorAddress} />
+}

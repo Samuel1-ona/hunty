@@ -181,7 +181,7 @@ async function HuntPageContent({
             <span aria-hidden="true">&rarr;</span>
           </Link>
         )}
-        <!-- Metadata cards -->
+        {/* Metadata cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-12">
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col justify-center">
             <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Rating</p>

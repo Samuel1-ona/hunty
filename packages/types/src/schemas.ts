@@ -77,6 +77,7 @@ export const storedHuntSchema = z.object({
   is_private: z.boolean().optional(),
   coverImageCid: z.string().optional(),
   isFeaturedOfWeek: z.boolean().optional(),
+
   sponsors: z.array(z.string()).optional(),
 })
 
