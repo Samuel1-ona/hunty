@@ -37,7 +37,7 @@ export default function CreatorRecent() {
           <li key={item.id}>
             <span>{item.name}</span> - <span>{item.type}</span> - <span>{item.createdAt}</span>
           </li>
-        ));
+        ))}
       </ul>
     </div>
   );

@@ -22,4 +22,4 @@ function getTsFiles(dir) {
   return results;
 }
 
-const files = getTsPath('.');*
+const files = getTsPath('.');
