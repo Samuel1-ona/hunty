@@ -1,50 +1,175 @@
 "use client";
 
-import { Archive, ArrowLeft, HelpCircle, RefreshCw, Trash2 } from "lucide-react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
-import { Button } from "@hunty/ui";
-import { Card } from "@hunty/ui";
+import {
+  BulkActionsToolbar,
+  ConfirmActionDialog,
+  CreatorHuntList,
+  CreatorPageHeader,
+  CreatorTabs,
+  type HuntAction,
+  SaveAsTemplateDialog,
+} from "@/components/creator";
 import { Header } from "@/components/Header";
-import { RewardHistorySection } from "@/components/RewardHistorySection";
-import { DraftListPanel } from "@/components/DraftListPanel";
-import { ConfirmationDialog, SaveTemplateDialog } from "./_components/creator-dialogs";
-import { HuntList } from "./_components/hunt-list";
-import { useCreatorPage } from "./_hooks/use-creator-page";
+import { useWallet } from "@/lib/context/WalletContext";
+import { promoteHunt } from "@/lib/contracts/rewardManager";
+import {
+  duplicateHunt,
+  getArchivedHunts,
+  getHuntsByCreator,
+  getSoftDeletedHunts,
+  hideHuntsFromPublic,
+  permanentDeleteHunts,
+  restoreHunts,
+  softDeleteHunts,
+  SPOTLIGHT_FEE_XLM,
+  unhideHuntsFromPublic,
+} from "@/lib/huntStore";
+import { logger } from "@/lib/logger";
+import { fetchCreatorRewardHistory } from "@/lib/rewardHistory";
+import type { StoredHunt } from "@/lib/types";
 
 const OnboardingTour = dynamic(() => import("@/components/OnboardingTour"), {
   ssr: false,
 });
 
-export default function CreatorPage() {
-  const {
-    connected,
-    connect,
-    hunts,
-    archivedHunts,
-    softDeletedHunts,
-    rewardHistory,
-    activeTab,
-    setActiveTab,
-    selectedHunts,
-    setSelectedHunts,
-    confirmDialog,
-    setConfirmDialog,
-    templateDialog,
-    setTemplateDialog,
-    templateAuthor,
-    setTemplateAuthor,
-    promotingHuntId,
-    handlePromote,
-    handleAction,
-    confirmAction,
-    toggleHuntSelection,
-    getCurrentHunts,
-    handleSaveTemplate,
-  } = useCreatorPage();
+type Tab = "active" | "archived" | "deleted";
 
-  const activeHunts = hunts.filter((h) => !h.isArchived);
+export default function CreatorPage() {
+  const router = useRouter();
+  const { connected, publicKey, connect } = useWallet();
+  const [hunts, setHunts] = useState<StoredHunt[]>([]);
+  const [archivedHunts, setArchivedHunts] = useState<StoredHunt[]>([]);
+  const [softDeletedHunts, setSoftDeletedHunts] = useState<StoredHunt[]>([]);
+  const [rewardHistory, setRewardHistory] = useState<
+    Awaited<ReturnType<typeof fetchCreatorRewardHistory>>
+  >([]);
+  const [activeTab, setActiveTab] = useState<Tab>("active");
+  const [selectedHunts, setSelectedHunts] = useState<number[]>([]);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    action: HuntAction;
+    huntIds: number[];
+  }>({ open: false, action: "archive", huntIds: [] });
+  const [promotingHuntId, setPromotingHuntId] = useState<number | null>(null);
+
+  const [templateDialog, setTemplateDialog] = useState<{ open: boolean; huntId: number | null }>({
+    open: false,
+    huntId: null,
+  });
+
+  const loadHunts = useCallback(() => {
+    if (!publicKey) {
+      setHunts([]);
+      setArchivedHunts([]);
+      setSoftDeletedHunts([]);
+      return;
+    }
+    setHunts(getHuntsByCreator());
+    setArchivedHunts(getArchivedHunts());
+    setSoftDeletedHunts(getSoftDeletedHunts());
+  }, [publicKey]);
+
+  useEffect(() => {
+    loadHunts();
+  }, [loadHunts]);
+
+  useEffect(() => {
+    if (!publicKey) {
+      setRewardHistory([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadRewardHistory = async () => {
+      try {
+        const data = await fetchCreatorRewardHistory(publicKey);
+        if (!cancelled) setRewardHistory(data);
+      } catch (err) {
+        logger.error("Failed to load creator reward history:", err);
+      }
+    };
+
+    loadRewardHistory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [publicKey]);
+
+  const handlePromote = async (huntId: number) => {
+    try {
+      setPromotingHuntId(huntId);
+      const receipt = await promoteHunt(huntId, SPOTLIGHT_FEE_XLM);
+      loadHunts();
+      toast.success(
+        `Spotlight active until ${new Date(receipt.promotedUntil * 1000).toLocaleString()}.`,
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to promote hunt.");
+    } finally {
+      setPromotingHuntId(null);
+    }
+  };
+
+  const handleAction = (action: HuntAction, huntIds: number[]) => {
+    setConfirmDialog({ open: true, action, huntIds });
+  };
+
+  const confirmAction = () => {
+    const { action, huntIds } = confirmDialog;
+
+    switch (action) {
+      case "archive":
+        hideHuntsFromPublic(huntIds);
+        break;
+      case "unarchive":
+        unhideHuntsFromPublic(huntIds);
+        break;
+      case "soft-delete":
+        softDeleteHunts(huntIds);
+        break;
+      case "restore":
+        restoreHunts(huntIds);
+        break;
+      case "permanent-delete":
+        permanentDeleteHunts(huntIds);
+        break;
+    }
+
+    setConfirmDialog({ open: false, action: "archive", huntIds: [] });
+    setSelectedHunts([]);
+    loadHunts();
+  };
+
+  const toggleHuntSelection = (huntId: number) => {
+    setSelectedHunts((prev) =>
+      prev.includes(huntId) ? prev.filter((id) => id !== huntId) : [...prev, huntId]
+    );
+  };
+
+  const getCurrentHunts = () => {
+    switch (activeTab) {
+      case "active":
+        return hunts.filter((h) => !h.isArchived);
+      case "archived":
+        return archivedHunts;
+      case "deleted":
+        return softDeletedHunts;
+      default:
+        return hunts;
+    }
+  };
+
+  const templateHunt =
+    [...hunts, ...archivedHunts, ...softDeletedHunts].find(
+      (h) => h.id === templateDialog.huntId
+    ) ?? undefined;
 
   return (
     <div className="min-h-screen bg-gradient-to-tr from-blue-100 via-purple-100 to-[#f9f9ff] pb-12">
@@ -52,236 +177,65 @@ export default function CreatorPage() {
       <Header />
 
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8 flex items-center gap-4">
-          <Button
-            variant="ghost"
-            asChild
-            className="flex items-center gap-2 text-slate-700 hover:text-slate-900"
-          >
-            <Link href="/">
-              <ArrowLeft className="h-4 w-4" />
-              Game Arcade
-            </Link>
-          </Button>
-        </div>
-
-        <h1 className="mb-2 text-3xl font-bold bg-gradient-to-br from-[#3737A4] to-[#0C0C4F] text-transparent bg-clip-text flex items-center gap-3">
-          My Hunts
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs font-semibold text-[#3737A4] dark:text-indigo-400 hover:underline gap-1.5 flex items-center p-1 h-auto"
-            onClick={() =>
-              window.dispatchEvent(
-                new CustomEvent("start-onboarding-tour", { detail: { tourType: "creator" } })
-              )
-            }
-          >
-            <HelpCircle className="w-3.5 h-3.5" />
-            Take Tour
-          </Button>
-        </h1>
-        <p className="mb-6 text-slate-600">
-          View and manage hunts you have created. Draft hunts open in Edit; Active hunts open Live
-          Statistics.
-        </p>
+        <CreatorPageHeader />
 
         {/* Tabs */}
-        <div className="mb-6 flex gap-2 border-b border-slate-200">
-          <button
-            onClick={() => {
-              setActiveTab("active");
-              setSelectedHunts([]);
-            }}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === "active"
-                ? "border-[#3737A4] text-[#3737A4]"
-                : "border-transparent text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Active ({hunts.filter((h) => !h.isArchived).length})
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab("archived");
-              setSelectedHunts([]);
-            }}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === "archived"
-                ? "border-[#3737A4] text-[#3737A4]"
-                : "border-transparent text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Archived ({archivedHunts.length})
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab("deleted");
-              setSelectedHunts([]);
-            }}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === "deleted"
-                ? "border-[#3737A4] text-[#3737A4]"
-                : "border-transparent text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Trash ({softDeletedHunts.length})
-          </button>
-        </div>
+        <CreatorTabs
+          activeTab={activeTab}
+          activeCount={hunts.filter((h) => !h.isArchived).length}
+          archivedCount={archivedHunts.length}
+          deletedCount={softDeletedHunts.length}
+          onChange={(tab) => {
+            setActiveTab(tab);
+            setSelectedHunts([]);
+          }}
+        />
 
         {/* Bulk actions */}
         {selectedHunts.length > 0 && (
-          <div className="mb-4 flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
-            <span className="text-sm text-slate-600">{selectedHunts.length} selected</span>
-            {activeTab === "active" && (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleAction("archive", selectedHunts)}
-                  className="gap-1"
-                >
-                  <Archive className="w-4 h-4" />
-                  Archive
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleAction("soft-delete", selectedHunts)}
-                  className="gap-1 text-red-600 border-red-200 hover:bg-red-50"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete
-                </Button>
-              </>
-            )}
-            {activeTab === "archived" && (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleAction("unarchive", selectedHunts)}
-                  className="gap-1"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Unarchive
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleAction("soft-delete", selectedHunts)}
-                  className="gap-1 text-red-600 border-red-200 hover:bg-red-50"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete
-                </Button>
-              </>
-            )}
-            {activeTab === "deleted" && (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleAction("restore", selectedHunts)}
-                  className="gap-1"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Restore
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleAction("permanent-delete", selectedHunts)}
-                  className="gap-1 text-red-600 border-red-200 hover:bg-red-50"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Permanent Delete
-                </Button>
-              </>
-            )}
-            <Button size="sm" variant="ghost" onClick={() => setSelectedHunts([])}>
-              Clear selection
-            </Button>
-          </div>
+          <BulkActionsToolbar
+            selectedHuntIds={selectedHunts}
+            activeTab={activeTab}
+            onAction={handleAction}
+            onClear={() => setSelectedHunts([])}
+          />
         )}
 
-        {!connected ? (
-          <Card className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
-            <p className="mb-4 text-slate-600">
-              Connect your wallet to see hunts you have created.
-            </p>
-            <Button
-              onClick={() => connect()}
-              className="bg-[#0C0C4F] hover:bg-slate-800 text-white"
-            >
-              Connect Wallet
-            </Button>
-          </Card>
-        ) : hunts.length === 0 ? (
-          <Card className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
-            <p className="mb-4 text-slate-600">You haven&apos;t created any hunts yet.</p>
-            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Button
-                id="creator-create-button"
-                asChild
-                className="bg-[#0C0C4F] hover:bg-slate-800 text-white"
-              >
-                <Link href="/hunty">Create your first hunt</Link>
-              </Button>
-              <Button
-                id="creator-templates-button"
-                asChild
-                variant="outline"
-                className="border-[#0C0C4F] text-[#0C0C4F] hover:bg-[#0C0C4F] hover:text-white"
-              >
-                <Link href="/hunty/templates">Browse templates</Link>
-              </Button>
-            </div>
-          </Card>
-        ) : (
-          <>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <HuntList
-                hunts={getCurrentHunts()}
-                activeTab={activeTab}
-                selectedHunts={selectedHunts}
-                promotingHuntId={promotingHuntId}
-                onToggleSelect={toggleHuntSelection}
-                onAction={handleAction}
-                onPromote={handlePromote}
-                onSaveTemplate={(hunt) => setTemplateDialog({ open: true, huntId: hunt.id })}
-              />
-            </div>
+        <CreatorHuntList
+          connected={connected}
+          huntsCount={hunts.length}
+          currentHunts={getCurrentHunts()}
+          activeTab={activeTab}
+          selectedHuntIds={selectedHunts}
+          promotingHuntId={promotingHuntId}
+          rewardHistory={rewardHistory}
+          onConnect={connect}
+          onSelect={toggleHuntSelection}
+          onPromote={handlePromote}
+          onDuplicate={(huntId) => {
+            const newHunt = duplicateHunt(huntId);
+            if (newHunt) {
+              router.push(`/hunty?edit=${newHunt.id}`);
+            }
+          }}
+          onSaveTemplate={(huntId) => setTemplateDialog({ open: true, huntId })}
+          onAction={handleAction}
+        />
 
-            <div id="reward-history-section" className="mt-10">
-              <RewardHistorySection
-                title="Reward Distribution"
-                description="All rewards you distributed across your created hunts, with explorer links and filters."
-                entries={rewardHistory}
-                showRecipient
-                recipientLabel="Recipient"
-              />
-            </div>
-
-            <DraftListPanel />
-          </>
-        )}
-
-        <ConfirmationDialog
-          confirmDialog={confirmDialog}
-          onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}
+        <ConfirmActionDialog
+          open={confirmDialog.open}
+          action={confirmDialog.action}
+          huntCount={confirmDialog.huntIds.length}
+          onOpenChange={(open) => setConfirmDialog((prev) => ({ ...prev, open }))}
           onConfirm={confirmAction}
         />
 
-        <SaveTemplateDialog
-          templateDialog={templateDialog}
-          templateAuthor={templateAuthor}
-          onOpenChange={(open) => setTemplateDialog({ ...templateDialog, open })}
-          onAuthorChange={setTemplateAuthor}
-          onSave={handleSaveTemplate}
+        <SaveAsTemplateDialog
+          open={templateDialog.open}
+          hunt={templateHunt}
+          onOpenChange={(open) => setTemplateDialog({ open, huntId: null })}
         />
       </div>
     </div>
   );
 }
- 
