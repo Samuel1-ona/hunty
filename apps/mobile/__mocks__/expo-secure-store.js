@@ -1,3 +1,5 @@
+/* global jest */
+
 module.exports = {
   getItemAsync: jest.fn(() => Promise.resolve(null)),
   setItemAsync: jest.fn(() => Promise.resolve()),

@@ -1,3 +1,5 @@
+/* global jest */
+
 /**
  * Manual mock for expo-notifications in the Jest environment.
  */

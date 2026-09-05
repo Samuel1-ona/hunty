@@ -1,7 +1,7 @@
 {
   "extends": "@hunty/config/tsconfig/nextjs.json",
   "compilerOptions": {
-    "baseUrl": ".",
+    "forceConsistentCasingInFileNames": true,
     "paths": {
       "@/*": ["./*"],
       "@/components": ["./components"],

@@ -1,3 +1,5 @@
+/* global jest */
+
 module.exports = {
   NativeModulesProxy: {},
   EventEmitter: class EventEmitter {

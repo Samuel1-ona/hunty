@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityIndicator, Modal, StyleSheet, Text, TouchableOpacity View } from 'react-native';
+import { ActivityIndicator, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 

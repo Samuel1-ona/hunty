@@ -2,16 +2,15 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import Image from "next/image";
 
 import { FastestPlayersStrip } from "@/components/FastestPlayersStrip";
 import { Header } from "@/components/Header";
+import { StarRating } from "@/components/StarRating";
 import { huntStructuredData, StructuredData } from "@/components/StructuredData";
 import { formatTimestamp } from "@/lib/dateUtils";
 import { isHuntEnded } from "@/lib/huntStatus";
 import { getAllHunts, getHunt } from "@/lib/huntStore";
 import type { HuntStatus } from "@/lib/types";
-import { StarRating } from "@/components/StarRating";
 
 import { HuntCountdown } from "./HuntCountdown";
 import HuntPageSkeleton from "./loading";
@@ -35,7 +34,7 @@ export async function generateMetadata({
     };
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL|| "https://hunty.app";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hunty.app";
   const queryString = spectator === "true" ? "?spectator=true" : "";
   const huntUrl = `${baseUrl}/hunt/${hunt.id}${queryString}`;
   const ended = isHuntEnded(hunt.status);
@@ -48,7 +47,7 @@ export async function generateMetadata({
     title: `${hunt.title} | Hunty - Scavenger Hunt Game`,
     description:
       hunt.description ||
-        `Join the "${hunt.title}" scavenger hunt on Hunty. Solve clues, complete challenges, and earn XLM tokens or exclusive NFTs!`,
+      `Join the "${hunt.title}" scavenger hunt on Hunty. Solve clues, complete challenges, and earn XLM tokens or exclusive NFTs!`,
     keywords: ["hunt", hunt.title, "scavenger hunt", "game", "blockchain", "Stellar"],
     authors: [{ name: "Hunty Team" }],
     openGraph: {
@@ -58,7 +57,7 @@ export async function generateMetadata({
       title: hunt.title,
       description:
         hunt.description ||
-          `Join the "${hunt.title}" scavenger hunt on Hunty. Solve clues, complete challenges, and earn rewards!`,
+        `Join the "${hunt.title}" scavenger hunt on Hunty. Solve clues, complete challenges, and earn rewards!`,
       siteName: "Hunty",
       images: [
         {
@@ -75,7 +74,7 @@ export async function generateMetadata({
       title: hunt.title,
       description:
         hunt.description ||
-          `Join the "${hunt.title}" scavenger hunt on Hunty. Solve clues, complete challengges, and earn rewards!`,
+        `Join the "${hunt.title}" scavenger hunt on Hunty. Solve clues, complete challengges, and earn rewards!`,
       images: [ogImage],
       creator: "@huntyapp",
     },
@@ -105,13 +104,7 @@ export function generateStaticParams() {
   return getAllHunts().map((hunt) => ({ id: String(hunt.id) }));
 }
 
-async function HuntPageContent({
-  id,
-  spectator,
-}: {
-  id: string;
-  spectator: boolean;
-}) {
+async function HuntPageContent({ id, spectator }: { id: string; spectator: boolean }) {
   const huntDetails = await getHunt(id);
   if (!huntDetails) return notFound();
 
@@ -136,7 +129,7 @@ async function HuntPageContent({
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hunty.app";
 
   return (
-    <div clasName="min-h-screen bg-[#0b0c10] text-white pb-24">
+    <div className="min-h-screen bg-[#0b0c10] text-white pb-24">
       <StructuredData data={huntStructuredData(huntDetails, baseUrl)} />
 
       <div className="fixed inset pointer-events-none">
@@ -147,12 +140,12 @@ async function HuntPageContent({
       <Header />
 
       <div role="main" className="relative max-w-3xl mx-auto px-6 pt-16">
-        <!-- Status badge -->
+        {/* Status badge */}
         <div className="mb-6">
           <span
-            className={`[infline-items gap-2 px-3 py-1 rounded-full text-xs font-semibold tracking-widest uppercase ${status.classes}`,
-          ~
-            {HuntDetails?.status === "Active" && (
+            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold tracking-widest uppercase ${status.classes}`}
+          >
+            {huntDetails?.status === "Active" && (
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             )}
             {status.label}
@@ -168,9 +161,7 @@ async function HuntPageContent({
           {huntDetails.title}
         </h1>
 
-        <p className="text-zinc-400 text-lg leading-relaxed mb-10">
-          {huntDetails.description}
-        </p>
+        <p className="text-zinc-400 text-lg leading-relaxed mb-10">{huntDetails.description}</p>
 
         {ended && (
           <Link
@@ -181,27 +172,26 @@ async function HuntPageContent({
             <span aria-hidden="true">&rarr;</span>
           </Link>
         )}
-        <!-- Metadata cards -->
+        {/* Metadata cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-12">
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col justify-center">
             <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Rating</p>
             <StarRating rating={huntDetails.averageRating} count={huntDetails.reviewCount} />
           </div>
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-          <div className="bg-white/5 border border-white/10 rounded-2x p-5">
             <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Hunt ID</p>
-            <p className="text-white font-semibold text-lg"># {HuntDetails.id}</p>
+            <p className="text-white font-semibold text-lg"># {huntDetails.id}</p>
           </div>
-          <div className="bg-white/5 border border-white/10 rounded-2x p-5">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
             <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Clues</p>
             <p className="text-white font-semibold text-lg">{huntDetails.cluesCount}</p>
           </div>
-          <div className="col-span-2 sm:col-span-1 bg-white/5 border border-white/10 rounded-2x p-5">
+          <div className="col-span-2 sm:col-span-1 bg-white/5 border border-white/10 rounded-2xl p-5">
             <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Status</p>
             <p className="text-white font-semibold text-lg capitalize">{huntDetails.status}</p>
           </div>
           {huntDetails.startTime && (
-            <div className="bg-white/5 border border-white/10 rounded-2x p-5">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
               <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Starts</p>
               <p className="text-white font-semibold text-sm">
                 {formatTimestamp(huntDetails.startTime)}
@@ -209,7 +199,7 @@ async function HuntPageContent({
             </div>
           )}
           {huntDetails.endTime && (
-            <div className="bg-white/5 border border-white/10 rounded-2x p-5">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
               <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Ends</p>
               <p className="text-white font-semibold text-sm">
                 {formatTimestamp(huntDetails.endTime)}
@@ -223,7 +213,7 @@ async function HuntPageContent({
 
         <FastestPlayersStrip huntId={huntDetails.id} />
 
-        {spectator ? null : <HuntDetailClient hunt={HuntDetails} />}
+        {spectator ? null : <HuntDetailClient hunt={huntDetails} />}
       </div>
     </div>
   );
@@ -235,7 +225,7 @@ const page = async ({ params, searchParams }: PageProps) => {
   const isSpectator = spectator === "true";
 
   return (
-    <Suspense fallback=<{!XuntPageSkeleton }>
+    <Suspense fallback={<HuntPageSkeleton />}>
       <HuntPageContent id={id} spectator={isSpectator} />
     </Suspense>
   );

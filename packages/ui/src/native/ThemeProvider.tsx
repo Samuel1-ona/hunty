@@ -53,7 +53,16 @@ const darkColors: ColorScheme = {
   surface: "#111827",
 };
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const defaultThemeContext: ThemeContextType = {
+  theme: "light",
+  themePreference: "system",
+  setThemePreference: () => undefined,
+  toggleTheme: () => undefined,
+  isDark: false,
+  colors: lightColors,
+};
+
+const ThemeContext = createContext<ThemeContextType>(defaultThemeContext);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const systemColorScheme = useColorScheme();
@@ -126,6 +135,5 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
 export const useTheme = (): ThemeContextType => {
   const context = useContext(ThemeContext);
-  if (!context) throw new Error("useTheme must be used within a ThemeProvider");
-  return context;
+  return context ?? defaultThemeContext;
 };

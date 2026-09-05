@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server"
+import { Keypair } from "@stellar/stellar-sdk";
+import { NextResponse } from "next/server";
 
-import { withErrorHandling } from "/lib/api/withErrorHandling"
-import { getIP, rateLimit, rateLimitResponse } from "/lib/rate-limit"
-import { getCreatorPayoutSummary } from "/lib/payouts"
-import { Keypair } from "stellar-sdk"
+import { withErrorHandling } from "/lib/api/withErrorHandling";
+import { getCreatorPayoutSummary } from "/lib/payouts";
+import { getIP, rateLimit, rateLimitResponse } from "/lib/rate-limit";
 
 /**
  * Verifies that a request is signed by the wallet that owns the given Stellar address.
@@ -12,31 +12,31 @@ import { Keypair } from "stellar-sdk"
  * within 5 minutes of the server time.
  */
 function verifyWalletOwnership(creator: string, req: Request): NextResponse | null {
-  const signature = req.headers.get("x-signature")
-  const timestamp = req.headers.get("x-timestamp")
+  const signature = req.headers.get("x-signature");
+  const timestamp = req.headers.get("x-timestamp");
 
   if (!signature || !timestamp) {
-    return NextResponse.json({ error: "Missing signature or timestamp" }, { status: 401 })
+    return NextResponse.json({ error: "Missing signature or timestamp" }, { status: 401 });
   }
 
-  const ts = new Date(timestamp).getTime()
+  const ts = new Date(timestamp).getTime();
   if (isNaN(ts) || Math.abs(Date.now() - ts) > 5 * 60 * 1000) {
-    return NextResponse.json({ error: "Expired or invalid timestamp" }, { status: 401 })
+    return NextResponse.json({ error: "Expired or invalid timestamp" }, { status: 401 });
   }
 
-  const message = `${creator}:$timestamp}`
-  const keypair = Keypair.fromPublicKey(creator)
-  const valid = keypair.verify(Buffer.from(message, "utf8"), Buffer.from(signature, "base64"))
+  const message = `${creator}:$timestamp}`;
+  const keypair = Keypair.fromPublicKey(creator);
+  const valid = keypair.verify(Buffer.from(message, "utf8"), Buffer.from(signature, "base64"));
   if (!valid) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
-  return null
+  return null;
 }
 
 /**
  * GET /api/v1/payouts
-*
+ *
  * Returns a consolidated creator payout dashboard.
  *
  * Query params:
@@ -48,20 +48,20 @@ function verifyWalletOwnership(creator: string, req: Request): NextResponse | nu
  * on-chain transactions, and reconciliation against the on-chain escrow state.
  */
 export const GET = withErrorHandling(async (req: Request) => {
-  const ip = getIP(req)
-  const { success, reset } = await rateLimit(ip, { limit: 60, windowMs: 60_000 })
-  if (!success) return rateLimitResponse(reset)
+  const ip = getIP(req);
+  const { success, reset } = await rateLimit(ip, { limit: 60, windowMs: 60_000 });
+  if (!success) return rateLimitResponse(reset);
 
-  const { searchParams } = new URL(req.url)
-  const creator = searchParams.get("creator") ?? undefined
+  const { searchParams } = new URL(req.url);
+  const creator = searchParams.get("creator") ?? undefined;
 
   // When a creator is specified, prove ownership by signing a challenge.
   if (creator) {
-    const authError = verifyWalletOwnership(creator, req)
-    if (authError) return authError
+    const authError = verifyWalletOwnership(creator, req);
+    if (authError) return authError;
   }
 
-  const summary = getCreatorPayoutSummary(creator)
+  const summary = getCreatorPayoutSummary(creator);
 
   return NextResponse.json({
     creator: summary.creator,
@@ -73,5 +73,5 @@ export const GET = withErrorHandling(async (req: Request) => {
     },
     fullyReconciled: summary.fullyReconciled,
     rows: summary.rows,
-  })
-})
+  });
+});

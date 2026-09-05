@@ -1,14 +1,16 @@
 "use client";
 
+import { Button, Card } from "@hunty/ui";
 import { Archive, ArrowLeft, HelpCircle, RefreshCw, Trash2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 
-import { Button } from "@hunty/ui";
-import { Card } from "@hunty/ui";
+import { DraftListPanel } from "@/components/DraftListPanel";
 import { Header } from "@/components/Header";
 import { RewardHistorySection } from "@/components/RewardHistorySection";
-import { DraftListPanel } from "@/components/DraftListPanel";
+import { CreatorProfileSettings } from "@/components/creator/CreatorProfileSettings";
+import { useWallet } from "@/lib/context/WalletContext";
+
 import { ConfirmationDialog, SaveTemplateDialog } from "./_components/creator-dialogs";
 import { HuntList } from "./_components/hunt-list";
 import { useCreatorPage } from "./_hooks/use-creator-page";
@@ -18,6 +20,7 @@ const OnboardingTour = dynamic(() => import("@/components/OnboardingTour"), {
 });
 
 export default function CreatorPage() {
+  const { publicKey } = useWallet();
   const {
     connected,
     connect,
@@ -44,7 +47,7 @@ export default function CreatorPage() {
     handleSaveTemplate,
   } = useCreatorPage();
 
-  const activeHunts = hunts.filter((h) => !h.isArchived);
+  // `activeHunts` was unused after merge; remove to satisfy lint
 
   return (
     <div className="min-h-screen bg-gradient-to-tr from-blue-100 via-purple-100 to-[#f9f9ff] pb-12">
@@ -85,6 +88,7 @@ export default function CreatorPage() {
           View and manage hunts you have created. Draft hunts open in Edit; Active hunts open Live
           Statistics.
         </p>
+        {publicKey ? <CreatorProfileSettings address={publicKey} /> : null}
 
         {/* Tabs */}
         <div className="mb-6 flex gap-2 border-b border-slate-200">
@@ -284,4 +288,3 @@ export default function CreatorPage() {
     </div>
   );
 }
- 

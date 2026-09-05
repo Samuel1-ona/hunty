@@ -19,8 +19,7 @@ export default function CreatorRecent() {
         setItems(data);
         setLoading(false);
       })
-      .catch((err) => {
-        console.error(err);
+      .catch(() => {
         setLoading(false);
       });
   }, []);
@@ -37,7 +36,7 @@ export default function CreatorRecent() {
           <li key={item.id}>
             <span>{item.name}</span> - <span>{item.type}</span> - <span>{item.createdAt}</span>
           </li>
-        ));
+        ))}
       </ul>
     </div>
   );

@@ -14,7 +14,6 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 import { Button } from "./button";
-import { Input } from "./input";
 
 export interface Column<T> {
   key: string;
@@ -90,8 +89,6 @@ export function DataTable<T extends Record<string, unknown>>({
 
   const totalPages = Math.ceil(sorted.length / pageSize);
   const paged = sorted.slice(page * pageSize, (page + 1) * pageSize);
-
-  React.useEffect(() => { setPage(0); }, [filters, pageSize]);
 
   React.useEffect(() => {
     if (onSelectionChange) {
@@ -185,7 +182,10 @@ export function DataTable<T extends Record<string, unknown>>({
                           type="text"
                           placeholder="Filter..."
                           value={filters[col.key] || ""}
-                          onChange={(e) => setFilters((f) => ({ ...f, [col.key]: e.target.value }))}
+                          onChange={(e) => {
+                            setPage(0);
+                            setFilters((f) => ({ ...f, [col.key]: e.target.value }));
+                          }}
                           className="h-6 w-full rounded border bg-background pl-6 pr-2 text-xs"
                           aria-label={`Filter ${col.header}`}
                         />
@@ -252,7 +252,10 @@ export function DataTable<T extends Record<string, unknown>>({
           <span className="text-muted-foreground">Rows per page:</span>
           <select
             value={pageSize}
-            onChange={(e) => setPageSize(Number(e.target.value))}
+            onChange={(e) => {
+              setPage(0);
+              setPageSize(Number(e.target.value));
+            }}
             className="h-8 rounded border bg-background px-2 text-sm"
             aria-label="Rows per page"
           >

@@ -11,22 +11,10 @@ import {
   useRef,
 } from "react";
 
-import { useIsMounted } from "@/hooks/useIsMounted"
-import { migrateGuestProgressToWallet } from "@/lib/huntStore"
-import {
-  clearStoredWalletSession,
-  connectWalletProvider,
-  getStoredWalletSession,
-  setStoredWalletSession,
-  type WalletProvider,
-} from "@/lib/walletAdapter"
-import { useWalletStore } from "@/lib/wallets/walletStore"
-import { truncateAddress } from "@/lib/walletAddress"
-import { truncateAddress } from "@/lib/walletAddress";
 import { useWalletMachine } from "@/lib/wallet/walletMachine";
+import { truncateAddress } from "@/lib/walletAddress";
 import { useWalletStore } from "@/lib/wallets/walletStore";
 import { usePlayerStore, useWalletStore as useLegacyWalletStore } from "@/store/useStore";
-import type { WalletProvider } from "@/lib/wallets/types";
 
 // ─── Address display helper ────────────────────────────────────────────────
 
@@ -69,11 +57,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const serverSafe = useRef(typeof window !== "undefined");
 
   // ── State machine (single source of truth) ─────────────────────────
-  const {
-    state,
-    connect: machineConnect,
-    disconnect: machineDisconnect,
-  } = useWalletMachine();
+  const { state, connect: machineConnect, disconnect: machineDisconnect } = useWalletMachine();
 
   const { status, publicKey, provider, error } = state;
   const connected = status === "connected";
@@ -93,67 +77,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       useLegacyWalletStore.getState().clearWallet();
       usePlayerStore.getState().clearProgress();
     }
-  }, [mounted])
+  }, [status, publicKey, provider, error, storeSync]);
 
   /**
    * Trigger wallet popup to request wallet access.
    * requestAccess() prompts if not yet on the allow list,
    * or returns immediately if the user already approved this app.
    */
-  const connect = useCallback(async (provider: WalletProvider = "freighter"): Promise<{ error?: string }> => {
-    try {
-      if (provider === "freighter") {
-        const connResult = await isConnected()
-        if (!connResult.isConnected) {
-          return {
-            error:
-              "Freighter extension not found. Please install it from freighter.app",
-          }
-        }
-
-        // requestAccess() returns { address: string, error?: string }
-        // error is a plain string per the Freighter API docs
-        const accessResult = await requestAccess()
-
-        if (accessResult.error) {
-          return { error: String(accessResult.error) }
-        }
-
-        const address = accessResult.address
-        if (!address) {
-          return { error: "No public key returned. Please try again." }
-        }
-
-        setStoredWalletSession("freighter", address)
-        localStorage.setItem(STORAGE_KEY, address)
-        migrateGuestProgressToWallet(address)
-        setPublicKey(address)
-        setWalletProvider("freighter")
-        setConnected(true)
-        storeSetConnected(address, "freighter")
-        return {}
-      }
-
-      const address = await connectWalletProvider(provider)
-      setStoredWalletSession(provider, address)
-      localStorage.setItem(STORAGE_KEY, address)
-      migrateGuestProgressToWallet(address)
-      setPublicKey(address)
-      setWalletProvider(provider)
-      setConnected(true)
-      storeSetConnected(address, provider)
-      return {}
-    } catch (err) {
-      return {
-        error:
-          err instanceof Error
-            ? err.message
-            : "Unexpected error during connection.",
-      }
-    }
-  }, [storeSetConnected])
-
-  }, [status, publicKey, provider, error, storeSync]);
+  
 
   // ── Connect wrapper (matches existing interface) ───────────────────
   // machineConnect handles all errors internally by dispatching CONNECT_ERROR.

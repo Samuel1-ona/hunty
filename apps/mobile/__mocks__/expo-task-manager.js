@@ -1,3 +1,5 @@
+/* global jest */
+
 /**
  * Manual mock for expo-task-manager in the Jest environment.
  */

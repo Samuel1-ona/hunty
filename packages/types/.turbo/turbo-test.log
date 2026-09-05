@@ -1,15 +1,150 @@
 
-> @hunty/types@0.1.0 test /home/kali/drip_projects/hunty/packages/types
-> vitest run
+> @hunty/types@0.1.0 test /home/abeegold/Documents/projectWave/hunty/packages/types
+> vitest --run
 
+[?25l
+ RUN  v4.1.10 /home/abeegold/Documents/projectWave/hunty/packages/types
 
-[1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/kali/drip_projects/hunty/packages/types[39m
+[?2026h
+ Test Files 0 passed (2)
+      Tests 0 passed (0)
+   Start at 15:02:51
+   Duration 993ms
+[?2026l[?2026h[K[1A[K[1A[K[1A[K[1A[K[1A[K
+ Test Files 0 passed (2)
+      Tests 0 passed (0)
+   Start at 15:02:51
+   Duration 2.01s
+[?2026l[?2026h[K[1A[K[1A[K[1A[K[1A[K[1A[K
+ ❯ __tests__/guards.test.ts [queued]
 
- [32m✓[39m __tests__/guards.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 16[2mms[22m[39m
- [32m✓[39m __tests__/schemas.test.ts [2m([22m[2m69 tests[22m[2m)[22m[32m 88[2mms[22m[39m
+ Test Files 0 passed (2)
+      Tests 0 passed (0)
+   Start at 15:02:51
+   Duration 2.22s
+[?2026l[?2026h[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K
+ ❯ __tests__/guards.test.ts [queued]
 
-[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
-[2m      Tests [22m [1m[32m74 passed[39m[22m[90m (74)[39m
-[2m   Start at [22m 09:20:46
-[2m   Duration [22m 735ms[2m (transform 297ms, setup 0ms, import 515ms, tests 104ms, environment 1ms)[22m
+ Test Files 0 passed (2)
+      Tests 0 passed (0)
+   Start at 15:02:51
+   Duration 3.10s
+[?2026l[?2026h[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K
+ ❯ __tests__/guards.test.ts [queued]
 
+ Test Files 0 passed (2)
+      Tests 0 passed (0)
+   Start at 15:02:51
+   Duration 4.09s
+[?2026l[?2026h[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K
+ ❯ __tests__/guards.test.ts [queued]
+ ❯ __tests__/schemas.test.ts [queued]
+
+ Test Files 0 passed (2)
+      Tests 0 passed (0)
+   Start at 15:02:51
+   Duration 4.19s
+[?2026l[?2026h[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K
+ ❯ __tests__/guards.test.ts [queued]
+ ❯ __tests__/schemas.test.ts [queued]
+
+ Test Files 0 passed (2)
+      Tests 0 passed (0)
+   Start at 15:02:51
+   Duration 5.83s
+[?2026l[?2026h[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K
+ ❯ __tests__/guards.test.ts 0/5
+ ❯ __tests__/schemas.test.ts [queued]
+
+ Test Files 0 passed (2)
+      Tests 0 passed (5)
+   Start at 15:02:51
+   Duration 6.13s
+[?2026l[?2026h[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K
+ ❯ __tests__/guards.test.ts 1/5
+ ❯ __tests__/schemas.test.ts [queued]
+
+ Test Files 0 passed (2)
+      Tests 1 passed (5)
+   Start at 15:02:51
+   Duration 6.45s
+[?2026l[?2026h[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K
+ ❯ __tests__/guards.test.ts 5/5
+ ❯ __tests__/schemas.test.ts [queued]
+
+ Test Files 0 passed (2)
+      Tests 5 passed (5)
+   Start at 15:02:51
+   Duration 6.56s
+[?2026l[?2026h[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K ✓ __tests__/guards.test.ts (5 tests) 308ms
+
+ ❯ __tests__/schemas.test.ts [queued]
+
+ Test Files 1 passed (2)
+      Tests 5 passed (5)
+   Start at 15:02:51
+   Duration 6.79s
+[?2026l[?2026h[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K
+ ❯ __tests__/schemas.test.ts [queued]
+
+ Test Files 1 passed (2)
+      Tests 5 passed (5)
+   Start at 15:02:51
+   Duration 7.80s
+[?2026l[?2026h[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K
+ ❯ __tests__/schemas.test.ts [queued]
+
+ Test Files 1 passed (2)
+      Tests 5 passed (5)
+   Start at 15:02:51
+   Duration 8.80s
+[?2026l[?2026h[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K
+ ❯ __tests__/schemas.test.ts 0/90
+
+ Test Files 1 passed (2)
+      Tests 5 passed (95)
+   Start at 15:02:51
+   Duration 9.24s
+[?2026l[?2026h[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K
+ ❯ __tests__/schemas.test.ts 1/90
+
+ Test Files 1 passed (2)
+      Tests 6 passed (95)
+   Start at 15:02:51
+   Duration 9.34s
+[?2026l[?2026h[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K
+ ❯ __tests__/schemas.test.ts 15/90
+
+ Test Files 1 passed (2)
+      Tests 20 passed (95)
+   Start at 15:02:51
+   Duration 9.44s
+[?2026l[?2026h[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K
+ ❯ __tests__/schemas.test.ts 49/90
+
+ Test Files 1 passed (2)
+      Tests 54 passed (95)
+   Start at 15:02:51
+   Duration 9.67s
+[?2026l[?2026h[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K
+ ❯ __tests__/schemas.test.ts 60/90
+
+ Test Files 1 passed (2)
+      Tests 65 passed (95)
+   Start at 15:02:51
+   Duration 9.88s
+[?2026l[?2026h[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K
+ ❯ __tests__/schemas.test.ts 83/90
+
+ Test Files 1 passed (2)
+      Tests 88 passed (95)
+   Start at 15:02:51
+   Duration 10.12s
+[?2026l[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K ✓ __tests__/schemas.test.ts (90 tests) 851ms
+
+ Test Files  2 passed (2)
+      Tests  95 passed (95)
+   Start at  15:02:51
+   Duration  10.20s (transform 5.70s, setup 0ms, import 9.01s, tests 1.16s, environment 17ms)
+
+[?25h

@@ -6,10 +6,10 @@
  *  - scrubValue: deep object redaction
  *  - scrubSentryEvent: full Sentry event pipeline
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 import type { Event } from "@sentry/nextjs"
+import { describe, expect, it, vi } from "vitest"
 
-import { scrubString, scrubValue, scrubSentryEvent } from "../scrub"
+import { scrubSentryEvent, scrubString, scrubValue } from "../scrub"
 
 // ---------------------------------------------------------------------------
 // Valid 56-character Stellar addresses used throughout the tests.

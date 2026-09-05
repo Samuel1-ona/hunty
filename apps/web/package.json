@@ -9,7 +9,7 @@
     "analyze": "ANALYZE=true next build",
     "bundle:check": "node scripts/check-bundle-size.mjs",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "next lint --max-warnings 9999",
     "typecheck": "tsc --noEmit && tsc --noEmit --project tsconfig.test.json",
     "test": "vitest --run",
     "test:watch": "vitest",

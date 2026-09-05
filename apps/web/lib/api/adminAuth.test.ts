@@ -32,4 +32,4 @@ describe("assertAdminAuth", () => {
     const admin = await assertAdminAuth(req)
     expect(admin).toEqual({ id: "admin-id", email: "admin@example.com", role: "admin" })
   })
-}
+});
