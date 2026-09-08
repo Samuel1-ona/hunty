@@ -2,18 +2,24 @@ import { usePlayerLocation } from '@app/hooks/usePlayerLocation';
 import { ClueMarkdownRenderer } from '@components/ClueMarkdownRenderer';
 import { BackgroundLocationControl } from '@components/BackgroundLocationControl';
 import { EmptyState } from '@components/EmptyState';
+import { OfflineBanner } from '@components/OfflineBanner';
 import { QRScanner } from '@components/QRScanner';
 import { ThemedButton, ThemedCustomText, ThemedView } from '@components/themed';
 import { useHaptics } from '@hooks/useHaptics';
 import { matchesClueAnswer } from '@lib/clueAnswerVerification';
 import { verifyQrAgainstClue } from '@lib/qrCodeDecryptor';
-import type { Clue } from '@lib/types';
+import type { Clue } from '@hunty/types';
 import { useTheme } from '@providers/ThemeProvider';
 import { useToast } from '@providers/ToastProvider';
-import { getHuntClues } from '@store/huntStore';
+import {
+  isRetryableAnswerStatus,
+  submitClueAnswer as submitClueAnswerRequest,
+} from '@services/answersApi';
+import { getHuntClues, queueClueAnswer } from '@store/huntStore';
 import { usePlayerStore, useWalletStore } from '@store/useStore';
+import NetInfo from '@react-native-community/netinfo';
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
 
 import { verifyClueGeofence } from '@/lib/locationGate';
@@ -24,7 +30,7 @@ export default function PlayScreen() {
   const [isOnline, setIsOnline] = useState(true);
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
-      setIsOnline(state.isConnected && state.isInternetReachable);
+      setIsOnline(Boolean(state.isConnected) && state.isInternetReachable !== false);
     });
     return () => unsubscribe();
   }, []);
@@ -33,7 +39,7 @@ export default function PlayScreen() {
   const { colors } = useTheme();
   const haptics = useHaptics();
   const { showToast } = useToast();
-  const { network } = useWalletStore();
+  const { network, walletAddress } = useWalletStore();
   const {
     location,
     error: locationError,
@@ -54,12 +60,27 @@ export default function PlayScreen() {
 
   useEffect(() => {
     if (!currentProgress?.hunt_id) {
-      setClues([]);
       return;
     }
 
     void getHuntClues(currentProgress.hunt_id).then(setClues);
   }, [currentProgress?.hunt_id]);
+
+  const activeClueIndex = currentProgress?.current_clue_index ?? 0;
+  const activeClue = clues[activeClueIndex];
+  const allSolved = activeClueIndex >= clues.length;
+
+  const progressLabel = (() => {
+    if (clues.length === 0) {
+      return 'Loading clues...';
+    }
+
+    if (allSolved) {
+      return 'All clues solved';
+    }
+
+    return `Clue ${activeClueIndex + 1} of ${clues.length}`;
+  })();
 
   if (!currentProgress?.hunt_id) {
     return (
@@ -75,36 +96,8 @@ export default function PlayScreen() {
     );
   }
 
-  const activeClueIndex = currentProgress.current_clue_index;
-  const activeClue = clues[activeClueIndex];
-  const allSolved = activeClueIndex >= clues.length;
-
-  const progressLabel = useMemo(() => {
-    if (clues.length === 0) {
-      return 'Loading clues...';
-    }
-
-    if (allSolved) {
-      return 'All clues solved';
-    }
-
-    return `Clue ${activeClueIndex + 1} of ${clues.length}`;
-  }, [activeClueIndex, allSolved, clues.length]);
-
   const submitClueAnswer = async (submittedAnswer: string, fromQr = false) => {
     if (!activeClue || !currentProgress?.hunt_id || isSubmitting) {
-      return;
-    }
-
-    // If offline, queue the answer and update progress locally
-    if (!isOnline) {
-      await queueClueAnswer(currentProgress.hunt_id, activeClue.id, answer.trim());
-      // Mark clue completed locally
-      markClueCompleted(currentProgress.hunt_id, activeClueIndex);
-      // Advance to next clue
-      updateClueIndex(activeClueIndex + 1);
-      setAnswer('');
-      showToast({ message: 'Answer queued. It will be submitted when back online.', type: 'info' });
       return;
     }
 
@@ -121,6 +114,9 @@ export default function PlayScreen() {
     setError('');
 
     try {
+      const normalizedAnswer = submittedAnswer.trim();
+      const playerWallet = walletAddress || currentProgress.player;
+
       const locationCheck = await verifyClueGeofence(activeClue);
       if (!locationCheck.allowed) {
         setError(locationCheck.reason);
@@ -130,7 +126,7 @@ export default function PlayScreen() {
 
       if (fromQr) {
         const qrCheck = await verifyQrAgainstClue(
-          submittedAnswer,
+          normalizedAnswer,
           activeClue,
           currentProgress.hunt_id,
         );
@@ -139,32 +135,99 @@ export default function PlayScreen() {
           setError(qrCheck.reason);
           return;
         }
-      } else if (!(await matchesClueAnswer(submittedAnswer, activeClue, currentProgress.hunt_id))) {
+      } else if (
+        !(await matchesClueAnswer(normalizedAnswer, activeClue, currentProgress.hunt_id))
+      ) {
         setError('Incorrect answer. Review the clue and try again.');
         haptics.triggerNotification('error');
         return;
       }
 
-      const isLastClue = activeClueIndex === clues.length - 1;
-      markClueCompleted(currentProgress.hunt_id, activeClueIndex);
-
-      if (isLastClue) {
-        await disableBackgroundProximity();
-        haptics.triggerImpact('heavy');
-        markCompleted();
-        router.push({
-          pathname: '/transaction/pending',
-          params: {
-            action: 'complete',
-            huntId: String(currentProgress.hunt_id),
-            huntTitle: 'Reward Dispatch',
-          },
-        });
-      } else {
-        haptics.triggerNotification('success');
-        updateClueIndex(activeClueIndex + 1);
+      if (!playerWallet) {
+        setError('Connect your wallet before submitting this clue.');
+        haptics.triggerNotification('error');
+        return;
       }
 
+      const isLastClue = activeClueIndex === clues.length - 1;
+
+      const applyLocalProgress = async (queued: boolean) => {
+        markClueCompleted(currentProgress.hunt_id, activeClueIndex);
+
+        if (isLastClue) {
+          await disableBackgroundProximity();
+          haptics.triggerImpact('heavy');
+          markCompleted();
+          if (queued) {
+            return;
+          }
+          router.push({
+            pathname: '/transaction/pending',
+            params: {
+              action: 'complete',
+              huntId: String(currentProgress.hunt_id),
+              huntTitle: 'Reward Dispatch',
+            },
+          });
+          return;
+        }
+
+        haptics.triggerNotification('success');
+        updateClueIndex(activeClueIndex + 1);
+      };
+
+      const queueAnswer = async () => {
+        await queueClueAnswer(
+          currentProgress.hunt_id,
+          activeClue.id,
+          normalizedAnswer,
+          playerWallet,
+          { clueIndex: activeClueIndex },
+        );
+        await applyLocalProgress(true);
+        setAnswer('');
+        showToast({
+          message: 'Answer queued. It will be submitted when back online.',
+          type: 'info',
+        });
+      };
+
+      if (!isOnline) {
+        await queueAnswer();
+        return;
+      }
+
+      try {
+        const { body, ok, status } = await submitClueAnswerRequest({
+          huntId: currentProgress.hunt_id,
+          clueId: activeClue.id,
+          answer: normalizedAnswer,
+          wallet: playerWallet,
+          clientTimestamp: Date.now(),
+          hintsUsed: 0,
+        });
+        if (!ok) {
+          if (isRetryableAnswerStatus(status)) {
+            await queueAnswer();
+            return;
+          }
+
+          setError('Unable to submit answer right now. Please try again.');
+          haptics.triggerNotification('error');
+          return;
+        }
+
+        if (body?.correct === false) {
+          setError('Incorrect answer. Review the clue and try again.');
+          haptics.triggerNotification('error');
+          return;
+        }
+      } catch {
+        await queueAnswer();
+        return;
+      }
+
+      await applyLocalProgress(false);
       setAnswer('');
     } finally {
       setIsSubmitting(false);
@@ -276,7 +339,7 @@ export default function PlayScreen() {
 
         {!allSolved && activeClue ? (
           <>
-            <OfflineBanner />
+            {!isOnline ? <OfflineBanner /> : null}
             <View
               style={[
                 styles.answerPanel,

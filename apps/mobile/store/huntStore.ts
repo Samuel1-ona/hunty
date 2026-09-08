@@ -5,9 +5,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import type { Clue, HuntStatus, StoredHunt } from '@hunty/types';
+import { isRetryableAnswerStatus, submitQueuedAnswer } from '@services/answersApi';
 import { scheduleHuntExpiryNotification } from '@utils/huntNotifications';
+
 const HUNTS_KEY = 'hunty_hunts';
 const CLUES_KEY = 'hunty_clues';
+const QUEUED_ANSWERS_KEY = 'hunty_clue_queue';
+let queuedAnswerOperation: Promise<void> = Promise.resolve();
 
 const now = Math.floor(Date.now() / 1000);
 
@@ -178,6 +182,100 @@ const SEED_CLUES: Clue[] = [
   },
 ];
 
+export interface QueuedClueAnswer {
+  id: string;
+  huntId: number;
+  clueId: number;
+  answer: string;
+  wallet: string;
+  clientTimestamp: number;
+  hintsUsed: number;
+  clueIndex?: number;
+}
+
+interface QueueClueAnswerOptions {
+  clientTimestamp?: number;
+  hintsUsed?: number;
+  id?: string;
+  clueIndex?: number;
+}
+
+interface QueueSubmitResult {
+  ok: boolean;
+  status: number;
+  correct?: boolean;
+}
+
+export interface QueueSyncResult {
+  synced: number;
+  pending: number;
+  discarded: number;
+  rejected: QueuedClueAnswer[];
+}
+
+type QueuedAnswerSubmitter = (entry: QueuedClueAnswer) => Promise<QueueSubmitResult>;
+
+function createQueuedAnswerId(): string {
+  return `queued-answer-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function isQueuedClueAnswer(value: unknown): value is QueuedClueAnswer {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const entry = value as Partial<QueuedClueAnswer>;
+  return (
+    typeof entry.id === 'string' &&
+    typeof entry.huntId === 'number' &&
+    typeof entry.clueId === 'number' &&
+    typeof entry.answer === 'string' &&
+    typeof entry.wallet === 'string' &&
+    typeof entry.clientTimestamp === 'number' &&
+    typeof entry.hintsUsed === 'number'
+  );
+}
+
+function getQueueIdentity(entry: QueuedClueAnswer): string {
+  return `${entry.wallet}:${entry.huntId}:${entry.clueId}`;
+}
+
+function compareQueuedAnswerOrder(left: QueuedClueAnswer, right: QueuedClueAnswer): number {
+  return left.clientTimestamp - right.clientTimestamp || left.id.localeCompare(right.id);
+}
+
+function choosePreferredQueuedAnswer(
+  current: QueuedClueAnswer,
+  candidate: QueuedClueAnswer,
+): QueuedClueAnswer {
+  if (candidate.clientTimestamp !== current.clientTimestamp) {
+    return candidate.clientTimestamp > current.clientTimestamp ? candidate : current;
+  }
+
+  return candidate.id.localeCompare(current.id) > 0 ? candidate : current;
+}
+
+function collapseQueuedAnswers(entries: QueuedClueAnswer[]): QueuedClueAnswer[] {
+  const latestByIdentity = new Map<string, QueuedClueAnswer>();
+
+  for (const entry of entries) {
+    const identity = getQueueIdentity(entry);
+    const existing = latestByIdentity.get(identity);
+    latestByIdentity.set(identity, existing ? choosePreferredQueuedAnswer(existing, entry) : entry);
+  }
+
+  return [...latestByIdentity.values()].sort(compareQueuedAnswerOrder);
+}
+
+function withQueuedAnswerLock<T>(operation: () => Promise<T>): Promise<T> {
+  const result = queuedAnswerOperation.then(operation, operation);
+  queuedAnswerOperation = result.then(
+    () => undefined,
+    () => undefined,
+  );
+  return result;
+}
+
 async function readJson<T>(key: string, fallback: T): Promise<T> {
   try {
     const value = await SecureStore.getItemAsync(key);
@@ -213,11 +311,7 @@ export async function writeClues(clues: Clue[]): Promise<void> {
 }
 
 export async function cacheJoinedHuntClues(huntId: number, clues: Clue[]): Promise<void> {
-  try {
-    await AsyncStorage.setItem(`hunty_clues_hunt_${huntId}`, JSON.stringify(clues));
-  } catch {
-    // ignore
-  }
+  await AsyncStorage.setItem(`hunty_clues_hunt_${huntId}`, JSON.stringify(clues));
 }
 
 // Queue a clue answer for later submission when back online
@@ -225,39 +319,85 @@ export async function queueClueAnswer(
   huntId: number,
   clueId: number,
   answer: string,
+  wallet: string,
+  options: QueueClueAnswerOptions = {},
 ): Promise<void> {
-  try {
-    const existing = await AsyncStorage.getItem('hunty_clue_queue');
-    const queue = existing
-      ? (JSON.parse(existing) as Array<{ huntId: number; clueId: number; answer: string }>)
-      : [];
-    queue.push({ huntId, clueId, answer });
-    await AsyncStorage.setItem('hunty_clue_queue', JSON.stringify(queue));
-  } catch {
-    // ignore errors
-  }
+  return withQueuedAnswerLock(async () => {
+    const queue = await getQueuedAnswers();
+    const nextEntry: QueuedClueAnswer = {
+      id: options.id ?? createQueuedAnswerId(),
+      huntId,
+      clueId,
+      answer,
+      wallet,
+      clientTimestamp: options.clientTimestamp ?? Date.now(),
+      hintsUsed: options.hintsUsed ?? 0,
+      clueIndex: options.clueIndex,
+    };
+
+    const nextQueue = collapseQueuedAnswers([...queue, nextEntry]);
+    await AsyncStorage.setItem(QUEUED_ANSWERS_KEY, JSON.stringify(nextQueue));
+  });
 }
 
 // Retrieve queued answers
-export async function getQueuedAnswers(): Promise<
-  Array<{ huntId: number; clueId: number; answer: string }>
-> {
+export async function getQueuedAnswers(): Promise<QueuedClueAnswer[]> {
   try {
-    const data = await AsyncStorage.getItem('hunty_clue_queue');
-    return data ? JSON.parse(data) : [];
+    const data = await AsyncStorage.getItem(QUEUED_ANSWERS_KEY);
+    if (!data) {
+      return [];
+    }
+
+    const parsed = JSON.parse(data) as unknown;
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return collapseQueuedAnswers(parsed.filter(isQueuedClueAnswer));
   } catch {
     return [];
   }
 }
 
 // Process queued answers: attempt to submit them when back online
-export async function processQueuedAnswers(): Promise<void> {
-  const queue = await getQueuedAnswers();
-  for (const item of queue) {
-    // TODO: integrate with server submission and update local progress
-    // Placeholder: assume success and remove from queue
-  }
-  await AsyncStorage.removeItem('hunty_clue_queue');
+export async function processQueuedAnswers(
+  submitter: QueuedAnswerSubmitter = submitQueuedAnswer,
+): Promise<QueueSyncResult> {
+  return withQueuedAnswerLock(async () => {
+    const queue = collapseQueuedAnswers(await getQueuedAnswers());
+    const pending: QueuedClueAnswer[] = [];
+    let synced = 0;
+    let discarded = 0;
+    const rejected: QueuedClueAnswer[] = [];
+
+    for (const item of queue) {
+      try {
+        const result = await submitter(item);
+        if (result.ok && result.correct !== false) {
+          synced += 1;
+          continue;
+        }
+
+        if (
+          result.ok ||
+          (result.status >= 400 && result.status < 500 && !isRetryableAnswerStatus(result.status))
+        ) {
+          rejected.push(item);
+          discarded += 1;
+          continue;
+        }
+
+        pending.push(item);
+      } catch {
+        pending.push(item);
+      }
+    }
+
+    const remainingQueue = collapseQueuedAnswers(pending);
+    await AsyncStorage.setItem(QUEUED_ANSWERS_KEY, JSON.stringify(remainingQueue));
+
+    return { synced, pending: remainingQueue.length, discarded, rejected };
+  });
 }
 
 export async function getOfflineCachedClues(huntId: number): Promise<Clue[]> {
@@ -387,6 +527,14 @@ export async function getFeaturedHunts(limit = 3): Promise<StoredHunt[]> {
 export async function joinHunt(huntId: number): Promise<void> {
   const hunts = await readHunts();
   const hunt = hunts.find((h) => h.id === huntId);
-  if (!hunt || !hunt.endTime) return;
-  await scheduleHuntExpiryNotification(huntId, hunt.title, hunt.endTime);
+  if (!hunt) return;
+
+  const clues = (await readClues()).filter((clue) => clue.huntId === huntId);
+  if (clues.length > 0) {
+    await cacheJoinedHuntClues(huntId, clues);
+  }
+
+  if (hunt.endTime) {
+    await scheduleHuntExpiryNotification(huntId, hunt.title, hunt.endTime);
+  }
 }

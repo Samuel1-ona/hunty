@@ -1,4 +1,5 @@
 /** @type {import('jest').Config} */
+/* global __dirname */
 module.exports = {
   // Don't use jest-expo preset — expo-modules-core is not fully installed.
   // We configure transforms manually below.
@@ -11,7 +12,7 @@ module.exports = {
     '!**/*.config.{js,ts}',
     '!coverage/**',
     '!**/.expo/**',
-    '!path-alias.js'
+    '!path-alias.js',
   ],
   setupFiles: ['<rootDir>/__mocks__/jestSetup.js'],
 
@@ -24,7 +25,7 @@ module.exports = {
 
   // Transform expo/* packages since they ship ESM
   transformIgnorePatterns: [
-    'node_modules/(?!(expo|@expo|expo-notifications|expo-device|expo-constants|expo-secure-store|expo-modules-core|react-native|@react-native))',
+    'node_modules/(?!(?:\\.pnpm/)?(?:expo|@expo|expo-notifications|expo-device|expo-constants|expo-secure-store|expo-modules-core|react-native|@react-native))',
   ],
 
   // Manual mocks for native/expo modules
@@ -34,6 +35,8 @@ module.exports = {
     '^@hooks/(.*)$': '<rootDir>/hooks/$1',
     '^@store/(.*)$': '<rootDir>/store/$1',
     '^@providers/(.*)$': '<rootDir>/providers/$1',
+    '^@lib/clueAnswerVerification$': '<rootDir>/lib/clueAnswerVerification',
+    '^@lib/qrCodeDecryptor$': '<rootDir>/lib/qrCodeDecryptor',
     '^@lib/(.*)$': '<rootDir>/../web/lib/$1',
     '^@utils/(.*)$': '<rootDir>/utils/$1',
     '^@components/(.*)$': '<rootDir>/components/$1',
