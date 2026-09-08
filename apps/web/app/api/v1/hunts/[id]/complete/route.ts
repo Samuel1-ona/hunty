@@ -5,7 +5,7 @@ import { ValidationError } from "@/lib/api/errors"
 import { huntCompleteBodySchema } from "@hunty/types/api-schemas"
 import { getActiveSeason } from "@/lib/seasonStore"
 import { awardXp, XP_PER_HUNT } from "@/lib/battlePassStore"
-import { z from "zod"
+import { z } from "zod"
 
 const paramsSchema = z.object({ id: z.string() })
 

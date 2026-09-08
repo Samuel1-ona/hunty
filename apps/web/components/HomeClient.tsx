@@ -620,6 +620,15 @@ export default function GameArcade() {
   const [visibleInactiveCount, setVisibleInactiveCount] = useState(INACTIVE_PAGE_SIZE)
   const [isLoadingMoreInactive, setIsLoadingMoreInactive] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [localSearchQuery, setLocalSearchQuery] = useState("")
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(localSearchQuery)
+    }, 250)
+    return () => clearTimeout(timer)
+  }, [localSearchQuery])
+
   const [activeTab, setActiveTab] = useState<"leaderboard" | "none">("none")
   const [rewardFilter, setRewardFilter] = useState<"all" | "XLM" | "NFT" | "Both">("all")
   const [statusFilter, setStatusFilter] = useState<"all" | "Active" | "Completed">("Active")
@@ -639,6 +648,7 @@ export default function GameArcade() {
     const sortBy = searchParams.get("sortBy") ?? "newest";
 
     setSearchQuery(q);
+    setLocalSearchQuery(q);
     if (["all", "XLM", "NFT", "Both"].includes(reward)) {
       setRewardFilter(reward as "all" | "XLM" | "NFT" | "Both");
     }
@@ -866,6 +876,7 @@ export default function GameArcade() {
   // Clear scroll position and reset pagination when filter state changes
   useEffect(() => {
     setSearchQuery("");
+    setLocalSearchQuery("");
     setRewardFilter("all");
     setStatusFilter("Active");
     setDifficultyFilter("all");
@@ -877,6 +888,7 @@ export default function GameArcade() {
 
   const clearAllFilters = () => {
     setSearchQuery("");
+    setLocalSearchQuery("");
     setRewardFilter("all");
     setStatusFilter("Active");
     setDifficultyFilter("all");
@@ -1226,8 +1238,8 @@ export default function GameArcade() {
                   <Input
                     list="hunt-search-suggestions"
                     placeholder="Search title or description..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    value={localSearchQuery}
+                    onChange={(e) => setLocalSearchQuery(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-[#3737A4] focus:ring-[#3737A4] pl-3 h-10 rounded-xl"
                   />
                   <datalist id="hunt-search-suggestions">

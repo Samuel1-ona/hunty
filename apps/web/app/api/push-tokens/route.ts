@@ -1,6 +1,7 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 
 import { NextRequest, NextResponse } from "next/server";
+
 import { ForbiddenError, ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
 import {
@@ -121,7 +122,7 @@ export const DELETE = withErrorHandling(async (request: NextRequest) => {
 export const GET = withErrorHandling(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const walletAddress = searchParams.get("walletAddress");
-  const ownerSecret = searchParams.get("ownerSecret");
+  const ownerSecret = request.headers.get("x-owner-secret");
 
   if (!walletAddress || !secretMatches(walletAddress, ownerSecret)) {
     // Identical response whether the wallet never registered or the secret is

@@ -2,10 +2,6 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Switch, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
-import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "@providers/ThemeProvider";
-import React from "react";
-import { StyleSheet,Switch, Text, TouchableOpacity, View } from "react-native";
 
 type SettingsRowProps = {
   icon: keyof typeof Ionicons.glyphMap;

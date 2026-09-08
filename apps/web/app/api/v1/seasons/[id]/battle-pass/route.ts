@@ -5,7 +5,7 @@ import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
 import { NotFoundError, ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
 import { withValidation } from "@/lib/api/withValidation";
-import { z from "zod";
+import { z } from "zod";
 
 type Context = { params: Promise<{ id: string }> };
 

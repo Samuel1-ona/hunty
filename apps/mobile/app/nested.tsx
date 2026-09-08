@@ -1,3 +1,4 @@
+import { ARClueReveal } from '@components/ARClueReveal';
 import { ClueMarkdownRenderer } from '@components/ClueMarkdownRenderer';
 import { CluesList } from '@components/CluesList';
 import { QRScanner } from '@components/QRScanner';
@@ -25,7 +26,15 @@ export default function NestedScreen() {
   const { colors } = useTheme();
   const haptics = useHaptics();
   const { walletAddress } = useWalletStore();
-  const { huntId, clueIndex } = useLocalSearchParams<{ huntId?: string; clueIndex?: string }>();
+  const {
+    huntId,
+    clueIndex,
+    arEnabled: arEnabledParam,
+  } = useLocalSearchParams<{
+    huntId?: string;
+    clueIndex?: string;
+    arEnabled?: string;
+  }>();
   const [hunt, setHunt] = useState<StoredHunt | null>(null);
   const [clues, setClues] = useState<Clue[]>([]);
   const [answer, setAnswer] = useState('');
@@ -33,6 +42,8 @@ export default function NestedScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const { currentProgress, markClueCompleted, getCompletedClues } = usePlayerStore();
+  const [arOpen, setArOpen] = useState(false);
+  const [arEnabled] = useState(arEnabledParam === 'true');
   const [showCluesDropdown] = useState(true);
 
   const hId = Number(huntId);
@@ -55,6 +66,10 @@ export default function NestedScreen() {
 
     return () => unsubscribe();
   }, []);
+
+  const handleAnswerChange = (text: string) => {
+    setAnswer(text);
+  };
 
   const navigateToClue = (clueIdx: number) => {
     setAnswer('');
@@ -175,6 +190,10 @@ export default function NestedScreen() {
     await submitAnswer(data, true);
   };
 
+  const handleArReveal = () => {
+    setArOpen(false);
+  };
+
   const canGoPrev = idx > 0;
   const canGoNext = idx < clues.length - 1 && completedClues.has(idx);
   const progressWidth = `${((idx + 1) / clues.length) * 100}%` as `${number}%`;
@@ -221,7 +240,7 @@ export default function NestedScreen() {
           placeholder="Your answer..."
           placeholderTextColor="#bbb"
           value={answer}
-          onChangeText={setAnswer}
+          onChangeText={handleAnswerChange}
           autoCapitalize="none"
           autoCorrect={false}
           editable={true}
@@ -242,6 +261,17 @@ export default function NestedScreen() {
               Previous
             </ThemedCustomText>
           </Pressable>
+
+          {arEnabled && hunt?.arEnabled && (
+            <Pressable
+              style={[styles.arButton, { backgroundColor: colors.primary }]}
+              onPress={() => setArOpen(true)}
+            >
+              <ThemedCustomText variant="caption" lightColor="#fff" darkColor="#fff" weight="700">
+                AR View
+              </ThemedCustomText>
+            </Pressable>
+          )}
 
           <Pressable
             style={[styles.scanButton, { backgroundColor: colors.warning }]}
@@ -301,6 +331,12 @@ export default function NestedScreen() {
         onClose={() => setScannerOpen(false)}
         onScan={handleQrScan}
         title="Scan checkpoint QR"
+      />
+      <ARClueReveal
+        isOpen={arOpen}
+        onClose={() => setArOpen(false)}
+        onReveal={handleArReveal}
+        clueText={clue.question}
       />
     </ThemedView>
   );
@@ -362,6 +398,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   scanButton: {
+    flex: 0.9,
+    paddingVertical: 11,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  arButton: {
     flex: 0.9,
     paddingVertical: 11,
     borderRadius: 6,

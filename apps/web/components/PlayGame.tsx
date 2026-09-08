@@ -1,4 +1,3 @@
-```tsx
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
@@ -12,7 +11,8 @@ import { Header } from "@/components/Header";
 import { HuntPageSkeletonLayout } from "@/components/LoadingSkeletons";
 import { PlayerProgressPanel } from "@/components/PlayerProgressPanel";
 import { Button } from "@hunty/ui";
-import { get_clue_info, get_hunt } from "@/lib/contracts/hunt";
+import { useHuntInfo } from "@/lib/hooks/useHuntContract";
+import { get_clue_info } from "@/lib/contracts/hunt";
 import {
   getHuntClues,
   getHuntProgress,
@@ -160,6 +160,8 @@ export function PlayGame({
 
   const solvedCount = solvedClues.size;
 
+  const huntInfoQuery = useHuntInfo(huntId);
+
   const {
     data: fetched = null as null | {
       clues: Hunt[];
@@ -171,9 +173,9 @@ export function PlayGame({
   } = useQuery({
     queryKey: queryKeys.hunts.clues(huntId),
     queryFn: async () => {
-      if (huntId == null) return null;
+      if (huntId == null || !huntInfoQuery.data) return null;
 
-      const huntInfo = await get_hunt(huntId);
+      const huntInfo = huntInfoQuery.data;
       const localClues = getHuntClues(huntId);
       const clues: Hunt[] = [];
 
@@ -221,7 +223,7 @@ export function PlayGame({
 
       return { clues, huntInfo };
     },
-    enabled: huntId != null,
+    enabled: huntId != null && huntInfoQuery.data !== undefined,
     staleTime: Math.max(
       SOROBAN_READ_STALE_TIME_MS,
       queryCachePolicy.hunts.staleTime
@@ -1032,4 +1034,3 @@ export function PlayGame({
     </div>
   );
 }
-```
