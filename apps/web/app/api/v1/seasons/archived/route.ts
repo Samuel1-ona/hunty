@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { getArchivedSeasons, getArchivedSeasonById } from "@/lib/seasonStore";
-import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
+
 import { NotFoundError, ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
+import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { getArchivedSeasonById, getArchivedSeasons } from "@/lib/seasonStore";
 
 const TIER_COUNT = 5;
 const tiers = Array.from({ length: TIER_COUNT }, (_, i) => ({
@@ -10,8 +11,8 @@ const tiers = Array.from({ length: TIER_COUNT }, (_, i) => ({
   reward: `Reward ${i + 1}`,
 }));
 
-const bp = (s: any) => ({
-  ...s,
+const bp = (s: unknown) => ({
+  ...(s as Record<string, unknown>),
   battlePass: { tiers },
 });
 

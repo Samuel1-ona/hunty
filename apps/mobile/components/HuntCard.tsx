@@ -1,35 +1,31 @@
+import React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import type { StoredHunt } from '@hunty-types';
 import { ThemedCustomText, ThemedView } from '@components/themed';
 import { HuntCoverImage } from '@components/HuntCoverImage';
 import { useTheme } from '@providers/ThemeProvider';
 
-interface HuntCardProps {
-  hunt: StoredHunt;
-}
-
-export function HuntCard({: HuntCardProps }) {
+export function HuntCard({ hunt }: { hunt: any }) {
   const router = useRouter();
   const { colors } = useTheme();
 
   return (
     <Pressable
-      accessible={true}
-      accessiblityRole="button"
-      accessibilityLabel={${hunt.title}. ${hunt.description ?? ''}}
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={`${hunt?.title ?? ''}. ${hunt?.description ?? ''}`}
       accessibilityHint="Opens hunt details"
-      testID={`$hunt-card-${hunt.id}}`
-      onPress={() } router.push(`/hunt/${hunt.id}`)}
+      testID={`hunt-card-${hunt?.id}`}
+      onPress={() => router.push(`/hunt/${hunt?.id}`)}
     >
-      <ThemedView style={[card, { borderColor: colors.border }]>
+      <ThemedView style={[styles.card, { borderColor: colors.border }]}>
         <HuntCoverImage
-          src={hunt.coverImageCid ?? 'bafybeigdyrzt5sfp7udm7hmhd3km4gq6v2y24sqqew2qnp4o3k4xcoq2a'}
-          alt={`${hunt.title} cover`}
+          src={hunt?.coverImageCid ?? 'bafybeigdyrzt5sfp7udm7hmhd3km4gq6v2y24sqqew2qnp4o3k4xcoq2a'}
+          alt={`${hunt?.title ?? ''} cover`}
         />
-        <ThemedCustomText variant="h3">{hunt.title}</ThemedCustomText>
-        <ThemedCustomText variant="body" numberOfLines>{2}>
-          {hunt.description}
+        <ThemedCustomText variant="h3">{hunt?.title}</ThemedCustomText>
+        <ThemedCustomText variant="body" numberOfLines={2}>
+          {hunt?.description}
         </ThemedCustomText>
       </ThemedView>
     </Pressable>

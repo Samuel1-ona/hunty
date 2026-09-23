@@ -4,8 +4,8 @@ import type { AchievementId } from "@hunty/types";
 import { Pin, PinOff } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@hunty/ui";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@hunty/ui";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ACHIEVEMENTS, RARITY_BORDER_COLORS, RARITY_COLORS } from "@/lib/achievements/config";
 import {

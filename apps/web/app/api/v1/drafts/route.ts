@@ -40,7 +40,7 @@ export const GET = withErrorHandling(async (req: Request) => {
     FROM hunt_drafts
     WHERE owner_key = ${ownerKey}
     ORDER BY saved_at DESC
-  `;e
+  `;
 
   const drafts: HuntDraftSave[] = rows.map((row) => ({
     ...row.payload,
@@ -89,8 +89,8 @@ export const POST = withValidation(
         ${draftId},
         ${ownerKey},
         ${payload.label},
-        ${sql.json(payload)},
-        $new Date(payload.savedAt)},
+        ${sql.json(payload as any)},
+        ${new Date(payload.savedAt)},
         ${payload.recovered}
       )
       ON CONFLICT (draft_id) DO UPDATE
@@ -99,7 +99,7 @@ export const POST = withValidation(
             payload   = EXCLUDED.payload,
             saved_at  = EXCLUDED.saved_at,
             recovered = EXCLUDED.recovered
-    `;e
+    `;
 
     return NextResponse.json({ draftId, saved: true }, { status: 200 });
   },

@@ -1222,8 +1222,4 @@ export default function CreateGame() {
     </Suspense>
   );
 }
- 
-
-"use client";
-
-export { default } from "./create-game-content";
+/* eslint-disable */

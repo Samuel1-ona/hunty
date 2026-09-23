@@ -15,7 +15,7 @@ import {
 import { cn } from "@/lib/utils"
 import { queryCachePolicy, queryKeys } from "@/lib/queryKeys"
 import { HuntFeedCard, HuntFeedCardGridSkeleton } from "@/components/HuntFeedCard"
-import { EmptyState } from "@/components/EmptyState"
+import { EmptyState } from "@hunty/ui"
 import type { HuntAgeClassification, StoredHunt, HuntFeedCategory } from "@/lib/types"
 import { getDistanceMeters } from "@/lib/locationServices"
 import { getStoredSession } from "@/lib/session"

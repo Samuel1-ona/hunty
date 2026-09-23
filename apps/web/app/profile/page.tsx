@@ -10,14 +10,14 @@ import { ProfilePageSkeleton } from "@/components/LoadingSkeletons";
 import type { NftRewardDetail } from "@/components/NftDetailModal";
 import { NftGallery } from "@/components/NftGallery";
 import { RewardHistorySection } from "@/components/RewardHistorySection";
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@hunty/ui";
 import { useFavorites } from "@/hooks/useFavorites";
 import { usePlayerProfileStats } from "@/hooks/usePlayerProfileStats";
 import { shortenAddress, WalletContext } from "@/lib/context/WalletContext";

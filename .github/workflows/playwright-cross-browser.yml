@@ -63,14 +63,18 @@ jobs:
 
       - name: Setup Node.js with pnpm
         uses: ./.github/actions/setup-node-pnpm
+        with:
+          working-directory: apps/web
 
       # Browser versions are pinned in apps/web/package.json (@playwright/test version)
       # and playwright.config.ts. The version is locked to ensure reproducible test runs.
       # See PLAYWRIGHT_BROWSERS.md for version management details.
       - name: Install Playwright browsers
+        working-directory: apps/web
         run: pnpm exec playwright install --with-deps
 
       - name: Run Playwright tests for project
+        working-directory: apps/web
         env:
           CI: true
           WALLET_EXTENSION_PATH: ${{ secrets.WALLET_EXTENSION_PATH }}

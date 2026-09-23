@@ -34,7 +34,8 @@ const buttonVariants = cva(
 export interface ButtonProps
   extends Omit<React.ComponentProps<"button">, "onPointerDown">,
     VariantProps<typeof buttonVariants>,
-    Omit<SharedButtonProps, "icon" | "onPress" | "variant" | "size"> {
+    Omit<SharedButtonProps, "icon" | "onPress" | "variant" | "size" | "label"> {
+  label?: string;
   asChild?: boolean;
   /** Icon rendered before label */
   icon?: React.ReactNode;

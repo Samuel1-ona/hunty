@@ -40,13 +40,6 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      "@hunty/config": path.resolve(__dirname, "../../packages/config"),
-      "@hunty/config/*": path.resolve(__dirname, "../../packages/config/*"),
-      "@hunty/types/schemas": path.resolve(__dirname, "../../packages/types/src/schemas.ts"),
-      "@hunty/types": path.resolve(__dirname, "../../packages/types/src/index.ts"),
-      "@": path.resolve(__dirname, "./"),
-    },
     // Keep subpath aliases ahead of the package root alias. Vite matches
     // aliases by prefix, so @hunty/types would otherwise swallow
     // @hunty/types/api-schemas.

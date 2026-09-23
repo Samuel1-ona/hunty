@@ -131,11 +131,11 @@ export function scrubValue(value: unknown, depth = 0): unknown {
  * are sent when `NODE_ENV === "test"`.
  */
 export function scrubSentryEvent(
-  event: Event,
+  event: any,
   // _hint is unused but must be present to match the Sentry callback signature
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _hint?: EventHint
-): Event | null {
+  _hint?: any
+): any | null {
   // Drop all events during automated tests — no noise in Sentry test project.
   if (process.env.NODE_ENV === "test") return null
 
