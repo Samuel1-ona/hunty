@@ -4,7 +4,7 @@ import { Check, ChevronDown, ChevronUp, Compass, Trophy, Wallet, X } from "lucid
 import Link from "next/link";
 import { useMemo } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 import { useFirstHuntGuide } from "@/hooks/useFirstHuntGuide";
 import {
   FIRST_HUNT_STEPS,

@@ -34,6 +34,10 @@ runs:
         cache: pnpm
         cache-dependency-path: ${{ inputs.working-directory }}/pnpm-lock.yaml
 
+    - name: Enable Corepack
+      shell: bash
+      run: corepack enable
+
     - name: Install dependencies
       shell: bash
       working-directory: ${{ inputs.working-directory }}

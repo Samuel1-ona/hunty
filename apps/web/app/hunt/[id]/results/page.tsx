@@ -103,7 +103,7 @@ interface PageProps {
  * used by the page below) so the branching can be unit tested without
  * exercising React's server-component rendering pipeline.
  */
-export function resolveEndedHuntOrBail(id: string): StoredHunt {
+function resolveEndedHuntOrBail(id: string): StoredHunt {
   const hunt = getHuntById(Number(id));
   if (!hunt || hunt.is_private) {
     notFound();

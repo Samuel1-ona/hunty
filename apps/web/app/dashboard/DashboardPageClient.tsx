@@ -9,7 +9,7 @@ import { EscrowDrawer } from "@/components/EscrowDrawer";
 import { Header } from "@/components/Header";
 import { HuntDashboard } from "@/components/HuntDashboard";
 import { PayoutDashboard } from "@/components/PayoutDashboard";
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 import {
   buildHuntHistoryQuery,
   getHuntHistoryView,

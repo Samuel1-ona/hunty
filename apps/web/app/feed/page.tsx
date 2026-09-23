@@ -12,12 +12,13 @@ export const metadata: Metadata = {
   },
 }
 
-export default function FeedPage({
+export default async function FeedPage({
   searchParams,
 }: {
-  searchParams?: { remote?: string };
+  searchParams: Promise<{ remote?: string }>;
 }) {
-  const remoteOnly = searchParams?.remote === "true";
+  const params = await searchParams;
+  const remoteOnly = params?.remote === "true";
   return (
     <div className="min-h-screen bg-gradient-to-tr from-blue-100 bg-purple-100 to-[#f9f9ff] dark:from-slate-900 dark:bg-slate-900 dark:to-slate-800">
       {/* Header bar */}

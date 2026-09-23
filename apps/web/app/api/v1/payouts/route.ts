@@ -1,9 +1,9 @@
 import { Keypair } from "@stellar/stellar-sdk";
 import { NextResponse } from "next/server";
 
-import { withErrorHandling } from "/lib/api/withErrorHandling";
-import { getCreatorPayoutSummary } from "/lib/payouts";
-import { getIP, rateLimit, rateLimitResponse } from "/lib/rate-limit";
+import { withErrorHandling } from "@/lib/api/withErrorHandling";
+import { getCreatorPayoutSummary } from "@/lib/payouts";
+import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 /**
  * Verifies that a request is signed by the wallet that owns the given Stellar address.
@@ -24,7 +24,7 @@ function verifyWalletOwnership(creator: string, req: Request): NextResponse | nu
     return NextResponse.json({ error: "Expired or invalid timestamp" }, { status: 401 });
   }
 
-  const message = `${creator}:$timestamp}`;
+  const message = `${creator}:${timestamp}`;
   const keypair = Keypair.fromPublicKey(creator);
   const valid = keypair.verify(Buffer.from(message, "utf8"), Buffer.from(signature, "base64"));
   if (!valid) {
