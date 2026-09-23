@@ -319,4 +319,205 @@ mod nft_reward_tests {
         assert_nft_present(&client, &player, id1);
         assert_nft_present(&client, &player, id2);
     }
+
+    // ── issue #850: update_nft_metadata + locked / frozen ────────────────────
+
+    /// Helper: initialise an admin and return the admin address.
+    fn setup_with_admin(env: &Env) -> (Address, Address, NftRewardContractClient<'_>) {
+        let contract_id = env.register(NftRewardContract, ());
+        let client = NftRewardContractClient::new(env, &contract_id);
+        let minter = Address::generate(env);
+        let admin = Address::generate(env);
+        client.initialise(&admin);
+        (minter, admin, client)
+    }
+
+    /// Owner can update metadata on a normal (unlocked, unfrozen) token.
+    #[test]
+    fn test_update_nft_metadata_success() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (minter, _admin, client) = setup_with_admin(&env);
+        let player = Address::generate(&env);
+
+        let id = client.mint(&minter, &player, &test_uri(&env, 1));
+        let new_uri = String::from_str(&env, "ipfs://QmUpdated");
+
+        client.update_nft_metadata(&player, &id, &new_uri);
+
+        assert_eq!(client.get_uri(&id), Some(new_uri));
+    }
+
+    /// Updating metadata on a locked token must return `NftLocked`.
+    #[test]
+    fn test_update_nft_metadata_locked_fails() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (minter, admin, client) = setup_with_admin(&env);
+        let player = Address::generate(&env);
+
+        let id = client.mint(&minter, &player, &test_uri(&env, 1));
+
+        // Admin locks the token.
+        client.set_nft_locked(&admin, &id, &true);
+        assert!(client.is_locked(&id));
+
+        let result = client.try_update_nft_metadata(&player, &id, &String::from_str(&env, "ipfs://QmNew"));
+        assert_eq!(result, Err(Ok(crate::NftError::NftLocked)));
+    }
+
+    /// A locked token can be unlocked and then updated again.
+    #[test]
+    fn test_update_nft_metadata_unlock_then_update() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (minter, admin, client) = setup_with_admin(&env);
+        let player = Address::generate(&env);
+
+        let id = client.mint(&minter, &player, &test_uri(&env, 1));
+        client.set_nft_locked(&admin, &id, &true);
+
+        // Unlock and retry.
+        client.set_nft_locked(&admin, &id, &false);
+        assert!(!client.is_locked(&id));
+
+        let new_uri = String::from_str(&env, "ipfs://QmUnlocked");
+        client.update_nft_metadata(&player, &id, &new_uri);
+        assert_eq!(client.get_uri(&id), Some(new_uri));
+    }
+
+    /// Updating metadata on a frozen token must return `MetadataFrozen`.
+    #[test]
+    fn test_update_nft_metadata_frozen_fails() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (minter, _admin, client) = setup_with_admin(&env);
+        let player = Address::generate(&env);
+
+        let id = client.mint(&minter, &player, &test_uri(&env, 1));
+
+        // Owner freezes the token.
+        client.freeze_metadata(&player, &id);
+        assert!(client.is_metadata_frozen(&id));
+
+        let result = client.try_update_nft_metadata(&player, &id, &String::from_str(&env, "ipfs://QmNew"));
+        assert_eq!(result, Err(Ok(crate::NftError::MetadataFrozen)));
+    }
+
+    /// A non-owner cannot update metadata.
+    #[test]
+    fn test_update_nft_metadata_wrong_owner_fails() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (minter, _admin, client) = setup_with_admin(&env);
+        let player = Address::generate(&env);
+        let eve = Address::generate(&env);
+
+        let id = client.mint(&minter, &player, &test_uri(&env, 1));
+
+        let result = client.try_update_nft_metadata(&eve, &id, &String::from_str(&env, "ipfs://QmEvil"));
+        assert_eq!(result, Err(Ok(crate::NftError::NotOwner)));
+    }
+
+    /// Admin can batch-update URIs on unfrozen tokens.
+    #[test]
+    fn test_admin_update_image_uris_success() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (minter, admin, client) = setup_with_admin(&env);
+        let player = Address::generate(&env);
+
+        let id1 = client.mint(&minter, &player, &test_uri(&env, 1));
+        let id2 = client.mint(&minter, &player, &test_uri(&env, 2));
+
+        let mut ids = soroban_sdk::Vec::new(&env);
+        ids.push_back(id1);
+        ids.push_back(id2);
+
+        let uri_a = String::from_str(&env, "ipfs://QmAdminA");
+        let uri_b = String::from_str(&env, "ipfs://QmAdminB");
+        let mut uris = soroban_sdk::Vec::new(&env);
+        uris.push_back(uri_a.clone());
+        uris.push_back(uri_b.clone());
+
+        client.admin_update_image_uris(&admin, &ids, &uris);
+
+        assert_eq!(client.get_uri(&id1), Some(uri_a));
+        assert_eq!(client.get_uri(&id2), Some(uri_b));
+    }
+
+    /// Admin cannot overwrite a frozen token's URI.
+    #[test]
+    fn test_admin_update_image_uris_frozen_fails() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (minter, admin, client) = setup_with_admin(&env);
+        let player = Address::generate(&env);
+
+        let id = client.mint(&minter, &player, &test_uri(&env, 1));
+        client.freeze_metadata(&player, &id);
+
+        let mut ids = soroban_sdk::Vec::new(&env);
+        ids.push_back(id);
+        let mut uris = soroban_sdk::Vec::new(&env);
+        uris.push_back(String::from_str(&env, "ipfs://QmHijack"));
+
+        let result = client.try_admin_update_image_uris(&admin, &ids, &uris);
+        assert_eq!(result, Err(Ok(crate::NftError::MetadataFrozen)));
+    }
+
+    /// Non-admin address is rejected by `admin_update_image_uris`.
+    #[test]
+    fn test_admin_update_image_uris_not_admin_fails() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (minter, _admin, client) = setup_with_admin(&env);
+        let player = Address::generate(&env);
+        let impostor = Address::generate(&env);
+
+        let id = client.mint(&minter, &player, &test_uri(&env, 1));
+
+        let mut ids = soroban_sdk::Vec::new(&env);
+        ids.push_back(id);
+        let mut uris = soroban_sdk::Vec::new(&env);
+        uris.push_back(String::from_str(&env, "ipfs://QmHijack"));
+
+        let result = client.try_admin_update_image_uris(&impostor, &ids, &uris);
+        assert_eq!(result, Err(Ok(crate::NftError::NotAdmin)));
+    }
+
+    /// `initialise` cannot be called twice.
+    #[test]
+    fn test_initialise_twice_fails() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register(NftRewardContract, ());
+        let client = NftRewardContractClient::new(&env, &contract_id);
+        let admin = Address::generate(&env);
+
+        client.initialise(&admin);
+        let result = client.try_initialise(&admin);
+        assert_eq!(result, Err(Ok(crate::NftError::AlreadyInitialised)));
+    }
+
+    /// Locked and frozen are independent: a frozen token that is also locked
+    /// fails with `MetadataFrozen` (frozen is checked after locked, but locked
+    /// short-circuits first — this test verifies locked takes precedence).
+    #[test]
+    fn test_locked_takes_precedence_over_frozen() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (minter, admin, client) = setup_with_admin(&env);
+        let player = Address::generate(&env);
+
+        let id = client.mint(&minter, &player, &test_uri(&env, 1));
+
+        // Lock first, then freeze.
+        client.set_nft_locked(&admin, &id, &true);
+        client.freeze_metadata(&player, &id);
+
+        let result = client.try_update_nft_metadata(&player, &id, &String::from_str(&env, "ipfs://QmNew"));
+        // locked is checked first in update_nft_metadata
+        assert_eq!(result, Err(Ok(crate::NftError::NftLocked)));
+    }
 }

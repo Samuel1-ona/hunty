@@ -35,6 +35,14 @@ pub enum NftError {
     AlreadyOwned = 3,
     /// Attempt to mint to the zero-address equivalent.
     InvalidRecipient = 4,
+    /// The token is locked; metadata updates are not permitted.
+    NftLocked = 5,
+    /// The token's metadata has been permanently frozen; it cannot be changed.
+    MetadataFrozen = 6,
+    /// The caller is not the contract admin.
+    NotAdmin = 7,
+    /// The contract admin has already been initialised.
+    AlreadyInitialised = 8,
 }
 
 // ─── contract ─────────────────────────────────────────────────────────────────
@@ -177,5 +185,173 @@ impl NftRewardContract {
     /// Return the total number of tokens minted (includes burned tokens).
     pub fn total_supply(env: Env) -> u64 {
         storage::get_total_supply(&env)
+    }
+
+    // ── admin bootstrap ───────────────────────────────────────────────────────
+
+    /// Initialise the contract admin.  Must be called exactly once.
+    ///
+    /// # Authorization
+    ///
+    /// `admin` must authorise this call, proving they control the address
+    /// being installed as admin.
+    pub fn initialise(env: Env, admin: Address) -> Result<(), NftError> {
+        if storage::get_admin(&env).is_some() {
+            return Err(NftError::AlreadyInitialised);
+        }
+        admin.require_auth();
+        storage::set_admin(&env, &admin);
+        Ok(())
+    }
+
+    // ── metadata update ───────────────────────────────────────────────────────
+
+    /// Update the metadata URI of `nft_id`.
+    ///
+    /// # Rules
+    ///
+    /// 1. The token must exist.
+    /// 2. `updater` must be the current owner.
+    /// 3. The token must not be locked (`NftError::NftLocked`).
+    /// 4. The token's metadata must not be frozen (`NftError::MetadataFrozen`).
+    ///
+    /// # Authorization
+    ///
+    /// `updater` must authorise this call.
+    pub fn update_nft_metadata(
+        env: Env,
+        updater: Address,
+        nft_id: u64,
+        new_uri: String,
+    ) -> Result<(), NftError> {
+        updater.require_auth();
+
+        let owner =
+            storage::get_nft_owner(&env, nft_id).ok_or(NftError::TokenNotFound)?;
+
+        if owner != updater {
+            return Err(NftError::NotOwner);
+        }
+
+        // Check locked state before frozen — locked is a reversible operational
+        // guard while frozen is the permanent immutability guarantee.
+        if storage::get_nft_locked(&env, nft_id) {
+            return Err(NftError::NftLocked);
+        }
+
+        if storage::get_nft_frozen(&env, nft_id) {
+            return Err(NftError::MetadataFrozen);
+        }
+
+        storage::set_nft_uri(&env, nft_id, &new_uri);
+        Ok(())
+    }
+
+    /// Batch-update the image URIs for a list of NFTs.
+    ///
+    /// This is an admin-only privilege intended for migrating a collection to a
+    /// new IPFS gateway or fixing a corrupt CID.  It respects the frozen flag:
+    /// an individual token whose metadata has been frozen cannot be overwritten
+    /// even by the admin.
+    ///
+    /// # Authorization
+    ///
+    /// The stored contract admin must authorise this call.
+    pub fn admin_update_image_uris(
+        env: Env,
+        admin: Address,
+        nft_ids: Vec<u64>,
+        new_uris: Vec<String>,
+    ) -> Result<(), NftError> {
+        admin.require_auth();
+
+        // Verify caller is the stored admin.
+        let stored_admin = storage::get_admin(&env).ok_or(NftError::NotAdmin)?;
+        if stored_admin != admin {
+            return Err(NftError::NotAdmin);
+        }
+
+        let len = nft_ids.len();
+        for i in 0..len {
+            let nft_id = nft_ids.get(i).unwrap();
+            let new_uri = new_uris.get(i).unwrap();
+
+            // Token must exist.
+            storage::get_nft_owner(&env, nft_id).ok_or(NftError::TokenNotFound)?;
+
+            // Admin respects the frozen flag — frozen metadata is immutable for
+            // everyone, including the admin.
+            if storage::get_nft_frozen(&env, nft_id) {
+                return Err(NftError::MetadataFrozen);
+            }
+
+            storage::set_nft_uri(&env, nft_id, &new_uri);
+        }
+
+        Ok(())
+    }
+
+    // ── freeze / lock ─────────────────────────────────────────────────────────
+
+    /// Permanently freeze the metadata of `nft_id`.
+    ///
+    /// Once frozen, neither the owner nor the admin can change the URI.  This
+    /// is a one-way operation — there is intentionally no `unfreeze` entrypoint.
+    ///
+    /// # Authorization
+    ///
+    /// `caller` must be the current owner of the token.
+    pub fn freeze_metadata(env: Env, caller: Address, nft_id: u64) -> Result<(), NftError> {
+        caller.require_auth();
+
+        let owner =
+            storage::get_nft_owner(&env, nft_id).ok_or(NftError::TokenNotFound)?;
+
+        if owner != caller {
+            return Err(NftError::NotOwner);
+        }
+
+        storage::set_nft_frozen(&env, nft_id, true);
+        Ok(())
+    }
+
+    /// Lock `nft_id`, preventing metadata updates until unlocked.
+    ///
+    /// Unlike `freeze_metadata`, locking is reversible.  Only the contract
+    /// admin may lock or unlock tokens (e.g. during a hunt claim window).
+    ///
+    /// # Authorization
+    ///
+    /// The stored contract admin must authorise this call.
+    pub fn set_nft_locked(
+        env: Env,
+        admin: Address,
+        nft_id: u64,
+        locked: bool,
+    ) -> Result<(), NftError> {
+        admin.require_auth();
+
+        let stored_admin = storage::get_admin(&env).ok_or(NftError::NotAdmin)?;
+        if stored_admin != admin {
+            return Err(NftError::NotAdmin);
+        }
+
+        // Token must exist before we can lock/unlock it.
+        storage::get_nft_owner(&env, nft_id).ok_or(NftError::TokenNotFound)?;
+
+        storage::set_nft_locked(&env, nft_id, locked);
+        Ok(())
+    }
+
+    // ── state queries ─────────────────────────────────────────────────────────
+
+    /// Return `true` if the token's metadata is permanently frozen.
+    pub fn is_metadata_frozen(env: Env, nft_id: u64) -> bool {
+        storage::get_nft_frozen(&env, nft_id)
+    }
+
+    /// Return `true` if the token is currently locked.
+    pub fn is_locked(env: Env, nft_id: u64) -> bool {
+        storage::get_nft_locked(&env, nft_id)
     }
 }

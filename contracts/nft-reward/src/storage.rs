@@ -229,3 +229,55 @@ pub fn get_owner_nfts(env: &Env, owner: &Address) -> soroban_sdk::Vec<u64> {
     }
     ids
 }
+
+// ─── per-NFT locked flag ──────────────────────────────────────────────────────
+
+/// Return `true` if `nft_id` is locked (non-transferable / metadata-immutable).
+pub fn get_nft_locked(env: &Env, nft_id: u64) -> bool {
+    let key = (symbol_short!("NFTL"), nft_id);
+    env.storage()
+        .persistent()
+        .get::<_, bool>(&key)
+        .unwrap_or(false)
+}
+
+/// Set the locked state of `nft_id`.
+pub fn set_nft_locked(env: &Env, nft_id: u64, locked: bool) {
+    let key = (symbol_short!("NFTL"), nft_id);
+    env.storage().persistent().set(&key, &locked);
+}
+
+// ─── per-NFT metadata-frozen flag ────────────────────────────────────────────
+
+/// Return `true` if `nft_id`'s metadata is permanently frozen.
+pub fn get_nft_frozen(env: &Env, nft_id: u64) -> bool {
+    let key = (symbol_short!("NFTF"), nft_id);
+    env.storage()
+        .persistent()
+        .get::<_, bool>(&key)
+        .unwrap_or(false)
+}
+
+/// Permanently freeze metadata for `nft_id`.  This is a one-way operation;
+/// callers are responsible for not calling `set_nft_frozen(false)` after freeze.
+pub fn set_nft_frozen(env: &Env, nft_id: u64, frozen: bool) {
+    let key = (symbol_short!("NFTF"), nft_id);
+    env.storage().persistent().set(&key, &frozen);
+}
+
+// ─── contract admin ───────────────────────────────────────────────────────────
+
+/// Store the contract admin address (set once at initialisation or by the
+/// existing admin).
+pub fn set_admin(env: &Env, admin: &Address) {
+    env.storage()
+        .persistent()
+        .set(&symbol_short!("ADMIN"), admin);
+}
+
+/// Retrieve the contract admin, or `None` if not yet initialised.
+pub fn get_admin(env: &Env) -> Option<Address> {
+    env.storage()
+        .persistent()
+        .get(&symbol_short!("ADMIN"))
+}
