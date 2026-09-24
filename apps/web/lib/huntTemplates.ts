@@ -3,7 +3,7 @@ import type { HuntDraft } from "@/lib/types"
 export interface HuntTemplateClue {
   title: string
   description: string
-  code: string
+  code?: string
   link?: string
 }
 
@@ -244,7 +244,7 @@ export function buildDraftHuntsFromTemplate(template: HuntTemplate): HuntDraft[]
     title: clue.title,
     description: clue.description,
     link: clue.link ?? "",
-    code: clue.code,
+    code: clue.code ?? "",
     image: "",
   }))
 }

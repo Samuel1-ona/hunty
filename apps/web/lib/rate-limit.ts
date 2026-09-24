@@ -92,11 +92,11 @@ export async function rateLimit(
 }
 
 export function getIP(req: Request): string {
-  const forwarded = req.headers.get("x-forwarded-for")
+  const forwarded = req.headers.get("x-forwarded-for");
   if (forwarded) {
-    return forwarded.split(",")[0].trim()
+    return forwarded.split(",")[0].trim();
   }
-  return "127.0.0.1"
+  return "127.0.0.1";
 }
 
 export function rateLimitResponse(reset: number) {
@@ -109,5 +109,5 @@ export function rateLimitResponse(reset: number) {
         "Retry-After": Math.ceil((reset - Date.now()) / 1000).toString(),
       },
     },
-  )
+  );
 }

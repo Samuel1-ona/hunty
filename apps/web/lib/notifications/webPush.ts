@@ -118,7 +118,9 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
 
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+      // TypeScript's DOM lib currently narrows Uint8Array's backing buffer
+      // more strictly than browsers do for this Web Push API.
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as unknown as BufferSource,
     })
 
     logger.info("[webPush] Push subscription created")
@@ -223,6 +225,11 @@ export async function syncSubscriptionToServer(
   subscription: PushSubscription,
   walletAddress: string,
   preferences?: {
+    enabled?: boolean
+    huntEvents?: boolean
+    rewards?: boolean
+    social?: boolean
+    achievements?: boolean
     huntStart?: boolean
     overtake?: boolean
     huntCancelled?: boolean
@@ -322,6 +329,11 @@ export async function enablePushNotifications(
 export async function syncPreferencesToServer(
   walletAddress: string,
   preferences: {
+    enabled?: boolean
+    huntEvents?: boolean
+    rewards?: boolean
+    social?: boolean
+    achievements?: boolean
     huntStart?: boolean
     overtake?: boolean
     huntCancelled?: boolean

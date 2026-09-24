@@ -12,6 +12,17 @@ import { getIP, rateLimit } from "@/lib/rate-limit"
 import { moderationSyncBodySchema } from "@hunty/types/api-schemas"
 
 export const GET = withErrorHandling(async (req: NextRequest) => {
+  assertAdminAuth(req)
+
+  const ip = getIP(req)
+  const ipResult = rateLimit(`sync_ip:${ip}`, { limit: 60, windowMs: 60 * 1000 })
+  if (!ipResult.success) {
+    throw new RateLimitError("Too many sync requests from this IP", {
+      reset: ipResult.reset,
+      remaining: ipResult.remaining,
+    })
+  }
+
   const { searchParams } = new URL(req.url)
   const email = searchParams.get("email") || undefined
   const huntIdsParam = searchParams.get("huntIds")

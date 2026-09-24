@@ -64,8 +64,8 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Hunty needs your location to show nearby clue zones on the map.",
-          "locationWhenInUsePermission": "Hunty needs your location to show nearby clue zones on the map."
+          "locationAlwaysAndWhenInUsePermission": "Allow Hunty to use your location while the app is closed so it can alert you when you reach an active clue. Hunty does not store your location history.",
+          "locationWhenInUsePermission": "Allow Hunty to use your location to verify that you reached a proximity clue."
         }
       ]
     ],

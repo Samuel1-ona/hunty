@@ -3,8 +3,9 @@
  *
  * Strategy
  * ─────────
- * • Every run checks the four main flows: landing (/), hunt detail (/hunt/[id]),
- *   play/create (/hunty), and the leaderboard (/leaderboard).
+ * • Every run checks the main flows: landing (/), hunt detail (/hunt/[id]),
+ *   play/create (/hunty), the creator dashboard (/dashboard), and the
+ *   leaderboard (/leaderboard and /hunt/[id]/leaderboard).
  * • Any *new* serious or critical violation immediately fails the build.
  * • Violations that were already present when the baseline was first recorded are
  *   allowed through so the build stays green while the team works them down.
@@ -297,6 +298,16 @@ test.describe("Axe Accessibility Audits", () => {
     await page.goto("/leaderboard");
     await page.waitForLoadState("networkidle");
     await auditPage(page, "leaderboard");
+  });
+
+  // ── Creator dashboard (HuntDashboard) ──────────────────────────────────────
+
+  test("dashboard page meets WCAG 2.1 AA (with baseline burn-down)", async ({
+    page,
+  }) => {
+    await page.goto("/dashboard");
+    await page.waitForLoadState("networkidle");
+    await auditPage(page, "dashboard");
   });
 
   // ── Hunt-specific leaderboard ─────────────────────────────────────────────

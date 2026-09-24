@@ -1,19 +1,16 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface ActivateHuntModalProps {
   isOpen: boolean
   onClose: () => void
-  onConfirm: () => void
+  onConfirm: (reactionsEnabled?: boolean) => void
   huntTitle: string
   isActivating?: boolean
+  defaultReactionsEnabled?: boolean
 }
 
 export function ActivateHuntModal({
@@ -22,7 +19,10 @@ export function ActivateHuntModal({
   onConfirm,
   huntTitle,
   isActivating = false,
+  defaultReactionsEnabled = true,
 }: ActivateHuntModalProps) {
+  const [reactionsEnabled, setReactionsEnabled] = useState(defaultReactionsEnabled)
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md text-center">
@@ -41,6 +41,20 @@ export function ActivateHuntModal({
               Hunt: &quot;{huntTitle}&quot;
             </p>
           )}
+          <label className="flex items-center justify-between gap-3 rounded-lg border p-3 text-left cursor-pointer">
+            <span className="text-sm text-slate-700 dark:text-slate-200">
+              Enable live reactions
+            </span>
+            <input
+              type="checkbox"
+              checked={reactionsEnabled}
+              onChange={(e) => setReactionsEnabled(e.target.checked)}
+              className="h-4 w-4"
+            />
+          </label>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Players can react to hunts in real time. Reaction content is moderated through the existing queue.
+          </p>
           <div className="flex gap-4">
             <Button
               onClick={onClose}
@@ -51,8 +65,8 @@ export function ActivateHuntModal({
               Cancel
             </Button>
             <Button
-              onClick={onConfirm}
-              className="flex-1 bg-gradient-to-b from-[#39A437] to-[#194F0C] hover:bg-green-700 text-white"
+              onClick={() => onConfirm(reactionsEnabled)}
+              className="flex-1 bg-gradient-to-b from-[[39A437] to-[#194F0C] hover:bg-green-700 text-white"
               disabled={isActivating}
             >
               {isActivating ? "Submitting…" : "Submit for review"}

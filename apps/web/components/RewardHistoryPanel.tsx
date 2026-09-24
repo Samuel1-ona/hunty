@@ -4,7 +4,7 @@ import { RotateCcw } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import {
   getRewardEscrow,
   getRewardHistory,

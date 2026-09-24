@@ -44,6 +44,9 @@ export function useActivateHuntMutation() {
   return useMutation({
     mutationFn: async (huntId: number) => {
       updateHuntStatus(huntId, "Active");
+      // Best-effort: notify the creator's followers that a new hunt dropped.
+      // Runs server-side so it can reach every follower; failures are ignored.
+      fetch(`/api/v1/hunts/${huntId}/notify-followers`, { method: "POST" }).catch(() => {});
       return huntId;
     },
     onMutate: async (huntId) => {

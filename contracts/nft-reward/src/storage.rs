@@ -75,40 +75,6 @@ pub fn remove_nft_owner(env: &Env, nft_id: u64) {
     env.storage().persistent().remove(&key);
 }
 
-// ─── NFT state flags ──────────────────────────────────────────────────────────
-
-/// Return `true` when `nft_id` is locked (transfers and metadata updates are
-/// blocked while locked).
-pub fn get_nft_locked(env: &Env, nft_id: u64) -> bool {
-    let key = (symbol_short!("NFTL"), nft_id);
-    env.storage()
-        .persistent()
-        .get::<_, bool>(&key)
-        .unwrap_or(false)
-}
-
-/// Set or clear the locked flag for `nft_id`.
-pub fn set_nft_locked(env: &Env, nft_id: u64, locked: bool) {
-    let key = (symbol_short!("NFTL"), nft_id);
-    env.storage().persistent().set(&key, &locked);
-}
-
-/// Return `true` when the metadata for `nft_id` has been permanently frozen.
-/// Once set, this flag cannot be unset.
-pub fn get_nft_metadata_frozen(env: &Env, nft_id: u64) -> bool {
-    let key = (symbol_short!("NFTF"), nft_id);
-    env.storage()
-        .persistent()
-        .get::<_, bool>(&key)
-        .unwrap_or(false)
-}
-
-/// Permanently freeze the metadata for `nft_id`.  This is a one-way operation.
-pub fn set_nft_metadata_frozen(env: &Env, nft_id: u64) {
-    let key = (symbol_short!("NFTF"), nft_id);
-    env.storage().persistent().set(&key, &true);
-}
-
 // ─── NFT counter (total supply) ───────────────────────────────────────────────
 
 /// Return the total number of NFTs ever minted (monotonically increasing).

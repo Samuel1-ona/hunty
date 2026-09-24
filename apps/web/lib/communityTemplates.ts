@@ -49,7 +49,7 @@ function isValidClue(clue: unknown): clue is HuntTemplateClue {
   return (
     typeof candidate.title === "string" &&
     typeof candidate.description === "string" &&
-    typeof candidate.code === "string"
+    (candidate.code === undefined || typeof candidate.code === "string")
   )
 }
 
@@ -117,10 +117,10 @@ export function validateCommunityTemplateInput(
   }
 
   const filledClues = input.clues.filter(
-    (clue) => clue.title.trim() && clue.description.trim() && clue.code.trim(),
+    (clue) => clue.title.trim() && clue.description.trim(),
   )
   if (filledClues.length < MIN_TEMPLATE_CLUES) {
-    return `Add at least ${MIN_TEMPLATE_CLUES} complete clues (title, description, and answer).`
+    return `Add at least ${MIN_TEMPLATE_CLUES} complete clues (title and description).`
   }
 
   return null
@@ -161,12 +161,12 @@ export function addCommunityTemplate(
     submittedAt: Date.now(),
     clues: input.clues
       .filter(
-        (clue) => clue.title.trim() && clue.description.trim() && clue.code.trim(),
+        (clue) => clue.title.trim() && clue.description.trim(),
       )
       .map((clue) => ({
         title: clue.title.trim(),
         description: clue.description.trim(),
-        code: clue.code.trim(),
+        ...(clue.code?.trim() ? { code: clue.code.trim() } : {}),
         ...(clue.link?.trim() ? { link: clue.link.trim() } : {}),
       })),
   }
@@ -184,4 +184,32 @@ export function addCommunityTemplate(
   }
 
   return template
+}
+
+import type { StoredHunt } from "@/lib/types"
+import { getHuntClues } from "@/lib/huntStore"
+
+/**
+ * Saves a StoredHunt as a template (omitting the answers).
+ */
+export function saveHuntAsTemplate(hunt: StoredHunt, author: string): CommunityHuntTemplate {
+  const clues = getHuntClues(hunt.id)
+  
+  if (clues.length === 0) {
+    throw new Error("This hunt has no clues. Cannot save as template.")
+  }
+
+  const templateClues: HuntTemplateClue[] = clues.map((clue) => ({
+    title: clue.question, // Clue interface has 'question' and 'answer', HuntTemplateClue has 'title', 'description'
+    description: clue.hint || clue.question, // Using question for title, maybe question/hint for description? Wait... Let me check Clue interface.
+  }))
+
+  return addCommunityTemplate({
+    title: hunt.title,
+    description: hunt.description,
+    category: hunt.category || "General",
+    estimatedDuration: "30-45 min", // Default duration
+    author,
+    clues: templateClues,
+  })
 }

@@ -13,7 +13,7 @@ import {
 } from "lucide-react"
 import React, { useEffect,useState } from "react"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import {
   Dialog,
   DialogContent,

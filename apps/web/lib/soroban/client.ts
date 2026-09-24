@@ -1,7 +1,9 @@
-import * as Sentry from "@sentry/nextjs"
-import Server from "@stellar/stellar-sdk";
+import * as Sentry from "@sentry/nextjs";
+import { rpc } from "@stellar/stellar-sdk";
 
-import { createSorobanRpcOptimizer } from "./rpcOptimization"
+type Server = rpc.Server;
+
+import { createSorobanRpcOptimizer } from "./rpcOptimization";
 
 /**
  * Testnet network configuration
@@ -40,12 +42,13 @@ export const MAINNET_NETWORK_PASSPHRASE = "Public Global Stellar Network ; Septe
  */
 function getRpcUrl(): string {
   // Check if there's an explicit override
-  const envUrl = typeof window === "undefined" 
-    ? process.env.NEXT_PUBLIC_SOROBAN_RPC_URL 
-    : process.env.NEXT_PUBLIC_SOROBAN_RPC_URL;
-  
+  const envUrl =
+    typeof window === "undefined"
+      ? process.env.NEXT_PUBLIC_SOROBAN_RPC_URL
+      : process.env.NEXT_PUBLIC_SOROBAN_RPC_URL;
+
   if (envUrl) return envUrl;
-  
+
   // Otherwise use network-specific default
   const networkType = getSorobanNetworkType();
   return networkType === "mainnet" ? MAINNET_CONFIG.rpcUrl : TESTNET_CONFIG.rpcUrl;
@@ -56,15 +59,18 @@ function getRpcUrl(): string {
  */
 function getNetworkPassphrase(): string {
   // Check if there's an explicit override
-  const envPassphrase = typeof window === "undefined"
-    ? process.env.NEXT_PUBLIC_SOROBAN_NETWORK_PASSPHRASE
-    : process.env.NEXT_PUBLIC_SOROBAN_NETWORK_PASSPHRASE;
-  
+  const envPassphrase =
+    typeof window === "undefined"
+      ? process.env.NEXT_PUBLIC_SOROBAN_NETWORK_PASSPHRASE
+      : process.env.NEXT_PUBLIC_SOROBAN_NETWORK_PASSPHRASE;
+
   if (envPassphrase) return envPassphrase;
-  
+
   // Otherwise use network-specific default
   const networkType = getSorobanNetworkType();
-  return networkType === "mainnet" ? MAINNET_CONFIG.networkPassphrase : TESTNET_CONFIG.networkPassphrase;
+  return networkType === "mainnet"
+    ? MAINNET_CONFIG.networkPassphrase
+    : TESTNET_CONFIG.networkPassphrase;
 }
 
 /**
@@ -79,8 +85,11 @@ export function getSorobanNetworkType(): "testnet" | "mainnet" {
       return stored;
     }
   }
-  
-  const networkType = process.env.NEXT_PUBLIC_SOROBAN_NETWORK_TYPE as "testnet" | "mainnet" | undefined;
+
+  const networkType = process.env.NEXT_PUBLIC_SOROBAN_NETWORK_TYPE as
+    | "testnet"
+    | "mainnet"
+    | undefined;
   return networkType ?? "testnet";
 }
 
@@ -91,7 +100,7 @@ export function getSorobanNetworkType(): "testnet" | "mainnet" {
 export function setSorobanNetworkType(networkType: "testnet" | "mainnet"): void {
   if (typeof window === "undefined") return;
   localStorage.setItem("stellar_network_preference", networkType);
-  
+
   // Clear the shared server instance to force reconnection
   sharedServer = null;
   sharedServerRpcUrl = null;
@@ -119,7 +128,7 @@ export function createSorobanServer(): Server {
     return sharedServer;
   }
 
-  sharedServer = new Server(rpcUrl);
+  sharedServer = new rpc.Server(rpcUrl);
   sharedServerRpcUrl = rpcUrl;
   return sharedServer;
 }
@@ -138,7 +147,7 @@ export function getSorobanRpcUrl(): string {
   return getRpcUrl();
 }
 
-let sharedOptimizer: ReturnType<typeof createSorobanRpcOptimizer> | null = null
+let sharedOptimizer: ReturnType<typeof createSorobanRpcOptimizer> | null = null;
 
 export function getSorobanRpcOptimizer(): ReturnType<typeof createSorobanRpcOptimizer> {
   if (!sharedOptimizer) {
@@ -147,20 +156,20 @@ export function getSorobanRpcOptimizer(): ReturnType<typeof createSorobanRpcOpti
       fallbackRpcUrl: process.env.NEXT_PUBLIC_SOROBAN_FALLBACK_RPC_URL,
       debounceMs: Number(process.env.NEXT_PUBLIC_SOROBAN_DEBOUNCE_MS ?? 50),
       ttlMs: Number(process.env.NEXT_PUBLIC_SOROBAN_READ_TTL_MS ?? 30_000),
-    })
+    });
   }
 
-  return sharedOptimizer
+  return sharedOptimizer;
 }
 
 export async function readSorobanContractState<T>(request: {
-  key: string
-  method: string
-  params?: unknown[]
-  parser?: (response: unknown) => unknown
+  key: string;
+  method: string;
+  params?: unknown[];
+  parser?: (response: unknown) => unknown;
 }): Promise<T> {
   try {
-    return await getSorobanRpcOptimizer().readContractState<T>(request)
+    return await getSorobanRpcOptimizer().readContractState<T>(request);
   } catch (err) {
     // Previously, this call could never succeed because createSorobanRpcOptimizer
     // was not imported (undefined at runtime). Now that the import is fixed,
@@ -168,7 +177,7 @@ export async function readSorobanContractState<T>(request: {
     Sentry.captureException(err instanceof Error ? err : new Error(String(err)), {
       tags: { source: "sorobanRpc", method: request.method },
       extra: { key: request.key, params: request.params },
-    })
-    throw err
+    });
+    throw err;
   }
 }

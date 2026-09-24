@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { AlertTriangle, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import { checkWalletNetworkMatch, type NetworkMismatchError } from "@/lib/wallets/networkDetection"
 import type { WalletProvider } from "@/lib/walletAdapter"
 

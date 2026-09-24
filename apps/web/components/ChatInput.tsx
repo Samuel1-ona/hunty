@@ -1,44 +1,52 @@
 import { Send, Smile } from "lucide-react";
+
 import React, { useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 import { Input } from "@/components/ui/input";
 
 const commonEmojis = [
   "😀",
   "😂",
   "😍",
-  "🤔",
-  "👍",
-  "👎",
+  "🔄",
+  "🍉",
+  "🌎",
   "❤️",
-  "🔥",
-  "🎉",
-  "🙌",
-  "😎",
-  "🤣",
+  "🚖",
+  "🍉",
+  "😲",
+  "🨐",
+  "😃",
   "😢",
-  "😡",
-  "👏",
-  "🙏",
-  "🤩",
+  "🟠",
+  "😬",
+  "🐍",
+  "🔯",
   "😜",
-  "🤗",
+  "🖗",
   "😇",
 ];
 
+// Quick reactions for one-click posting
+const quickReactions = ["🍉","❤️","😂","🖢","🍉"];
+
 interface ChatInputProps {
   onSend: (message: string) => void;
+  onReact?: (emoji: string) => void;
   disabled?: boolean;
+  reactionsDisabled?: boolean;
   placeholder?: string;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
   onSend,
+  onReact,
   disabled = false,
+  reactionsDisabled = false,
   placeholder = "Type a message...",
 }) => {
-  const [message, setMessage] = useState("");
+  const {message, setMessage} = useState("");
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
 
   const handleSend = () => {
@@ -60,6 +68,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     setEmojiPickerOpen(false);
   };
 
+  const handleReact = (emoji: string) => {
+    if (onReact && !disabled && !reactionsDisabled) {
+      onReact(emoji);
+    }
+  };
+
   return (
     <div className="flex items-center gap-2 p-3 border-t border-slate-200 dark:border-slate-700">
       <div className="flex-1">
@@ -72,6 +86,24 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           className="rounded-full"
         />
       </div>
+      {/* Quick reactions */}
+      {onReact && !reactionsDisabled && (
+        <div className="flex items-center gap-1">
+          {quickReactions.map((emoji) => (
+            <Button
+              key={emoji}
+              variant="ghost"
+              size="icon"
+              disabled={disabled}
+              onClick={() => handleReact(emoji)}
+              className="h-8 w-8"
+              type="button"
+            >
+              <span className="text-lg">{emoji}</span>
+            </Button>
+          ))}
+        </div>
+      )}
       <div className="relative">
         <Button
           variant="ghost"
@@ -83,7 +115,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           <Smile className="h-5 w-5" />
         </Button>
         {emojiPickerOpen && (
-          <div className="absolute right-0 bottom-full mb-2 w-80 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-3 shadow-lg z-50">
+          <div className="absolute right-0 bottom-full mb-2 w-80 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 roundd-lg p-3 shadow-lg z-50">
             <div className="grid grid-cols-10 gap-2">
               {commonEmojis.map((emoji, index) => (
                 <Button
@@ -112,4 +144,3 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     </div>
   );
 };
- 

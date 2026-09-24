@@ -2,10 +2,13 @@
 
 import { Minus,Plus, Shield } from "lucide-react"
 
+import { useEffect } from "react"
+
 import { ClaimRewardFlow } from "@/components/ClaimRewardFlow"
 import Coin from "@/components/icons/Coin"
+import { markFirstHuntStep } from "@/lib/firstHuntGuide"
 import Trash from "@/components/icons/trash"
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import { useXlmUsdPrice } from "@/hooks/useXlmUsdPrice"
 import { useIsFeatureEnabled } from "@/hooks/useFeatureFlag"
 import type { Reward, RewardPlayerProgress } from "@/lib/types"
@@ -25,6 +28,12 @@ export interface RewardsPanelProps {
 export function RewardsPanel({ rewards, rewardType = "XLM", onUpdateReward, onAddReward, onDeleteReward, error, playerProgress }: RewardsPanelProps) {
   const { price: xlmUsdPrice } = useXlmUsdPrice()
   const advancedRewardsEnabled = useIsFeatureEnabled("advancedRewards")
+
+  useEffect(() => {
+    if (playerProgress?.reward_claimed && playerProgress.hunt_id != null) {
+      markFirstHuntStep("claim", { huntId: Number(playerProgress.hunt_id) })
+    }
+  }, [playerProgress?.reward_claimed, playerProgress?.hunt_id])
 
   const currencyFormatter = new Intl.NumberFormat(undefined, {
     style: "currency",

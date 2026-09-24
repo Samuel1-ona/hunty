@@ -19,7 +19,6 @@ export default defineConfig({
     exclude: ["e2e/**", "node_modules/**"],
     coverage: {
       provider: "v8",
-      all: true,
       reporter: ["text", "json", "html", "lcov"],
       reportsDirectory: "./coverage",
       include: ["lib/**/*.{ts,tsx}", "hooks/**/*.{ts,tsx}"],
@@ -42,11 +41,37 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@hunty/types/schemas": path.resolve(__dirname, "./packages/types/src/schemas.ts"),
-      "@hunty/types": path.resolve(__dirname, "./packages/types/src/index.ts"),
+      "@hunty/config": path.resolve(__dirname, "../../packages/config"),
+      "@hunty/config/*": path.resolve(__dirname, "../../packages/config/*"),
       "@hunty/types/schemas": path.resolve(__dirname, "../../packages/types/src/schemas.ts"),
       "@hunty/types": path.resolve(__dirname, "../../packages/types/src/index.ts"),
       "@": path.resolve(__dirname, "./"),
     },
+    // Keep subpath aliases ahead of the package root alias. Vite matches
+    // aliases by prefix, so @hunty/types would otherwise swallow
+    // @hunty/types/api-schemas.
+    alias: [
+      // @upstash/redis is an optional runtime dependency not installed in the
+      // dev/test environment.  Redirect it to a lightweight stub so Vite's
+      // static import-analysis does not fail when it encounters the dynamic
+      // `await import("@upstash/redis")` inside lib/rate-limit.ts.
+      {
+        find: "@upstash/redis",
+        replacement: path.resolve(__dirname, "./__mocks__/@upstash/redis.ts"),
+      },
+      {
+        find: "@hunty/types/api-schemas",
+        replacement: path.resolve(__dirname, "../../packages/types/src/api-schemas.ts"),
+      },
+      {
+        find: "@hunty/types/schemas",
+        replacement: path.resolve(__dirname, "../../packages/types/src/schemas.ts"),
+      },
+      {
+        find: "@hunty/types",
+        replacement: path.resolve(__dirname, "../../packages/types/src/index.ts"),
+      },
+      { find: "@", replacement: path.resolve(__dirname, "./") },
+    ],
   },
 });

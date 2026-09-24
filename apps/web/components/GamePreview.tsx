@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Eye } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 
 import PlayCircle from "@/components/icons/PlayCircle";
 import type { HuntCard } from "@/lib/types";

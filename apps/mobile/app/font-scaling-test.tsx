@@ -91,7 +91,7 @@ export default function FontScalingTestScreen() {
             </View>
             <View style={styles.resultDetails}>
               <Text style={styles.detailText}>
-                Original: {result.originalSize}pt -> Scaled: {result.scaledSize.toFixed(1)}pt
+                Original: {result.originalSize}pt {'->'} Scaled: {result.scaledSize.toFixed(1)}pt
               </Text>
               {result.willClip && <Text style={styles.warning}>Text may clip at max scale</Text>}
               <Text style={styles.safeSize}>Safe Font Size: {result.safeFontSize.toFixed(1)}pt</Text>

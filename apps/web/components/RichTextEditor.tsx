@@ -22,7 +22,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import { Textarea } from "@/components/ui/textarea"
 import { MarkdownContent } from "@/components/MarkdownContent"
 import { uploadToIPFS } from "@/lib/ipfs"

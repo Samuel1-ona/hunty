@@ -16,6 +16,7 @@
  * end-users.
  */
 
+import { getCached, invalidate, setCached } from "@/lib/analyticsCache";
 import { getDb } from "@/lib/db";
 import { logger } from "@/lib/logger";
 
@@ -288,6 +289,8 @@ async function writeRecord(rec: HuntAnalyticsRecord): Promise<void> {
 /**
  * Record a single analytics event for a hunt.
  * This is the only write path — all event types funnel through here.
+ * The cache entry for the hunt is invalidated after a successful write so
+ * that subsequent reads always reflect the latest state.
  */
 export async function recordAnalyticsEvent(event: AnalyticsEvent): Promise<void> {
   try {
@@ -331,6 +334,9 @@ export async function recordAnalyticsEvent(event: AnalyticsEvent): Promise<void>
 
     rec.updatedAt = new Date().toISOString();
     await writeRecord(rec);
+    // Evict so the next read fetches the freshly-written row and re-populates
+    // the cache rather than serving stale data.
+    await invalidate(event.huntId);
   } catch (err) {
     logger.warn("[huntAnalytics] failed to persist analytics event", err);
   }
@@ -338,11 +344,17 @@ export async function recordAnalyticsEvent(event: AnalyticsEvent): Promise<void>
 
 /**
  * Return the full analytics record for one hunt, enriched with derived metrics.
+ * Reads from cache first; on miss fetches from DB and populates the cache.
  */
 export async function getHuntAnalytics(huntId: number): Promise<HuntAnalyticsResponse> {
   try {
+    const cached = await getCached(huntId);
+    if (cached) return cached;
+
     const rec = await readRecord(huntId);
-    return enrichRecord(rec);
+    const response = enrichRecord(rec);
+    await setCached(huntId, response);
+    return response;
   } catch (err) {
     logger.error("[huntAnalytics] getHuntAnalytics DB error:", err);
     return enrichRecord(emptyRecord(huntId));
