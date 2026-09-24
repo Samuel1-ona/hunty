@@ -19,6 +19,14 @@ vi.mock("sonner", () => ({
 
 vi.mock("@/lib/ipfs", () => ({
   COVER_IMAGE_UPLOAD_ERROR_MESSAGE: "Failed to upload cover image. Please try again.",
+  MAX_IPFS_UPLOAD_BYTES: Math.floor(4.5 * 1024 * 1024),
+  formatMaxUploadSize: () => "4.5 MB",
+  buildFileTooLargeMessage: (fileName?: string) =>
+    fileName
+      ? `"${fileName}" is too large. Maximum upload size is 4.5 MB.`
+      : "This file is too large. Maximum upload size is 4.5 MB.",
+  isTooLargeForIPFSUpload: (file: { size: number }) =>
+    file.size > Math.floor(4.5 * 1024 * 1024),
   uploadToIPFS: uploadToIPFSMock,
 }))
 
