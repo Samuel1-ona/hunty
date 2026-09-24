@@ -1,4 +1,5 @@
-import { Keypair } from "@stellar/stellar-base";
+import { Keypair } from "@stellar/stellar-sdk";
+
 import { generateChallenge, verifySignedMessage } from "../signature";
 
 describe("signature helper", () => {
@@ -8,9 +9,7 @@ describe("signature helper", () => {
     const challenge = generateChallenge(address, "test");
     const signature = keypair.sign(Buffer.from(challenge, "utf8")).toString("base64");
 
-    expect(
-      verifySignedMessage({ address, challenge, signature, purpose: "test" })
-    ).toBe(true);
+    expect(verifySignedMessage({ address, challenge, signature, purpose: "test" })).toBe(true);
   });
 
   it("rejects an invalid signature", () => {
@@ -19,9 +18,7 @@ describe("signature helper", () => {
     const challenge = generateChallenge(address, "test");
     const signature = "invalid-signature";
 
-    expect(
-      verifySignedMessage({ address, challenge, signature, purpose: "test" })
-    ).toBe(false);
+    expect(verifySignedMessage({ address, challenge, signature, purpose: "test" })).toBe(false);
   });
 
   it("rejects a challenge signed for a different address", () => {
@@ -53,8 +50,6 @@ describe("signature helper", () => {
     const challenge = `huntly-challenge:test:${address.toLowerCase()}:${issuedAt}:nonce`;
     const signature = keypair.sign(Buffer.from(challenge, "utf8")).toString("base64");
 
-    expect(
-      verifySignedMessage({ address, challenge, signature, purpose: "test" })
-    ).toBe(false);
+    expect(verifySignedMessage({ address, challenge, signature, purpose: "test" })).toBe(false);
   });
 });
