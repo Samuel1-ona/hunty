@@ -4,19 +4,16 @@ import {
   ActivityIndicator,
   Pressable,
   type PressableProps,
-  StyleSheet,
-  Text,
-  useColorScheme,
   View,
   type ViewStyle,
 } from "react-native";
 
-import { colors as tokenColors } from "../tokens/colors";
+import { ThemedCustomText } from "./ThemedCustomText";
+import { useTheme } from "./ThemeProvider";
 
 export interface ButtonProps
-  extends Omit<PressableProps, "style">,
-    Omit<SharedButtonProps, "disabled" | "onPress"> {
-  disabled?: boolean;
+  extends Omit<PressableProps, "style" | "disabled" | "onPress">,
+    SharedButtonProps {
   icon?: React.ReactNode;
   style?: ViewStyle;
 }
@@ -40,21 +37,14 @@ export function Button({
   testID,
 }: ButtonProps) {
   const [pressed, setPressed] = useState(false);
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-
-  const primary = isDark ? tokenColors.primaryDark : tokenColors.primary;
-  const secondary = isDark ? tokenColors.secondaryDark : tokenColors.secondary;
-  const border = isDark ? tokenColors.borderDark : tokenColors.border;
-  const textColor_ = isDark ? tokenColors.textDark : tokenColors.text;
-  const errorColor = isDark ? tokenColors.errorDark : tokenColors.error;
+  const { colors } = useTheme();
 
   const bgColor: Record<ButtonVariant, string> = {
-    primary,
-    secondary,
+    primary: colors.primary,
+    secondary: colors.secondary,
     ghost: "transparent",
     outline: "transparent",
-    destructive: errorColor,
+    destructive: colors.error,
   };
 
   const isGhostLike = variant === "ghost" || variant === "outline";
@@ -69,15 +59,12 @@ export function Button({
     gap: 8,
     ...(variant === "outline" && {
       borderWidth: 1,
-      borderColor: border,
+      borderColor: colors.border,
     }),
     ...(style as ViewStyle),
   };
 
-  const labelColor = isGhostLike ? textColor_ : "#ffffff";
-
-  const labelFontSize = size === "sm" ? 12 : size === "lg" ? 16 : 14;
-  const labelLineHeight = size === "sm" ? 16 : size === "lg" ? 24 : 20;
+  const textColor = isGhostLike ? colors.text : "#ffffff";
 
   return (
     <Pressable
@@ -87,29 +74,23 @@ export function Button({
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled: disabled || loading, busy: loading }}
       disabled={disabled || loading}
-      onPress={onPress}
+      onPress={onPress ? () => onPress() : undefined}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
       style={containerStyle}
     >
-      {loading && <ActivityIndicator color={labelColor} size="small" />}
+      {loading && <ActivityIndicator color={textColor} size="small" />}
       {!loading && icon && <View>{icon as React.ReactElement}</View>}
       {!loading && (
-        <Text
-          style={[
-            styles.label,
-            { color: labelColor, fontSize: labelFontSize, lineHeight: labelLineHeight },
-          ]}
+        <ThemedCustomText
+          variant={size === "sm" ? "caption" : size === "lg" ? "body" : "label"}
+          lightColor={textColor}
+          darkColor={textColor}
+          weight="600"
         >
           {label}
-        </Text>
+        </ThemedCustomText>
       )}
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  label: {
-    fontWeight: "600",
-  },
-});

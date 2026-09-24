@@ -1,8 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-native';
 import { View } from 'react-native';
 
-import { ThemedCustomText } from '../../components/themed/ThemedCustomText';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@hunty/ui/native';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  ThemedCustomText,
+} from '@hunty/ui/native';
 
 const meta = {
   title: 'Shared/Native/Card',
@@ -41,4 +47,6 @@ const children = (
 export const Default: Story = { args: { variant: 'default', children } };
 export const Flat: Story = { args: { variant: 'flat', children } };
 export const Ghost: Story = { args: { variant: 'ghost', children } };
-export const Clickable: Story = { args: { variant: 'default', onPress: () => {}, children } };
+export const Clickable: Story = {
+  args: { variant: 'default', onPress: () => {}, children },
+};

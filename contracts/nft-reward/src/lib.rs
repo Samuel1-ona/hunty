@@ -1,3 +1,4 @@
+//! nft-reward — Soroban smart contract for Hunty NFT rewards.
 //!
 //! # Storage discipline
 //!
@@ -15,11 +16,6 @@ mod storage;
 mod tests;
 
 use soroban_sdk::{contract, contractimpl, contracterror, Address, Env, String, Vec};
-
-// ─── constants ────────────────────────────────────────────────────────────────
-
-/// Maximum byte length accepted for any NFT URI field.
-const MAX_NFT_URI_BYTES: u32 = 512;
 
 // ─── errors ───────────────────────────────────────────────────────────────────
 
@@ -39,16 +35,6 @@ pub enum NftError {
     AlreadyOwned = 3,
     /// Attempt to mint to the zero-address equivalent.
     InvalidRecipient = 4,
-    /// The supplied URI is empty, uses a forbidden scheme (not https:// or
-    /// ipfs://), or contains invalid characters.
-    ///
-    /// This error is returned by both `mint_reward_nft_from_map` and
-    /// `update_nft_metadata` so that the two entry-points enforce identical
-    /// URI rules and cannot drift apart (issue #849).
-    InvalidUri = 5,
-    /// A metadata text field exceeds the maximum allowed byte length or
-    /// contains invalid / disallowed characters.
-    InvalidField = 6,
 }
 
 // ─── contract ─────────────────────────────────────────────────────────────────
@@ -58,126 +44,6 @@ pub struct NftRewardContract;
 
 #[contractimpl]
 impl NftRewardContract {
-    // ── private helpers ───────────────────────────────────────────────────────
-
-    /// Return `true` when `uri` is acceptable for on-chain storage.
-    ///
-    /// Rules (must all hold):
-    /// 1. Non-empty.
-    /// 2. Does not exceed `MAX_NFT_URI_BYTES` bytes.
-    /// 3. Starts with `https://` or `ipfs://` (case-sensitive).
-    ///
-    /// This is the single source of truth for URI scheme validation.  Both
-    /// `mint_reward_nft_from_map` and `update_nft_metadata` delegate here so
-    /// they cannot drift (issue #849 root cause).
-    fn image_uri_is_valid(uri: &String) -> bool {
-        let len = uri.len();
-
-        // Rule 1: non-empty.
-        if len == 0 {
-            return false;
-        }
-
-        // Rule 2: not too long.
-        if len > MAX_NFT_URI_BYTES {
-            return false;
-        }
-
-        // Rule 3: must start with an allowed scheme.
-        //
-        // We copy only the first 8 bytes (the length of "https://") into a
-        // stack buffer so we can do a prefix comparison without alloc.
-        // `ipfs://` is 7 bytes, `https://` is 8 bytes — 8 is the maximum we
-        // need to inspect.
-        const PREFIX_BUF_LEN: usize = 8;
-        let read_len = if len as usize >= PREFIX_BUF_LEN {
-            PREFIX_BUF_LEN
-        } else {
-            len as usize
-        };
-
-        // Build a String that contains only the first `read_len` bytes of the
-        // URI so we can call copy_into_slice on it.  We do this by comparing
-        // the full URI against prefix strings using the Soroban String
-        // comparison helpers available in the SDK.
-        //
-        // Soroban SDK v22 String exposes `copy_into_slice`, which copies the
-        // entire string into a caller-supplied slice.  We use a fixed-size
-        // stack buffer and fill only up to read_len bytes.
-        let mut prefix_buf = [0u8; PREFIX_BUF_LEN];
-        // copy_into_slice requires the slice length to exactly equal the string
-        // length, so we need a slice of the right size.  We use a temporary
-        // full buffer and only look at the first `read_len` bytes.
-        if len as usize <= PREFIX_BUF_LEN {
-            // Short URI: copy all bytes and examine them.
-            let slice = &mut prefix_buf[..len as usize];
-            uri.copy_into_slice(slice);
-        } else {
-            // URI is longer than our buffer; we can only copy the first part by
-            // constructing a sub-string — but Soroban String has no substr API.
-            //
-            // Instead, allocate a larger buffer on the stack (up to 512 bytes
-            // maximum, guarded by MAX_NFT_URI_BYTES above) and copy the whole
-            // string, then examine the prefix.
-            //
-            // NOTE: 512 bytes is safe here because we have already rejected
-            // URIs longer than MAX_NFT_URI_BYTES (512) above.
-            let mut full_buf = [0u8; MAX_NFT_URI_BYTES as usize];
-            uri.copy_into_slice(&mut full_buf[..len as usize]);
-            prefix_buf.copy_from_slice(&full_buf[..PREFIX_BUF_LEN]);
-        };
-
-        let has_https = read_len >= 8 && &prefix_buf[..8] == b"https://";
-        let has_ipfs = read_len >= 7 && &prefix_buf[..7] == b"ipfs://";
-
-        has_https || has_ipfs
-    }
-
-    /// Validate and return a sanitised copy of a generic metadata text field.
-    ///
-    /// Checks performed:
-    /// * Length does not exceed `max_bytes`.
-    /// * No ASCII control characters (bytes 0x00–0x1F and 0x7F).
-    ///
-    /// `allow_empty` controls whether a zero-length string is accepted.  For
-    /// URI fields pass `allow_empty: false` in addition to calling
-    /// `image_uri_is_valid` to enforce the scheme allowlist.
-    ///
-    /// Returns `Err(NftError::InvalidField)` on any violation.
-    fn sanitize_metadata_field(
-        field: &String,
-        max_bytes: u32,
-        allow_empty: bool,
-    ) -> Result<String, NftError> {
-        let len = field.len();
-
-        if len == 0 {
-            if allow_empty {
-                return Ok(field.clone());
-            } else {
-                return Err(NftError::InvalidField);
-            }
-        }
-
-        if len > max_bytes {
-            return Err(NftError::InvalidField);
-        }
-
-        // Copy the full string into a stack buffer and scan for control chars.
-        // len <= max_bytes <= MAX_NFT_URI_BYTES (512), so this is safe.
-        let mut buf = [0u8; MAX_NFT_URI_BYTES as usize];
-        field.copy_into_slice(&mut buf[..len as usize]);
-
-        for i in 0..len as usize {
-            let b = buf[i];
-            if b < 0x20 || b == 0x7F {
-                return Err(NftError::InvalidField);
-            }
-        }
-
-        Ok(field.clone())
-    }
-
     // ── mint ──────────────────────────────────────────────────────────────────
 
     /// Mint a new NFT to `recipient` with the given metadata URI.
@@ -188,11 +54,6 @@ impl NftRewardContract {
     ///
     /// The `minter` must authorise this call.  In the Hunty context this is
     /// the Reward Manager contract acting on behalf of the hunt creator.
-    ///
-    /// # Note
-    ///
-    /// This low-level entry-point stores `uri` without scheme validation.  For
-    /// validated minting use `mint_reward_nft_from_map`.
     pub fn mint(
         env: Env,
         minter: Address,
@@ -209,105 +70,6 @@ impl NftRewardContract {
         storage::add_nft_to_owner(&env, &recipient, nft_id);
 
         Ok(nft_id)
-    }
-
-    /// Mint a new NFT to `recipient` using a validated image URI.
-    ///
-    /// Unlike the bare `mint` entry-point, this function enforces:
-    ///
-    /// * The URI must use the `https://` or `ipfs://` scheme (via
-    ///   `image_uri_is_valid`).
-    /// * The URI must not be empty and must not exceed `MAX_NFT_URI_BYTES`.
-    ///
-    /// Returns `Err(NftError::InvalidUri)` when any URI check fails.
-    ///
-    /// # Authorization
-    ///
-    /// The `minter` must authorise this call.
-    pub fn mint_reward_nft_from_map(
-        env: Env,
-        minter: Address,
-        recipient: Address,
-        image_uri: String,
-    ) -> Result<u64, NftError> {
-        minter.require_auth();
-
-        // ── URI validation (issue #849: shared rule, same as update_nft_metadata)
-        if !Self::image_uri_is_valid(&image_uri) {
-            return Err(NftError::InvalidUri);
-        }
-
-        let nft_id = storage::increment_total_supply(&env);
-
-        storage::set_nft_uri(&env, nft_id, &image_uri);
-        storage::set_nft_minter(&env, nft_id, &minter);
-        storage::set_nft_owner(&env, nft_id, &recipient);
-        storage::add_nft_to_owner(&env, &recipient, nft_id);
-
-        Ok(nft_id)
-    }
-
-    // ── metadata update ───────────────────────────────────────────────────────
-
-    /// Update the image URI stored for `nft_id`.
-    ///
-    /// The caller must be the current owner of the token.  The new URI is
-    /// validated with the same `image_uri_is_valid` check that
-    /// `mint_reward_nft_from_map` applies, so the two entry-points cannot
-    /// drift apart (issue #849 fix).
-    ///
-    /// Additional sanitisation (length, control characters) is performed by
-    /// `sanitize_metadata_field`.
-    ///
-    /// # Errors
-    ///
-    /// * `NftError::TokenNotFound` — the token does not exist.
-    /// * `NftError::NotOwner` — `owner` is not the current token owner.
-    /// * `NftError::InvalidUri` — `new_image_uri` fails URI scheme / emptiness
-    ///   validation.  This includes `javascript:`, `data:`, plain `http://`,
-    ///   and empty strings.
-    /// * `NftError::InvalidField` — `new_image_uri` contains control characters
-    ///   or exceeds `MAX_NFT_URI_BYTES`.
-    ///
-    /// # Authorization
-    ///
-    /// `owner` must authorise this call.
-    pub fn update_nft_metadata(
-        env: Env,
-        owner: Address,
-        nft_id: u64,
-        new_image_uri: String,
-    ) -> Result<(), NftError> {
-        owner.require_auth();
-
-        // Verify token existence and ownership.
-        let current_owner =
-            storage::get_nft_owner(&env, nft_id).ok_or(NftError::TokenNotFound)?;
-        if current_owner != owner {
-            return Err(NftError::NotOwner);
-        }
-
-        // ── URI scheme validation (issue #849) ────────────────────────────────
-        //
-        // This MUST happen before sanitize_metadata_field, which only checks
-        // length and control characters.  Without this call an owner could
-        // bypass the https:// / ipfs:// restriction enforced at mint time and
-        // write javascript:, data:, http://, or an empty string.
-        if !Self::image_uri_is_valid(&new_image_uri) {
-            return Err(NftError::InvalidUri);
-        }
-
-        // ── Field sanitisation (length, control characters) ───────────────────
-        //
-        // allow_empty: false — image_uri_is_valid already rejects empty
-        // strings, but we keep allow_empty: false here as defence-in-depth
-        // so the two checks stay in agreement.
-        let sanitized_uri =
-            Self::sanitize_metadata_field(&new_image_uri, MAX_NFT_URI_BYTES, false)?;
-
-        storage::set_nft_uri(&env, nft_id, &sanitized_uri);
-
-        Ok(())
     }
 
     // ── transfer ──────────────────────────────────────────────────────────────

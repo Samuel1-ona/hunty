@@ -2,13 +2,14 @@
 
 import { useContext, useState, useCallback, useRef } from "react";
 import { CheckCircle2, Loader2, ExternalLink, AlertCircle, RefreshCw, Wallet } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 
 import { AnimatedCheckmark } from "@/components/AnimatedCheckmark";
 import Coin from "@/components/icons/Coin";
 import { useXlmUsdPrice } from "@/hooks/useXlmUsdPrice";
 import { getStellarExplorerUrl } from "@/lib/constants";
 import { ClaimRejectedError, claimReward, ClaimTimeoutError } from "@/lib/contracts/rewardManager";
+import { markFirstHuntStep } from "@/lib/firstHuntGuide";
 import { logger } from "@/lib/logger";
 import { WalletContext } from "@/lib/context/WalletContext";
 import { recordNftReceived } from "@/lib/contracts/player-stats";
@@ -85,6 +86,7 @@ export function ClaimRewardFlow({
       setTxHash(result.txHash);
       setStage("success");
       setClaimed(true);
+      markFirstHuntStep("claim", { huntId });
       if (wallet?.publicKey && rewardType !== "XLM") {
         recordNftReceived(wallet.publicKey);
       }

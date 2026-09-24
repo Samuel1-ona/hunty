@@ -49,6 +49,7 @@ export default {
       supportsTablet: true,
       associatedDomains: ['applinks:hunty.app'],
       infoPlist: {
+        UIBackgroundModes: ['location'],
         UIViewControllerBasedStatusBarAppearance: true,
         NSFaceIDUsageDescription: 'Use Face ID to unlock your Hunty wallet securely.',
         LSApplicationQueriesSchemes: [
@@ -65,7 +66,13 @@ export default {
     },
     android: {
       package: config.androidPackage,
-      permissions: ['USE_BIOMETRIC', 'USE_FINGERPRINT'],
+      permissions: [
+        'USE_BIOMETRIC',
+        'USE_FINGERPRINT',
+        'ACCESS_COARSE_LOCATION',
+        'ACCESS_FINE_LOCATION',
+        'ACCESS_BACKGROUND_LOCATION',
+      ],
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#1f2937',
@@ -91,6 +98,21 @@ export default {
         },
       ],
     },
+    plugins: [
+      'expo-router',
+      'expo-notifications',
+      [
+        'expo-location',
+        {
+          locationWhenInUsePermission:
+            'Allow Hunty to use your location to verify that you reached a proximity clue.',
+          locationAlwaysAndWhenInUsePermission:
+            'Allow Hunty to use your location while the app is closed so it can alert you when you reach an active clue. Hunty does not store your location history.',
+          isIosBackgroundLocationEnabled: true,
+          isAndroidBackgroundLocationEnabled: true,
+        },
+      ],
+    ],
     updates: {
       url: process.env.EXPO_UPDATE_URL ?? 'https://u.expo.dev/YOUR_EAS_PROJECT_ID',
       fallbackToCacheTimeout: 0,

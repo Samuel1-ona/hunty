@@ -1,5 +1,7 @@
 import * as Notifications from 'expo-notifications';
 
+import { shouldShowNotification } from '@services/notifications/notificationPreferences';
+
 const NOTIF_ID_PREFIX = 'hunt_expiry_';
 
 /**
@@ -12,6 +14,12 @@ export async function scheduleHuntExpiryNotification(
   huntTitle: string,
   endTimeSeconds: number,
 ): Promise<void> {
+  // Cancel an already scheduled reminder when the player mutes hunt events.
+  if (!(await shouldShowNotification('hunt_ending_soon'))) {
+    await cancelHuntExpiryNotification(huntId);
+    return;
+  }
+
   const triggerAt = (endTimeSeconds - 3600) * 1000; // 1 hour before, in ms
   if (triggerAt <= Date.now()) return;
 
@@ -31,4 +39,15 @@ export async function scheduleHuntExpiryNotification(
 /** Cancel the expiry reminder for a specific hunt. */
 export async function cancelHuntExpiryNotification(huntId: number): Promise<void> {
   await Notifications.cancelScheduledNotificationAsync(`${NOTIF_ID_PREFIX}${huntId}`);
+}
+
+/** Cancel every locally scheduled hunt reminder when the category is muted. */
+export async function cancelAllHuntExpiryNotifications(): Promise<void> {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(
+    scheduled
+      .map((notification) => notification.identifier)
+      .filter((identifier) => identifier.startsWith(NOTIF_ID_PREFIX))
+      .map((identifier) => Notifications.cancelScheduledNotificationAsync(identifier)),
+  );
 }

@@ -4,13 +4,13 @@
  *            or import { Button } from '@hunty/ui'
  */
 
-export { Button } from "./Button"
+export { Button, buttonVariants } from "./Button"
 export type { ButtonProps } from "./Button"
 
-export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./Card"
+export { Card, CardHeader, CardTitle, CardDescription, CardAction, CardContent, CardFooter } from "./Card"
 export type { CardProps } from "./Card"
 
-export { Badge } from "./Badge"
+export { Badge, badgeVariants } from "./Badge"
 export type { BadgeProps } from "./Badge"
 
 export { EmptyState } from "./EmptyState"

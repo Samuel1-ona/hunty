@@ -75,7 +75,9 @@ export const useWalletStore = create<WalletState>()(
         removeItem: async (key: string) => {
           await SecureStore.deleteItemAsync(key);
         },
-      } as unknown as PersistStorage<WalletState>,
+      } as unknown as PersistStorage<
+        Pick<WalletState, "walletAddress" | "network" | "watchOnlyAddress">
+      >,
       // Persist wallet identity + network; balance is fetched on demand.
       partialize: (state) => ({
           walletAddress: state.walletAddress,

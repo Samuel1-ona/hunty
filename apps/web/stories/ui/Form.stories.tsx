@@ -11,7 +11,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 
 const schema = z.object({
   huntName: z.string().min(3, "Hunt name must be at least 3 characters."),

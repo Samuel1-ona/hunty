@@ -5,7 +5,7 @@ import Link from "next/link"
 
 import { Header } from "@/components/Header"
 import { PerformanceDashboard } from "@/components/PerformanceDashboard"
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 
 export default function AdminPerformancePage() {
   return (

@@ -12,7 +12,12 @@ export const metadata: Metadata = {
   },
 }
 
-export default function FeedPage() {
+export default function FeedPage({
+  searchParams,
+}: {
+  searchParams?: { remote?: string };
+}) {
+  const remoteOnly = searchParams?.remote === "true";
   return (
     <div className="min-h-screen bg-gradient-to-tr from-blue-100 bg-purple-100 to-[#f9f9ff] dark:from-slate-900 dark:bg-slate-900 dark:to-slate-800">
       {/* Header bar */}
@@ -34,10 +39,22 @@ export default function FeedPage() {
 
       {/* Feed content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-4">
+          {remoteOnly ? (
+            <a href="/feed" className="text-sm text-blue-600 dark:text-blue-400 underline">
+              Show All Hunts
+            </a>
+          ) : (
+            <a href="/feed?remote=true" className="text-sm text-blue-600 dark:text-blue-400 underline">
+              Show Remote-Playable Only
+            </a>
+          )}
+        </div>
         <HuntFeed
           defaultCategory="trending"
           className="w-full"
           gridColumns={{ sm: 2, lg: 3 }}
+          remotePlayableOnly={remoteOnly}
         />
       </div>
     </div>

@@ -59,6 +59,19 @@ export function CardDescription({ className, ...props }: React.ComponentProps<"d
   return <div className={cn("text-muted-foreground text-sm", className)} {...props} />;
 }
 
+export function CardAction({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-action"
+      className={cn(
+        "col-start-2 row-span-2 row-start-1 self-start justify-self-end",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
 export function CardContent({ className, ...props }: React.ComponentProps<"div">) {
   return <div className={cn("px-6 py-4", className)} {...props} />;
 }

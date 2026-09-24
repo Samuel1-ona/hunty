@@ -64,7 +64,7 @@ export const useWalletStore = create<WalletStore>()(
     (set) => ({
       ...initialState,
 
-          syncFromMachine: ({ status, publicKey, provider, error }) =>
+      syncFromMachine: ({ status, publicKey, provider, error }) =>
         set((prev) => ({
           status,
           connected: status === "connected",

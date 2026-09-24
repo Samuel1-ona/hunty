@@ -16,7 +16,7 @@ import { PrivateHuntAccessGate } from "@/components/PrivateHuntAccessGate";
 import { QrCodeModal } from "@/components/QrCodeModal";
 import { RegistrationButton } from "@/components/RegistrationButton";
 import { SponsorHuntButton } from "@/components/SponsorHuntButton";
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 import { WaitlistDisplay } from "@/components/WaitlistDisplay";
 import {
   checkRegistrationStatus,

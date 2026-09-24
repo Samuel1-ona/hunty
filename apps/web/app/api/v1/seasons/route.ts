@@ -12,6 +12,7 @@ import {
   getCurrentSeasonLeaderboard,
 } from "@/lib/seasonStore";
 import { seasonCreateBodySchema } from "@hunty/types/api-schemas";
+import { getBattlePassTiers } from "@/lib/battlePassStore";
 
 /**
  * GET /api/v1/seasons
@@ -32,15 +33,21 @@ export const GET = withErrorHandling(async (req: Request) => {
     }
 
     const leaderboard = getCurrentSeasonLeaderboard();
+    const tiers = getBattlePassTiers(activeSeason);
     return NextResponse.json({
       season: activeSeason,
       leaderboard,
+      tiers,
       timeRemaining: activeSeason.endTime - Math.floor(Date.now() / 1000),
     });
   }
 
   const seasons = getAllSeasons();
-  return NextResponse.json({ seasons });
+  const seasonsWithTiers = seasons.map(season => ({
+    ...season,
+    tiers: getBattlePassTiers(season),
+  }));
+  return NextResponse.json({ seasons: seasonsWithTiers });
 });
 
 /**

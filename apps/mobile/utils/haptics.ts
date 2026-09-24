@@ -3,4 +3,4 @@ export {
   triggerImpact,
   triggerSelection,
   hapticTriggers,
-} from '../../lib/haptics';
+} from '../lib/haptics';

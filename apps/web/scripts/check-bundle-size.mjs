@@ -1,9 +1,17 @@
 import { existsSync, readFileSync, statSync } from "node:fs"
 import { join } from "node:path"
 
-const MAX_INITIAL_JS_KB = 200
 const projectRoot = process.cwd()
 const manifestPath = join(projectRoot, ".next", "build-manifest.json")
+const budgetPath = join(projectRoot, "bundle-budgets.json")
+
+let MAX_INITIAL_JS_KB = 200
+if (existsSync(budgetPath)) {
+  const budgets = JSON.parse(readFileSync(budgetPath, "utf8"))
+  if (budgets["/"] && budgets["/"].jsKb) {
+    MAX_INITIAL_JS_KB = budgets["/"].jsKb
+  }
+}
 
 if (!existsSync(manifestPath)) {
   console.error("build-manifest.json was not found. Run `npm run build` before bundle:check.")

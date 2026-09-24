@@ -1,8 +1,13 @@
 /**
  * Countdown / live hunt status utilities (server-synced aware).
+ *
+ * `getCountdownParts` now accepts an optional `units` map (CountdownUnits)
+ * so callers can pass locale-translated unit labels from `next-intl` messages.
+ * Falls back to the English defaults ("d", "h", "m", "s") for backward-compat.
  */
 
 import { getCountdown } from "@/lib/dateUtils"
+import { buildCountdownLabel, type CountdownUnits, DEFAULT_COUNTDOWN_UNITS } from "@/lib/i18n-datetime"
 import { getServerSyncedNowSeconds } from "@/lib/serverTime"
 
 export type HuntLiveStatus =
@@ -18,7 +23,7 @@ export interface CountdownParts {
   hours: number
   minutes: number
   seconds: number
-  /** Formatted string e.g. "1d 02h 15m 03s" */
+  /** Formatted string e.g. "1d 02h 15m 03s" – uses supplied locale units */
   label: string
   expired: boolean
 }
@@ -28,13 +33,18 @@ export type TimeWarningLevel = "none" | "caution" | "warning" | "critical" | "ex
 /** Default warning thresholds in seconds remaining. */
 export const DEFAULT_WARNING_THRESHOLDS = {
   caution: 30 * 60, // 30m
-  warning: 5 * 60, // 5m
-  critical: 60, // 1m
+  warning: 5 * 60,  // 5m
+  critical: 60,     // 1m
 } as const
+
+// Re-export so consumers can type the units map without importing i18n-datetime.
+export type { CountdownUnits }
+export { DEFAULT_COUNTDOWN_UNITS }
 
 export function getCountdownParts(
   targetUnixSeconds: number,
   nowUnixSeconds: number = getServerSyncedNowSeconds(),
+  units: CountdownUnits = DEFAULT_COUNTDOWN_UNITS,
 ): CountdownParts {
   let diff = targetUnixSeconds - nowUnixSeconds
   if (diff <= 0) {
@@ -44,7 +54,7 @@ export function getCountdownParts(
       hours: 0,
       minutes: 0,
       seconds: 0,
-      label: "0s",
+      label: `0${units.s}`,
       expired: true,
     }
   }
@@ -54,19 +64,13 @@ export function getCountdownParts(
   const minutes = Math.floor((diff % 3600) / 60)
   const seconds = diff % 60
 
-  const parts: string[] = []
-  if (days > 0) parts.push(`${days}d`)
-  parts.push(`${hours.toString().padStart(days > 0 ? 2 : 1, "0")}h`)
-  parts.push(`${minutes.toString().padStart(2, "0")}m`)
-  parts.push(`${seconds.toString().padStart(2, "0")}s`)
-
   return {
     totalSeconds: diff,
     days,
     hours,
     minutes,
     seconds,
-    label: parts.join(" "),
+    label: buildCountdownLabel({ days, hours, minutes, seconds }, units),
     expired: false,
   }
 }
@@ -107,9 +111,10 @@ export function resolveHuntLiveStatus(opts: {
 export function getStartCountdownLabel(
   startTime: number,
   now: number = getServerSyncedNowSeconds(),
+  units?: CountdownUnits,
 ): string | null {
   if (now >= startTime) return null
-  return getCountdownParts(startTime, now).label
+  return getCountdownParts(startTime, now, units).label
 }
 
 /** Re-export getCountdown for convenience with optional now override via parts. */

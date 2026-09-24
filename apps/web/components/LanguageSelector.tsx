@@ -31,7 +31,7 @@ function LanguageSelectorCore() {
     // Replace the locale segment in the current path.
     // Locale-prefixed paths look like /en/... or /es/...
     const segments = pathname.split("/")
-    if (routing.locales.includes(segments[1] as "en" | "es")) {
+    if (routing.locales.includes(segments[1] as "en" | "es" | "fr")) {
       segments[1] = newLocale
     } else {
       segments.splice(1, 0, newLocale)

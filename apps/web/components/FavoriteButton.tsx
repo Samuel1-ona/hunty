@@ -2,6 +2,7 @@
 
 import React from "react"
 import { Heart } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 import { useFavorites } from "@/hooks/useFavorites"
 
@@ -13,10 +14,12 @@ interface FavoriteButtonProps {
 
 export function FavoriteButton({ huntId, className, iconClassName }: FavoriteButtonProps) {
   const { isFavorite, toggleFavorite, isLoaded } = useFavorites()
+  const a11y = useTranslations("a11y")
 
   if (!isLoaded) return null
 
   const favorited = isFavorite(huntId)
+  const label = favorited ? a11y("removeFromFavorites") : a11y("addToFavorites")
 
   return (
     <button
@@ -32,8 +35,8 @@ export function FavoriteButton({ huntId, className, iconClassName }: FavoriteBut
           : "bg-white/80 dark:bg-slate-800/80 text-slate-400 hover:text-pink-400 backdrop-blur-sm shadow-sm",
         className
       )}
-      aria-label={favorited ? "Remove from favorites" : "Add to favorites"}
-      title={favorited ? "Remove from favorites" : "Add to favorites"}
+      aria-label={label}
+      title={label}
     >
       <Heart 
         className={cn("w-4 h-4 transition-transform", favorited && "fill-current", iconClassName)} 

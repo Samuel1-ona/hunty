@@ -2,11 +2,12 @@ import Server, { Operation, TransactionBuilder } from "@stellar/stellar-sdk"
 
 import {
   getHunt,
+  REWARD_REFUND_GRACE_PERIOD_SECONDS,
   SPOTLIGHT_DURATION_SECONDS,
   updateHuntPromotion,
   updateHuntRewardEscrow,
 } from "@/lib/huntStore"
-import type { Reward, RewardReceipt } from "@/lib/types"
+import type { Reward, RewardReceipt, SponsorContribution } from "@/lib/types"
 import { getActiveWalletAdapter } from "@/lib/walletAdapter"
 
 import {
@@ -30,20 +31,12 @@ export type RewardEscrow = {
   balance: number
   rewards: Reward[]
   expiresAt: number
+  gracePeriodSeconds?: number
   depositTxHash: string
   createdAt: number
   distributions: RewardReceipt[]
   refunds: RewardReceipt[]
   sponsorContributions?: SponsorContribution[]
-}
-
-export type SponsorContribution = {
-  id: string
-  huntId: number
-  sponsor: string
-  amount: number
-  txHash: string
-  createdAt: number
 }
 
 export type HuntPromotionReceipt = {
@@ -237,6 +230,7 @@ export async function createRewardEscrow(input: {
   rewardType: "XLM" | "NFT" | "Both"
   rewards: Reward[]
   expiresAt: number
+  gracePeriodSeconds?: number
 }): Promise<RewardEscrow | null> {
   if (input.rewardType === "NFT") return null
 
@@ -249,6 +243,7 @@ export async function createRewardEscrow(input: {
     totalPool,
     rewards: input.rewards.map(({ place, amount }) => ({ place, amount })),
     expiresAt: input.expiresAt,
+    grace_period_seconds: input.gracePeriodSeconds ?? REWARD_REFUND_GRACE_PERIOD_SECONDS,
   })
 
   const wallet = getActiveWalletAdapter()
@@ -261,6 +256,8 @@ export async function createRewardEscrow(input: {
     balance: totalPool,
     rewards: input.rewards,
     expiresAt: input.expiresAt,
+    gracePeriodSeconds:
+      input.gracePeriodSeconds ?? REWARD_REFUND_GRACE_PERIOD_SECONDS,
     depositTxHash: txHash,
     createdAt: Date.now(),
     distributions: [],
@@ -421,11 +418,31 @@ export function getPlayerRewardReceipt(huntId: number, playerAddress?: string): 
   }
 }
 
-export async function refundUnclaimedRewards(huntId: number): Promise<RewardReceipt> {
+export async function refundUnclaimedRewards(
+  huntId: number,
+  /**
+   * Optional creator address — when supplied, validated against the escrow's
+   * recorded creator so that only the hunt creator can trigger a refund.
+   */
+  creatorAddress?: string,
+  /**
+   * Grace period override in seconds. Reads from the hunt's `gracePeriodSeconds`
+   * field. Falls back to 0 (immediate refund is allowed once the escrow has
+   * expired) when not provided.
+   */
+  gracePeriodSeconds = 0
+): Promise<RewardReceipt> {
   const escrow = getRewardEscrow(huntId)
   if (!escrow) throw new Error("No reward escrow found for this hunt")
-  if (Date.now() < escrow.expiresAt * 1000) {
-    throw new Error("Rewards can only be refunded after the hunt expires")
+  if (creatorAddress && escrow.creator !== creatorAddress) {
+    throw new Error("Only the hunt creator can request a refund")
+  }
+  const refundableAfterMs = (escrow.expiresAt + gracePeriodSeconds) * 1000
+  if (Date.now() < refundableAfterMs) {
+    const secondsRemaining = Math.ceil((refundableAfterMs - Date.now()) / 1000)
+    throw new Error(
+      `Grace period has not yet elapsed. Refund available in ${secondsRemaining} second(s).`
+    )
   }
   if (escrow.balance <= 0) throw new Error("No unclaimed rewards remain")
 

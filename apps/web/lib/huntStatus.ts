@@ -30,3 +30,13 @@ export function normalizeHuntStatus(status?: string): HuntLifecycleStatus {
 export function getDisplayHuntStatus(status?: string): string {
   return normalizeHuntStatus(status)
 }
+
+/**
+ * True once a hunt has finished running — either the scheduler transitioned
+ * it to "Ended" or a creator/admin marked it "Completed". Used to gate the
+ * permanent results page and its indexing behavior.
+ */
+export function isHuntEnded(status?: string): boolean {
+  const normalized = normalizeHuntStatus(status)
+  return normalized === "Ended" || normalized === "Completed"
+}

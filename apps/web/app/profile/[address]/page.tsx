@@ -6,7 +6,7 @@ import { use } from "react";
 
 import { Header } from "@/components/Header";
 import { PlayerProfileView, ProfilePageHeading } from "@/components/PlayerProfileView";
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 
 interface PublicProfilePageProps {
   params: Promise<{ address: string }>;

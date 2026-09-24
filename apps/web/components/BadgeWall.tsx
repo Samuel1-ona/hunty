@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@hunty/ui"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { RARITY_BORDER_COLORS,RARITY_COLORS } from "@/lib/achievements/config"
 import { getAllAchievementsWithStatus } from "@/lib/achievements/service"

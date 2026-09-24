@@ -33,7 +33,7 @@ import { QrCodeModal } from "@/components/QrCodeModal";
 import { RewardsPanel } from "@/components/RewardsPanel";
 import { TagInput } from "@/components/TagInput";
 import ToggleButton from "@/components/ToggleButton";
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -51,7 +51,11 @@ import { createHunt } from "@/lib/contracts/hunt";
 import { createRewardEscrow } from "@/lib/contracts/rewardManager";
 import { downloadElementAsImage } from "@/lib/downloadAsImage";
 import { dynapuff } from "@/lib/font";
-import { addHunt as addStoredHunt, getAllHuntsIncludingPrivate } from "@/lib/huntStore";
+import {
+  addHunt as addStoredHunt,
+  getAllHuntsIncludingPrivate,
+  REWARD_REFUND_GRACE_PERIOD_SECONDS,
+} from "@/lib/huntStore";
 import { buildDraftHuntsFromTemplate, getStarterTemplateBySlug } from "@/lib/huntTemplates";
 import { COVER_IMAGE_UPLOAD_ERROR_MESSAGE } from "@/lib/ipfs";
 import { logger } from "@/lib/logger";
@@ -506,13 +510,16 @@ function CreateGameContent() {
             formValues.sequential,
             // Normalize empty-string sentinel ("") from the publish-tab select back
             // to undefined so the on-chain metadata stays clean.
-            huntDifficulty ? huntDifficulty : undefined
+            huntDifficulty ? huntDifficulty : undefined,
+            undefined,
+            REWARD_REFUND_GRACE_PERIOD_SECONDS
           );
           const escrow = await createRewardEscrow({
             huntId: localId,
             rewardType: formValues.rewardType,
             rewards: formValues.rewards,
             expiresAt: end_time,
+            gracePeriodSeconds: REWARD_REFUND_GRACE_PERIOD_SECONDS,
           });
           rewardEscrowTxHash = escrow?.depositTxHash;
 
@@ -545,6 +552,7 @@ function CreateGameContent() {
         createdAt: Math.floor(Date.now() / 1000),
         startTime: start_time,
         endTime: end_time,
+        gracePeriodSeconds: REWARD_REFUND_GRACE_PERIOD_SECONDS,
         creatorEmail: formValues.creatorEmail || undefined,
         emailNotifications: formValues.emailNotifications,
         is_private: formValues.isPrivate,
@@ -734,6 +742,10 @@ function CreateGameContent() {
                             ))}
                           </div>
                         </div>
+
+                        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                          Unclaimed rewards can be reclaimed by the creator 7 days after this hunt ends.
+                        </p>
 
                         <RewardsPanel
                           rewards={rewards}
@@ -1211,3 +1223,7 @@ export default function CreateGame() {
   );
 }
  
+
+"use client";
+
+export { default } from "./create-game-content";

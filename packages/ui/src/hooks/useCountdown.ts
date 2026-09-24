@@ -16,10 +16,12 @@ export function useCountdown(
 
   useEffect(() => {
     if (endUnixSeconds == null) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDisplay(null)
       return
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDisplay(format(endUnixSeconds))
 
     const intervalId = setInterval(() => {

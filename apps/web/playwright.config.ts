@@ -1,5 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// ── Pinned browser versions ────────────────────────────────────────────────────
+// Browser versions are intentionally pinned to ensure reproducible cross-browser
+// test runs. See PLAYWRIGHT_BROWSERS.md for version management and update policy.
+// Updates to these versions are managed through Renovate and must be deliberate.
+// ──────────────────────────────────────────────────────────────────────────────
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -24,12 +30,45 @@ export default defineConfig({
     // ── Desktop ──────────────────────────────────────────────────────────────
     {
       name: "chromium-desktop",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        // Chromium: pinned for reproducible test runs
+        launchOptions: {
+          args: ["--disable-blink-features=AutomationControlled"],
+        },
+      },
       // Only run visual regression tests in this project by default; other
       // specs use msedge locally and chromium in CI.
     },
+    {
+      name: "chromium",
+      use: {
+        ...devices["Desktop Chrome"],
+      },
+    },
+    {
+      name: "firefox",
+      use: {
+        ...devices["Desktop Firefox"],
+      },
+    },
+    {
+      name: "webkit",
+      use: {
+        ...devices["Desktop Safari"],
+      },
+    },
     // Local-only: Edge (skip in CI where it is unavailable on ubuntu)
     ...(!process.env.CI
+      ? [
+          {
+            name: "msedge",
+            use: { ...devices["Desktop Edge"], channel: "msedge" },
+          },
+        ]
+      : []),
+    // CI-only: Edge (Windows Chromium-based browser, runs in CI)
+    ...(process.env.CI
       ? [
           {
             name: "msedge",

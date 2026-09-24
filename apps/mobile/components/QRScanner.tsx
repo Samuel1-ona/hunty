@@ -1,15 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  Dimensions,
+  AccessibilityInfo,
   ActivityIndicator,
+  Dimensions,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator,Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -18,6 +18,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { getScannerStatusText, type ScannerCameraState, validateManualCode } from '@/lib/qrCodeScanner';
 
 interface QRScannerProps {
   isOpen: boolean;
@@ -29,6 +31,136 @@ interface QRScannerProps {
 const { width, height } = Dimensions.get('window');
 const SCAN_AREA_SIZE = 250;
 
+interface ManualCodeEntryFormProps {
+  onSubmit: (code: string) => void;
+  onCancel: () => void;
+}
+
+/**
+ * Accessible fallback that lets a user type the QR/checkpoint code by hand.
+ * Validation reuses `validateManualCode` so the same rules applied to scanned
+ * data are enforced on entry. Submission delegates to `onSubmit`, which the parent
+ * wires to the exact same path as a successful barcode scan.
+ */
+const ManualCodeEntryForm: React.FC<ManualCodeEntryFormProps> = ({ onSubmit, onCancel }) => {
+  const [code, setCode] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const inputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    // Move focus to the input as soon as manual entry opens.
+    inputRef.current?.focus();
+  }, []);
+
+  const handleSubmit = () => {
+    if (submitting) return;
+    const validation = validateManualCode(code);
+    if (!validation.valid) {
+      setError(validation.error);
+      AccessibilityInfo.announceForAccessibility(validation.error ?? 'Invalid code');
+      return;
+    }
+    setError(null);
+    setSubmitting(true);
+    try {
+      onSubmit(code.trim());
+    } finally {
+      setSubmitting(false);
+      setCode('');
+    }
+  };
+
+  return (
+    <View style={styles.manualEntryForm}>
+      <Text
+        accessible={true}
+        accessibilityRole="header"
+        style={styles.manualEntryLabel}
+      >
+        Enter code manually
+      </Text>
+
+      <TextInput
+        ref={inputRef}
+        accessible={true}
+        accessibilityLabel="QR code value"
+        accessibilityHint="Type the code shown on your QR code"
+        accessibilityRole="text"
+        autoCapitalize="none"
+        autoCorrect={false}
+        keyboardType="default"
+        onSubmitEditing={handleSubmit}
+        placeholder="e.g. lantern statue"
+        placeholderTextColor="#94a3b8"
+        returnKeyType="done"
+        style={[styles.manualEntryInput, error ? styles.manualEntryInputError : null]}
+        value={code}
+        onChangeText={setCode}
+      />
+
+      {error ? (
+        <Text
+          accessible={true}
+          accessibilityRole="alert"
+          accessibilityLiveRegion="assertive"
+          style={styles.manualEntryError}
+        >
+          {error}
+        </Text>
+      ) : null}
+
+      <View style={styles.manualEntryActions}>
+        <TouchableOpacity
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Submit code"
+          accessibilityHint="Submits the manually entered code for this checkpoint"
+          accessibilityState={{ busy: submitting, disabled: submitting }}
+          style={[styles.manualEntrySubmit, submitting && styles.buttonDisabled]}
+          disabled={submitting}
+          onPress={handleSubmit}
+        >
+          <Text style={styles.buttonText}>{submitting ? 'Submitting…' : 'Submit code'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel manual entry"
+          accessibilityHint="Returns to the camera scanner"
+          style={styles.manualEntryCancel}
+          onPress={onCancel}
+        >
+          <Text style={[styles.buttonText, { color: '#cbd5e1' }]}>Cancel</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
+const renderManualEntryOrButton = (
+  manualEntryVisible: boolean,
+  onOpen: () => void,
+  onCancel: () => void,
+  onSubmit: (code: string) => void,
+) => {
+  if (manualEntryVisible) {
+    return <ManualCodeEntryForm onSubmit={onSubmit} onCancel={onCancel} />;
+  }
+  return (
+    <TouchableOpacity
+      accessible={true}
+      accessibilityRole="button"
+      accessibilityLabel="Enter code manually"
+      accessibilityHint="Type your QR code value without using the camera"
+      style={styles.manualEntryButton}
+      onPress={onOpen}
+    >
+      <Text style={styles.buttonText}>Enter code manually</Text>
+    </TouchableOpacity>
+  );
+};
+
 export const QRScanner: React.FC<QRScannerProps> = ({
   isOpen,
   onClose,
@@ -39,6 +171,9 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   const [scanned, setScanned] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [torchOn, setTorchOn] = useState(false);
+  const [scannerState, setScannerState] = useState<ScannerCameraState>('idle');
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [manualEntryVisible, setManualEntryVisible] = useState(false);
   const cameraRef = useRef<CameraView>(null);
   const insets = useSafeAreaInsets();
 
@@ -70,23 +205,73 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   }, [isOpen, permission?.granted, requestPermission]);
 
   useEffect(() => {
-    if (isOpen) {
-      setScanned(false);
-      setIsInitializing(true);
-      const timer = setTimeout(() => setIsInitializing(false), 300);
-      return () => clearTimeout(timer);
-    }
+    if (!isOpen) return;
+    setScanned(false);
+    setManualEntryVisible(false);
+    setCameraError(null);
+    setScannerState('starting');
+    setIsInitializing(true);
+    const timer = setTimeout(() => {
+      setIsInitializing(false);
+      setScannerState((current) => (current === 'starting' || current === 'idle' ? 'ready' : current));
+    }, 300);
+    return () => clearTimeout(timer);
   }, [isOpen]);
 
-  const handleBarCodeScanned = ({ data }: { data: string; type?: string }) => {
-    if (!scanned) {
-      setScanned(true);
-      onScan(data);
-      setTimeout(onClose, 800);
+  // Mirror permission state into scannerState and announce the permission
+  // branches (their UI is rendered outside the main camera view, so the in-view
+  // live region does not apply to them).
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!permission) {
+      setScannerState('permission-required');
+      AccessibilityInfo.announceForAccessibility('Camera permission required');
+    } else if (!permission.granted) {
+      setScannerState('permission-denied');
+      AccessibilityInfo.announceForAccessibility('Camera access denied');
     }
+  }, [isOpen, permission]);
+
+  const handleClose = () => {
+    AccessibilityInfo.announceForAccessibility(getScannerStatusText('stopped', false));
+    onClose();
+  };
+
+  // Shared path used by both a real barcode scan and manual code entry so the
+  // two behave identically.
+  const processScan = (data: string) => {
+    if (scanned) return;
+    setScanned(true);
+    setManualEntryVisible(false);
+    setScannerState('ready');
+    onScan(data);
+    setTimeout(onClose, 800);
+  };
+
+  const handleBarCodeScanned = ({ data }: { data: string; type?: string }) => {
+    processScan(data);
+  };
+
+  const handleManualSubmit = (code: string) => {
+    processScan(code);
+  };
+
+  const openManualEntry = () => {
+    setManualEntryVisible(true);
+    AccessibilityInfo.announceForAccessibility('Manual code entry opened');
+  };
+
+  const closeManualEntry = () => {
+    setManualEntryVisible(false);
+    AccessibilityInfo.announceForAccessibility('Returned to camera scanner');
   };
 
   if (!isOpen) return null;
+
+  const hintText =
+    scannerState === 'error' && cameraError
+      ? `Camera unavailable. ${cameraError}`
+      : getScannerStatusText(scannerState, scanned);
 
   if (!permission) {
     return (
@@ -107,12 +292,20 @@ export const QRScanner: React.FC<QRScannerProps> = ({
           >
             <Text style={styles.buttonText}>Grant Permission</Text>
           </TouchableOpacity>
+
+          {renderManualEntryOrButton(
+            manualEntryVisible,
+            openManualEntry,
+            closeManualEntry,
+            handleManualSubmit,
+          )}
+
           <TouchableOpacity
             accessible={true}
             accessibilityRole="button"
             accessibilityLabel="Close scanner"
             style={styles.closeButton}
-            onPress={onClose}
+            onPress={handleClose}
           >
             <Text style={styles.closeButtonText}>×</Text>
           </TouchableOpacity>
@@ -123,7 +316,11 @@ export const QRScanner: React.FC<QRScannerProps> = ({
 
   if (!permission.granted) {
     return (
-      <View accessible={true} accessibilityLabel="Camera access denied" style={styles.container}>
+      <View
+        accessible={true}
+        accessibilityLabel="Camera access denied"
+        style={styles.container}
+      >
         <View style={styles.centerContent}>
           <Text style={styles.permissionText}>Camera access denied</Text>
           <TouchableOpacity
@@ -136,12 +333,20 @@ export const QRScanner: React.FC<QRScannerProps> = ({
           >
             <Text style={styles.buttonText}>Enable Camera</Text>
           </TouchableOpacity>
+
+          {renderManualEntryOrButton(
+            manualEntryVisible,
+            openManualEntry,
+            closeManualEntry,
+            handleManualSubmit,
+          )}
+
           <TouchableOpacity
             accessible={true}
             accessibilityRole="button"
             accessibilityLabel="Close scanner"
             style={styles.closeButton}
-            onPress={onClose}
+            onPress={handleClose}
           >
             <Text style={[styles.closeButtonText, { color: 'white' }]}>×</Text>
           </TouchableOpacity>
@@ -160,6 +365,15 @@ export const QRScanner: React.FC<QRScannerProps> = ({
         ref={cameraRef}
         style={[styles.camera, { opacity: isInitializing ? 0.1 : 1 }]}
         onBarcodeScanned={handleBarCodeScanned}
+        onCameraReady={() => {
+          setIsInitializing(false);
+          setScannerState('ready');
+        }}
+        onMountError={({ message }: { message: string }) => {
+          setCameraError(message ?? null);
+          setScannerState('error');
+          setIsInitializing(false);
+        }}
         barcodeScannerSettings={{
           barcodeTypes: ['qr'],
         }}
@@ -196,7 +410,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
           accessibilityLabel="Close scanner"
           accessibilityHint="Returns to previous screen"
           style={styles.headerCloseButton}
-          onPress={onClose}
+          onPress={handleClose}
         >
           <Text style={styles.headerCloseText}>×</Text>
         </TouchableOpacity>
@@ -217,15 +431,36 @@ export const QRScanner: React.FC<QRScannerProps> = ({
         </TouchableOpacity>
       </View>
 
-      <View style={styles.hintContainer}>
-        <Text accessible={true} accessibilityLiveRegion="polite" style={styles.hintText}>
-          {scanned ? 'QR Code detected!' : 'Position the QR code within the frame'}
-        </Text>
-      </View>
+      <View style={styles.bottomHintContainer}>
+        {manualEntryVisible && !scanned ? (
+          <ManualCodeEntryForm onSubmit={handleManualSubmit} onCancel={closeManualEntry} />
+        ) : (
+          <>
+            <Text
+              accessible={true}
+              accessibilityLiveRegion="polite"
+              style={styles.hintText}
+            >{hintText}</Text>
 
-      {scanned && (
-        <ActivityIndicator size="large" color="white" style={styles.scanSuccessIndicator} />
-      )}
+            {!scanned && (
+              <TouchableOpacity
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel="Enter code manually"
+                accessibilityHint="Type your QR code value instead of using the camera"
+                style={styles.manualEntryButton}
+                onPress={openManualEntry}
+              >
+                <Text style={styles.buttonText}>Enter code manually</Text>
+              </TouchableOpacity>
+            )}
+          </>
+        )}
+
+        {scanned && (
+          <ActivityIndicator size="large" color="white" style={styles.scanSuccessIndicator} />
+        )}
+      </View>
     </View>
   );
 };
@@ -359,6 +594,14 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
   },
+  bottomHintContainer: {
+    position: 'absolute',
+    bottom: 40,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
   hintText: {
     color: 'white',
     fontSize: 14,
@@ -367,6 +610,76 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     overflow: 'hidden',
+    marginBottom: 8,
+  },
+  manualEntryButton: {
+    backgroundColor: 'rgba(55, 55, 164, 0.85)',
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 8,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  manualEntryForm: {
+    width: '100%',
+    maxWidth: 400,
+    marginTop: 12,
+    alignItems: 'stretch',
+  },
+  manualEntryLabel: {
+    color: 'white',
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  manualEntryInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+    color: '#0f172a',
+    fontSize: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  manualEntryInputError: {
+    borderColor: '#ef4444',
+    borderWidth: 2,
+  },
+  manualEntryError: {
+    color: '#fca5a5',
+    fontSize: 13,
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  manualEntryActions: {
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+  manualEntrySubmit: {
+    flex: 1,
+    backgroundColor: '#3b82f6',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  manualEntryCancel: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
   },
   centerContent: {
     flex: 1,
@@ -387,12 +700,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 16,
     backgroundColor: '#3b82f6',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
   },
   closeButton: {
     position: 'absolute',

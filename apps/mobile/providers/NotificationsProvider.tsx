@@ -16,7 +16,10 @@
  */
 
 import { incrementBadge, resetBadge } from '@services/notifications/badgeService';
-import { shouldShowNotification } from '@services/notifications/notificationPreferences';
+import {
+  getPreferences,
+  shouldShowNotification,
+} from '@services/notifications/notificationPreferences';
 import {
   configureNotificationHandler,
   ensureAndroidChannel,
@@ -29,6 +32,8 @@ import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import React, { createContext, useContext, useEffect, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
+
+import { useWalletStore } from '@store/useStore';
 
 // ─── Context (exposed for convenience hooks) ──────────────────────────────────
 
@@ -48,6 +53,14 @@ export function useNotificationsContext(): NotificationsContextValue {
 export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const router = useRouter();
   const isListeningRef = useRef(false);
+  const walletAddress = useWalletStore((state) => state.walletAddress);
+
+  // Hydrate the device cache when a wallet is restored or connected. The
+  // foreground handler can then apply the same preferences before the user
+  // opens the settings screen.
+  useEffect(() => {
+    void getPreferences(walletAddress || undefined);
+  }, [walletAddress]);
 
   useEffect(() => {
     // Configure handler as early as possible so foreground notifications show

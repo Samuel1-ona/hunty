@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getHuntAnalytics, buildAnalyticsCsv } from "@/lib/huntAnalytics"
+import { CACHE_TTL_SECONDS } from "@/lib/analyticsCache"
 
 /**
  * GET /api/analytics/[huntId]
  *
  * Returns full analytics for a single hunt.
  * Accepts an optional `format=csv` query param to download a CSV export.
+ *
+ * Responses are served from an in-process cache (or Upstash Redis when
+ * UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN are set).  The TTL is
+ * controlled by ANALYTICS_CACHE_TTL_SECONDS (default 60s).
+ *
+ * Cache-Control is set on the JSON response so CDN/browser layers also benefit.
+ * CSV exports skip the Cache-Control header so downloads always reflect the
+ * most recently cached state without accumulating stale files client-side.
  *
  * Response (JSON):
  * ```json
@@ -50,5 +59,9 @@ export async function GET(
     })
   }
 
-  return NextResponse.json(analytics)
+  return NextResponse.json(analytics, {
+    headers: {
+      "Cache-Control": `public, s-maxage=${CACHE_TTL_SECONDS}, stale-while-revalidate=${CACHE_TTL_SECONDS}`,
+    },
+  })
 }
