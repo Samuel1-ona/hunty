@@ -15,7 +15,7 @@ export const GET = withErrorHandling(async (req: NextRequest) => {
   assertAdminAuth(req)
 
   const ip = getIP(req)
-  const ipResult = rateLimit(`sync_ip:${ip}`, { limit: 60, windowMs: 60 * 1000 })
+  const ipResult = await rateLimit(`sync_ip:${ip}`, { limit: 60, windowMs: 60 * 1000 })
   if (!ipResult.success) {
     throw new RateLimitError("Too many sync requests from this IP", {
       reset: ipResult.reset,
@@ -45,7 +45,7 @@ export const POST = withErrorHandling(
       assertAdminAuth(req)
 
       const ip = getIP(req)
-      const ipResult = rateLimit(`sync_ip:${ip}`, { limit: 60, windowMs: 60 * 1000 })
+      const ipResult = await rateLimit(`sync_ip:${ip}`, { limit: 60, windowMs: 60 * 1000 })
       if (!ipResult.success) {
         throw new RateLimitError("Too many sync requests from this IP", {
           reset: ipResult.reset,

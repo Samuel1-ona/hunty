@@ -14,7 +14,7 @@ export const POST = withErrorHandling(async (req: Request) => {
     throw new AuthError("Wallet address required", { header: "x-wallet-address" });
   }
 
-  const walletResult = rateLimit(`submit_wallet:${wallet}`, { limit: 10, windowMs: 60 * 1000 });
+  const walletResult = await rateLimit(`submit_wallet:${wallet}`, { limit: 10, windowMs: 60 * 1000 });
   if (!walletResult.success) {
     throw new RateLimitError("Too many submissions from this wallet", {
       reset: walletResult.reset,
@@ -22,7 +22,7 @@ export const POST = withErrorHandling(async (req: Request) => {
     });
   }
 
-  const ipResult = rateLimit(`submit_ip:${ip}`, { limit: 100, windowMs: 60 * 1000 });
+  const ipResult = await rateLimit(`submit_ip:${ip}`, { limit: 100, windowMs: 60 * 1000 });
   if (!ipResult.success) {
     throw new RateLimitError("Too many submissions from this IP", {
       reset: ipResult.reset,
@@ -30,7 +30,7 @@ export const POST = withErrorHandling(async (req: Request) => {
     });
   }
 
-  let body: { hunt?: StoredHint; challenge?: string; signature?: string };
+  let body: { hunt?: StoredHunt; challenge?: string; signature?: string };
   try {
     body = await req.json();
   } catch {
