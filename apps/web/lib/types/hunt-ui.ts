@@ -1,4 +1,10 @@
-import type { ClueDifficulty, ClueHint } from "./clues";
+import type {
+  ClueChoiceOption,
+  ClueDifficulty,
+  ClueHint,
+  ClueType,
+  ImageClueMode,
+} from "./clues";
 import type { HuntAgeClassification, HuntDifficulty } from "./hunts";
 
 export interface HuntCard {
@@ -23,6 +29,17 @@ export interface HuntCard {
   difficulty?: HuntDifficulty | ClueDifficulty;
   /** Optional IPFS media reference, optionally tagged with a type query param. */
   mediaCid?: string;
+  /** Interaction type. Legacy cards without a value render as text clues. */
+  type?: ClueType;
+  /** Image clue media. */
+  imageCid?: string;
+  imageMode?: ImageClueMode;
+  /** Public multiple-choice options; the correct option is never included. */
+  multipleChoice?: {
+    options: ClueChoiceOption[];
+  };
+  /** Radius disclosed for a location clue; target coordinates stay private. */
+  geofenceRadiusMeters?: number;
 }
 
 // HuntDraft and PlayerStats now live in @hunty/types (re-exported above).

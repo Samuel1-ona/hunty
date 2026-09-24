@@ -17,8 +17,15 @@ import { getClueElapsedSeconds, recordClueAttempt } from "@/lib/huntAttemptHisto
 import { calculateCluePoints } from "@/lib/scoring";
 import { resolveImageSrc, GATEWAY_COUNT } from "@/lib/ipfs";
 import { getClueMediaKind, getClueMediaSource } from "@/lib/clueMedia";
+import {
+  getClueType,
+  getImageClueMode,
+  type ClueSubmission,
+} from "@/lib/clueTypeSystem";
 import type { HuntCard as Hunt } from "@/lib/types";
 import { usePlayerCount } from "@/hooks/usePlayerCount";
+
+import { ClueTypeInput } from "./ClueTypeInput";
 
 export type { Hunt };
 
@@ -26,7 +33,7 @@ interface HuntCardsProps {
   hunts: Hunt[]; // always an array of one item in active/preview mode
   isActive?: boolean;
   preview?: boolean;
-  onUnlock?: () => void;
+  onUnlock?: (pointsAwarded?: number) => void;
   currentIndex?: number;
   totalHunts?: number;
   isLoading?: boolean;
@@ -54,6 +61,14 @@ interface HuntCardsProps {
 }
 
 const DEFAULT_POINTS = 10;
+
+const CLUE_TYPE_LABELS = {
+  text: "Text",
+  image: "Image",
+  location: "GPS",
+  qr: "QR",
+  "multiple-choice": "Multiple choice",
+} as const;
 
 const shakeVariants = {
   shake: {
@@ -114,8 +129,14 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
   const prefersReducedMotion = useReducedMotion();
   const a11y = useTranslations("a11y");
   const [shake, setShake] = useState(false);
+  const clueType = getClueType(hunt);
+  const imageMode = getImageClueMode(hunt);
+  const usesTypedAnswer = clueType === "text" || clueType === "image";
   const clueMediaKind = getClueMediaKind(hunt.mediaCid);
-  const clueMediaSrc = getClueMediaSource(hunt.mediaCid, imgGatewayIdx);
+  const clueMediaSrc = getClueMediaSource(
+    clueType === "image" ? hunt.imageCid : hunt.mediaCid,
+    imgGatewayIdx
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -157,7 +178,7 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
     setSuccess(false);
   };
 
-  const handleUnlock = async () => {
+  const handleUnlock = async (submission?: ClueSubmission) => {
     if (!isActive || preview) return;
     // Immediate ref-guard to avoid race from double-clicks or rapid presses
     if (submittingRef.current) return;
@@ -167,9 +188,17 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
     setError("");
 
     try {
+      const submittedAnswer = submission?.answer ?? input;
+
       if (huntId != null) {
         // Contract path: submit_answer → ClueCompleted | AnswerIncorrect
-        const result = await submitAnswer(huntId, Number(hunt.id), input);
+        const result = await submitAnswer(
+          huntId,
+          Number(hunt.id),
+          submittedAnswer,
+          undefined,
+          submission
+        );
         // Poll for transaction inclusion
         if (result && result.txHash) {
           await pollTransaction(result.txHash);
@@ -186,15 +215,15 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
             {
               clueId: Number(hunt.id),
               clueIndex: currentIndex - 1,
-              question: hunt.title,
-              answerGiven: input.trim(),
+              question: hunt.title ?? "",
+              answerGiven: submittedAnswer.trim(),
               timeTakenSeconds: getClueElapsedSeconds(huntId, Number(hunt.id)),
               pointsEarned: 0, // This will be replaced by the scoring function
               answeredAt: new Date().toISOString(),
               hintsUsed: 0, // This will be replaced too
             },
             points ?? DEFAULT_POINTS,
-            hunt.difficulty || "Medium",
+            hunt.difficulty === "Expert" ? "Hard" : hunt.difficulty ?? "Medium",
             hintsUsed
           );
           if (updatedAttempt) {
@@ -238,13 +267,24 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
         }, 1200);
       } else {
         // Local fallback (test / preview mode — no wallet required)
-        if (input.trim().toLowerCase() === (hunt.code || "").trim().toLowerCase()) {
+        const selectedOption =
+          clueType === "multiple-choice"
+            ? hunt.multipleChoice?.options.find(
+                (option) => option.id === submittedAnswer
+              )?.label
+            : undefined;
+        const localCandidate = selectedOption ?? submittedAnswer;
+        const isLocallyCorrect =
+          clueType !== "location" &&
+          localCandidate.trim().toLowerCase() ===
+            (hunt.code || "").trim().toLowerCase();
+        if (isLocallyCorrect) {
           setSuccess(true);
           
           // Calculate points for local mode too!
           const { breakdown } = calculateCluePoints(
             points ?? DEFAULT_POINTS,
-            hunt.difficulty || "Medium",
+            hunt.difficulty === "Expert" ? "Hard" : hunt.difficulty ?? "Medium",
             0, // For local mode, time is 0 for simplicity
             hintsUsed,
             0 // Streak 0 for local mode
@@ -336,6 +376,9 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
           {points != null && (
             <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-semibold print:bg-transparent print:border print:border-gray-300 print:text-black">{points} pts</span>
           )}
+          <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs font-semibold print:border print:border-gray-300 print:text-black">
+            {CLUE_TYPE_LABELS[clueType]}
+          </span>
           <div className="ml-auto flex items-center gap-2">
             {trending && (
               <span
@@ -374,8 +417,19 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
           {hunt.title || "Untitled Hunt"}
         </h3>
         <p className="text-xs sm:text-sm opacity-90 mb-4 sm:mb-6 line-clamp-3 print:text-lg print:opacity-100 print:mb-8" dangerouslySetInnerHTML={{ __html: sanitizeHtml(hunt.description || "No description provided.") }} />
+        {clueType === "image" && (
+          <p className="mb-3 rounded-lg bg-white/10 px-3 py-2 text-center text-xs text-white/90 print:border print:border-gray-300 print:text-black">
+            {imageMode === "spot-difference"
+              ? "Inspect the image and identify what changed."
+              : "Inspect the image and identify the object."}
+          </p>
+        )}
         <div className="flex justify-center">
-          {clueMediaSrc && clueMediaKind === "audio" ? (
+          {clueType === "image" && !clueMediaSrc ? (
+            <p className="rounded-xl bg-amber-100 px-4 py-6 text-center text-sm text-amber-900">
+              This image clue is missing its image. Please contact the hunt creator.
+            </p>
+          ) : clueMediaSrc && clueMediaKind === "audio" ? (
               <audio controls aria-label={a11y("clueAudio")} className="w-full max-w-xs">
               <source src={clueMediaSrc} />
             </audio>
@@ -475,39 +529,65 @@ export const HuntCards: React.FC<HuntCardsProps> = ({
           backdropFilter: "saturate(180%) blur(18px)",
         }}
       >
-        <motion.div
-          animate={shake ? "shake" : "idle"}
-          variants={shakeVariants}
-          className="flex-1"
-        >
-          <Input
-          placeholder={isActive && !preview ? "Enter answer" : "Locked"}
-          className={cn(
-            "flex-1 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-full text-sm transition-colors",
-            isLocked ? "bg-gray-100 dark:bg-slate-800 cursor-not-allowed" : "dark:bg-slate-950 dark:border-white/10"
-          )}
-          value={input}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          onFocus={handleInputFocus}
-          disabled={isLocked}
-        />
-        </motion.div>
-        <Button
-          className={cn(
-            "bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] hover:bg-purple-700 text-white px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl transition-all duration-200 flex-shrink-0",
-            isLocked && "opacity-50 cursor-not-allowed"
-          )}
-          onClick={handleUnlock}
-          disabled={isLocked}
-          aria-label={a11y("submitAnswer")}
-        >
-          {isPending ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <ArrowRight className="w-4 h-4" />
-          )}
-        </Button>
+        {usesTypedAnswer ? (
+          <>
+            <motion.div
+              animate={shake ? "shake" : "idle"}
+              variants={shakeVariants}
+              className="flex-1"
+            >
+              <Input
+                aria-label={
+                  clueType === "image" ? "Image clue answer" : "Clue answer"
+                }
+                placeholder={
+                  isActive && !preview
+                    ? clueType === "image"
+                      ? "Identify what you see"
+                      : "Enter answer"
+                    : "Locked"
+                }
+                className={cn(
+                  "flex-1 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-full text-sm transition-colors",
+                  isLocked
+                    ? "bg-gray-100 dark:bg-slate-800 cursor-not-allowed"
+                    : "dark:bg-slate-950 dark:border-white/10"
+                )}
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                onFocus={handleInputFocus}
+                disabled={isLocked}
+              />
+            </motion.div>
+            <Button
+              className={cn(
+                "bg-gradient-to-b from-[#3737A4] to-[#0C0C4F] hover:bg-purple-700 text-white px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl transition-all duration-200 flex-shrink-0",
+                isLocked && "opacity-50 cursor-not-allowed"
+              )}
+              onClick={() => void handleUnlock()}
+              disabled={isLocked}
+              aria-label={a11y("submitAnswer")}
+            >
+              {isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ArrowRight className="w-4 h-4" />
+              )}
+            </Button>
+          </>
+        ) : clueType === "location" ||
+          clueType === "qr" ||
+          clueType === "multiple-choice" ? (
+          <ClueTypeInput
+            type={clueType}
+            disabled={isLocked}
+            isPending={isPending}
+            geofenceRadiusMeters={hunt.geofenceRadiusMeters}
+            options={hunt.multipleChoice?.options}
+            onSubmit={handleUnlock}
+          />
+        ) : null}
       </div>
 
       {/* Feedback */}

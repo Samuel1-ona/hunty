@@ -1,3 +1,4 @@
+import { getClueTypeConfigurationError } from "./clueTypeSystem";
 import type { Clue } from "./huntStoreCore";
 import { MAX_CLUES_PER_HUNT, readClues, readHunts, writeClues, writeHunts } from "./huntStoreCore";
 
@@ -12,6 +13,9 @@ function validateClueDraft(clue: Omit<Clue, "id">, index: number): Omit<Clue, "i
   if (!answer) throw new Error(`Clue ${index + 1} answer is required.`);
   if (!Number.isFinite(clue.points) || clue.points <= 0)
     throw new Error(`Clue ${index + 1} points must be greater than 0.`);
+  const configurationError = getClueTypeConfigurationError(clue);
+  if (configurationError)
+    throw new Error(`Clue ${index + 1}: ${configurationError}`);
   const questionTranslations = clue.questionTranslations
     ? Object.fromEntries(
         Object.entries(clue.questionTranslations)
@@ -28,8 +32,21 @@ function validateClueDraft(clue: Omit<Clue, "id">, index: number): Omit<Clue, "i
     : undefined;
   return {
     ...clue,
+    type: clue.type ?? "text",
     question,
     answer,
+    imageCid: clue.imageCid?.trim() || undefined,
+    imageMode: clue.imageMode,
+    qrPayload: clue.qrPayload?.trim() || undefined,
+    multipleChoice: clue.multipleChoice
+      ? {
+          options: clue.multipleChoice.options.map((option) => ({
+            id: option.id.trim(),
+            label: option.label.trim(),
+          })),
+          correctOptionId: clue.multipleChoice.correctOptionId.trim(),
+        }
+      : undefined,
     questionTranslations:
       Object.keys(questionTranslations ?? {}).length > 0 ? questionTranslations : undefined,
     hintTranslations: Object.keys(hintTranslations ?? {}).length > 0 ? hintTranslations : undefined,

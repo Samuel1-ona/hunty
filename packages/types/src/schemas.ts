@@ -23,24 +23,141 @@ export const huntStatusSchema = z.enum([
 
 export const clueDifficultySchema = z.enum(["Easy", "Medium", "Hard"])
 
+export const clueTypeSchema = z.enum([
+  "text",
+  "image",
+  "location",
+  "qr",
+  "multiple-choice",
+])
+
+export const imageClueModeSchema = z.enum([
+  "identify-object",
+  "spot-difference",
+])
+
+export const clueChoiceOptionSchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1),
+})
+
+export const multipleChoiceConfigSchema = z.object({
+  options: z.array(clueChoiceOptionSchema).min(2),
+  correctOptionId: z.string().min(1),
+})
+
 export const rewardSchema = z.object({
   place: z.number(),
   amount: z.number(),
 })
 
-export const clueSchema = z.object({
-  id: z.number(),
-  huntId: z.number(),
-  question: z.string(),
-  answer: z.string(),
-  points: z.number(),
-  hint: z.string().optional(),
-  hintCost: z.number().optional(),
-  difficulty: clueDifficultySchema.optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  geofenceRadiusMeters: z.number().optional(),
-})
+export const clueSchema = z
+  .object({
+    id: z.number(),
+    huntId: z.number(),
+    question: z.string(),
+    answer: z.string(),
+    points: z.number(),
+    type: clueTypeSchema.optional(),
+    imageCid: z.string().optional(),
+    imageMode: imageClueModeSchema.optional(),
+    qrPayload: z.string().optional(),
+    multipleChoice: multipleChoiceConfigSchema.optional(),
+    hint: z.string().optional(),
+    hintCost: z.number().optional(),
+    difficulty: clueDifficultySchema.optional(),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
+    geofenceRadiusMeters: z.number().optional(),
+  })
+  .superRefine((clue, ctx) => {
+    const type = clue.type ?? "text";
+
+    if (type === "image" && !clue.imageCid?.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Image clues require an image reference.",
+        path: ["imageCid"],
+      });
+    }
+
+    if (type === "location") {
+      if (
+        clue.latitude == null ||
+        !Number.isFinite(clue.latitude) ||
+        clue.latitude < -90 ||
+        clue.latitude > 90
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Location clues require a latitude between -90 and 90.",
+          path: ["latitude"],
+        });
+      }
+
+      if (
+        clue.longitude == null ||
+        !Number.isFinite(clue.longitude) ||
+        clue.longitude < -180 ||
+        clue.longitude > 180
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Location clues require a longitude between -180 and 180.",
+          path: ["longitude"],
+        });
+      }
+
+      if (
+        clue.geofenceRadiusMeters != null &&
+        (!Number.isFinite(clue.geofenceRadiusMeters) ||
+          clue.geofenceRadiusMeters <= 0)
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "The geofence radius must be greater than zero.",
+          path: ["geofenceRadiusMeters"],
+        });
+      }
+    }
+
+    if (type === "qr" && !clue.qrPayload?.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        message: "QR clues require an expected payload.",
+        path: ["qrPayload"],
+      });
+    }
+
+    if (type === "multiple-choice") {
+      const config = clue.multipleChoice;
+      if (!config) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Multiple-choice clues require answer options.",
+          path: ["multipleChoice"],
+        });
+        return;
+      }
+
+      const ids = config.options.map((option) => option.id);
+      if (new Set(ids).size !== ids.length) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Multiple-choice option IDs must be unique.",
+          path: ["multipleChoice", "options"],
+        });
+      }
+
+      if (!ids.includes(config.correctOptionId)) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Select one of the options as the correct answer.",
+          path: ["multipleChoice", "correctOptionId"],
+        });
+      }
+    }
+  })
 
 export const storedHuntSchema = z.object({
   id: z.number(),
@@ -75,6 +192,7 @@ export const storedHuntSchema = z.object({
   creatorEmail: z.string().optional(),
   emailNotifications: z.boolean().optional(),
   is_private: z.boolean().optional(),
+  remotePlayable: z.boolean().optional(),
   coverImageCid: z.string().optional(),
   isFeaturedOfWeek: z.boolean().optional(),
   sponsors: z.array(z.string()).optional(),
