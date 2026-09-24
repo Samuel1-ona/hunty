@@ -28,7 +28,12 @@ import {
   takeHuntStoreSnapshot,
   updateClueAnswer,
 } from "@/lib/huntStore";
-import { COVER_IMAGE_UPLOAD_ERROR_MESSAGE, uploadToIPFS } from "@/lib/ipfs";
+import {
+  COVER_IMAGE_UPLOAD_ERROR_MESSAGE,
+  buildFileTooLargeMessage,
+  isTooLargeForIPFSUpload,
+  uploadToIPFS,
+} from "@/lib/ipfs";
 import { logger } from "@/lib/logger";
 import { withTransactionToast } from "@/lib/txToast";
 import type { CoverImageUploadState, HuntDraft } from "@/lib/types";
@@ -148,6 +153,16 @@ export function HuntForm({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Reject oversized files before any network request so the user gets a
+    // clear message instead of an opaque serverless 413/platform error.
+    if (isTooLargeForIPFSUpload(file)) {
+      toast.error(buildFileTooLargeMessage(file.name));
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+
     updateImageUploadState("uploading");
     setIsUploading(true);
 
@@ -158,7 +173,11 @@ export function HuntForm({
     } catch (error) {
       logger.error("Error uploading image to IPFS:", error);
       updateImageUploadState("failed");
-      toast.error(COVER_IMAGE_UPLOAD_ERROR_MESSAGE);
+      if (error instanceof Error && error.message.includes("too large")) {
+        toast.error(error.message);
+      } else {
+        toast.error(COVER_IMAGE_UPLOAD_ERROR_MESSAGE);
+      }
     } finally {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -364,6 +383,14 @@ export function HuntForm({
     const file = e.target.files?.[0]
     if (!file) return
 
+    if (isTooLargeForIPFSUpload(file)) {
+      toast.error(buildFileTooLargeMessage(file.name))
+      if (clueFileInputRefs.current[index]) {
+        clueFileInputRefs.current[index]!.value = ""
+      }
+      return
+    }
+
     setUploadingClueIndex(index)
     try {
       const ipfsUri = await uploadToIPFS(file)
@@ -374,7 +401,11 @@ export function HuntForm({
       toast.success(`Attached ${file.type.split("/")[0] || "media"} to clue ${index + 1}.`)
     } catch (error) {
       logger.error("Error uploading clue media to IPFS:", error)
-      toast.error("Failed to upload clue media. Please try again.")
+      if (error instanceof Error && error.message.includes("too large")) {
+        toast.error(error.message)
+      } else {
+        toast.error("Failed to upload clue media. Please try again.")
+      }
     } finally {
       if (clueFileInputRefs.current[index]) {
         clueFileInputRefs.current[index]!.value = ""
