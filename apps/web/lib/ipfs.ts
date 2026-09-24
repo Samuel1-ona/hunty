@@ -10,6 +10,26 @@
 const PINATA_GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY
 export const COVER_IMAGE_UPLOAD_ERROR_MESSAGE = "Failed to upload cover image. Please try again."
 
+/**
+ * Serverless platforms cap request bodies far lower than Pinata accepts
+ * (Vercel: ~4.5 MB). Keep client and server in sync so oversized files are
+ * rejected with a clear message before the upload starts.
+ */
+export const MAX_IPFS_UPLOAD_BYTES = Math.floor(4.5 * 1024 * 1024)
+
+export function formatMaxUploadSize(): string {
+  return `${(MAX_IPFS_UPLOAD_BYTES / (1024 * 1024)).toFixed(1)} MB`
+}
+
+export function isTooLargeForIPFSUpload(file: File | { size: number }): boolean {
+  return file.size > MAX_IPFS_UPLOAD_BYTES
+}
+
+export function buildFileTooLargeMessage(fileName?: string): string {
+  const label = fileName ? `"${fileName}" is` : "This file is"
+  return `${label} too large. Maximum upload size is ${formatMaxUploadSize()}.`
+}
+
 // Ordered list of public fallback gateways.
 const GATEWAYS: string[] = [
   PINATA_GATEWAY ? `https://${PINATA_GATEWAY}` : "https://gateway.pinata.cloud",
@@ -65,6 +85,10 @@ export function extractCID(src: string): string | null {
  * - The network request fails
  */
 export async function uploadToIPFS(file: File, walletAddress?: string): Promise<string> {
+  if (isTooLargeForIPFSUpload(file)) {
+    throw new Error(buildFileTooLargeMessage(file.name))
+  }
+
   const formData = new FormData()
   formData.append("file", file)
 
