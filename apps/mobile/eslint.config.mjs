@@ -11,12 +11,16 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  {
+    files: ['**/*.{js,jsx,ts,tsx}'],
+  },
   ...reactNativeConfig,
   ...compat.extends('expo', 'prettier'),
   {
     ignores: ['node_modules/', '.expo/', 'build/', 'dist/', 'coverage/'],
   },
   {
+    files: ['**/*.{js,jsx,ts,tsx}'],
     rules: {
       'react-hooks/exhaustive-deps': 'warn',
     },
