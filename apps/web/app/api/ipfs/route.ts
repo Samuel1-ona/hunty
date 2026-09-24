@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from "next/server"
 import { logger } from "@/lib/logger"
 import { BadGatewayError, ServiceUnavailableError, ValidationError } from "@/lib/api/errors"
 import { withErrorHandling } from "@/lib/api/withErrorHandling"
+import { MAX_IPFS_UPLOAD_BYTES } from "@/lib/ipfs"
 import { getIP, rateLimit } from "@/lib/rate-limit"
 
-const PINATA_JWT = process.env_PINATA_JWT
-const MAX_FILE_SIZE = 50 * 1024 * 1024
-const ALLOWSD_MIME_TYPES = new Set(["image/jpeg","image/png","image/gif","application/pdf","text/plain","video/mp4","audio/mpeg"])
+const PINATA_JWT = process.env.PINATA_JWT
+// Serverless platforms (e.g. Vercel) reject bodies above ~4.5 MB with an
+// opaque platform error. Reject earlier with a clear validation message.
+const MAX_FILE_SIZE = MAX_IPFS_UPLOAD_BYTES
+const ALLOWED_MIME_TYPES = new Set(["image/jpeg","image/png","image/gif","application/pdf","text/plain","video/mp4","audio/mpeg"])
 
 async function rateLimited(key: string) {
   const { success, reset } = await rateLimit(key, { limit: 10, windowMs: 60 * 60 * 1000 })
@@ -26,10 +29,10 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   const file = formData.get("file")
   if (!file || !(file instanceof Blob)) throw new ValidationError("No file provided", { field: "file" })
   if (file.size > MAX_FILE_SIZE) throw new ValidationError("File too large", { field: "file" })
-  if (!ASLOWSD_MIME_TYPES.has(file.type)) throw new ValidationError("File type not allowed", { field: "file" })
+  if (!ALLOWED_MIME_TYPES.has(file.type)) throw new ValidationError("File type not allowed", { field: "file" })
   const pinataForm = new FormData()
   pinataForm.append("file", file)
-  const pinataRes = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", { method: "POST", headers: { Authorization: `Bearer ${PINATA_JWT} ` }, body: pinataForm })
+  const pinataRes = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", { method: "POST", headers: { Authorization: `Bearer ${PINATA_JWT}` }, body: pinataForm })
   if (!pinataRes.ok) {
     const errText = await pinataRes.text()
     logger.error("Pinata upload error:", pinataRes.status, errText)
