@@ -5,7 +5,6 @@ import { ArrowUpDown, Eye, EyeOff, Minus, Plus, Trash2 } from "lucide-react";
 import React, { ChangeEvent, useCallback, useMemo, useRef, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 
 import { Button } from "@hunty/ui";
 import { Input } from "@/components/ui/input";
@@ -21,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { addCluesBatch } from "@/lib/contracts/hunt";
 import { sha256Hex } from "@/lib/crypto";
-import { parseClueCsv, type CsvRow, type CsvParseResult } from "@/lib/csv";
+import { parseClueCsv, type CsvParseResult } from "@/lib/csv";
 import {
   restoreHuntStoreSnapshot,
   saveCluesLocallyBatch,
@@ -31,13 +30,22 @@ import {
 import { COVER_IMAGE_UPLOAD_ERROR_MESSAGE, uploadToIPFS } from "@/lib/ipfs";
 import { logger } from "@/lib/logger";
 import { withTransactionToast } from "@/lib/txToast";
-import type { CoverImageUploadState, HuntDraft } from "@/lib/types";
+import type { ClueDifficulty, CoverImageUploadState, HuntDraft } from "@/lib/types";
 
+import { ClueEditorFields } from "./ClueEditorFields";
 import { ClueSortList } from "./ClueSortList";
 import { HuntCards } from "./HuntCards";
 import ToggleSwitch from "./ToggleButton";
 import { useIsFeatureEnabled } from "@/hooks/useFeatureFlag";
 import { attachMediaTypeToCid } from "@/lib/clueMedia";
+import {
+  CLUE_TRANSLATION_LOCALES,
+  clueEditorRowToClue,
+  cluesEditorFormSchema,
+  createEmptyClueEditorValue,
+  isClueEditorRowComplete,
+  type CluesEditorFormData,
+} from "@/lib/clueEditorSchema";
 
 interface HuntFormProps {
   hunt: HuntDraft
@@ -50,25 +58,6 @@ interface HuntFormProps {
   onClueReorder?: () => void
 }
 
-const clueTranslationLocales = ["en", "es", "fr"] as const;
-
-const clueSchema = z.object({
-  question: z.string().min(1, "Question is required"),
-  answer: z.string().min(1, "Answer is required"),
-  points: z.number().min(1, "Points must be at least 1"),
-  hint: z.string(),
-  hintCost: z.number().min(0),
-  difficulty: z.enum(["Easy", "Medium", "Hard"]).optional(),
-  mediaCid: z.string().optional(),
-  questionTranslations: z.record(z.string(), z.string()).optional(),
-  hintTranslations: z.record(z.string(), z.string()).optional(),
-});
-
-const cluesFormSchema = z.object({
-  clues: z.array(clueSchema).min(1, "At least one clue is required"),
-});
-
-type CluesFormData = z.infer<typeof cluesFormSchema>;
 
 export function HuntForm({
   hunt,
@@ -89,6 +78,7 @@ export function HuntForm({
   const dragDropEnabled = useIsFeatureEnabled("dragDropClues");
   const clueFileInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const [uploadingClueIndex, setUploadingClueIndex] = useState<number | null>(null);
+  const [uploadingImageClueIndex, setUploadingImageClueIndex] = useState<number | null>(null);
   const [csvDialogOpen, setCsvDialogOpen] = useState(false);
   const [csvPreview, setCsvPreview] = useState<CsvParseResult | null>(null);
   const [csvFileName, setCsvFileName] = useState<string | null>(null);
@@ -101,21 +91,10 @@ export function HuntForm({
     setValue,
     watch,
     formState: { errors, submitCount },
-  } = useForm<CluesFormData>({
-    resolver: zodResolver(cluesFormSchema),
+  } = useForm<CluesEditorFormData>({
+    resolver: zodResolver(cluesEditorFormSchema),
     defaultValues: {
-      clues: [
-        {
-          question: "",
-          answer: "",
-          points: 10,
-          hint: "",
-          hintCost: 0,
-          mediaCid: "",
-          questionTranslations: { en: "", es: "", fr: "" },
-          hintTranslations: { en: "", es: "", fr: "" },
-        },
-      ],
+      clues: [createEmptyClueEditorValue()],
     },
   });
 
@@ -181,16 +160,7 @@ export function HuntForm({
   };
 
   const addClueRow = () => {
-    append({
-      question: "",
-      answer: "",
-      points: 10,
-      hint: "",
-      hintCost: 0,
-      mediaCid: "",
-      questionTranslations: { en: "", es: "", fr: "" },
-      hintTranslations: { en: "", es: "", fr: "" },
-    });
+    append(createEmptyClueEditorValue());
   };
 
   const removeClueRow = (index: number) => {
@@ -223,13 +193,13 @@ export function HuntForm({
     }
     for (const row of validRows) {
       append({
+        ...createEmptyClueEditorValue(),
         question: row.question,
         answer: row.answer,
         points: row.points,
         hint: row.hint || "",
         hintCost: row.hintCost ?? 0,
-        difficulty: row.difficulty,
-        mediaCid: "",
+        difficulty: row.difficulty as ClueDifficulty | undefined,
       })
     }
     toast.success(`Imported ${validRows.length} clue(s)`)
@@ -279,34 +249,21 @@ export function HuntForm({
     [fields, move, onClueReorder],
   );
 
-  const onSaveClues = async (data: CluesFormData) => {
+  const onSaveClues = async (data: CluesEditorFormData) => {
     if (!huntId) return;
-    const valid = data.clues.filter((r) => r.question.trim() && r.answer.trim());
+    const valid = data.clues.filter(isClueEditorRowComplete);
     if (!valid.length) return;
 
     setIsSavingClues(true);
     const snapshot = takeHuntStoreSnapshot();
     try {
-      const normalizedClues = valid.map((row) => ({
-        huntId,
-        question: row.question.trim(),
-        answer: row.answer.trim().toLowerCase(),
-        points: row.points,
-        questionTranslations: Object.fromEntries(
-          clueTranslationLocales
-            .map((locale) => [locale, row.questionTranslations?.[locale]?.trim() ?? ""])
-            .filter(([, value]) => value.length > 0)
-        ),
-        hintTranslations: Object.fromEntries(
-          clueTranslationLocales
-            .map((locale) => [locale, row.hintTranslations?.[locale]?.trim() ?? ""])
-            .filter(([, value]) => value.length > 0)
-        ),
-        hint: row.hint?.trim() || undefined,
-        hintCost: row.hintCost,
-        difficulty: row.difficulty,
-        mediaCid: row.mediaCid?.trim() || undefined,
-      }));
+      const normalizedClues = valid.map((row) => {
+        const clue = clueEditorRowToClue(row, huntId);
+        return {
+          ...clue,
+          answer: clue.answer.toLowerCase(),
+        };
+      });
 
       const clueIds = saveCluesLocallyBatch(normalizedClues);
 
@@ -315,7 +272,11 @@ export function HuntForm({
           setStage("approving");
           return addCluesBatch(
             huntId,
-            normalizedClues.map(({ huntId: _huntId, ...clue }) => clue)
+            normalizedClues.map((clue) => {
+              const { huntId: ignoredHuntId, ...clueWithoutHuntId } = clue;
+              void ignoredHuntId;
+              return clueWithoutHuntId;
+            })
           );
         },
         {
@@ -325,38 +286,46 @@ export function HuntForm({
         }
       );
 
-      for (const [index, row] of valid.entries()) {
-        const normalizedAnswer = row.answer.trim().toLowerCase();
+      for (const [index, clue] of normalizedClues.entries()) {
         const newId = clueIds[index];
         const salt = `${huntId}_${newId}`;
-        const hashed = await sha256Hex(normalizedAnswer + salt);
+        const hashed = await sha256Hex(clue.answer + salt);
         try {
           updateClueAnswer(huntId, newId, hashed);
-        } catch (e) {
-          logger.warn("Failed to update local clue answer with hash", e);
+        } catch (error) {
+          logger.warn("Failed to update local clue answer with hash", error);
         }
       }
 
       onCluesSaved?.(valid.length);
-      reset({
-        clues: [
-          {
-            question: "",
-            answer: "",
-            points: 10,
-            hint: "",
-            hintCost: 0,
-            mediaCid: "",
-            questionTranslations: { en: "", es: "", fr: "" },
-            hintTranslations: { en: "", es: "", fr: "" },
-          },
-        ],
-      });
+      reset({ clues: [createEmptyClueEditorValue()] });
     } catch (error) {
       restoreHuntStoreSnapshot(snapshot);
       throw error;
     } finally {
       setIsSavingClues(false);
+    }
+  };
+
+  const handleClueImageUpload = async (index: number, file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Image clues require an image file.");
+      return;
+    }
+
+    setUploadingImageClueIndex(index);
+    try {
+      const ipfsUri = await uploadToIPFS(file);
+      setValue(`clues.${index}.imageCid`, attachMediaTypeToCid(ipfsUri, file.type), {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+      toast.success(`Attached image to clue ${index + 1}.`);
+    } catch (error) {
+      logger.error("Error uploading clue image to IPFS:", error);
+      toast.error("Failed to upload clue image. Please try again.");
+    } finally {
+      setUploadingImageClueIndex(null);
     }
   };
 
@@ -511,6 +480,7 @@ export function HuntForm({
               ref={fileInputRef}
               onChange={handleImageUpload}
               accept="image/*"
+              aria-label="Upload hunt cover image file"
               className="hidden"
             />
             {hunt.image && (
@@ -696,6 +666,15 @@ export function HuntForm({
                 key={field.id}
                 className="flex flex-col gap-2 p-2 border border-slate-100 dark:border-white/5 rounded-lg bg-white/50 dark:bg-slate-900/50"
               >
+                <ClueEditorFields
+                  control={control}
+                  setValue={setValue}
+                  index={index}
+                  value={clueValues[index] ?? createEmptyClueEditorValue()}
+                  imageUploading={uploadingImageClueIndex === index}
+                  onImageUpload={(file) => handleClueImageUpload(index, file)}
+                  errors={errors.clues?.[index]}
+                />
                 <div className="flex gap-2 items-start">
                   <span className="text-xs text-slate-400 dark:text-slate-500 w-4 shrink-0 mt-2">
                     {index + 1}.
@@ -730,34 +709,40 @@ export function HuntForm({
                       </span>
                     )}
                   </div>
-                  <div className="w-32 flex flex-col">
-                    <Controller
-                      control={control}
-                      name={`clues.${index}.answer`}
-                      render={({ field: f }) => (
-                        <Input
-                          placeholder="Answer (use | for multiple)"
-                          aria-label={`Clue ${index + 1} Answer`}
-                          aria-invalid={!!errors.clues?.[index]?.answer}
-                          aria-describedby={
-                            errors.clues?.[index]?.answer ? `clue-${index}-answer-error` : undefined
-                          }
-                          {...f}
-                          className="pl-3 py-2 text-sm"
-                        />
+                  {(clueValues[index]?.type === "text" ||
+                    clueValues[index]?.type === "image" ||
+                    !clueValues[index]?.type) && (
+                    <div className="w-32 flex flex-col">
+                      <Controller
+                        control={control}
+                        name={`clues.${index}.answer`}
+                        render={({ field: f }) => (
+                          <Input
+                            placeholder="Answer (use | for multiple)"
+                            aria-label={`Clue ${index + 1} Answer`}
+                            aria-invalid={!!errors.clues?.[index]?.answer}
+                            aria-describedby={
+                              errors.clues?.[index]?.answer
+                                ? `clue-${index}-answer-error`
+                                : undefined
+                            }
+                            {...f}
+                            className="pl-3 py-2 text-sm"
+                          />
+                        )}
+                      />
+                      {errors.clues?.[index]?.answer && (
+                        <span
+                          role="alert"
+                          aria-live="assertive"
+                          id={`clue-${index}-answer-error`}
+                          className="text-red-500 text-xs mt-0.5"
+                        >
+                          {errors.clues[index].answer.message}
+                        </span>
                       )}
-                    />
-                    {errors.clues?.[index]?.answer && (
-                      <span
-                        role="alert"
-                        aria-live="assertive"
-                        id={`clue-${index}-answer-error`}
-                        className="text-red-500 text-xs mt-0.5"
-                      >
-                        {errors.clues[index].answer.message}
-                      </span>
-                    )}
-                  </div>
+                    </div>
+                  )}
                   <div className="w-16 flex flex-col">
                     <Controller
                       control={control}
@@ -808,7 +793,7 @@ export function HuntForm({
                     Translations
                   </div>
                   <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-                    {clueTranslationLocales.map((locale) => (
+                    {CLUE_TRANSLATION_LOCALES.map((locale) => (
                       <div key={`${field.id}-translation-${locale}`} className="space-y-1">
                         <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
                           {locale.toUpperCase()}

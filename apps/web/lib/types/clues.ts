@@ -1,6 +1,15 @@
+import type {
+  Clue as SharedClue,
+  ClueChoiceOption,
+  ClueDifficulty,
+  ClueType,
+  ImageClueMode,
+  MultipleChoiceConfig,
+} from "@hunty/types";
+
 import type { AnswerStrictness } from "../fuzzyAnswer";
 
-export type ClueDifficulty = "Easy" | "Medium" | "Hard";
+export type { ClueChoiceOption, ClueDifficulty, ClueType, ImageClueMode, MultipleChoiceConfig };
 
 /**
  * A single progressive hint entry. Creators can define up to 3 hints per clue.
@@ -17,12 +26,7 @@ export interface ClueHint {
   delaySeconds: number;
 }
 
-export interface Clue {
-  id: number;
-  huntId: number;
-  question: string;
-  answer: string;
-  points: number;
+export interface Clue extends SharedClue {
   /** Optional locale-specific question strings. The base `question` remains the fallback. */
   questionTranslations?: Partial<Record<string, string>>;
   /** Optional locale-specific hint strings. The base `hint` remains the fallback. */
@@ -36,14 +40,6 @@ export interface Clue {
   hint?: string;
   /** @deprecated Use `hints[0].penalty` instead. Kept for backwards compatibility. */
   hintCost?: number;
-  /** Optional difficulty tag set by the creator. */
-  difficulty?: ClueDifficulty;
-  /** Center latitude for the clue's answer geofence. */
-  latitude?: number;
-  /** Center longitude for the clue's answer geofence. */
-  longitude?: number;
-  /** Allowed distance from the clue center in metres. Defaults to 100m. */
-  geofenceRadiusMeters?: number;
   /** Creator-specified accepted alternative answers (plaintext). */
   alternativeAnswers?: string[];
   /** Fuzzy matching strictness for this clue. Defaults to "normal". */
@@ -73,6 +69,13 @@ export type ClueInfo = {
   id: number;
   question: string;
   points: number;
+  type?: ClueType;
+  imageCid?: string;
+  imageMode?: ImageClueMode;
+  multipleChoice?: {
+    options: ClueChoiceOption[];
+  };
+  geofenceRadiusMeters?: number;
   /** Optional locale-specific question strings. */
   questionTranslations?: Partial<Record<string, string>>;
   /** Optional locale-specific hint strings. */
@@ -91,6 +94,14 @@ export interface ClueRow {
   question: string;
   answer: string;
   points: number;
+  type?: ClueType;
+  imageCid?: string;
+  imageMode?: ImageClueMode;
+  qrPayload?: string;
+  multipleChoice?: MultipleChoiceConfig;
+  latitude?: number;
+  longitude?: number;
+  geofenceRadiusMeters?: number;
   questionTranslations?: Partial<Record<string, string>>;
   hintTranslations?: Partial<Record<string, string>>;
   hints?: ClueHint[];

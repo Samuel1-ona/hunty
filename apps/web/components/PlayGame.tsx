@@ -219,6 +219,14 @@ export function PlayGame({
           link: "",
           code: "",
           points: clue.points,
+          type: clue.type ?? localClue?.type ?? "text",
+          imageCid: clue.imageCid ?? localClue?.imageCid,
+          imageMode: clue.imageMode ?? localClue?.imageMode,
+          multipleChoice: clue.multipleChoice ?? (localClue?.multipleChoice
+            ? { options: localClue.multipleChoice.options }
+            : undefined),
+          geofenceRadiusMeters:
+            clue.geofenceRadiusMeters ?? localClue?.geofenceRadiusMeters,
           hint: localizedHint,
           hintCost: clue.hintCost,
           difficulty: clue.difficulty,
