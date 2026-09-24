@@ -18,6 +18,7 @@
 import { NextResponse } from "next/server";
 
 import { AuthError } from "@/lib/api/errors";
+import { constantTimeEqual } from "@/lib/api/timingSafeCompare";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
 import { withValidation } from "@/lib/api/withValidation";
 import { getPaymasterConfig } from "@/lib/paymaster/config";
@@ -48,7 +49,7 @@ function requireAdmin(request: Request): void {
     );
   }
 
-  if (!auth || !auth.startsWith("Bearer ") || auth.slice(7) !== secret) {
+  if (!auth || !auth.startsWith("Bearer ") || !constantTimeEqual(auth.slice(7), secret)) {
     throw new AuthError("Invalid or missing admin authorization token.");
   }
 }
