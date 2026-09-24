@@ -1,6 +1,6 @@
 use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface LeaderboardEntry {
   position: number;
@@ -25,10 +25,15 @@ interface LeaderboardData {
   shareUrl: string;
 }
 
+const ANNOUNCEMENT_THROTTLE_MS = 30_000;
+
 export default function SpectatorLeaderboard({ huntId }: { huntId: string }) {
   const [data, setData] = useState<LeaderboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const liveRegionRef = useRef<HTMLDivElement>(null);
+  const prevLeaderboardRef = useRef<LeaderboardEntry[]>([]);
+  const lastAnnouncementRef = useRef(0);
 
   const fetchLeaderboard = useCallback(async () => {
     try {
@@ -49,6 +54,61 @@ export default function SpectatorLeaderboard({ huntId }: { huntId: string }) {
     const interval = setInterval(fetchLeaderboard, 5000);
     return () => clearInterval(interval);
   }, [fetchLeaderboard]);
+
+  useEffect(() => {
+    if (!data) return;
+
+    const prev = prevLeaderboardRef.current;
+    const now = Date.now();
+
+    // Skip the initial render when there is no previous data to compare.
+    if (prev.length === 0) {
+      prevLeaderboardRef.current = data.leaderboard;
+      return;
+    }
+
+    // Throttle announcements so screen readers are not spammed.
+    if (now - lastAnnouncementRef.current < ANNOUNCEMENT_THROTTLE_MS) {
+      prevLeaderboardRef.current = data.leaderboard;
+      return;
+    }
+
+    const changes: string[] = [];
+    const prevMap = new Map(prev.map((e) => [e.name, e.position]));
+    const newMap = new Map(data.leaderboard.map((e) => [e.name, e.position]));
+
+    for (const entry of data.leaderboard) {
+      const prevPos = prevMap.get(entry.name);
+      if (prevPos === undefined) {
+        changes.push(`${entry.name} entered the leaderboard at position ${entry.position}`);
+      } else if (prevPos !== entry.position) {
+        const diff = prevPos - entry.position;
+        const direction = diff > 0 ? "up" : "down";
+        changes.push(
+          `${entry.name} moved ${direction} ${Math.abs(diff)} position${Math.abs(diff) > 1 ? "s" : ""} to ${entry.position}`,
+        );
+      }
+    }
+
+    for (const entry of prev) {
+      if (!newMap.has(entry.name)) {
+        changes.push(`${entry.name} left the leaderboard`);
+      }
+    }
+
+    if (changes.length > 0 && liveRegionRef.current) {
+      lastAnnouncementRef.current = now;
+      // Clear then set so identical messages are still announced.
+      liveRegionRef.current.textContent = "";
+      requestAnimationFrame(() => {
+        if (liveRegionRef.current) {
+          liveRegionRef.current.textContent = changes.join(". ");
+        }
+      });
+    }
+
+    prevLeaderboardRef.current = data.leaderboard;
+  }, [data]);
 
   if (loading) {
     return (
@@ -109,6 +169,15 @@ export default function SpectatorLeaderboard({ huntId }: { huntId: string }) {
             <p className="text-white font-semibold text-lg">{data.summary.playerCount}</p>
           </div>
         </div>
+
+        {/* Polite live region for screen-reader announcements of rank changes. */}
+        <div
+          ref={liveRegionRef}
+          className="sr-only"
+          aria-live="polite"
+          aria-atomic="true"
+          role="status"
+        />
 
         <div className="bg-white/5 border border-white/10 rounded-2x overflow-hidden">
           <div className="px-6 py-4 border-b border-white/10 bg-white/[0.03]">
