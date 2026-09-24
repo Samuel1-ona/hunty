@@ -36,93 +36,37 @@ const nextConfig: NextConfig = {
   },
 
   async headers() {
-    // Determine if we're in report-only mode (staging) or enforcement mode (production)
-    const isProduction = process.env.NODE_ENV === "production";
-    const isReportOnly = !isProduction || process.env.CSP_REPORT_ONLY === "true";
+    // Content-Security-Policy and clickjacking headers (X-Frame-Options /
+    // frame-ancestors) are set in middleware.ts so they can vary per route:
+    // embed widgets must be framable by third-party sites, everything else
+    // keeps DENY / frame-ancestors 'none'. Optional allow-list:
+    // EMBED_FRAME_ANCESTORS (defaults to "*").
+    //
+    // This config only manages static cache and baseline security headers.
 
-    // Trusted IPFS gateways
-    const ipfsGateways = [
-      "https://gateway.pinata.cloud",
-      "https://*.mypinata.cloud",
-      "https://cloudflare-ipfs.com",
-      "https://dweb.link",
-      "https://ipfs.io",
+    const baseSecurityHeaders = [
+      {
+        key: "X-Content-Type-Options",
+        value: "nosniff",
+      },
+      {
+        key: "X-XSS-Protection",
+        value: "1; mode=block",
+      },
+      {
+        key: "Referrer-Policy",
+        value: "strict-origin-when-cross-origin",
+      },
+      {
+        key: "Permissions-Policy",
+        value: "geolocation=(self), microphone=(), camera=()",
+      },
     ];
-
-    // Soroban RPC endpoints for blockchain interactions
-    const sorobanRpcEndpoints = [
-      "https://soroban-testnet.stellar.org",
-      "https://rpc.testnet.soroban.stellar.org",
-      "https://soroban-mainnet.stellar.org",
-      "https://rpc.mainnet.soroban.stellar.org",
-    ];
-
-    // Trusted API endpoints
-    const trustedApis = [
-      "https://api.resend.com", // Email service for notifications
-      "https://torii-indexer.stellar-mainnet.public.blastapi.io", // Indexer API
-      "https://indexer.testnet.torii.com", // Testnet Indexer
-      ...sorobanRpcEndpoints,
-    ];
-
-    // Build CSP directives
-    const cspDirectives = [
-      // Script sources: only self and trusted inline scripts
-      `script-src 'self' 'unsafe-inline' 'unsafe-eval'`,
-
-      // Style sources: self and inline styles
-      `style-src 'self' 'unsafe-inline'`,
-
-      // Image sources: self and IPFS gateways
-      `img-src 'self' data: https: ${ipfsGateways.join(" ")}`,
-
-      // Connect sources: self, Soroban RPC, IPFS, and APIs
-      `connect-src 'self' ${trustedApis.join(" ")} wss: https:`,
-
-      // Font sources
-      `font-src 'self' data: https:`,
-
-      // Frame ancestors - prevent clickjacking
-      `frame-ancestors 'none'`,
-
-      // Default fallback
-      `default-src 'self'`,
-
-      // Base URI restriction
-      `base-uri 'self'`,
-
-      // Form action restriction
-      `form-action 'self'`,
-    ];
-
-    const cspHeader = cspDirectives.join("; ");
-    const cspHeaderName = isReportOnly ? "Content-Security-Policy-Report-Only" : "Content-Security-Policy";
 
     return [
       {
         source: "/(.*)",
-        headers: [
-          {
-            key: "X-Content-Type-Options",
-            value: "nosniff",
-          },
-          {
-            key: "X-Frame-Options",
-            value: "DENY",
-          },
-          {
-            key: "X-XSS-Protection",
-            value: "1; mode=block",
-          },
-          {
-            key: "Referrer-Policy",
-            value: "strict-origin-when-cross-origin",
-          },
-          {
-            key: "Permissions-Policy",
-            value: "geolocation=(self), microphone=(), camera=()",
-          },
-        ],
+        headers: baseSecurityHeaders,
       },
       {
         source: "/:path*.(svg|png|jpg|jpeg|gif|webp|avif|ico|woff2|woff|ttf|otf)",
