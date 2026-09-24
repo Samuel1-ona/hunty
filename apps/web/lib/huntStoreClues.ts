@@ -78,6 +78,27 @@ export function saveCluesLocallyBatch(clues: Omit<Clue, "id">[]): number[] {
   return withIds.map((clue) => clue.id);
 }
 
+/** Replace a hunt's clues in one operation, used when restoring a JSON backup. */
+export function replaceHuntCluesLocally(huntId: number, clues: Omit<Clue, "id">[]): void {
+  if (clues.length > MAX_CLUES_PER_HUNT) {
+    throw new Error(`A hunt can have at most ${MAX_CLUES_PER_HUNT} clues.`);
+  }
+  if (clues.some((clue) => clue.huntId !== huntId)) {
+    throw new Error("All imported clues must belong to the same hunt.");
+  }
+
+  const normalized = clues.map(validateClueDraft);
+  const remaining = readClues().filter((clue) => clue.huntId !== huntId);
+  const nextId = remaining.length > 0 ? Math.max(...remaining.map((clue) => clue.id)) + 1 : 1;
+  const imported = normalized.map((clue, index) => ({ ...clue, id: nextId + index }));
+  writeClues([...remaining, ...imported]);
+  writeHunts(
+    readHunts().map((hunt) =>
+      hunt.id === huntId ? { ...hunt, cluesCount: imported.length } : hunt
+    )
+  );
+}
+
 export function updateClueAnswer(huntId: number, clueId: number, answer: string): boolean {
   const all = readClues();
   const idx = all.findIndex((c) => c.huntId === huntId && c.id === clueId);
