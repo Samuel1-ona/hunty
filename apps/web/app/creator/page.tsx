@@ -42,6 +42,9 @@ export default function CreatorPage() {
     toggleHuntSelection,
     getCurrentHunts,
     handleSaveTemplate,
+    auditLog,
+    fetchAuditLog,
+    selectedAuditHuntId,
   } = useCreatorPage();
 
   const activeHunts = hunts.filter((h) => !h.isArchived);
@@ -126,6 +129,19 @@ export default function CreatorPage() {
             }`}
           >
             Trash ({softDeletedHunts.length})
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("audit");
+              setSelectedHunts([]);
+            }}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "audit"
+                ? "border-[#3737A4] text-[#3737A4]"
+                : "border-transparent text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            Audit Log
           </button>
         </div>
 
@@ -238,6 +254,13 @@ export default function CreatorPage() {
               </Button>
             </div>
           </Card>
+        ) : activeTab === "audit" ? (
+          <AuditLogTab
+            hunts={hunts}
+            auditLog={auditLog}
+            selectedAuditHuntId={selectedAuditHuntId}
+            onFetchAuditLog={fetchAuditLog}
+          />
         ) : (
           <>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -250,6 +273,7 @@ export default function CreatorPage() {
                 onAction={handleAction}
                 onPromote={handlePromote}
                 onSaveTemplate={(hunt) => setTemplateDialog({ open: true, huntId: hunt.id })}
+                onViewAudit={fetchAuditLog}
               />
             </div>
 
@@ -281,6 +305,105 @@ export default function CreatorPage() {
           onSave={handleSaveTemplate}
         />
       </div>
+    </div>
+  );
+}
+
+function AuditLogTab({
+  hunts,
+  auditLog,
+  selectedAuditHuntId,
+  onFetchAuditLog,
+}: {
+  hunts: import("@/lib/types").StoredHunt[];
+  auditLog: unknown[];
+  selectedAuditHuntId: number | null;
+  onFetchAuditLog: (huntId: number) => Promise<void>;
+}) {
+  const [huntId, setHuntId] = useState<number | "">("");
+
+  return (
+    <div className="space-y-4">
+      <Card className="rounded-2xl border border-slate-200 bg-white p-4">
+        <h2 className="mb-3 text-lg font-semibold text-slate-900">Audit Log</h2>
+        <p className="mb-4 text-sm text-slate-600">
+          Select a hunt to view its edit, delete, and refund audit trail.
+        </p>
+        <div className="flex items-center gap-3">
+          <label htmlFor="audit-hunt-select" className="text-sm font-medium text-slate-700">
+            Hunt:
+          </label>
+          <select
+            id="audit-hunt-select"
+            value={huntId}
+            onChange={(e) => setHuntId(e.target.value ? Number(e.target.value) : "")}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 focus:border-[#3737A4] focus:outline-none focus:ring-1 focus:ring-[#3737A4]"
+          >
+            <option value="">Select a hunt…</option>
+            {hunts.map((h) => (
+              <option key={h.id} value={h.id}>
+                {h.title} (ID: {h.id})
+              </option>
+            ))}
+          </select>
+          <Button
+            size="sm"
+            onClick={() => {
+              if (typeof huntId === "number") onFetchAuditLog(huntId);
+            }}
+            disabled={typeof huntId !== "number"}
+            className="bg-[#3737A4] hover:bg-[#0C0C4F] text-white"
+          >
+            Load Audit Log
+          </Button>
+        </div>
+      </Card>
+
+      {selectedAuditHuntId && (
+        <Card className="rounded-2xl border border-slate-200 bg-white p-4">
+          <h3 className="mb-3 text-sm font-semibold text-slate-700">
+            Audit entries for hunt ID {selectedAuditHuntId}
+          </h3>
+          {auditLog.length === 0 ? (
+            <p className="text-sm text-slate-500">No audit entries found.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 text-left text-xs font-medium text-slate-500 uppercase">
+                    <th className="pb-3 pr-4">Timestamp</th>
+                    <th className="pb-3 pr-4">Action</th>
+                    <th className="pb-3 pr-4">Actor</th>
+                    <th className="pb-3">Diff</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditLog.map((entry: any, i: number) => (
+                    <tr key={i} className="border-b border-slate-100">
+                      <td className="py-3 pr-4 text-slate-600">
+                        {new Date(entry.createdAt).toLocaleString()}
+                      </td>
+                      <td className="py-3 pr-4">
+                        <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                          {entry.action}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4 font-mono text-xs text-slate-600">
+                        {entry.actor}
+                      </td>
+                      <td className="py-3">
+                        <pre className="overflow-x-auto text-xs text-slate-500">
+                          {JSON.stringify(entry.diff, null, 2)}
+                        </pre>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
     </div>
   );
 }
