@@ -1,7 +1,9 @@
+import { TOAST_DURATION_MS } from "@hunty/ui/toast";
 import { toast } from "sonner";
 
 import { announceSr } from "@/components/SrAnnouncer";
 import { mapContractError } from "@/lib/contracts/errors";
+import { buildExplorerToastOptions } from "@/lib/toast/notify";
 import { settleWalletBalance } from "@/lib/wallet/balanceEvents";
 
 // ─── Stage type ───────────────────────────────────────────────────────────────
@@ -130,7 +132,11 @@ export async function withTransactionToast<T>(
 
     // Stage 3 — Confirmed
     announceSr(msgs.confirmed);
-    toast.success(msgs.confirmed, { id: toastId });
+    toast.success(msgs.confirmed, {
+      id: toastId,
+      duration: TOAST_DURATION_MS,
+      ...buildExplorerToastOptions(result),
+    });
     releaseToast();
 
     // The transaction landed, so any optimistic balance shown while it was in
@@ -156,10 +162,10 @@ export async function withTransactionToast<T>(
     if (mapped.isUserRejection) {
       // Yellow warning — user intentionally cancelled, not an error.
       announceSr("Transaction cancelled");
-      toast.warning(mapped.message, { id: toastId });
+      toast.warning(mapped.message, { id: toastId, duration: TOAST_DURATION_MS });
     } else {
       announceSr("Failed: " + mapped.message);
-      toast.error(mapped.message, { id: toastId });
+      toast.error(mapped.message, { id: toastId, duration: TOAST_DURATION_MS });
     }
 
     // Re-throw so callers can run their own cleanup (e.g. reset isPublishing).

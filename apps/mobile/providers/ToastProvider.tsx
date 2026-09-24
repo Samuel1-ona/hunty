@@ -1,126 +1,193 @@
 import { ThemedCustomText } from '@components/themed';
 import { useTheme } from '@providers/ThemeProvider';
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
-import { StyleSheet } from 'react-native';
-import Animated, {
-  Easing,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import {
+  createToastQueue,
+  TOAST_DISMISS_LABEL,
+  TOAST_VIEW_ACTION_LABEL,
+  ToastVariant,
+  type ToastInput,
+  type ToastItem,
+} from '@hunty/ui/toast';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { Linking, Pressable, StyleSheet } from 'react-native';
+import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-type ToastType = 'info' | 'success' | 'warning' | 'error';
-
-type ToastInput = {
-  message: string;
-  type?: ToastType;
-  durationMs?: number;
-};
-
-type ToastState = {
-  id: number;
-  message: string;
-  type: ToastType;
-};
-
 type ToastContextValue = {
-  showToast: (input: ToastInput) => void;
+  showToast: (input: ToastInput & { type?: ToastVariant }) => void;
 };
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
-const TOAST_ICONS: Record<ToastType, string> = {
-  info: 'ℹ️',
-  success: '✅',
-  warning: '⚠️',
-  error: '❌',
+const TOAST_ICONS: Record<ToastVariant, string> = {
+  [ToastVariant.Info]: 'ℹ️',
+  [ToastVariant.Success]: '✅',
+  [ToastVariant.Warning]: '⚠️',
+  [ToastVariant.Error]: '❌',
+};
+
+function colorForVariant(
+  variant: ToastVariant,
+  colors: { success: string; warning: string; error: string; info: string },
+): string {
+  switch (variant) {
+    case ToastVariant.Success:
+      return colors.success;
+    case ToastVariant.Warning:
+      return colors.warning;
+    case ToastVariant.Error:
+      return colors.error;
+    default:
+      return colors.info;
+  }
+}
+
+const ToastBanner: React.FC<{
+  toast: ToastItem;
+  backgroundColor: string;
+  onDismiss: (id: number) => void;
+}> = ({ toast, backgroundColor, onDismiss }) => {
+  const handleDismiss = () => {
+    onDismiss(toast.id);
+  };
+
+  const explorerUrl = toast.explorerUrl;
+
+  return (
+    <Animated.View
+      entering={FadeInDown.duration(400)}
+      exiting={FadeOutDown.duration(200)}
+      style={[styles.toast, { backgroundColor }]}
+    >
+      <ThemedCustomText style={styles.icon}>{TOAST_ICONS[toast.variant]}</ThemedCustomText>
+      <ThemedCustomText
+        variant="label"
+        lightColor="#ffffff"
+        darkColor="#ffffff"
+        weight="700"
+        style={styles.message}
+      >
+        {toast.message}
+      </ThemedCustomText>
+      {explorerUrl ? (
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={TOAST_VIEW_ACTION_LABEL}
+          onPress={() => {
+            void Linking.openURL(explorerUrl);
+          }}
+          hitSlop={8}
+        >
+          <ThemedCustomText variant="label" lightColor="#ffffff" darkColor="#ffffff" weight="700">
+            {TOAST_VIEW_ACTION_LABEL}
+          </ThemedCustomText>
+        </Pressable>
+      ) : null}
+      {toast.action ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={toast.action.label}
+          onPress={() => {
+            toast.action?.onPress();
+            handleDismiss();
+          }}
+          hitSlop={8}
+        >
+          <ThemedCustomText variant="label" lightColor="#ffffff" darkColor="#ffffff" weight="700">
+            {toast.action.label}
+          </ThemedCustomText>
+        </Pressable>
+      ) : null}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={TOAST_DISMISS_LABEL}
+        onPress={handleDismiss}
+        hitSlop={8}
+      >
+        <ThemedCustomText variant="label" lightColor="#ffffff" darkColor="#ffffff" weight="700">
+          ×
+        </ThemedCustomText>
+      </Pressable>
+    </Animated.View>
+  );
 };
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { colors } = useTheme();
-  const [toast, setToast] = useState<ToastState | null>(null);
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const nextIdRef = useRef(0);
+  const queueRef = useRef(createToastQueue());
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const timersRef = useRef(new Map<number, ReturnType<typeof setTimeout>>());
 
-  const translateY = useSharedValue(-120);
-  const opacity = useSharedValue(0);
+  useEffect(() => queueRef.current.subscribe(setToasts), []);
 
-  const clearTimer = useCallback(() => {
-    if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
-      hideTimerRef.current = null;
+  useEffect(() => {
+    const timers = timersRef.current;
+    return () => {
+      for (const timer of timers.values()) {
+        clearTimeout(timer);
+      }
+      timers.clear();
+    };
+  }, []);
+
+  const clearTimer = useCallback((id: number) => {
+    const timer = timersRef.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      timersRef.current.delete(id);
     }
   }, []);
 
-  const hideToast = useCallback(() => {
-    opacity.value = withTiming(0, { duration: 250, easing: Easing.out(Easing.ease) }, () => {
-      runOnJS(setToast)(null);
-      runOnJS(clearTimer)();
-    });
-    translateY.value = withTiming(-120, { duration: 250, easing: Easing.out(Easing.ease) });
-  }, [opacity, translateY, clearTimer]);
+  const dismissToast = useCallback(
+    (id: number) => {
+      clearTimer(id);
+      queueRef.current.dismiss(id);
+    },
+    [clearTimer],
+  );
 
   const showToast = useCallback(
-    ({ message, type = 'info', durationMs = 4200 }: ToastInput) => {
-      clearTimer();
-      const id = (nextIdRef.current += 1);
+    (input: ToastInput & { type?: ToastVariant }) => {
+      const { item, evicted } = queueRef.current.add(input);
+      for (const dropped of evicted) {
+        clearTimer(dropped.id);
+      }
 
-      setToast({ id, message, type });
-
-      translateY.value = -120;
-      opacity.value = 0;
-
-      translateY.value = withTiming(0, {
-        duration: 400,
-        easing: Easing.out(Easing.back(1.5)),
-      });
-      opacity.value = withTiming(1, {
-        duration: 300,
-        easing: Easing.out(Easing.ease),
-      });
-
-      hideTimerRef.current = setTimeout(() => {
-        hideToast();
-      }, durationMs);
+      if (item.durationMs > 0) {
+        timersRef.current.set(
+          item.id,
+          setTimeout(() => {
+            dismissToast(item.id);
+          }, item.durationMs),
+        );
+      }
     },
-    [clearTimer, translateY, opacity, hideToast],
+    [clearTimer, dismissToast],
   );
 
   const value = useMemo(() => ({ showToast }), [showToast]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-    opacity: opacity.value,
-  }));
-
-  const typeColor =
-    toast?.type === 'success'
-      ? colors.success
-      : toast?.type === 'warning'
-        ? colors.warning
-        : toast?.type === 'error'
-          ? colors.error
-          : colors.info;
-
   return (
     <ToastContext.Provider value={value}>
       {children}
-      {toast ? (
-        <SafeAreaView pointerEvents="none" style={styles.overlay} edges={['top']}>
-          <Animated.View style={[styles.toast, { backgroundColor: typeColor }, animatedStyle]}>
-            <ThemedCustomText style={styles.icon}>{TOAST_ICONS[toast.type]}</ThemedCustomText>
-            <ThemedCustomText
-              variant="label"
-              lightColor="#ffffff"
-              darkColor="#ffffff"
-              weight="700"
-              style={styles.message}
-            >
-              {toast.message}
-            </ThemedCustomText>
-          </Animated.View>
+      {toasts.length > 0 ? (
+        <SafeAreaView pointerEvents="box-none" style={styles.overlay} edges={['bottom']}>
+          {toasts.map((toast) => (
+            <ToastBanner
+              key={toast.id}
+              toast={toast}
+              backgroundColor={colorForVariant(toast.variant, colors)}
+              onDismiss={dismissToast}
+            />
+          ))}
         </SafeAreaView>
       ) : null}
     </ToastContext.Provider>
@@ -139,11 +206,13 @@ export const useToast = (): ToastContextValue => {
 const styles = StyleSheet.create({
   overlay: {
     position: 'absolute',
-    top: 0,
+    bottom: 0,
     left: 0,
     right: 0,
     alignItems: 'center',
     paddingHorizontal: 16,
+    paddingBottom: 8,
+    gap: 8,
     zIndex: 9999,
   },
   toast: {
@@ -151,7 +220,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 14,
-    marginTop: 4,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,

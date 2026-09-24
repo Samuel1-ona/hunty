@@ -60,6 +60,10 @@ export default defineConfig({
         replacement: path.resolve(__dirname, "./__mocks__/@upstash/redis.ts"),
       },
       {
+        find: "@hunty/ui/toast",
+        replacement: path.resolve(__dirname, "../../packages/ui/src/toast/index.ts"),
+      },
+      {
         find: "@hunty/types/api-schemas",
         replacement: path.resolve(__dirname, "../../packages/types/src/api-schemas.ts"),
       },

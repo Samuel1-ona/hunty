@@ -1,16 +1,22 @@
-"use client"
+"use client";
 
-import { Toaster } from "sonner"
+import { TOAST_DURATION_MS, TOAST_MAX_VISIBLE } from "@hunty/ui/toast";
+import { Toaster } from "sonner";
+
+import { useToastPosition } from "@/lib/toast/useToastPosition";
 
 export function TxToaster() {
+  const position = useToastPosition();
+
   return (
     <Toaster
-      position="top-right"
+      position={position}
       richColors
       expand
       closeButton
-      containerAriaLabel="Transaction status notifications"
+      duration={TOAST_DURATION_MS}
+      visibleToasts={TOAST_MAX_VISIBLE}
+      containerAriaLabel="Notifications"
     />
-  )
+  );
 }
-

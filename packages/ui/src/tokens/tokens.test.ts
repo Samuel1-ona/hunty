@@ -128,4 +128,10 @@ describe('@hunty/ui barrel index', () => {
     expect(uiIndex.useCountdown).toBeDefined()
     expect(uiIndex.useLocalStorage).toBeDefined()
   })
+
+  it('re-exports toast primitives', () => {
+    expect(uiIndex.ToastVariant).toBeDefined()
+    expect(uiIndex.createToastQueue).toBeDefined()
+    expect(uiIndex.TOAST_DURATION_MS).toBeDefined()
+  })
 })
