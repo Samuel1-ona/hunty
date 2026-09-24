@@ -1,3 +1,5 @@
+import { TOAST_DURATION_MS } from "@hunty/ui/toast"
+
 /**
  * Centralized constants and configuration for the Hunty application.
  *
@@ -77,7 +79,7 @@ export const UI = {
   /** Card hover animation duration in seconds. */
   CARD_HOVER_DURATION_S: 0.2,
   /** Toast notification auto-dismiss duration in milliseconds. */
-  TOAST_DURATION_MS: 5_000,
+  TOAST_DURATION_MS,
   /** Debounce delay for search inputs (ms). */
   SEARCH_DEBOUNCE_MS: 300,
   /** Maximum number of hunt cards displayed per page in the arcade. */

@@ -18,7 +18,8 @@
       "@hunty/types/*": ["../../packages/types/src/*"],
       "@hunty/ui": ["../../packages/ui/src/index.ts"],
       "@hunty/ui/native": ["../../packages/ui/src/native/index.ts"],
-      "@hunty/ui/tokens": ["../../packages/ui/src/tokens/index.ts"]
+      "@hunty/ui/tokens": ["../../packages/ui/src/tokens/index.ts"],
+      "@hunty/ui/toast": ["../../packages/ui/src/toast/index.ts"]
     }
   }
 }

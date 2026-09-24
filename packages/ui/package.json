@@ -10,7 +10,8 @@
     "./web": "./src/web/index.ts",
     "./native": "./src/native/index.ts",
     "./tokens": "./src/tokens/index.ts",
-    "./hooks": "./src/hooks/index.ts"
+    "./hooks": "./src/hooks/index.ts",
+    "./toast": "./src/toast/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

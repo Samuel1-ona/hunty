@@ -23,6 +23,7 @@ module.exports = function (api) {
                 '@app': './app',
                 '@hunty/types': '../../packages/types/src',
                 '@hunty/ui': '../../packages/ui/src',
+                '@hunty/ui/toast': '../../packages/ui/src/toast',
               },
             },
           ],
