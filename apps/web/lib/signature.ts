@@ -1,4 +1,4 @@
-import { Keypair } from "@stellar/stellar-base";
+import { Keypair } from "@stellar/stellar-sdk";
 import { randomBytes } from "crypto";
 
 const CHALLENGE_PREFIX = "huntly-challenge";
