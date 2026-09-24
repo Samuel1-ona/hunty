@@ -31,6 +31,14 @@ export default function middleware(request: NextRequest) {
   const isProduction = process.env.NODE_ENV === "production"
   const isReportOnly = !isProduction || process.env.CSP_REPORT_ONLY === "true"
 
+  // Embed widget routes must be framable by third-party sites.
+  // Everything else keeps frame-ancestors 'none' (clickjacking protection).
+  const isEmbedRoute = /^\/hunt\/[^/]+\/(leaderboard\/)?embed\/?$/.test(
+    request.nextUrl.pathname
+  )
+  // Optional allow-list, e.g. EMBED_FRAME_ANCESTORS="https://example.com"
+  const embedFrameAncestors = process.env.EMBED_FRAME_ANCESTORS?.trim() || "*"
+
   const ipfsGateways = [
     "https://gateway.pinata.cloud",
     "https://*.mypinata.cloud",
@@ -64,7 +72,7 @@ export default function middleware(request: NextRequest) {
     `img-src 'self' data: blob: https: ${ipfsGateways.join(" ")}`,
     `connect-src 'self' ${trustedApis.join(" ")} wss: https:`,
     "font-src 'self' data: https:",
-    "frame-ancestors 'none'",
+    `frame-ancestors ${isEmbedRoute ? embedFrameAncestors : "'none'"}`,
     "base-uri 'self'",
     "form-action 'self'",
     "report-uri /api/csp-report",
@@ -75,7 +83,17 @@ export default function middleware(request: NextRequest) {
 
   // Set the CSP response header
   response.headers.set(cspHeaderName, cspHeaderValue)
-  
+
+  // Clickjacking protection: DENY everywhere except embed widget routes,
+  // which third-party sites must be able to frame in an <iframe>.
+  // X-Frame-Options has no allow-all value, so it is omitted on embed routes
+  // and CSP frame-ancestors (set above) controls framing instead.
+  if (!isEmbedRoute) {
+    response.headers.set("X-Frame-Options", "DENY")
+  } else {
+    response.headers.delete("X-Frame-Options")
+  }
+
   // Set the x-nonce header in the response as well for testing/verification
   response.headers.set("x-nonce", nonce)
 
