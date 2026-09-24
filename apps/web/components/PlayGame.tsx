@@ -1,7 +1,10 @@
 "use client";
 
+/* The legacy hunt-reset effects intentionally synchronise a new game session. */
+/* eslint-disable react-hooks/set-state-in-effect */
+
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Lightbulb } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Lightbulb, PartyPopper } from "lucide-react";
 import Image from "next/image";
 import React, { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
@@ -126,8 +129,10 @@ export function PlayGame({
     new Set()
   );
   const [huntEnded, setHuntEnded] = useState(false);
+  const [celebrationVisible, setCelebrationVisible] = useState(false);
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const attemptIdRef = useRef<string | null>(null);
+  const celebrationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
    * Tracks the highest hint level already used for each clue.
@@ -280,6 +285,14 @@ export function PlayGame({
       setHuntProgress(null);
     }
   }, [huntId]);
+
+  useEffect(() => {
+    return () => {
+      if (celebrationTimerRef.current) {
+        clearTimeout(celebrationTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (huntId == null || !playerAddress || !gameName) return;
@@ -471,6 +484,16 @@ export function PlayGame({
     );
   };
 
+  const goToPreviousClue = () => {
+    setCurrentCardIndex((index) => Math.max(0, index - 1));
+  };
+
+  const goToNextClue = () => {
+    const currentClue = hunts[currentCardIndex];
+    if (!currentClue || !solvedClues.has(currentClue.id)) return;
+    setCurrentCardIndex((index) => Math.min(hunts.length - 1, index + 1));
+  };
+
   const handleClueUnlock = (
     clueIndex: number,
     pointsAwarded = 0
@@ -485,6 +508,14 @@ export function PlayGame({
       markFirstHuntStep(
         "solve",
         huntId != null ? { huntId } : undefined
+      );
+      setCelebrationVisible(true);
+      if (celebrationTimerRef.current) {
+        clearTimeout(celebrationTimerRef.current);
+      }
+      celebrationTimerRef.current = setTimeout(
+        () => setCelebrationVisible(false),
+        1_800
       );
     }
 
@@ -742,6 +773,20 @@ export function PlayGame({
       </div>
 
       <div className="max-w-[1500px] px-14 pt-10 pb-12 bg-white mx-auto rounded-4xl relative print:px-0 print:py-0 print:w-full print:max-w-none print:rounded-none">
+        {celebrationVisible && (
+          <div
+            className="pointer-events-none absolute inset-x-0 top-20 z-30 flex justify-center"
+            role="status"
+            aria-live="polite"
+            data-testid="correct-answer-celebration"
+          >
+            <div className="flex items-center gap-3 rounded-full border border-emerald-200 bg-emerald-50 px-5 py-3 text-emerald-800 shadow-lg animate-bounce dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-100">
+              <PartyPopper className="h-5 w-5" aria-hidden="true" />
+              <span className="font-semibold">Correct — nice work!</span>
+              <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+            </div>
+          </div>
+        )}
         <div className="flex items-center gap-4 mb-8 print:hidden">
           <Button
             variant="ghost"
@@ -786,11 +831,22 @@ export function PlayGame({
             cluesSolved={solvedCount}
             totalClues={hunts.length}
             totalPoints={score}
+            currentStep={currentCardIndex + 1}
+            onPrevious={goToPreviousClue}
+            onNext={goToNextClue}
+            nextDisabled={
+              currentCardIndex >= hunts.length - 1 ||
+              !solvedClues.has(hunts[currentCardIndex]?.id ?? -1)
+            }
           />
 
           {(huntInfo?.endTime ||
             huntInfo?.startTime) && (
-            <div className="max-w-md mx-auto mb-6">
+            <div
+              className="max-w-md mx-auto mb-6"
+              data-testid="timed-hunt-timer"
+              aria-label="Timed hunt countdown"
+            >
               <LiveHuntCountdown
                 startTime={huntInfo?.startTime}
                 endTime={huntInfo?.endTime}
