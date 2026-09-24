@@ -21,7 +21,7 @@ import { withErrorHandling } from "@/lib/api/withErrorHandling";
 export const GET = withErrorHandling<{ params: Promise<{ id: string }> }>(
   async (req, { params }) => {
     const ip = getIP(req);
-    const { success, reset } = rateLimit(ip, { limit: 30, windowMs: 60 * 1000 });
+    const { success, reset } = await rateLimit(ip, { limit: 30, windowMs: 60 * 1000 });
 
     if (!success) {
       return rateLimitResponse(reset);
@@ -182,4 +182,3 @@ function toCsv(rows: ExportRow[], aggregation: Record<string, unknown>): string 
 
   return [...aggLines, header, ...body].join("\n");
 }
- 
