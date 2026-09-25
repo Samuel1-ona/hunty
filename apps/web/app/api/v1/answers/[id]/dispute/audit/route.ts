@@ -1,21 +1,27 @@
+/**
+ * @deprecated Use /api/v1/answers/disputes/{id}/audit instead.
+ *
+ * This endpoint has been removed. The audit log for a specific dispute
+ * can be fetched from the canonical route:
+ *   GET /api/v1/answers/disputes/{disputeId}/audit
+ *
+ * The old route served a per-answer audit trail that aggregated all dispute
+ * audit entries for a given answerId.  That functionality is now available
+ * by listing disputes for an answer first:
+ *   GET /api/v1/answers/disputes?answerId={id}
+ * and then fetching audit entries per disputeId.
+ */
 import { NextResponse } from "next/server"
 
-import { ValidationError } from "@/lib/api/errors"
-import { withErrorHandling } from "@/lib/api/withErrorHandling"
-import { getAnswerDisputeAuditLog, getAnswerDisputesForAnswer } from "@/lib/answerDisputes"
-
-export const GET = withErrorHandling(async (req: Request) => {
-  const segments = new URL(req.url).pathname.split("/").filter(Boolean)
-  const answerId = segments[segments.length - 3] ?? null
-
-  if (!answerId) {
-    throw new ValidationError("answerId is required")
-  }
-
-  const disputes = getAnswerDisputesForAnswer(answerId)
-  const auditLog = disputes.flatMap((dispute) =>
-    getAnswerDisputeAuditLog(dispute.id).map((entry) => ({ ...entry, disputeId: dispute.id })),
+export function GET() {
+  return NextResponse.json(
+    {
+      error: "Gone",
+      message:
+        "This endpoint has been removed. " +
+        "Fetch disputes for an answer via GET /api/v1/answers/disputes?answerId={id}, " +
+        "then retrieve audit entries via GET /api/v1/answers/disputes/{disputeId}/audit.",
+    },
+    { status: 410 },
   )
-
-  return NextResponse.json({ answerId, auditLog })
-})
+}

@@ -130,6 +130,14 @@ vi.mock("@sentry/nextjs", () => ({
   captureEvent: vi.fn(),
 }))
 
+vi.mock("@/lib/answerDisputes", () => ({
+  getAnswerDisputesForAnswer: () => [],
+  getAnswerDisputeById: () => null,
+  getAnswerDisputeAuditLog: () => [],
+  createAnswerDispute: vi.fn(),
+  resolveAnswerDispute: vi.fn(),
+}))
+
 interface RouteEntry {
   /** Filesystem path relative to app/api/, e.g. "admin/moderation/route.ts" */
   file: string
@@ -201,6 +209,13 @@ const ROUTE_MANIFEST: RouteEntry[] = [
 
   // ── v1 / answers ─────────────────────────────────────────────────────
   { file: "v1/answers/route.ts",                    path: "/api/v1/answers",                    methods: ["POST"],          auth: "public" },
+  // Deprecated shims – redirect / 410 to canonical answers/disputes routes
+  { file: "v1/answers/[id]/dispute/route.ts",       path: "/api/v1/answers/[id]/dispute",       methods: ["GET", "POST"],   auth: "public", noBody: true },
+  { file: "v1/answers/[id]/dispute/audit/route.ts", path: "/api/v1/answers/[id]/dispute/audit", methods: ["GET"],           auth: "public" },
+  // Canonical dispute routes
+  { file: "v1/answers/disputes/route.ts",           path: "/api/v1/answers/disputes",           methods: ["GET", "POST"],   auth: "public" },
+  { file: "v1/answers/disputes/[id]/route.ts",      path: "/api/v1/answers/disputes/[id]",      methods: ["GET", "PATCH"],  auth: "public" },
+  { file: "v1/answers/disputes/[id]/audit/route.ts",path: "/api/v1/answers/disputes/[id]/audit",methods: ["GET"],           auth: "public" },
 
   // ── v1 / feature-flags ───────────────────────────────────────────────
   { file: "v1/feature-flags/route.ts",              path: "/api/v1/feature-flags",              methods: ["GET"],           auth: "public" },
