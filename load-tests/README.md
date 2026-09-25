@@ -1,139 +1,106 @@
 # Load Testing — hunty API
 
+Load tests use [k6](https://k6.io/) to exercise the public API. The focused
+leaderboard scenario is the current performance gate for high-volume read
+paths.
 
-Load tests using [k6](https://k6.io/) covering the acceptance criteria for issue #667.
+## Leaderboard read scenario
 
-## Acceptance Criteria
+`k6/leaderboard-read-test.js` exercises the route used by the web client:
 
-- [x] k6 load test scripts
-- [x] Scenarios: normal load, peak load, spike
-- [x] API response time targets (p95 < 200ms)
-- [x] Identify bottlenecks under load
-- [x] Load test as part of release process (GitHub Actions)
+```text
+GET /api/v1/hunts/{HUNT_ID}/leaderboard?limit=100
+```
 
----
+The scenario uses a constant arrival rate of **1 request/second for 5 minutes**
+(60 requests/minute), below the route's documented 100 requests/minute/IP rate
+limit. Choose a stable staging hunt with representative progress data; an empty
+leaderboard measures the empty-list path rather than the highest-volume read
+path.
+
+### Targets
+
+| Metric                |    Target |
+| --------------------- | --------: |
+| p95 latency           | `< 200ms` |
+| p99 latency           | `< 500ms` |
+| HTTP/check error rate |    `< 1%` |
+
+The thresholds are applied to requests tagged `endpoint:leaderboard`, so the
+health probe used during setup is not included in the leaderboard percentiles.
 
 ## Structure
 
-```
+```text
 load-tests/
-├── k6/
-│   ├── load-test.js       # Main suite: normal + peak + spike scenarios
-│   ├── smoke-test.js      # Quick sanity check (1 VU, 1 min)
-│   └── bottleneck-test.js # Ramps until system breaks
-└── .github/
-    └── workflows/
-        └── load-tests.yml # CI/CD integration
+├── README.md
+└── k6/
+    ├── leaderboard-read-test.js # Public leaderboard read gate
+    ├── load-test.js             # Legacy broad suite; route coverage needs repair
+    ├── smoke-test.js            # Quick multi-route sanity check
+    └── bottleneck-test.js       # Legacy exploratory ramp
+.github/workflows/load-tests.yml # On-demand staging workflow
 ```
-
----
 
 ## Prerequisites
 
-Install k6: https://k6.io/docs/get-started/installation/
+Install k6 using the [official installation guide](https://k6.io/docs/get-started/installation/).
+The focused scenario does not require test-account credentials because the
+leaderboard endpoint is public.
+
+## Running locally
+
+Start the web app and choose a hunt that exists in the local dataset:
 
 ```bash
-# macOS
-brew install k6
-
-# Linux
-sudo gpg -k
-sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
-  --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
-echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" \
-  | sudo tee /etc/apt/sources.list.d/k6.list
-sudo apt-get update && sudo apt-get install k6
-```
-
----
-
-## Running Locally
-
-```bash
-# Set your target (defaults to localhost:3000)
 export BASE_URL=http://localhost:3000
-export TEST_EMAIL=loadtest@example.com
-export TEST_PASSWORD=loadtest123
+export HUNT_ID=1
 
-# 1. Smoke test first (always)
-k6 run load-tests/k6/smoke-test.js
-
-# 2. Full load test (normal + peak + spike — ~20 minutes)
-k6 run load-tests/k6/load-test.js
-
-# 3. Bottleneck test (find the breaking point)
-k6 run load-tests/k6/bottleneck-test.js
+# Validate the script and run the five-minute profile.
+k6 inspect load-tests/k6/leaderboard-read-test.js
+k6 run load-tests/k6/leaderboard-read-test.js
 ```
 
-### Against staging
+For a fast one-request check, use k6's `--once` mode when it is available in
+your installed version:
 
 ```bash
-BASE_URL=https://staging.hunty.app k6 run load-tests/k6/load-test.js
+BASE_URL=http://localhost:3000 HUNT_ID=1 \
+  k6 run --once load-tests/k6/leaderboard-read-test.js
 ```
 
----
+The older `load-test.js`, `smoke-test.js`, and `bottleneck-test.js` files are
+retained for historical/manual investigation. They reference routes that are
+not all part of the current API and are not used by the leaderboard gate.
 
-## Scenarios
+## Staging workflow
 
-| Scenario     | VUs      | Duration | Purpose                        |
-|--------------|----------|----------|--------------------------------|
-| Normal load  | 20       | 5 min    | Typical daily traffic          |
-| Peak load    | 100      | 6 min    | High-traffic periods           |
-| Spike        | 200      | ~1.5 min | Sudden burst (viral event etc) |
-| Bottleneck   | up to 300| ~22 min  | Find the breaking point        |
+The `Leaderboard Load Test` workflow is intentionally **on demand** so a
+shared GitHub-hosted runner does not create unattended production-like traffic.
+To run it:
 
----
+1. Open **Actions → Leaderboard Load Test → Run workflow**.
+2. Provide a stable, populated `hunt_id` in the staging environment.
+3. The workflow uses `vars.STAGING_URL` when configured, otherwise
+   `https://staging.hunty.app`.
+4. The job runs in the protected `staging` GitHub environment and fails on a
+   threshold breach, non-200 response, or invalid response shape.
 
-## Thresholds
+The workflow requires no account secrets and does not target production. A
+nightly schedule can be added after staging availability, hunt fixture
+persistence, and the shared-runner rate-limit budget have been confirmed.
 
-| Metric        | Target   |
-|---------------|----------|
-| p95 latency   | < 200ms  |
-| p99 latency   | < 500ms  |
-| Error rate    | < 1%     |
+## Interpreting results
 
----
+k6 prints request percentiles and threshold results at the end of the run:
 
-## CI/CD Integration
-
-The GitHub Actions workflow (`.github/workflows/load-tests.yml`) runs automatically:
-
-- On every `release` published
-- On every push to `release/**` or `rc/**` branches
-- Manually via **Actions → Load Tests → Run workflow**
-
-The workflow:
-1. Runs the smoke test first
-2. Runs the full load test suite only if smoke passes
-3. Checks that p95 < 200ms and fails the build if not
-4. Posts a summary table to the release/PR
-
-### Required Secrets
-
-Add these in **Settings → Secrets → Actions**:
-
-| Secret              | Description                   |
-|---------------------|-------------------------------|
-| `LOAD_TEST_EMAIL`   | Test account email            |
-| `LOAD_TEST_PASSWORD`| Test account password         |
-
-### Required Variables
-
-| Variable       | Description                        |
-|----------------|------------------------------------|
-| `STAGING_URL`  | Staging base URL (fallback default)|
-
----
-
-## Interpreting Results
-
-k6 prints a summary after each run. Key fields:
-
-```
-http_req_duration.....: avg=45ms  min=12ms  med=38ms  max=850ms  p(90)=120ms p(95)=175ms p(99)=420ms
-http_req_failed.......: 0.00%
+```text
+http_req_duration{endpoint:leaderboard}: p(95)=... p(99)=...
+http_req_failed{endpoint:leaderboard}: rate=...
+leaderboard_checks: rate=...
 ```
 
-- **p(95) must be < 200ms** — this is the release gate
-- High p(99) with low p(95) → isolated slow requests, investigate specific endpoints
-- Rising error rate → server is overloaded, scale or optimise before release
+A passing run has p95 below 200 ms, p99 below 500 ms, and fewer than 1% failed
+or invalid leaderboard reads. A high p99 with a passing p95 usually indicates
+isolated slow requests; rising errors or latency warrant investigating the
+staging deployment and representative hunt data before changing the target.
