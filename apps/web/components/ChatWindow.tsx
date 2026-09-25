@@ -41,6 +41,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [messages, setMessages] = useState<ChatMessageType[]>([])
   const [settings, setSettings] = useState(() => getChatSettings(huntId))
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  /** Returns true when the user is scrolled within 80 px of the bottom. */
+  const isNearBottom = () => {
+    const container = scrollContainerRef.current
+    if (!container) return true
+    return container.scrollHeight - container.scrollTop - container.clientHeight <= 80
+  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -54,7 +62,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }, [huntId, isOpen])
 
   useEffect(() => {
-    scrollToBottom()
+    // Only auto-scroll when the user is already at (or near) the bottom,
+    // so we never steal focus or disorient users who have scrolled up.
+    if (isNearBottom()) {
+      scrollToBottom()
+    }
   }, [messages])
 
   const handleSendMessage = (content: string) => {
@@ -125,7 +137,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
             {settings.isChatEnabled ? (
               <>
-                <div className="flex-1 overflow-y-auto p-3 space-y-1">
+                <div
+                  ref={scrollContainerRef}
+                  className="flex-1 overflow-y-auto p-3 space-y-1"
+                  aria-live="polite"
+                  aria-relevant="additions"
+                  aria-label="Chat messages"
+                >
                   {filteredMessages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-slate-400">
                       <MessageSquare className="h-8 w-8 mb-2 opacity-50" />
