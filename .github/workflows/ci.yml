@@ -11,6 +11,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  root-files:
+    name: Repository Root Files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check repository root files
+        run: bash scripts/check-root-files.sh
+
   # ─── Workspace quality (lint + typecheck) ──────────────────────────────
   quality:
     name: Quality — ${{ matrix.workspace }}
@@ -18,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        workspace: ['@hunty/web', 'mobile', '@hunty/types', '@hunty/ui', '@hunty/config']
+        workspace: ["@hunty/web", "mobile", "@hunty/types", "@hunty/ui", "@hunty/config"]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -58,7 +70,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        workspace: ['@hunty/web', '@hunty/types', '@hunty/ui', 'mobile']
+        workspace: ["@hunty/web", "@hunty/types", "@hunty/ui", "mobile"]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -206,12 +218,13 @@ jobs:
   ci-summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [quality, test, coverage, mutation, build, e2e, visual-regression, typecheck]
+    needs: [root-files, quality, test, coverage, mutation, build, e2e, visual-regression, typecheck]
     if: always()
     steps:
       - name: Check CI status
         run: |
-          if [ "${{ needs.quality.result }}" = "failure" ] || \
+          if [ "${{ needs.root-files.result }}" = "failure" ] || \
+             [ "${{ needs.quality.result }}" = "failure" ] || \
              [ "${{ needs.test.result }}" = "failure" ] || \
              [ "${{ needs.coverage.result }}" = "failure" ] || \
              [ "${{ needs.mutation.result }}" = "failure" ] || \

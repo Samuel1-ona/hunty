@@ -3,7 +3,7 @@
 # Email Digest Feature - Deployment Verification Script
 # 
 # Run this script after deploying to verify the email digest feature is working.
-# Usage: chmod +x verify-email-digest.sh && ./verify-email-digest.sh
+# Usage: chmod +x scripts/verify-email-digest.sh && ./scripts/verify-email-digest.sh
 #
 # Set these environment variables before running:
 #   BASE_URL - the base URL of your application (default: http://localhost:3000)
