@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { withValidation } from "@/lib/api/withValidation";
 import { ValidationError, NotFoundError } from "@/lib/api/errors";
+import { recordHuntAudit } from "@/lib/db/huntAuditLog";
 import { huntRefundBodySchema } from "@hunty/types/api-schemas";
 import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
@@ -67,6 +68,11 @@ export const POST = withValidation(
         body.creatorAddress,
         gracePeriodSeconds
       );
+
+      await recordHuntAudit(huntId, "hunt refund", body.creatorAddress, {
+        amount: receipt.amount,
+        txHash: receipt.txHash,
+      });
 
       return NextResponse.json({ success: true, receipt });
     } catch (error) {

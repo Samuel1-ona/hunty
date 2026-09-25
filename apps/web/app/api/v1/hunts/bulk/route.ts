@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { recordHuntAudit } from "@/lib/db/huntAuditLog";
 import { withValidation } from "@/lib/api/withValidation";
 import { huntsBulkBodySchema } from "@hunty/types/api-schemas";
 
@@ -23,10 +24,15 @@ export const POST = withValidation(
       return NextResponse.json({ error: "Invalid hunt ID in list" }, { status: 400 });
     }
 
+    const actorAddress = body.actorAddress;
+
     try {
       if (body.action === "archive") {
         const { hideHuntsFromPublic } = await import("@/lib/huntStore");
         hideHuntsFromPublic(ids);
+        for (const id of ids) {
+          await recordHuntAudit(id, "hunt archived", actorAddress, { action: "archive" });
+        }
         return NextResponse.json({
           success: true,
           message: `${ids.length} hunt(s) archived successfully`
@@ -34,6 +40,9 @@ export const POST = withValidation(
       } else if (body.action === "unarchive") {
         const { unhideHuntsFromPublic } = await import("@/lib/huntStore");
         unhideHuntsFromPublic(ids);
+        for (const id of ids) {
+          await recordHuntAudit(id, "hunt unarchived", actorAddress, { action: "unarchive" });
+        }
         return NextResponse.json({
           success: true,
           message: `${ids.length} hunt(s) unarchived successfully`
@@ -41,6 +50,9 @@ export const POST = withValidation(
       } else if (body.action === "soft-delete") {
         const { softDeleteHunts } = await import("@/lib/huntStore");
         softDeleteHunts(ids);
+        for (const id of ids) {
+          await recordHuntAudit(id, "hunt soft-deleted", actorAddress, { action: "soft-delete" });
+        }
         return NextResponse.json({
           success: true,
           message: `${ids.length} hunt(s) soft-deleted successfully. You can restore them within 30 days.`
@@ -48,6 +60,9 @@ export const POST = withValidation(
       } else if (body.action === "restore") {
         const { restoreHunts } = await import("@/lib/huntStore");
         restoreHunts(ids);
+        for (const id of ids) {
+          await recordHuntAudit(id, "hunt restored", actorAddress, { action: "restore" });
+        }
         return NextResponse.json({
           success: true,
           message: `${ids.length} hunt(s) restored successfully`
@@ -60,6 +75,9 @@ export const POST = withValidation(
         }
         const { permanentDeleteHunts } = await import("@/lib/huntStore");
         permanentDeleteHunts(ids);
+        for (const id of ids) {
+          await recordHuntAudit(id, "hunt permanently deleted", actorAddress, { action: "permanent-delete" });
+        }
         return NextResponse.json({
           success: true,
           message: `${ids.length} hunt(s) permanently deleted. This action cannot be undone.`

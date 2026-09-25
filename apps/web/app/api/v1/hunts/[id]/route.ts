@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getPublicHuntByIdOptimized } from "@/lib/db/queryOptimizer";
+import { getHuntVersion, listHuntVersions } from "@/lib/db/huntVersions";
+import { recordHuntAudit } from "@/lib/db/huntAuditLog";
 import { createHuntVersion } from "@/lib/db/huntVersions";
 import { ForbiddenError, NotFoundError, ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
@@ -16,6 +18,25 @@ function assertCreator(snapshot: Record<string, unknown>, actorAddress: string):
   if (typeof creator !== "string" || creator !== actorAddress) {
     throw new ForbiddenError("Only the hunt creator can edit this hunt");
   }
+}
+
+/**
+ * Compute a shallow diff between two objects, returning only changed keys.
+ */
+function computeDiff(
+  oldObj: Record<string, unknown>,
+  newObj: Record<string, unknown>,
+): Record<string, unknown> {
+  const diff: Record<string, unknown> = {};
+  const allKeys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)]);
+  for (const key of allKeys) {
+    const oldVal = oldObj[key];
+    const newVal = newObj[key];
+    if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+      diff[key] = { from: oldVal, to: newVal };
+    }
+  }
+  return diff;
 }
 
 /**
@@ -60,7 +81,20 @@ export const PATCH = withValidation(
     }
 
     assertCreator(body!.snapshot, body!.actorAddress);
+
+    // Fetch the latest snapshot for diff computation before creating the new version.
+    const versions = await listHuntVersions(huntId);
+    let previousSnapshot: Record<string, unknown> | undefined;
+    if (versions.length > 0) {
+      const latest = await getHuntVersion(huntId, versions[0].version);
+      if (latest) previousSnapshot = latest.snapshot;
+    }
+
     const version = await createHuntVersion(huntId, body!.snapshot, body!.actorAddress);
+
+    const diff = previousSnapshot ? computeDiff(previousSnapshot, body!.snapshot) : { created: true };
+    await recordHuntAudit(huntId, "hunt edited", body!.actorAddress, diff);
+
     return NextResponse.json({ data: version }, { status: 201 });
   },
 );

@@ -291,12 +291,14 @@ export const huntsBulkBodySchema = z.object({
     .array(z.union([z.string(), z.number()]))
     .min(1, { message: "huntIds must be a non-empty array" }),
   confirmed: z.boolean().optional(),
+  actorAddress: nonEmptyStringSchema,
 });
 
 // ─── v1 / Hunts / [id] / Archive ─────────────────────────────────────────────
 
 export const huntArchiveBodySchema = z.object({
   action: z.enum(["archive", "unarchive"]),
+  actorAddress: nonEmptyStringSchema,
 });
 
 // ─── v1 / Hunts / [id] / Delete ──────────────────────────────────────────────
@@ -304,6 +306,7 @@ export const huntArchiveBodySchema = z.object({
 export const huntDeleteBodySchema = z.object({
   action: z.enum(["soft-delete", "restore", "permanent-delete"]),
   confirmed: z.boolean().optional(),
+  actorAddress: nonEmptyStringSchema,
 });
 
 // ─── v1 / Hunts / Versions ──────────────────────────────────────────────────

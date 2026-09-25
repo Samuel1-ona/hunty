@@ -3,6 +3,7 @@ import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { ValidationError } from "@/lib/api/errors";
 import { withValidation } from "@/lib/api/withValidation";
+import { recordHuntAudit } from "@/lib/db/huntAuditLog";
 import { huntDeleteBodySchema } from "@hunty/types/api-schemas";
 import { z } from "zod";
 
@@ -24,10 +25,15 @@ export const POST = withValidation(
       throw new ValidationError("Invalid hunt ID", { id: params!.id });
     }
 
+    const actorAddress = body!.actorAddress;
+
     try {
       if (body.action === "soft-delete") {
         const { softDeleteHunts } = await import("@/lib/huntStore");
         softDeleteHunts([huntId]);
+        await recordHuntAudit(huntId, "hunt soft-deleted", actorAddress, {
+          action: "soft-delete",
+        });
         return NextResponse.json({
           success: true,
           message: "Hunt soft-deleted successfully. You can restore it within 30 days.",
@@ -35,6 +41,9 @@ export const POST = withValidation(
       } else if (body.action === "restore") {
         const { restoreHunts } = await import("@/lib/huntStore");
         restoreHunts([huntId]);
+        await recordHuntAudit(huntId, "hunt restored", actorAddress, {
+          action: "restore",
+        });
         return NextResponse.json({ success: true, message: "Hunt restored successfully" });
       } else {
         // permanent-delete
@@ -46,6 +55,9 @@ export const POST = withValidation(
         }
         const { permanentDeleteHunts } = await import("@/lib/huntStore");
         permanentDeleteHunts([huntId]);
+        await recordHuntAudit(huntId, "hunt permanently deleted", actorAddress, {
+          action: "permanent-delete",
+        });
         return NextResponse.json({
           success: true,
           message: "Hunt permanently deleted. This action cannot be undone.",

@@ -3,6 +3,7 @@ import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { ValidationError } from "@/lib/api/errors";
 import { withValidation } from "@/lib/api/withValidation";
+import { recordHuntAudit } from "@/lib/db/huntAuditLog";
 import { huntArchiveBodySchema } from "@hunty/types/api-schemas";
 import { z } from "zod";
 
@@ -24,14 +25,18 @@ export const POST = withValidation(
       throw new ValidationError("Invalid hunt ID", { id: params!.id });
     }
 
+    const actorAddress = body!.actorAddress;
+
     try {
       if (body.action === "archive") {
         const { hideHuntsFromPublic } = await import("@/lib/huntStore");
         hideHuntsFromPublic([huntId]);
+        await recordHuntAudit(huntId, "hunt archived", actorAddress, { action: "archive" });
         return NextResponse.json({ success: true, message: "Hunt archived successfully" });
       } else {
         const { unhideHuntsFromPublic } = await import("@/lib/huntStore");
         unhideHuntsFromPublic([huntId]);
+        await recordHuntAudit(huntId, "hunt unarchived", actorAddress, { action: "unarchive" });
         return NextResponse.json({ success: true, message: "Hunt unarchived successfully" });
       }
     } catch (error) {
