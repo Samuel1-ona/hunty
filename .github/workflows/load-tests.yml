@@ -32,7 +32,7 @@ jobs:
       - name: Set up k6
         uses: grafana/setup-k6-action@v1.2.2
         with:
-          version: v2.3.0
+          k6-version: "2.3.0"
 
       - name: Validate load-test input
         shell: bash
