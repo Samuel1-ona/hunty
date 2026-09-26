@@ -22,17 +22,18 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: ${{ inputs.pnpm-version }}
-
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
         cache: pnpm
         cache-dependency-path: ${{ inputs.working-directory }}/pnpm-lock.yaml
+
+    - name: Enable corepack for pnpm
+      shell: bash
+      run: |
+        corepack enable pnpm
+        corepack prepare pnpm@${{ inputs.pnpm-version }} --activate
 
     - name: Install dependencies
       shell: bash
