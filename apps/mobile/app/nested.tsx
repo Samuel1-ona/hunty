@@ -1,4 +1,3 @@
-import { ARClueReveal } from '@components/ARClueReveal';
 import { ClueMarkdownRenderer } from '@components/ClueMarkdownRenderer';
 import { CluesList } from '@components/CluesList';
 import { QRScanner } from '@components/QRScanner';
@@ -9,10 +8,14 @@ import { useTheme } from '@providers/ThemeProvider';
 import { getHuntById, getHuntClues } from '@store/huntStore';
 import { usePlayerStore } from '@store/useStore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { verifyClueGeofence } from '@/lib/locationGate';
+
+const LazyARClueReveal = React.lazy(() =>
+  import('@components/ARClueReveal').then((mod) => ({ default: mod.ARClueReveal })),
+);
 
 export default function NestedScreen() {
   const router = useRouter();
@@ -259,17 +262,21 @@ export default function NestedScreen() {
         onScan={handleQrScan}
         title="Scan checkpoint QR"
       />
-      <ARClueReveal
-        isOpen={arOpen}
-        onClose={() => setArOpen(false)}
-        onReveal={handleArReveal}
-        clueText={clue.question}
-        targetLocation={
-          clue.latitude && clue.longitude
-            ? { latitude: clue.latitude, longitude: clue.longitude }
-            : undefined
-        }
-      />
+      {arOpen && (
+        <React.Suspense fallback={null}>
+          <LazyARClueReveal
+            isOpen={arOpen}
+            onClose={() => setArOpen(false)}
+            onReveal={handleArReveal}
+            clueText={clue.question}
+            targetLocation={
+              clue.latitude && clue.longitude
+                ? { latitude: clue.latitude, longitude: clue.longitude }
+                : undefined
+            }
+          />
+        </React.Suspense>
+      )}
     </ThemedView>
   );
 }
