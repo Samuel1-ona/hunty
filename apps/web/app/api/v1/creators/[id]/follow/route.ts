@@ -37,13 +37,13 @@ export const POST = withValidation(
     const { success, reset } = await rateLimit(ip, { limit: 50, windowMs: 60 * 1000 });
     if (!success) return rateLimitResponse(reset);
 
-    const record = followCreator(body.followerWallet, params.id);
+    const record = await followCreator(body.followerWallet, params.id);
 
     return NextResponse.json({
       following: true,
       creatorWallet: params.id,
       followerWallet: record.followerWallet,
-      followersCount: getFollowersCount(params.id),
+      followersCount: await getFollowersCount(params.id),
     });
   }
 );
@@ -55,14 +55,14 @@ export const DELETE = withValidation(
     const { success, reset } = await rateLimit(ip, { limit: 50, windowMs: 60 * 1000 });
     if (!success) return rateLimitResponse(reset);
 
-    const removed = unfollowCreator(body.followerWallet, params.id);
+    const removed = await unfollowCreator(body.followerWallet, params.id);
 
     return NextResponse.json({
       following: false,
       creatorWallet: params.id,
       followerWallet: body.followerWallet,
       removed,
-      followersCount: getFollowersCount(params.id),
+      followersCount: await getFollowersCount(params.id),
     });
   }
 );
@@ -76,7 +76,7 @@ export const GET = withErrorHandling<Context>(async (req: Request, { params }) =
   return NextResponse.json({
     creatorWallet,
     followerWallet,
-    following: isFollowing(followerWallet, creatorWallet),
-    followersCount: getFollowersCount(creatorWallet),
+    following: await isFollowing(followerWallet, creatorWallet),
+    followersCount: await getFollowersCount(creatorWallet),
   });
 });

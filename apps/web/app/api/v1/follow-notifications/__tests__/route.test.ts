@@ -24,8 +24,8 @@ describe("follow-notifications API", () => {
     const { GET } = await loadRoute()
     const follows = await import("@/lib/follows")
     follows.resetFollowsStore()
-    follows.followCreator(FOLLOWER, CREATOR)
-    follows.notifyFollowersOfNewHunt(CREATOR, { id: 5, title: "Hi" })
+    await follows.followCreator(FOLLOWER, CREATOR)
+    await follows.notifyFollowersOfNewHunt(CREATOR, { id: 5, title: "Hi" })
 
     const res = await GET(get(FOLLOWER) as any)
     expect(res.status).toBe(200)
