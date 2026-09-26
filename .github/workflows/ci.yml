@@ -27,7 +27,7 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
 
       - name: Lint and typecheck
-        run: pnpm turbo run lint typecheck --filter=${{ matrix.workspace }}
+        run: pnpm exec turbo run lint typecheck --filter=${{ matrix.workspace }}
 
   # ─── Root typecheck verification ─────────────────────────────────────
   typecheck:
@@ -67,7 +67,7 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
 
       - name: Run tests
-        run: pnpm turbo run test --filter=${{ matrix.workspace }}
+        run: pnpm exec turbo run test --filter=${{ matrix.workspace }}
 
   # ─── Coverage (web + mobile) ──────────────────────────────────────────
   coverage:
@@ -81,7 +81,7 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
 
       - name: Run web tests with coverage (enforces 80 % threshold via vitest)
-        run: pnpm turbo run test:coverage --filter=@hunty/web
+        run: pnpm exec turbo run test:coverage --filter=@hunty/web
 
       - name: Run mobile tests with coverage (enforces 80 % threshold via jest)
         run: pnpm --filter mobile test:coverage

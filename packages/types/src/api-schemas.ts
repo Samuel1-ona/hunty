@@ -309,6 +309,12 @@ export const huntDeleteBodySchema = z.object({
   actorAddress: nonEmptyStringSchema,
 });
 
+// ─── v1 / Hunts / [id] / Refund ─────────────────────────────────────────────────
+
+export const huntRefundBodySchema = z.object({
+  creatorAddress: nonEmptyStringSchema,
+})
+
 // ─── v1 / Hunts / Versions ──────────────────────────────────────────────────
 
 export const huntSnapshotSchema = z.object({
