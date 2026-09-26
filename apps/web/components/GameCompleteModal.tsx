@@ -53,6 +53,8 @@ interface GameCompleteModalProps {
   rewardReceipt?: RewardReceipt | null
   huntId?: number
   playerAddress?: string
+  showWalletPrompt?: boolean
+  onConnectWalletToClaim?: () => void
 }
 
 export function GameCompleteModal({
@@ -65,6 +67,8 @@ export function GameCompleteModal({
   rewardReceipt,
   huntId,
   playerAddress,
+  showWalletPrompt = false,
+  onConnectWalletToClaim,
 }: GameCompleteModalProps) {
   const { price: xlmUsdPrice } = useXlmUsdPrice()
 
@@ -400,6 +404,25 @@ export function GameCompleteModal({
                 )}
               </div>
             </div>
+
+            {showWalletPrompt && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-left">
+                <p className="text-sm font-semibold text-amber-900">
+                  Connect your wallet to claim rewards
+                </p>
+                <p className="mt-1 text-xs text-amber-800">
+                  This was a practice run. Connect a wallet to claim real rewards on non-practice hunts.
+                </p>
+                {onConnectWalletToClaim ? (
+                  <Button
+                    onClick={onConnectWalletToClaim}
+                    className="mt-3 h-9 rounded-lg bg-amber-600 text-white hover:bg-amber-700"
+                  >
+                    Connect Wallet
+                  </Button>
+                ) : null}
+              </div>
+            )}
 
             {/* Reward receipt */}
             {rewardReceipt && (
