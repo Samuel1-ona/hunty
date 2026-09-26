@@ -83,6 +83,8 @@ export interface StoredHunt {
    * This is an opt-in feature per hunt.
    */
   arEnabled?: boolean;
+  /** When true, this hunt is playable without a wallet as a practice demo. */
+  isPractice?: boolean;
 }
 
 /** Lightweight hunt projection used by list/detail views. */

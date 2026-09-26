@@ -60,6 +60,7 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
   const searchParams = useSearchParams();
   const inviteToken = searchParams.get("invite");
   const inviteAccess = validateHuntInvite(hunt, inviteToken);
+  const isPracticeHunt = hunt.isPractice === true;
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
   const [completionScore, setCompletionScore] = useState(0);
   const [rewardReceipt, setRewardReceipt] = useState<RewardReceipt | null>(null);
@@ -93,6 +94,16 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
   
   /* eslint-disable react-hooks/set-state-in-effect -- wallet detection synchronizes React with an external browser extension. */
   useEffect(() => {
+    if (isPracticeHunt) {
+      setWalletCheckComplete(true);
+      setRegistrationStatus({
+        isRegistered: false,
+        isWaitlisted: false,
+        loading: false,
+      });
+      return;
+    }
+
     // Check if wallet is available
     if (!isWalletAvailable()) {
       setWalletCheckComplete(true);
@@ -137,10 +148,21 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
         error: "Please connect your wallet to continue",
       });
     }
-  }, []);
+  }, [isPracticeHunt]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const refreshRegistrationStatus = useCallback(async (isActive: () => boolean = () => true) => {
+    if (isPracticeHunt) {
+      if (isActive()) {
+        setRegistrationStatus({
+          isRegistered: false,
+          isWaitlisted: false,
+          loading: false,
+        });
+      }
+      return;
+    }
+
     if (!walletCheckComplete || !isActive()) {
       return;
     }
@@ -177,7 +199,7 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
         waitlistPosition: waitlistPosition ?? undefined,
       });
     }
-  }, [hunt.id, connectedPublicKey, walletCheckComplete]);
+  }, [hunt.id, connectedPublicKey, walletCheckComplete, isPracticeHunt]);
 
   // Check registration status when wallet is connected (Requirement 1.1, 2.3)
   useEffect(() => {
@@ -292,6 +314,39 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
     updateHuntStatus(huntId, "Cancelled");
   };
 
+  const handleConnectWalletToClaim = useCallback(async () => {
+    const win = window as Window & {
+      freighter?: { getPublicKey?: () => Promise<string> };
+      soroban?: { getPublicKey?: () => Promise<string> };
+      sorobanWallet?: { getPublicKey?: () => Promise<string> };
+    };
+    const wallet = win.freighter ?? win.soroban ?? win.sorobanWallet;
+
+    if (!wallet?.getPublicKey) {
+      setRegistrationStatus((current) => ({
+        ...current,
+        loading: false,
+        error: "No wallet detected. Install a Soroban-compatible wallet to claim rewards.",
+      }));
+      return;
+    }
+
+    try {
+      const key = await wallet.getPublicKey();
+      setConnectedPublicKey(key);
+      setWalletCheckComplete(true);
+      if (!isPracticeHunt) {
+        await refreshRegistrationStatus();
+      }
+    } catch {
+      setRegistrationStatus((current) => ({
+        ...current,
+        loading: false,
+        error: "Wallet connection cancelled. Connect your wallet to claim rewards.",
+      }));
+    }
+  }, [isPracticeHunt, refreshRegistrationStatus]);
+
   const huntUrl = typeof window !== "undefined" ? `${window.location.origin}/hunt/${hunt.id}` : "";
 
   return (
@@ -299,8 +354,16 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
       {/* Registration Section */}
       <div className="flex flex-col sm:flex-row items-center gap-4">
         {/* Registration Button - Requirements 1.2, 2.1 */}
-        <PrivateHuntAccessGate hunt={hunt} inviteToken={inviteToken}>
-          {connectedPublicKey ? (
+        {isPracticeHunt ? (
+          <div className="w-full rounded-2xl border border-blue-500/30 bg-blue-500/10 px-6 py-4 text-sm text-blue-100">
+            <p className="font-semibold">Practice mode: start instantly without a wallet.</p>
+            <p className="mt-1 text-blue-200">
+              Complete the demo hunt first, then connect a wallet if you want to claim rewards.
+            </p>
+          </div>
+        ) : (
+          <PrivateHuntAccessGate hunt={hunt} inviteToken={inviteToken}>
+            {connectedPublicKey ? (
             <div className="flex-1 w-full space-y-4">
               <RegistrationButton
                 huntId={hunt.id}
@@ -340,8 +403,9 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
                 Watch Live Leaderboard
               </Button>
             </div>
-          )}
-        </PrivateHuntAccessGate>
+            )}
+          </PrivateHuntAccessGate>
+        )}
 
         {/* Share button */}
 
@@ -445,20 +509,53 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
         />
       </div>
 
-      {/* Play Interface Section - Protected by PlayInterfaceGuard (Requirements 3.1, 3.2, 3.3) */}
-      {inviteAccess.isValid && connectedPublicKey && registrationStatus.isRegistered && (
-        <PlayInterfaceGuard
-          huntId={hunt.id}
-          playerAddress={connectedPublicKey}
-          onRegister={handleRegister}
-        >
+      {/* Play Interface Section */}
+      {inviteAccess.isValid && isPracticeHunt && (
+        <>
           <div className="mt-8">
             <PlayGame
-              hunts={[]} // PlayGame will fetch clues itself using huntId
+              hunts={[]}
               gameName={hunt.title}
               onExit={() => router.push("/")}
               onGameComplete={async (score) => {
-                // Refresh registration status to show completion/rewards
+                setCompletionScore(score);
+                setRewardReceipt(null);
+                setIsCompleteModalOpen(true);
+              }}
+              huntId={hunt.id}
+              playerAddress={connectedPublicKey}
+            />
+          </div>
+
+          <GameCompleteModal
+            isOpen={isCompleteModalOpen}
+            onClose={() => setIsCompleteModalOpen(false)}
+            onGoHome={() => router.push("/")}
+            onReplay={() => {
+              setIsCompleteModalOpen(false);
+              if (connectedPublicKey) {
+                prepareHuntReattempt(connectedPublicKey, hunt.id);
+              }
+            }}
+            onViewLeaderboard={() => router.push(`/?huntId=${hunt.id}&tab=leaderboard`)}
+            reward={completionScore}
+            rewardReceipt={rewardReceipt}
+            huntId={hunt.id}
+            playerAddress={connectedPublicKey}
+            showWalletPrompt={!connectedPublicKey}
+            onConnectWalletToClaim={handleConnectWalletToClaim}
+          />
+        </>
+      )}
+
+      {inviteAccess.isValid && !isPracticeHunt && connectedPublicKey && registrationStatus.isRegistered && (
+        <PlayInterfaceGuard huntId={hunt.id} playerAddress={connectedPublicKey} onRegister={handleRegister}>
+          <div className="mt-8">
+            <PlayGame
+              hunts={[]}
+              gameName={hunt.title}
+              onExit={() => router.push("/")}
+              onGameComplete={async (score) => {
                 clearRegistrationCache(hunt.id, connectedPublicKey);
                 queryClient.invalidateQueries({ queryKey: ["registrationStatus", hunt.id, connectedPublicKey] });
                 const payout = hunt.rewardType === "NFT"
@@ -482,16 +579,14 @@ export default function HuntShare({ hunt }: HuntDetailProps) {
               playerAddress={connectedPublicKey}
             />
           </div>
-          
+
           <GameCompleteModal
             isOpen={isCompleteModalOpen}
             onClose={() => setIsCompleteModalOpen(false)}
             onGoHome={() => router.push("/")}
             onReplay={() => {
               setIsCompleteModalOpen(false);
-              if (connectedPublicKey) {
-                prepareHuntReattempt(connectedPublicKey, hunt.id);
-              }
+              prepareHuntReattempt(connectedPublicKey, hunt.id);
             }}
             onViewLeaderboard={() => router.push(`/?huntId=${hunt.id}&tab=leaderboard`)}
             reward={completionScore}
