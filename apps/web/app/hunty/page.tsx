@@ -27,31 +27,45 @@ import { DraftRecoveryPrompt } from "@/components/DraftRecoveryPrompt";
 import { GamePreview } from "@/components/GamePreview";
 import { Header } from "@/components/Header";
 import { HuntForm } from "@/components/HuntForm";
+import { HuntTransferControls } from "@/components/HuntTransferControls";
+import type { HuntTransfer } from "@/lib/huntTransfer";
 import { ManualSaveButton } from "@/components/ManualSaveButton";
 import { PublishModal } from "@/components/PublishModal";
 import { QrCodeModal } from "@/components/QrCodeModal";
 import { RewardsPanel } from "@/components/RewardsPanel";
 import { TagInput } from "@/components/TagInput";
 import ToggleButton from "@/components/ToggleButton";
-import { Button } from "@/components/ui/button";
+import { Button } from "@hunty/ui";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { readDraftPayload, useHuntDraftAutoSave } from "@/hooks/useHuntDraftAutoSave";
+import {
+  fetchDraftFromServer,
+  readDraftPayload,
+  useHuntDraftAutoSave,
+} from "@/hooks/useHuntDraftAutoSave";
+import { useIsFeatureEnabled } from "@/hooks/useFeatureFlag";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import type { HuntCategoryId } from "@/lib/categories";
 import { ensureOwner } from "@/lib/collaboration";
 import { getCommunityTemplateBySlug } from "@/lib/communityTemplates";
+import { useWallet } from "@/lib/context/WalletContext";
 import { createHunt } from "@/lib/contracts/hunt";
 import { createRewardEscrow } from "@/lib/contracts/rewardManager";
 import { downloadElementAsImage } from "@/lib/downloadAsImage";
 import { dynapuff } from "@/lib/font";
-import { addHunt as addStoredHunt, getAllHuntsIncludingPrivate } from "@/lib/huntStore";
+import {
+  addHunt as addStoredHunt,
+  getAllHuntsIncludingPrivate,
+  REWARD_REFUND_GRACE_PERIOD_SECONDS,
+} from "@/lib/huntStore";
+import { getHuntClues, replaceHuntCluesLocally } from "@/lib/huntStoreClues";
 import { buildDraftHuntsFromTemplate, getStarterTemplateBySlug } from "@/lib/huntTemplates";
 import { COVER_IMAGE_UPLOAD_ERROR_MESSAGE } from "@/lib/ipfs";
 import { logger } from "@/lib/logger";
 import { withTransactionToast } from "@/lib/txToast";
 import type {
   CoverImageUploadState,
+  HuntAgeClassification,
   HuntDifficulty,
   HuntDraft,
   HuntDraftSave,
@@ -90,6 +104,10 @@ function CreateGameContent() {
     "draft-huntDifficulty",
     ""
   );
+  const [ageClassification, setAgeClassification] = useLocalStorage<HuntAgeClassification>(
+    "draft-ageClassification",
+    "all-ages"
+  );
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [direction, setDirection] = useState(0);
@@ -110,6 +128,7 @@ function CreateGameContent() {
   const previewContainerRef = useRef<HTMLDivElement | null>(null);
   const appliedTemplateRef = useRef<string | null>(null);
   const router = useRouter();
+  const { publicKey: walletPublicKey } = useWallet();
 
   const prefersReducedMotion = useReducedMotion();
 
@@ -140,6 +159,7 @@ function CreateGameContent() {
     rewards,
     meta: autoSaveMeta,
     draftId: activeDraftId ?? undefined,
+    walletPublicKey: walletPublicKey || undefined,
   });
 
   // Sync the hook-generated draftId back to state on first mount.
@@ -161,6 +181,70 @@ function CreateGameContent() {
     setCreatorEmail(draft.meta.creatorEmail);
     setEmailNotifications(draft.meta.emailNotifications);
     setActiveDraftId(draft.draftId);
+  };
+
+  const handleTransferImport = (transfer: HuntTransfer) => {
+    const rawHunt = transfer.hunt as Record<string, unknown>;
+    const importedHuntId = typeof rawHunt.id === "number" ? rawHunt.id : 1;
+    const importedDescription = typeof rawHunt.description === "string" ? rawHunt.description : "";
+    const importedImage =
+      typeof rawHunt.coverImageCid === "string" ? rawHunt.coverImageCid : undefined;
+    const importedLink = typeof rawHunt.link === "string" ? rawHunt.link : "";
+    const importedCode = typeof rawHunt.code === "string" ? rawHunt.code : "";
+    const importedMaxParticipants =
+      typeof rawHunt.maxParticipants === "number" ? rawHunt.maxParticipants : undefined;
+    const importedAgeClassification =
+      rawHunt.ageClassification === "all-ages" ||
+      rawHunt.ageClassification === "13-plus" ||
+      rawHunt.ageClassification === "16-plus" ||
+      rawHunt.ageClassification === "18-plus"
+        ? rawHunt.ageClassification
+        : undefined;
+
+    const importedClues = transfer.clues.map((clue) => {
+      const { id: _importedId, ...clueWithoutId } = clue;
+      return {
+        ...clueWithoutId,
+        huntId: importedHuntId,
+        answer:
+          clue.answer.trim() ||
+          clue.qrPayload?.trim() ||
+          (clue.type === "location" ? "location reached" : "imported answer"),
+      };
+    });
+
+    try {
+      replaceHuntCluesLocally(importedHuntId, importedClues);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to import clues.");
+      return;
+    }
+
+    setHunts([
+      {
+        id: importedHuntId,
+        title: transfer.hunt.title,
+        description: importedDescription,
+        link: importedLink,
+        code: importedCode,
+        image: importedImage,
+        sequential: transfer.hunt.sequential ?? transfer.settings.sequential,
+        maxParticipants: importedMaxParticipants,
+        ageClassification: importedAgeClassification,
+      },
+    ]);
+    setGameName(transfer.hunt.title);
+    setStartDate(transfer.settings.startDate ?? "");
+    setEndDate(transfer.settings.endDate ?? "");
+    setRewardType(transfer.settings.rewardType);
+    setSequential(transfer.settings.sequential);
+    setIsPrivate(transfer.settings.isPrivate);
+    setTimerEnabled(transfer.settings.timerEnabled);
+    setCreatorEmail(transfer.settings.creatorEmail ?? "");
+    setEmailNotifications(transfer.settings.emailNotifications);
+    setRewards(transfer.settings.rewards.map((reward) => ({ ...reward, icon: undefined })));
+    setSelectedTemplateTitle(null);
+    setActiveTab("create");
   };
 
   const tabMotion = {
@@ -191,27 +275,45 @@ function CreateGameContent() {
     }
   }, []);
 
+  const appliedDraftIdRef = useRef<string | null>(null);
+
   // Load a previously auto-saved draft when navigating from the draft list.
+  // Falls back to the server copy when this device has no local copy (e.g.
+  // the draft was auto-saved from a different browser/device).
   useEffect(() => {
     const draftId = searchParams.get("draftId");
-    if (!draftId) return;
-    const saved = readDraftPayload(draftId);
-    if (!saved) return;
-    setHunts(saved.hunts);
-    setRewards(saved.rewards.map((r) => ({ ...r, icon: undefined })));
-    setGameName(saved.meta.gameName);
-    setStartDate(saved.meta.startDate);
-    setEndDate(saved.meta.endDate);
-    setRewardType(saved.meta.rewardType);
-    setSequential(saved.meta.sequential);
-    setIsPrivate(saved.meta.isPrivate);
-    setTimerEnabled(saved.meta.timerEnabled);
-    setCreatorEmail(saved.meta.creatorEmail);
-    setEmailNotifications(saved.meta.emailNotifications);
-    setActiveDraftId(draftId);
-    // Only run on mount; deps intentionally omitted to avoid re-loading on every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!draftId || appliedDraftIdRef.current === draftId) return;
+
+    const applyDraft = (saved: HuntDraftSave) => {
+      appliedDraftIdRef.current = draftId;
+      setHunts(saved.hunts);
+      setRewards(saved.rewards.map((r) => ({ ...r, icon: undefined })));
+      setGameName(saved.meta.gameName);
+      setStartDate(saved.meta.startDate);
+      setEndDate(saved.meta.endDate);
+      setRewardType(saved.meta.rewardType);
+      setSequential(saved.meta.sequential);
+      setIsPrivate(saved.meta.isPrivate);
+      setTimerEnabled(saved.meta.timerEnabled);
+      setCreatorEmail(saved.meta.creatorEmail);
+      setEmailNotifications(saved.meta.emailNotifications);
+      setActiveDraftId(draftId);
+    };
+
+    const local = readDraftPayload(draftId);
+    if (local) {
+      applyDraft(local);
+      return;
+    }
+
+    let cancelled = false;
+    void fetchDraftFromServer(draftId).then((remote) => {
+      if (!cancelled && remote) applyDraft(remote);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams]);
 
   useEffect(() => {
     const templateSlug = searchParams.get("template");
@@ -245,6 +347,8 @@ function CreateGameContent() {
   }, [router, searchParams, setGameName, setHunts, setRewardType]);
 
   const rewardPool = rewards.reduce((sum, r) => sum + r.amount, 0);
+  const transferHunt = hunts[0] ?? EMPTY_HUNT_DRAFT;
+  const transferClues = hunts.flatMap((hunt) => getHuntClues(hunt.id));
 
   const setCoverImageUploadState = (huntId: number, state: CoverImageUploadState) => {
     setCoverImageUploadStates((current) => {
@@ -284,7 +388,7 @@ function CreateGameContent() {
   const rewardItemSchema = z.object({
     place: z.number().int().positive(),
     amount: z.number().positive("Reward amount must be greater than 0."),
-    icon: z.any().optional(),
+    icon: z.unknown().optional(),
   });
 
   const formSchema = z
@@ -402,11 +506,7 @@ function CreateGameContent() {
   };
 
   const updateHunt = (id: number, field: string, value: string | number | undefined) => {
-    setHunts(
-      hunts.map((hunt) =>
-        hunt.id === id ? { ...hunt, [field]: value } : hunt,
-      ),
-    );
+    setHunts(hunts.map((hunt) => (hunt.id === id ? { ...hunt, [field]: value } : hunt)));
   };
 
   const addHunt = () => {
@@ -475,13 +575,16 @@ function CreateGameContent() {
             formValues.sequential,
             // Normalize empty-string sentinel ("") from the publish-tab select back
             // to undefined so the on-chain metadata stays clean.
-            huntDifficulty ? huntDifficulty : undefined
+            huntDifficulty ? huntDifficulty : undefined,
+            undefined,
+            REWARD_REFUND_GRACE_PERIOD_SECONDS
           );
           const escrow = await createRewardEscrow({
             huntId: localId,
             rewardType: formValues.rewardType,
             rewards: formValues.rewards,
             expiresAt: end_time,
+            gracePeriodSeconds: REWARD_REFUND_GRACE_PERIOD_SECONDS,
           });
           rewardEscrowTxHash = escrow?.depositTxHash;
 
@@ -514,10 +617,12 @@ function CreateGameContent() {
         createdAt: Math.floor(Date.now() / 1000),
         startTime: start_time,
         endTime: end_time,
+        gracePeriodSeconds: REWARD_REFUND_GRACE_PERIOD_SECONDS,
         creatorEmail: formValues.creatorEmail || undefined,
         emailNotifications: formValues.emailNotifications,
         is_private: formValues.isPrivate,
         sequential: formValues.sequential,
+        ageClassification,
         maxParticipants: formValues.hunts[0]?.maxParticipants,
         coverImageCid,
         category,
@@ -636,6 +741,16 @@ function CreateGameContent() {
                           </div>
                         </div>
 
+                        <HuntTransferControls
+                          hunt={{
+                            ...transferHunt,
+                            coverImageCid: transferHunt.image,
+                          }}
+                          clues={transferClues}
+                          settings={{ ...autoSaveMeta, rewards }}
+                          onImport={handleTransferImport}
+                        />
+
                         {hunts.map((hunt) => (
                           <HuntForm
                             key={hunt.id}
@@ -702,6 +817,11 @@ function CreateGameContent() {
                             ))}
                           </div>
                         </div>
+
+                        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                          Unclaimed rewards can be reclaimed by the creator 7 days after this hunt
+                          ends.
+                        </p>
 
                         <RewardsPanel
                           rewards={rewards}
@@ -841,6 +961,9 @@ function CreateGameContent() {
                           />
                         )}
 
+                        {/* Game modes section (shown when gameModes flag is enabled) */}
+                        <GameModesSection />
+
                         <div className="flex items-center justify-between">
                           <div>
                             <label className="block text-xl font-normal text-[#808080]">
@@ -877,6 +1000,33 @@ function CreateGameContent() {
                                 {d}
                               </option>
                             ))}
+                          </select>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <label
+                              htmlFor="hunt-age-classification"
+                              className="block text-xl font-normal text-[#808080]"
+                            >
+                              Age suitability
+                            </label>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              Helps players and moderators understand the intended audience
+                            </p>
+                          </div>
+                          <select
+                            id="hunt-age-classification"
+                            value={ageClassification}
+                            onChange={(e) =>
+                              setAgeClassification(e.target.value as HuntAgeClassification)
+                            }
+                            className="h-11 w-[160px] text-center rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#3737A4]/40"
+                          >
+                            <option value="all-ages">All ages</option>
+                            <option value="13-plus">13+</option>
+                            <option value="16-plus">16+</option>
+                            <option value="18-plus">18+</option>
                           </select>
                         </div>
 
@@ -1087,6 +1237,64 @@ function CreateGameContent() {
   );
 }
 
+function GameModesSection() {
+  const gameModesEnabled = useIsFeatureEnabled("gameModes");
+  const collaborativeEnabled = useIsFeatureEnabled("collaborativeHunts");
+
+  if (!gameModesEnabled && !collaborativeEnabled) return null;
+
+  return (
+    <div className="rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30 px-4 py-4 space-y-4">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-semibold text-indigo-800 dark:text-indigo-300">
+          Game Modes
+        </span>
+        <span className="text-[10px] uppercase tracking-wider text-indigo-500 dark:text-indigo-400 font-medium px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/50">
+          Beta
+        </span>
+      </div>
+      <p className="text-xs text-indigo-600 dark:text-indigo-400">
+        Additional game modes are available because the game modes feature flag is enabled.
+      </p>
+      {gameModesEnabled && (
+        <div className="space-y-2">
+          <label className="flex items-center gap-3 p-2 rounded-lg bg-white dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800">
+            <input type="radio" name="gameMode" className="text-indigo-600" />
+            <div>
+              <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                Timed Mode
+              </span>
+              <p className="text-xs text-slate-500">
+                Players must complete the hunt within a time limit
+              </p>
+            </div>
+          </label>
+          <label className="flex items-center gap-3 p-2 rounded-lg bg-white dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800">
+            <input type="radio" name="gameMode" className="text-indigo-600" />
+            <div>
+              <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                Competitive Mode
+              </span>
+              <p className="text-xs text-slate-500">Head-to-head competition with live rankings</p>
+            </div>
+          </label>
+        </div>
+      )}
+      {collaborativeEnabled && (
+        <label className="flex items-center gap-3 p-2 rounded-lg bg-white dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800">
+          <input type="checkbox" className="rounded text-indigo-600" />
+          <div>
+            <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
+              Collaborative Mode
+            </span>
+            <p className="text-xs text-slate-500">Teams of players work together to solve clues</p>
+          </div>
+        </label>
+      )}
+    </div>
+  );
+}
+
 export default function CreateGame() {
   return (
     <Suspense
@@ -1098,4 +1306,7 @@ export default function CreateGame() {
     </Suspense>
   );
 }
- 
+
+("use client");
+
+export { default } from "./create-game-content";

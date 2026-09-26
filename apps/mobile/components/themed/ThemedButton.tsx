@@ -27,20 +27,29 @@ interface ThemedButtonProps extends PressableProps {
   accessibilityHint?: string;
 }
 
+type ThemeColors = {
+  primary: string
+  secondary: string
+  error: string
+  success: string
+  border: string
+  text: string
+}
+
 const variantStyles = {
-  primary: (colors: any) => ({
+  primary: (colors: ThemeColors) => ({
     backgroundColor: colors.primary,
   }),
-  secondary: (colors: any) => ({
+  secondary: (colors: ThemeColors) => ({
     backgroundColor: colors.secondary,
   }),
-  danger: (colors: any) => ({
+  danger: (colors: ThemeColors) => ({
     backgroundColor: colors.error,
   }),
-  success: (colors: any) => ({
+  success: (colors: ThemeColors) => ({
     backgroundColor: colors.success,
   }),
-  ghost: (colors: any) => ({
+  ghost: (colors: ThemeColors) => ({
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: colors.border,
@@ -125,7 +134,7 @@ export const ThemedButton: React.FC<ThemedButtonProps> = ({
       style={[
         containerStyle,
         pressed && !disabled && { opacity: 0.8 },
-        Array.isArray(style) ? StyleSheet.flatten(style as any) : (style as any),
+        Array.isArray(style) ? StyleSheet.flatten(style) : style,
       ]}
       {...otherProps}
     >

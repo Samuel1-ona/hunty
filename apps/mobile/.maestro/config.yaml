@@ -2,7 +2,7 @@
 #
 # Prerequisites:
 #   brew tap mobile-dev-inc/tap && brew install maestro
-#   cd mobile && pnpm start
+#   cd apps/mobile && pnpm start
 #   In another terminal: pnpm test:e2e
 #
 # CI runs these flows against an Android emulator via .github/workflows/mobile-e2e.yml

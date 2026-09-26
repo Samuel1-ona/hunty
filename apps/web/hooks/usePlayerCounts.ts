@@ -114,10 +114,11 @@ export function usePlayerCounts(huntIds: string[]): {
     setIsLoading(false)
   }, [])
 
+  const huntIdsKey = huntIds.join(",")
+
   useEffect(() => {
-    void fetchCounts(huntIds)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [huntIds.join(",")])
+    void fetchCounts(huntIdsRef.current)
+  }, [fetchCounts, huntIdsKey])
 
   const refetch = useCallback(() => {
     void fetchCounts(huntIdsRef.current, true)

@@ -134,7 +134,7 @@ describe("WalletConnectModal", () => {
 
     it("copies URI to clipboard", async () => {
       const { user } = renderModal()
-      
+
       Object.defineProperty(navigator, "userAgent", {
         value: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
         configurable: true,
@@ -143,8 +143,15 @@ describe("WalletConnectModal", () => {
       await user.click(screen.getByLabelText("Connect Lobstr wallet"))
       await waitFor(() => screen.getByText("Scan with Wallet"))
 
+      // Order matters: userEvent.setup() (called inside renderModal) stubs
+      // navigator.clipboard. We re-define the property here AFTER setup so our
+      // spy takes precedence. defineProperty (not Object.assign) is required
+      // because clipboard is a getter-only property in jsdom.
       const writeText = vi.fn().mockResolvedValue(undefined)
-      Object.assign(navigator, { clipboard: { writeText } })
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: { writeText },
+      })
 
       await user.click(screen.getByRole("button", { name: /Copy URI/i }))
 
@@ -172,8 +179,12 @@ describe("WalletConnectModal", () => {
 
     it("closes modal on dialog close", async () => {
       const { user } = renderModal()
-      
-      const closeBtn = screen.getByRole("button", { name: /close/i })
+
+      // shadcn Dialog renders the visual close X as a hidden button with no
+      // accessible name — searching by /close/i returns the dismiss "Cancel &
+      // Choose Another" button instead. Allow hidden: true so we can grab the
+      // DialogClose shim that fires radix Dialog's onOpenChange.
+      const closeBtn = screen.getByRole("button", { name: /close/i }, { hidden: true })
       await user.click(closeBtn)
 
       expect(mockOnClose).toHaveBeenCalled()

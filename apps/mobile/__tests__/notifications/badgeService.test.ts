@@ -1,3 +1,4 @@
+(globalThis as any).__DEV__ = true;
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getBadgeCount,
@@ -115,4 +116,3 @@ describe('handleDeviceNotRegistered', () => {
     expect(tokenRegistry.unregisterPushToken).not.toHaveBeenCalled();
   });
 });
-

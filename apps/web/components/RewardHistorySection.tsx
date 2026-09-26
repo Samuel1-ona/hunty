@@ -3,8 +3,8 @@
 import { CalendarDays, ExternalLink } from "lucide-react"
 import { useMemo, useState } from "react"
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardTitle } from "@/components/ui/card"
+import { Button } from "@hunty/ui"
+import { Card, CardContent, CardTitle } from "@hunty/ui"
 import { formatISOString } from "@/lib/dateUtils"
 import type { RewardHistoryEntry, RewardHistoryType } from "@/lib/types"
 

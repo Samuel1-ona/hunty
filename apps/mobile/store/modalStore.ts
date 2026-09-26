@@ -11,7 +11,7 @@ export interface ModalConfig {
   cancelText?: string;
   onConfirm?: () => void | Promise<void>;
   onCancel?: () => void | Promise<void>;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 }
 
 interface ModalStore {

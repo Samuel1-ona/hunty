@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react"
 import { useWallet } from "@/lib/context/WalletContext"
 import type { HuntReview } from "@/lib/types"
-import { Star, Trash2, Flag, Loader2, MessageSquare, AlertCircle } from "lucide-react"
+import { Star, Trash2, Flag, Loader2, MessageSquare, AlertCircle, ThumbsUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -18,6 +18,7 @@ export function HuntReviewsSection({ huntId, creatorAddress }: HuntReviewsSectio
   const [reviews, setReviews] = useState<HuntReview[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [sortOption, setSortOption] = useState<"newest" | "helpful">("newest")
 
   // Form State
   const [rating, setRating] = useState(0)
@@ -38,8 +39,8 @@ export function HuntReviewsSection({ huntId, creatorAddress }: HuntReviewsSectio
       const data = await res.json()
       setReviews(data.data || [])
       setError(null)
-    } catch (err: any) {
-      setError(err.message || "An error occurred while loading reviews")
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred while loading reviews")
     } finally {
       setLoading(false)
     }
@@ -98,8 +99,8 @@ export function HuntReviewsSection({ huntId, creatorAddress }: HuntReviewsSectio
       setRating(0)
       setText("")
       await fetchReviews()
-    } catch (err: any) {
-      setSubmitError(err.message || "An error occurred while submitting your review")
+    } catch (err: unknown) {
+      setSubmitError(err instanceof Error ? err.message : "An error occurred while submitting your review")
     } finally {
       setSubmitting(false)
     }
@@ -124,10 +125,44 @@ export function HuntReviewsSection({ huntId, creatorAddress }: HuntReviewsSectio
       }
 
       await fetchReviews()
-    } catch (err: any) {
-      alert(err.message || "An error occurred during moderation")
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "An error occurred during moderation")
+  }
+  }
+
+  const handleHelpful = async (reviewId: string) => {
+    if (!connected || !publicKey) {
+      alert("Please connect your wallet to upvote reviews.")
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/v1/hunts/${huntId}/reviews/${reviewId}/helpful`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playerAddress: publicKey }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Failed to toggle helpful")
+      }
+
+      await fetchReviews()
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "An error occurred")
     }
   }
+
+  const sortedReviews = [...reviews].sort((a, b) => {
+    if (sortOption === "helpful") {
+      const aVotes = a.upvotes || 0
+      const bVotes = b.upvotes || 0
+      if (aVotes !== bVotes) return bVotes - aVotes
+    }
+    // Default to newest
+    return b.createdAt - a.createdAt
+  })
 
   const userHasReviewed = connected && publicKey && reviews.some(
     (r) => r.playerAddress.toLowerCase() === publicKey.toLowerCase()
@@ -142,11 +177,26 @@ export function HuntReviewsSection({ huntId, creatorAddress }: HuntReviewsSectio
 
   return (
     <div className="space-y-8 bg-slate-900/30 border border-white/5 rounded-3xl p-6 md:p-8 backdrop-blur-md">
-      <div className="flex items-center gap-2 mb-2">
-        <MessageSquare className="w-5 h-5 text-indigo-400" />
-        <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">
-          Player Reviews & Ratings
-        </h2>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+        <div className="flex items-center gap-2">
+          <MessageSquare className="w-5 h-5 text-indigo-400" />
+          <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">
+            Player Reviews & Ratings
+          </h2>
+        </div>
+        {reviews.length > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-400">Sort by:</span>
+            <select
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value as "newest" | "helpful")}
+              className="bg-slate-900 border border-white/10 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="newest">Newest</option>
+              <option value="helpful">Most Helpful</option>
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Review Submission Form */}
@@ -263,7 +313,11 @@ export function HuntReviewsSection({ huntId, creatorAddress }: HuntReviewsSectio
           </p>
         ) : (
           <div className="grid gap-4">
-            {reviews.map((review) => (
+            {sortedReviews.map((review) => {
+              const hasUpvoted = connected && publicKey && review.upvotedBy?.some(
+                (addr) => addr.toLowerCase() === publicKey.toLowerCase()
+              )
+              return (
               <div
                 key={review.id}
                 className={cn(
@@ -319,6 +373,22 @@ export function HuntReviewsSection({ huntId, creatorAddress }: HuntReviewsSectio
                         <span>Flagged for moderation</span>
                       </div>
                     )}
+                    
+                    <div className="mt-4 flex items-center">
+                      <button
+                        onClick={() => handleHelpful(review.id)}
+                        className={cn(
+                          "flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors border",
+                          hasUpvoted
+                            ? "bg-indigo-500/20 text-indigo-400 border-indigo-500/30"
+                            : "bg-white/5 text-slate-400 border-transparent hover:bg-white/10 hover:text-slate-200"
+                        )}
+                        aria-label="Mark review as helpful"
+                      >
+                        <ThumbsUp className={cn("w-3.5 h-3.5", hasUpvoted && "fill-indigo-400")} />
+                        <span>Helpful {review.upvotes ? `(${review.upvotes})` : ""}</span>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Creator Moderation Actions */}
@@ -353,7 +423,7 @@ export function HuntReviewsSection({ huntId, creatorAddress }: HuntReviewsSectio
                   )}
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         )}
       </div>

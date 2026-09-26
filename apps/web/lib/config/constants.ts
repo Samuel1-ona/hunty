@@ -129,6 +129,11 @@ export const RATE_LIMITS = {
  * Each flag is driven by an environment variable of the form
  * `NEXT_PUBLIC_FEATURE_<NAME>`. Set the env var to `"true"` to enable
  * the feature. All flags default to `false` when unset.
+ *
+ * @deprecated Use the type-safe feature flag system from `@/lib/config/feature-flags`
+ * instead. The new system supports runtime overrides, server-side evaluation,
+ * environment-based overrides, and a React provider/hooks API.
+ * See `lib/config/feature-flags/definitions.ts` for the canonical flag registry.
  */
 export const FEATURE_FLAGS = {
   /** Show the staging banner on non-production environments. */
@@ -143,6 +148,7 @@ export const FEATURE_FLAGS = {
   DRAG_DROP_CLUES: process.env.NEXT_PUBLIC_FEATURE_DRAG_DROP === "true",
 } as const
 
+/** @deprecated Use `FeatureFlagKey` from `@/lib/config/feature-flags` instead. */
 export type FeatureFlag = keyof typeof FEATURE_FLAGS
 
 // ─── Anti-Cheat Defaults ────────────────────────────────────────────────────

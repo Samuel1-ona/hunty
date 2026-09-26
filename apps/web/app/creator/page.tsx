@@ -1,206 +1,53 @@
 "use client";
 
-import {
-  AlertTriangle,
-  Archive,
-  ArrowLeft,
-  BarChart3,
-  CheckCircle,
-  HelpCircle,
-  Pencil,
-  RefreshCw,
-  Trash2,
-} from "lucide-react";
+import { Archive, ArrowLeft, HelpCircle, RefreshCw, Trash2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Button } from "@hunty/ui";
+import { Card } from "@hunty/ui";
+import { Header } from "@/components/Header";
+import { RewardHistorySection } from "@/components/RewardHistorySection";
+import { DraftListPanel } from "@/components/DraftListPanel";
+import { ConfirmationDialog, SaveTemplateDialog } from "./_components/creator-dialogs";
+import { HuntList } from "./_components/hunt-list";
+import { useCreatorPage } from "./_hooks/use-creator-page";
 
 const OnboardingTour = dynamic(() => import("@/components/OnboardingTour"), {
   ssr: false,
 });
-import { Header } from "@/components/Header";
-import { RewardHistorySection } from "@/components/RewardHistorySection";
-import { useWallet } from "@/lib/context/WalletContext";
-import type { StoredHunt } from "@/lib/types";
-import {
-  getHuntsByCreator,
-  getArchivedHunts,
-  getSoftDeletedHunts,
-  hideHuntsFromPublic,
-  unhideHuntsFromPublic,
-  softDeleteHunts,
-  restoreHunts,
-  permanentDeleteHunts,
-} from "@/lib/huntStore";
-import { fetchCreatorRewardHistory } from "@/lib/rewardHistory";
-import { DraftListPanel } from "@/components/DraftListPanel";
-
-function StatusBadge({ status }: { status: StoredHunt["status"] }) {
-  const config: Partial<Record<StoredHunt["status"], string>> = {
-    Draft: "bg-amber-100 text-amber-800 border-amber-200",
-    Active: "bg-emerald-100 text-emerald-800 border-emerald-200",
-    Completed: "bg-slate-100 text-slate-700 border-slate-200",
-    Cancelled: "bg-red-100 text-red-800 border-red-200",
-  };
-  const style = config[status] ?? config.Draft!;
-  return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${style}`}
-    >
-      {status}
-    </span>
-  );
-}
 
 export default function CreatorPage() {
-  const router = useRouter();
-  const { connected, publicKey, connect } = useWallet();
-  const [hunts, setHunts] = useState<StoredHunt[]>([]);
-  const [archivedHunts, setArchivedHunts] = useState<StoredHunt[]>([]);
-  const [softDeletedHunts, setSoftDeletedHunts] = useState<StoredHunt[]>([]);
-  const [rewardHistory, setRewardHistory] = useState<
-    Awaited<ReturnType<typeof fetchCreatorRewardHistory>>
-  >([]);
-  const [activeTab, setActiveTab] = useState<"active" | "archived" | "deleted">("active");
-  const [selectedHunts, setSelectedHunts] = useState<number[]>([]);
-  const [confirmDialog, setConfirmDialog] = useState<{
-    open: boolean;
-    action: "archive" | "unarchive" | "soft-delete" | "restore" | "permanent-delete";
-    huntIds: number[];
-  }>({ open: false, action: "archive", huntIds: [] });
+  const {
+    connected,
+    connect,
+    hunts,
+    archivedHunts,
+    softDeletedHunts,
+    rewardHistory,
+    activeTab,
+    setActiveTab,
+    selectedHunts,
+    setSelectedHunts,
+    confirmDialog,
+    setConfirmDialog,
+    templateDialog,
+    setTemplateDialog,
+    templateAuthor,
+    setTemplateAuthor,
+    promotingHuntId,
+    handlePromote,
+    handleAction,
+    confirmAction,
+    toggleHuntSelection,
+    getCurrentHunts,
+    handleSaveTemplate,
+    auditLog,
+    fetchAuditLog,
+    selectedAuditHuntId,
+  } = useCreatorPage();
 
-  const loadHunts = useCallback(() => {
-    if (!publicKey) {
-      setHunts([]);
-      setArchivedHunts([]);
-      setSoftDeletedHunts([]);
-      return;
-    }
-    setHunts(getHuntsByCreator());
-    setArchivedHunts(getArchivedHunts());
-    setSoftDeletedHunts(getSoftDeletedHunts());
-  }, [publicKey]);
-
-  useEffect(() => {
-    loadHunts();
-  }, [loadHunts]);
-
-  useEffect(() => {
-    if (!publicKey) {
-      setRewardHistory([]);
-      return;
-    }
-
-    let cancelled = false;
-
-    const loadRewardHistory = async () => {
-      try {
-        const data = await fetchCreatorRewardHistory(publicKey);
-        if (!cancelled) setRewardHistory(data);
-      } catch (err) {
-        console.error("Failed to load creator reward history:", err);
-      }
-    };
-
-    loadRewardHistory();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [publicKey]);
-
-  const handleCardClick = (hunt: StoredHunt) => {
-    if (hunt.status === "Draft") {
-      router.push(`/hunty?edit=${hunt.id}`);
-    } else if (hunt.status === "Active") {
-      router.push(`/creator/stats/${hunt.id}`);
-    }
-    // Completed: no navigation or could open a read-only summary
-  };
-
-  const handleAction = (
-    action: "archive" | "unarchive" | "soft-delete" | "restore" | "permanent-delete",
-    huntIds: number[]
-  ) => {
-    setConfirmDialog({ open: true, action, huntIds });
-  };
-
-  const confirmAction = () => {
-    const { action, huntIds } = confirmDialog;
-
-    switch (action) {
-      case "archive":
-        hideHuntsFromPublic(huntIds);
-        break;
-      case "unarchive":
-        unhideHuntsFromPublic(huntIds);
-        break;
-      case "soft-delete":
-        softDeleteHunts(huntIds);
-        break;
-      case "restore":
-        restoreHunts(huntIds);
-        break;
-      case "permanent-delete":
-        permanentDeleteHunts(huntIds);
-        break;
-    }
-
-    setConfirmDialog({ open: false, action: "archive", huntIds: [] });
-    setSelectedHunts([]);
-    loadHunts();
-  };
-
-  const toggleHuntSelection = (huntId: number) => {
-    setSelectedHunts((prev) =>
-      prev.includes(huntId) ? prev.filter((id) => id !== huntId) : [...prev, huntId]
-    );
-  };
-
-  const getActionMessage = () => {
-    const { action, huntIds } = confirmDialog;
-    const count = huntIds.length;
-
-    switch (action) {
-      case "archive":
-        return `Archive ${count} hunt${count > 1 ? "s" : ""}? They will be hidden from the public but data will be preserved.`;
-      case "unarchive":
-        return `Unarchive ${count} hunt${count > 1 ? "s" : ""}? They will be visible to the public again.`;
-      case "soft-delete":
-        return `Soft delete ${count} hunt${count > 1 ? "s" : ""}? They will be moved to trash and can be restored within 30 days.`;
-      case "restore":
-        return `Restore ${count} hunt${count > 1 ? "s" : ""}? They will be moved back to your active hunts.`;
-      case "permanent-delete":
-        return `Permanently delete ${count} hunt${count > 1 ? "s" : ""}? This action cannot be undone and all data will be lost.`;
-    }
-  };
-
-  const getCurrentHunts = () => {
-    switch (activeTab) {
-      case "active":
-        return hunts.filter((h) => !h.isArchived);
-      case "archived":
-        return archivedHunts;
-      case "deleted":
-        return softDeletedHunts;
-      default:
-        return hunts;
-    }
-  };
+  const activeHunts = hunts.filter((h) => !h.isArchived);
 
   return (
     <div className="min-h-screen bg-gradient-to-tr from-blue-100 via-purple-100 to-[#f9f9ff] pb-12">
@@ -282,6 +129,19 @@ export default function CreatorPage() {
             }`}
           >
             Trash ({softDeletedHunts.length})
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("audit");
+              setSelectedHunts([]);
+            }}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "audit"
+                ? "border-[#3737A4] text-[#3737A4]"
+                : "border-transparent text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            Audit Log
           </button>
         </div>
 
@@ -394,160 +254,27 @@ export default function CreatorPage() {
               </Button>
             </div>
           </Card>
+        ) : activeTab === "audit" ? (
+          <AuditLogTab
+            hunts={hunts}
+            auditLog={auditLog}
+            selectedAuditHuntId={selectedAuditHuntId}
+            onFetchAuditLog={fetchAuditLog}
+          />
         ) : (
           <>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {getCurrentHunts().map((hunt) => {
-                const isDraft = hunt.status === "Draft";
-                const isActive = hunt.status === "Active";
-                const isClickable = isDraft || isActive;
-                const isSelected = selectedHunts.includes(hunt.id);
-
-                return (
-                  <Card
-                    key={hunt.id}
-                    className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow ${
-                      isClickable ? "cursor-pointer hover:shadow-md" : "opacity-90"
-                    } ${isSelected ? "ring-2 ring-[#3737A4]" : ""}`}
-                  >
-                    <div className="p-5">
-                      <div className="mb-2 flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              toggleHuntSelection(hunt.id);
-                            }}
-                            className="w-4 h-4 rounded border-slate-300 text-[#3737A4] focus:ring-[#3737A4]"
-                          />
-                          <CardTitle className="line-clamp-2 text-lg">{hunt.title}</CardTitle>
-                        </div>
-                        <StatusBadge status={hunt.status} />
-                      </div>
-                      <CardDescription className="mb-4 line-clamp-3 text-sm text-slate-600">
-                        {hunt.description}
-                      </CardDescription>
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="text-xs text-slate-500">
-                          {hunt.cluesCount} {hunt.cluesCount === 1 ? "clue" : "clues"}
-                        </span>
-                        <div className="flex items-center gap-1">
-                          {isDraft && (
-                            <span className="flex items-center gap-1 text-xs text-amber-700">
-                              <Pencil className="h-3 w-3" />
-                              Edit
-                            </span>
-                          )}
-                          {isActive && (
-                            <span className="flex items-center gap-1 text-xs text-emerald-700">
-                              <BarChart3 className="h-3 w-3" />
-                              Live Statistics
-                            </span>
-                          )}
-                          {/* Individual action buttons */}
-                          {activeTab === "active" && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleAction("archive", [hunt.id]);
-                                }}
-                                className="h-6 w-6 p-0 text-slate-500 hover:text-slate-700"
-                              >
-                                <Archive className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleAction("soft-delete", [hunt.id]);
-                                }}
-                                className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                          {activeTab === "archived" && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleAction("unarchive", [hunt.id]);
-                                }}
-                                className="h-6 w-6 p-0 text-slate-500 hover:text-slate-700"
-                                title="Unarchive"
-                              >
-                                <RefreshCw className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleAction("soft-delete", [hunt.id]);
-                                }}
-                                className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                                title="Delete"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                          {activeTab === "deleted" && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleAction("restore", [hunt.id]);
-                                }}
-                                className="h-6 w-6 p-0 text-emerald-500 hover:text-emerald-700"
-                                title="Restore"
-                              >
-                                <RefreshCw className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleAction("permanent-delete", [hunt.id]);
-                                }}
-                                className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                                title="Permanent Delete"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      {hunt.deletedAt && (
-                        <div className="mt-2 text-xs text-orange-600 flex items-center gap-1">
-                          <AlertTriangle className="h-3 w-3" />
-                          Expires in{" "}
-                          {Math.ceil(
-                            (hunt.deletedAt +
-                              (hunt.recoveryWindow || 30 * 86400) -
-                              Math.floor(Date.now() / 1000)) /
-                              86400
-                          )}{" "}
-                          days
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                );
-              })}
+              <HuntList
+                hunts={getCurrentHunts()}
+                activeTab={activeTab}
+                selectedHunts={selectedHunts}
+                promotingHuntId={promotingHuntId}
+                onToggleSelect={toggleHuntSelection}
+                onAction={handleAction}
+                onPromote={handlePromote}
+                onSaveTemplate={(hunt) => setTemplateDialog({ open: true, huntId: hunt.id })}
+                onViewAudit={fetchAuditLog}
+              />
             </div>
 
             <div id="reward-history-section" className="mt-10">
@@ -564,51 +291,119 @@ export default function CreatorPage() {
           </>
         )}
 
-        {/* Confirmation Dialog */}
-        <AlertDialog
-          open={confirmDialog.open}
+        <ConfirmationDialog
+          confirmDialog={confirmDialog}
           onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center gap-2">
-                {confirmDialog.action === "permanent-delete" && (
-                  <AlertTriangle className="h-5 w-5 text-red-600" />
-                )}
-                {confirmDialog.action === "archive" && (
-                  <Archive className="h-5 w-5 text-slate-600" />
-                )}
-                {confirmDialog.action === "unarchive" && (
-                  <RefreshCw className="h-5 w-5 text-slate-600" />
-                )}
-                {confirmDialog.action === "soft-delete" && (
-                  <Trash2 className="h-5 w-5 text-orange-600" />
-                )}
-                {confirmDialog.action === "restore" && (
-                  <CheckCircle className="h-5 w-5 text-emerald-600" />
-                )}
-                {confirmDialog.action.charAt(0).toUpperCase() +
-                  confirmDialog.action.slice(1).replace("-", " ")}
-              </AlertDialogTitle>
-              <AlertDialogDescription>{getActionMessage()}</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={confirmAction}
-                className={
-                  confirmDialog.action === "permanent-delete" ||
-                  confirmDialog.action === "soft-delete"
-                    ? "bg-red-600 hover:bg-red-700"
-                    : "bg-[#3737A4] hover:bg-slate-800"
-                }
-              >
-                Confirm
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+          onConfirm={confirmAction}
+        />
+
+        <SaveTemplateDialog
+          templateDialog={templateDialog}
+          templateAuthor={templateAuthor}
+          onOpenChange={(open) => setTemplateDialog({ ...templateDialog, open })}
+          onAuthorChange={setTemplateAuthor}
+          onSave={handleSaveTemplate}
+        />
       </div>
+    </div>
+  );
+}
+
+function AuditLogTab({
+  hunts,
+  auditLog,
+  selectedAuditHuntId,
+  onFetchAuditLog,
+}: {
+  hunts: import("@/lib/types").StoredHunt[];
+  auditLog: unknown[];
+  selectedAuditHuntId: number | null;
+  onFetchAuditLog: (huntId: number) => Promise<void>;
+}) {
+  const [huntId, setHuntId] = useState<number | "">("");
+
+  return (
+    <div className="space-y-4">
+      <Card className="rounded-2xl border border-slate-200 bg-white p-4">
+        <h2 className="mb-3 text-lg font-semibold text-slate-900">Audit Log</h2>
+        <p className="mb-4 text-sm text-slate-600">
+          Select a hunt to view its edit, delete, and refund audit trail.
+        </p>
+        <div className="flex items-center gap-3">
+          <label htmlFor="audit-hunt-select" className="text-sm font-medium text-slate-700">
+            Hunt:
+          </label>
+          <select
+            id="audit-hunt-select"
+            value={huntId}
+            onChange={(e) => setHuntId(e.target.value ? Number(e.target.value) : "")}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 focus:border-[#3737A4] focus:outline-none focus:ring-1 focus:ring-[#3737A4]"
+          >
+            <option value="">Select a hunt…</option>
+            {hunts.map((h) => (
+              <option key={h.id} value={h.id}>
+                {h.title} (ID: {h.id})
+              </option>
+            ))}
+          </select>
+          <Button
+            size="sm"
+            onClick={() => {
+              if (typeof huntId === "number") onFetchAuditLog(huntId);
+            }}
+            disabled={typeof huntId !== "number"}
+            className="bg-[#3737A4] hover:bg-[#0C0C4F] text-white"
+          >
+            Load Audit Log
+          </Button>
+        </div>
+      </Card>
+
+      {selectedAuditHuntId && (
+        <Card className="rounded-2xl border border-slate-200 bg-white p-4">
+          <h3 className="mb-3 text-sm font-semibold text-slate-700">
+            Audit entries for hunt ID {selectedAuditHuntId}
+          </h3>
+          {auditLog.length === 0 ? (
+            <p className="text-sm text-slate-500">No audit entries found.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 text-left text-xs font-medium text-slate-500 uppercase">
+                    <th className="pb-3 pr-4">Timestamp</th>
+                    <th className="pb-3 pr-4">Action</th>
+                    <th className="pb-3 pr-4">Actor</th>
+                    <th className="pb-3">Diff</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditLog.map((entry: any, i: number) => (
+                    <tr key={i} className="border-b border-slate-100">
+                      <td className="py-3 pr-4 text-slate-600">
+                        {new Date(entry.createdAt).toLocaleString()}
+                      </td>
+                      <td className="py-3 pr-4">
+                        <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                          {entry.action}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4 font-mono text-xs text-slate-600">
+                        {entry.actor}
+                      </td>
+                      <td className="py-3">
+                        <pre className="overflow-x-auto text-xs text-slate-500">
+                          {JSON.stringify(entry.diff, null, 2)}
+                        </pre>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
     </div>
   );
 }

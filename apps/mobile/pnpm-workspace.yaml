@@ -1,3 +1,0 @@
-allowBuilds:
-  '@sentry/cli': set this to true or false
-nodeLinker: hoisted

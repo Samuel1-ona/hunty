@@ -1,31 +1,32 @@
 import { NextResponse } from "next/server"
 import { readReviews, writeReviews, readCompletions } from "@/lib/reviews"
 import type { HuntReview } from "@/lib/types"
+import { withErrorHandling } from "@/lib/api/withErrorHandling"
+import { withValidation } from "@/lib/api/withValidation"
+import { ValidationError } from "@/lib/api/errors"
+import { huntReviewBodySchema } from "@hunty/types/api-schemas"
+import { z } from "zod"
+
+type RouteContext = { params: Promise<{ id: string }> }
+
+const paramsSchema = z.object({ id: z.string() })
 
 /**
  * GET /api/v1/hunts/[id]/reviews
  * Get all active (non-moderated) reviews for a specific hunt.
  */
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params
-    const huntId = parseInt(id, 10)
-
-    if (isNaN(huntId)) {
-      return NextResponse.json({ error: "Invalid hunt ID" }, { status: 400 })
-    }
-
-    const reviews = await readReviews()
-    const huntReviews = reviews.filter((r) => r.huntId === huntId && !r.moderated)
-
-    return NextResponse.json({ data: huntReviews })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to retrieve reviews" }, { status: 500 })
+export const GET = withErrorHandling(async (_req: Request, context: RouteContext) => {
+  const { id } = await context.params
+  const huntId = parseInt(id, 10)
+  if (isNaN(huntId)) {
+    throw new ValidationError("Invalid hunt ID", { id })
   }
-}
+
+  const reviews = await readReviews()
+  const huntReviews = reviews.filter((r) => r.huntId === huntId && !r.moderated)
+
+  return NextResponse.json({ data: huntReviews })
+})
 
 /**
  * POST /api/v1/hunts/[id]/reviews
@@ -36,41 +37,33 @@ export async function GET(
  * - Star rating between 1 and 5.
  * - Verification that player has completed the hunt.
  */
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params
-    const huntId = parseInt(id, 10)
-
+export const POST = withValidation(
+  { body: huntReviewBodySchema, params: paramsSchema },
+  async (_req, _context, { body, params }) => {
+    const huntId = parseInt(params!.id, 10)
     if (isNaN(huntId)) {
-      return NextResponse.json({ error: "Invalid hunt ID" }, { status: 400 })
+      throw new ValidationError("Invalid hunt ID", { id: params!.id })
     }
 
-    const body = await req.json().catch(() => ({}))
-    const { playerAddress, rating, text, difficultyRating } = body
-
-    if (!playerAddress || typeof playerAddress !== "string" || playerAddress.trim() === "") {
-      return NextResponse.json({ error: "Player address is required" }, { status: 400 })
-    }
-
-    const ratingVal = parseInt(rating, 10)
-    if (isNaN(ratingVal) || ratingVal < 1 || ratingVal > 5) {
-      return NextResponse.json({ error: "Rating must be a number between 1 and 5" }, { status: 400 })
-    }
+    const ratingVal = Number(body.rating)
 
     // 1. Enforce hunt completion verification
     const completions = await readCompletions()
-    const completed = completions[huntId]?.[playerAddress] === true
+    const completed = completions[huntId]?.[body.playerAddress] === true
     if (!completed) {
-      return NextResponse.json({ error: "You must complete this hunt before submitting a review" }, { status: 403 })
+      return NextResponse.json(
+        { error: "You must complete this hunt before submitting a review" },
+        { status: 403 }
+      )
     }
 
     // 2. Prevent duplicate reviews from the same wallet
     const reviews = await readReviews()
     const duplicate = reviews.some(
-      (r) => r.huntId === huntId && r.playerAddress.toLowerCase() === playerAddress.toLowerCase() && !r.moderated
+      (r) =>
+        r.huntId === huntId &&
+        r.playerAddress.toLowerCase() === body.playerAddress.toLowerCase() &&
+        !r.moderated
     )
     if (duplicate) {
       return NextResponse.json({ error: "You have already reviewed this hunt" }, { status: 400 })
@@ -79,10 +72,10 @@ export async function POST(
     const newReview: HuntReview = {
       id: Math.random().toString(36).substring(2, 15) + Date.now().toString(36),
       huntId,
-      playerAddress,
+      playerAddress: body.playerAddress,
       rating: ratingVal,
-      text: typeof text === "string" ? text.trim() : undefined,
-      difficultyRating: typeof difficultyRating === "string" ? difficultyRating : undefined,
+      text: typeof body.text === "string" ? body.text.trim() : undefined,
+      difficultyRating: typeof body.difficultyRating === "string" ? body.difficultyRating : undefined,
       createdAt: Date.now(),
     }
 
@@ -90,7 +83,5 @@ export async function POST(
     await writeReviews(reviews)
 
     return NextResponse.json({ data: newReview })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to submit review" }, { status: 500 })
   }
-}
+)

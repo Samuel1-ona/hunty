@@ -4,7 +4,13 @@
   "extends": "./base.json",
   "compilerOptions": {
     "plugins": [{ "name": "next" }],
-    "jsx": "preserve"
+    "jsx": "preserve",
+    // Path aliases should be defined in the consuming app's tsconfig.json
+    // because they are relative to that app's root directory.
+    // The web app defines: @/components, @/lib, @/hooks, @/store, @/types
+    // All of these extend the catch-all @/* alias.
+    // Do NOT add paths here — they belong in apps/web/tsconfig.json.
+    "paths": {}
   },
   "include": [
     "next-env.d.ts",

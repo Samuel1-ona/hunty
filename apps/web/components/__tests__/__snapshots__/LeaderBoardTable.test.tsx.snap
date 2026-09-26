@@ -6,10 +6,10 @@ exports[`LeaderboardTable > render > renders snapshot of empty state 1`] = `
     class="rounded-none max-w-2xl mx-auto p-0"
   >
     <div
-      class="rounded-3xl border border-dashed border-slate-300 bg-slate-50/90 p-8 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900/60"
+      class="rounded-3xl border border-dashed p-8 text-center shadow-sm dark:bg-slate-900/60 border-slate-300 bg-slate-50/90 dark:border-slate-700"
     >
       <div
-        class="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white text-slate-700 shadow-sm dark:bg-slate-800 dark:text-slate-200"
+        class="mx-auto flex h-20 w-20 items-center justify-center rounded-full shadow-sm dark:bg-slate-800 bg-white text-slate-700 dark:text-slate-200"
       >
         <svg
           aria-hidden="true"
@@ -47,12 +47,12 @@ exports[`LeaderboardTable > render > renders snapshot of empty state 1`] = `
       <h2
         class="mt-6 text-xl font-semibold text-slate-900 dark:text-slate-100"
       >
-        Be the first to complete!
+        No results for these filters
       </h2>
       <p
         class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600 dark:text-slate-400"
       >
-        No players have finished this leaderboard yet. Jump into a hunt to claim the top spot.
+        Try adjusting the time period, category, or difficulty to see more players.
       </p>
       <div
         class="mt-6"
@@ -60,9 +60,9 @@ exports[`LeaderboardTable > render > renders snapshot of empty state 1`] = `
         <a
           class="inline-flex items-center justify-center gap-2 whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer hover:scale-[1.02] active:scale-[0.98] bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 has-[>svg]:px-3 rounded-full px-6 py-3 text-sm font-semibold"
           data-slot="button"
-          href="/"
+          href="/leaderboard"
         >
-          Explore hunts
+          Clear filters
         </a>
       </div>
     </div>
@@ -75,6 +75,133 @@ exports[`LeaderboardTable > render > renders snapshot of loading state 1`] = `
   <div
     class="rounded-none max-w-2xl mx-auto"
   >
+    <div
+      class="mb-4"
+    >
+      <div
+        class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4"
+      >
+        <div
+          class="flex items-start justify-between mb-3"
+        >
+          <div>
+            <h3
+              class="text-lg font-bold text-slate-900 dark:text-slate-100"
+            >
+              Season 2: Rising Stars
+            </h3>
+            <span
+              class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20"
+            >
+              Active
+            </span>
+          </div>
+          <div
+            class="flex items-center gap-2"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-clock w-4 h-4 text-[#3737A4] dark:text-blue-400"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+              />
+              <polyline
+                points="12 6 12 12 16 14"
+              />
+            </svg>
+            <div
+              class="flex items-center gap-1 text-sm"
+            >
+              <span
+                class="font-semibold text-[#3737A4] dark:text-blue-400"
+              >
+                30
+              </span>
+              <span
+                class="text-slate-600 dark:text-slate-400"
+              >
+                d
+              </span>
+              <span
+                class="font-semibold text-[#3737A4] dark:text-blue-400"
+              >
+                0
+              </span>
+              <span
+                class="text-slate-600 dark:text-slate-400"
+              >
+                m
+              </span>
+              <span
+                class="font-semibold text-[#3737A4] dark:text-blue-400"
+              >
+                0
+              </span>
+              <span
+                class="text-slate-600 dark:text-slate-400"
+              >
+                s
+              </span>
+            </div>
+          </div>
+        </div>
+        <div
+          class="space-y-2 text-sm"
+        >
+          <div
+            class="flex items-center gap-2 text-slate-600 dark:text-slate-400"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-calendar w-4 h-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M8 2v4"
+              />
+              <path
+                d="M16 2v4"
+              />
+              <rect
+                height="18"
+                rx="2"
+                width="18"
+                x="3"
+                y="4"
+              />
+              <path
+                d="M3 10h18"
+              />
+            </svg>
+            <span>
+              Jun 28, 2026
+               - 
+              Aug 27, 2026
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
     <table
       class="w-full rounded-none border-l border-[#808080] dark:border-slate-700 border-collapse"
     >
@@ -256,6 +383,133 @@ exports[`LeaderboardTable > render > renders snapshot of table with data 1`] = `
   <div
     class="rounded-none max-w-2xl mx-auto"
   >
+    <div
+      class="mb-4"
+    >
+      <div
+        class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4"
+      >
+        <div
+          class="flex items-start justify-between mb-3"
+        >
+          <div>
+            <h3
+              class="text-lg font-bold text-slate-900 dark:text-slate-100"
+            >
+              Season 2: Rising Stars
+            </h3>
+            <span
+              class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20"
+            >
+              Active
+            </span>
+          </div>
+          <div
+            class="flex items-center gap-2"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-clock w-4 h-4 text-[#3737A4] dark:text-blue-400"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+              />
+              <polyline
+                points="12 6 12 12 16 14"
+              />
+            </svg>
+            <div
+              class="flex items-center gap-1 text-sm"
+            >
+              <span
+                class="font-semibold text-[#3737A4] dark:text-blue-400"
+              >
+                30
+              </span>
+              <span
+                class="text-slate-600 dark:text-slate-400"
+              >
+                d
+              </span>
+              <span
+                class="font-semibold text-[#3737A4] dark:text-blue-400"
+              >
+                0
+              </span>
+              <span
+                class="text-slate-600 dark:text-slate-400"
+              >
+                m
+              </span>
+              <span
+                class="font-semibold text-[#3737A4] dark:text-blue-400"
+              >
+                0
+              </span>
+              <span
+                class="text-slate-600 dark:text-slate-400"
+              >
+                s
+              </span>
+            </div>
+          </div>
+        </div>
+        <div
+          class="space-y-2 text-sm"
+        >
+          <div
+            class="flex items-center gap-2 text-slate-600 dark:text-slate-400"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-calendar w-4 h-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M8 2v4"
+              />
+              <path
+                d="M16 2v4"
+              />
+              <rect
+                height="18"
+                rx="2"
+                width="18"
+                x="3"
+                y="4"
+              />
+              <path
+                d="M3 10h18"
+              />
+            </svg>
+            <span>
+              Jun 28, 2026
+               - 
+              Aug 27, 2026
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
     <table
       class="w-full rounded-none border-l border-[#808080] dark:border-slate-700 border-collapse"
     >
@@ -285,13 +539,14 @@ exports[`LeaderboardTable > render > renders snapshot of table with data 1`] = `
           class="bg-slate-50 dark:bg-blue-900/10 font-bold"
         >
           <td
-            class="px-4 py-2 flex items-center justify-center gap-2 text-center border-r-2 border-[#808080] dark:border-slate-700 border-b-2 "
+            class="px-4 py-2 flex items-center justify-center gap-2 text-center border-r-2 border-[#808080] dark:border-slate-700 border-b-2"
           >
             <span>
               <div
                 data-testid="medal-1"
               >
-                🥇
+                Medal 
+                1
               </div>
             </span>
             <span
@@ -301,9 +556,13 @@ exports[`LeaderboardTable > render > renders snapshot of table with data 1`] = `
             </span>
           </td>
           <td
-            class="px-4 py-2 border-r-2 border-[#808080] dark:border-slate-700 border-b-2 text-[16px] bg-gradient-to-b from-[#576065] to-[#787884] dark:from-slate-200 dark:to-slate-400 bg-clip-text text-transparent"
+            class="px-4 py-2 border-r-2 border-[#808080] dark:border-slate-700 border-b-2"
           >
-            Champion
+            <span
+              class="text-[16px] bg-gradient-to-b from-[#576065] to-[#787884] dark:from-slate-200 dark:to-slate-400 bg-clip-text text-transparent"
+            >
+              Champion
+            </span>
           </td>
           <td
             class="px-4 py-2 text-center border border-b-2 border-[#808080] dark:border-slate-700 text-[16px] bg-gradient-to-b from-[#576065] to-[#787884] dark:from-slate-200 dark:to-slate-400 bg-clip-text text-transparent"
@@ -315,13 +574,14 @@ exports[`LeaderboardTable > render > renders snapshot of table with data 1`] = `
           class="bg-slate-50 dark:bg-blue-900/10 font-bold"
         >
           <td
-            class="px-4 py-2 flex items-center justify-center gap-2 text-center border-r-2 border-[#808080] dark:border-slate-700 border-b-2 "
+            class="px-4 py-2 flex items-center justify-center gap-2 text-center border-r-2 border-[#808080] dark:border-slate-700 border-b-2"
           >
             <span>
               <div
                 data-testid="medal-2"
               >
-                🥈
+                Medal 
+                2
               </div>
             </span>
             <span
@@ -331,9 +591,13 @@ exports[`LeaderboardTable > render > renders snapshot of table with data 1`] = `
             </span>
           </td>
           <td
-            class="px-4 py-2 border-r-2 border-[#808080] dark:border-slate-700 border-b-2 text-[16px] bg-gradient-to-b from-[#576065] to-[#787884] dark:from-slate-200 dark:to-slate-400 bg-clip-text text-transparent"
+            class="px-4 py-2 border-r-2 border-[#808080] dark:border-slate-700 border-b-2"
           >
-            Runner Up
+            <span
+              class="text-[16px] bg-gradient-to-b from-[#576065] to-[#787884] dark:from-slate-200 dark:to-slate-400 bg-clip-text text-transparent"
+            >
+              Runner Up
+            </span>
           </td>
           <td
             class="px-4 py-2 text-center border border-b-2 border-[#808080] dark:border-slate-700 text-[16px] bg-gradient-to-b from-[#576065] to-[#787884] dark:from-slate-200 dark:to-slate-400 bg-clip-text text-transparent"
@@ -345,13 +609,14 @@ exports[`LeaderboardTable > render > renders snapshot of table with data 1`] = `
           class="bg-slate-50 dark:bg-blue-900/10 font-bold"
         >
           <td
-            class="px-4 py-2 flex items-center justify-center gap-2 text-center border-r-2 border-[#808080] dark:border-slate-700 border-b-2 "
+            class="px-4 py-2 flex items-center justify-center gap-2 text-center border-r-2 border-[#808080] dark:border-slate-700 border-b-2"
           >
             <span>
               <div
                 data-testid="medal-3"
               >
-                🥉
+                Medal 
+                3
               </div>
             </span>
             <span
@@ -361,9 +626,13 @@ exports[`LeaderboardTable > render > renders snapshot of table with data 1`] = `
             </span>
           </td>
           <td
-            class="px-4 py-2 border-r-2 border-[#808080] dark:border-slate-700 border-b-2 text-[16px] bg-gradient-to-b from-[#576065] to-[#787884] dark:from-slate-200 dark:to-slate-400 bg-clip-text text-transparent"
+            class="px-4 py-2 border-r-2 border-[#808080] dark:border-slate-700 border-b-2"
           >
-            Third
+            <span
+              class="text-[16px] bg-gradient-to-b from-[#576065] to-[#787884] dark:from-slate-200 dark:to-slate-400 bg-clip-text text-transparent"
+            >
+              Third
+            </span>
           </td>
           <td
             class="px-4 py-2 text-center border border-b-2 border-[#808080] dark:border-slate-700 text-[16px] bg-gradient-to-b from-[#576065] to-[#787884] dark:from-slate-200 dark:to-slate-400 bg-clip-text text-transparent"

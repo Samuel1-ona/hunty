@@ -9,15 +9,24 @@ Hey there! 👋 Welcome to the Hunty frontend development guide. This is your fr
 Before we dive in, make sure you have these installed on your computer:
 
 **Node.js and npm** (or yarn/pnpm if you prefer)
+
 - You'll need Node.js version 18 or higher
 - Check if you have it: `node --version` and `npm --version`
 - If not, grab it from [nodejs.org](https://nodejs.org/)
+**Node.js and pnpm**
+- We have standardized on **pnpm** (version 10+) as our package manager to ensure fast, deterministic, and space-efficient builds across our monorepo workspaces.
+- You'll need Node.js version 18 or higher and pnpm version 10 or higher.
+- Check if you have them: `node --version` and `pnpm --version`
+- To install pnpm: `npm install -g pnpm` or visit [pnpm.io](https://pnpm.io/)
+- If Node.js is not installed, grab it from [nodejs.org](https://nodejs.org/)
 
 **A code editor**
+
 - VS Code is popular, but use whatever you're comfortable with
 - We recommend having the ESLint and Prettier extensions installed
 
 **Git** (for version control)
+
 - Most developers already have this, but if not: [git-scm.com](https://git-scm.com/)
 
 That's it! No need for Rust or Stellar CLI here - that's for the smart contracts. We're just building the web interface.
@@ -27,49 +36,85 @@ That's it! No need for Rust or Stellar CLI here - that's for the smart contracts
 First things first, let's get the code on your machine:
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/Samuel1-ona/hunty.git
    cd hunty
    ```
 
 2. **Install all the dependencies:**
+
    ```bash
    #  pnpm
    pnpm install
    ```
 
 3. **Set up your environment variables:**
+
    ```bash
    # Copy the example environment file
    cp .env.example .env.local
    ```
-   
+
    Open `.env.local` in your editor and update the values:
-   
+
    **Required for basic development:**
+
    - Most variables have sensible defaults for local development
    - You can start the app immediately and add API keys later as needed
-   
+
    **Required for full functionality:**
+
    - `PINATA_JWT` - For file uploads to IPFS ([Get from Pinata](https://pinata.cloud))
    - `RESEND_API_KEY` - For email notifications ([Get from Resend](https://resend.com))
    - `NEXT_PUBLIC_WC_PROJECT_ID` - For WalletConnect support ([Get from WalletConnect](https://cloud.walletconnect.com/))
-   
+
    **Optional for blockchain integration:**
+
    - `NEXT_PUBLIC_HUNTY_CORE_ADDRESS` - Your deployed Hunty contract address
    - `NEXT_PUBLIC_REWARD_MANAGER_ADDRESS` - Your reward manager contract
    - `NEXT_PUBLIC_NFT_REWARD_ADDRESS` - Your NFT reward contract
-   
+
    See the `.env.example` file for a complete list of all available configuration options with detailed comments.
 
-4. **Start the development server:**
+   **Required for most server-side features:** set `DATABASE_URL` to your PostgreSQL connection string (see step 4 below).
+
+4. **Set up the database:**
+
+   Hunty uses PostgreSQL for all mutable server-side state — featured hunts, rate limits, moderation queue, anti-cheat records, creator drafts, and analytics. See [`docs/persistence-strategy.md`](./docs/persistence-strategy.md) for the full strategy.
+
+   **Option A — Docker (recommended for local development):**
+
    ```bash
- 
-   # 
+   # Start Postgres and the web app together (hot reload is enabled)
+   docker compose up --build
+   ```
+
+   Postgres runs at `localhost:5432` with credentials `hunty/hunty/hunty_dev`. `DATABASE_URL` is pre-configured inside the container.
+
+   **Option B — Local Postgres:**
+
+   ```bash
+   # Set your connection string
+   export DATABASE_URL="postgresql://user:password@localhost:5432/hunty_dev"
+
+   # Apply all migrations in order (each is idempotent — safe to re-run)
+   for f in apps/web/lib/db/migrations/*.sql; do
+     psql "$DATABASE_URL" -f "$f"
+   done
+   ```
+
+   Migrations are plain SQL files in `apps/web/lib/db/migrations/`. Each uses `CREATE TABLE IF NOT EXISTS`, so re-running them on an existing database is always safe.
+
+5. **Start the development server:**
+
+   ```bash
+
+   #
    pnpm dev
    ```
 
-5. **Open your browser:**
+6. **Open your browser:**
    - Navigate to `http://localhost:3000`
    - You should see the Hunty landing page!
 
@@ -82,28 +127,35 @@ That's it! The dev server will automatically reload when you make changes to the
 When you're ready to add something new or fix a bug, here's the workflow we follow:
 
 1. **Create a new branch:**
+
    ```bash
    git checkout -b feature/your-awesome-feature
    # or for bug fixes
    git checkout -b fix/that-annoying-bug
    ```
+
    This keeps your work separate from the main code until it's ready.
 
 2. **Make your changes:**
+
    - Edit the files you need to change
    - Test it in your browser (the dev server should auto-reload)
    - Make sure everything looks good and works as expected
 
 3. **Check for any issues:**
+
    ```bash
    pnpm run lint
    ```
+
    This will catch any code style problems or potential bugs.
 
 4. **Build it to make sure everything compiles:**
+
    ```bash
    pnpm run build
    ```
+
    If this works, you're good to go!
 
 5. **Commit your changes:**
@@ -118,22 +170,28 @@ Then create a pull request on GitHub so others can review your work. We're all a
 ### Running the App
 
 **Development mode** (with hot reload):
+
 ```bash
 pnpm run dev
 ```
+
 This starts the Next.js dev server with Turbopack. Changes you make will show up instantly in your browser.
 
 **Production build** (to test how it'll work when deployed):
+
 ```bash
 pnpm run build
 pnpm start
 ```
+
 This builds an optimized version and runs it locally. Good for catching issues before deployment.
 
 **Linting** (checking code quality):
+
 ```bash
 pnpm run lint
 ```
+
 This runs ESLint to catch potential problems and style issues. Fix any errors before committing!
 
 ## Understanding the Codebase
@@ -147,11 +205,13 @@ This is a Next.js app using the App Router (the newer way Next.js does routing).
 ### Main Pages
 
 **`app/page.tsx`** - This is the landing page
+
 - The "Game Arcade" homepage where users first land
 - Shows available hunts and lets users connect their wallet
 - Has the "Create Game" and "Play Game" buttons
 
 **`app/hunty/page.tsx`** - The game creation page
+
 - Where hunt creators build their scavenger hunts
 - Has tabs for creating clues, setting rewards, and publishing
 - Also shows the leaderboard when you're viewing a completed game
@@ -159,37 +219,45 @@ This is a Next.js app using the App Router (the newer way Next.js does routing).
 ### Key Components
 
 **`components/Header.tsx`** - The top navigation bar
+
 - Shows the Hunty logo
 - Has wallet connection button (when not connected)
 - Shows wallet address and balance (when connected)
 
 **`components/WalletModal.tsx`** - The wallet connection popup
+
 - Currently empty (we removed Starknet wallets)
 - This is where you'll add Stellar wallet integration later
 
 **`components/PlayGame.tsx`** - The actual game playing interface
+
 - Shows hunt cards one at a time
 - Lets players enter codes to unlock clues
 - Handles the game flow from start to completion
 
 **`components/HuntCards.tsx`** - Individual hunt clue cards
+
 - The visual cards that show each clue
 - Handles answer input and verification
 - Shows hints and images
 
 **`components/CreateGameTabs.tsx`** - Tab navigation for game creation
+
 - Switches between Create, Rewards, Publish, and Leaderboard tabs
 
 **`components/HuntForm.tsx`** - Form for adding clues
+
 - Where creators input questions, descriptions, links, and answer codes
 
 **`components/RewardsPanel.tsx`** - Reward configuration
+
 - Lets creators set up XLM or NFT rewards
 - Shows reward tiers and amounts
 
 ### UI Components
 
 Everything in `components/ui/` is a reusable component built on Radix UI:
+
 - `button.tsx` - Buttons with different variants
 - `dialog.tsx` - Modal dialogs
 - `input.tsx` - Text inputs
@@ -199,9 +267,11 @@ Everything in `components/ui/` is a reusable component built on Radix UI:
 ### Utilities
 
 **`lib/utils.ts`** - Helper functions
+
 - Currently has `cn()` for merging Tailwind classes
 
 **`lib/font.ts`** - Custom fonts
+
 - Sets up the fonts we use (Hanken Grotesk, Dynapuff)
 
 ### Styling
@@ -209,10 +279,9 @@ Everything in `components/ui/` is a reusable component built on Radix UI:
 We use **Tailwind CSS** for all styling. If you're not familiar with it, it's a utility-first CSS framework. Instead of writing separate CSS files, you add classes directly to your HTML/JSX.
 
 For example:
+
 ```tsx
-<div className="bg-blue-500 text-white p-4 rounded-lg">
-  Hello!
-</div>
+<div className="bg-blue-500 text-white p-4 rounded-lg">Hello!</div>
 ```
 
 The classes mean: blue background, white text, padding of 4, and rounded corners. Pretty intuitive once you get the hang of it!
@@ -251,12 +320,12 @@ pnpm test:e2e:ui
 
 The E2E suite covers the full **Create → Join → Solve → Complete** game loop:
 
-| Test Suite | What It Verifies |
-|---|---|
-| `wallet-connection.spec.ts` | Connect Wallet button, Freighter modal, connected state display, disconnect flow |
-| `hunt-creation.spec.ts` | Navigate to create page, fill clue forms, add multiple clues, publish form validation |
-| `game-loop.spec.ts` | Active hunts displayed, play preview mode, submit correct/incorrect answers, leaderboard toggle |
-| `dashboard.spec.ts` | Dashboard navigation, hunt status badges, Add Clues modal, Activate button, leaderboard access |
+| Test Suite                  | What It Verifies                                                                                |
+| --------------------------- | ----------------------------------------------------------------------------------------------- |
+| `wallet-connection.spec.ts` | Connect Wallet button, Freighter modal, connected state display, disconnect flow                |
+| `hunt-creation.spec.ts`     | Navigate to create page, fill clue forms, add multiple clues, publish form validation           |
+| `game-loop.spec.ts`         | Active hunts displayed, play preview mode, submit correct/incorrect answers, leaderboard toggle |
+| `dashboard.spec.ts`         | Dashboard navigation, hunt status badges, Add Clues modal, Activate button, leaderboard access  |
 
 #### Mock Wallet Adapter
 
@@ -277,12 +346,14 @@ Since E2E tests run in a real browser without the Freighter extension installed,
 #### CI Integration
 
 The Playwright config (`playwright.config.ts`) is CI-ready:
+
 - Retries failed tests twice in CI
 - Uses a single worker for stability
 - Auto-starts the Next.js dev server
 - Uses the GitHub reporter for PR annotations
 
 To run in CI, install browsers first:
+
 ```bash
 npx playwright install --with-deps chromium
 pnpm test:e2e
@@ -295,46 +366,56 @@ We've all been there - something's not working and you're not sure why. Here are
 ### Common Problems
 
 **"Module not found" errors:**
+
 - Usually means you forgot to install dependencies
 - Fix: Run `pnpm install` again
 
 **Port 3000 already in use:**
+
 - Something else is running on that port
 - Fix: Kill the other process or use a different port: `pnpm run dev -- -p 3001`
 
 **Styles not updating:**
+
 - Sometimes Tailwind needs a refresh
 - Fix: Restart the dev server
 
 **TypeScript errors:**
+
 - Check the error message - it usually tells you what's wrong
 - Common issues: wrong types, missing props, undefined values
 
 **React hydration errors:**
+
 - Usually happens when server and client HTML don't match
 - Check for `useEffect` or browser-only code running on the server
 
 ### Debugging Tools
 
 **Browser DevTools** - Your best friend!
+
 - Open with F12 or right-click → Inspect
 - Check the Console tab for errors
 - Use the React DevTools extension to see component state
 - Network tab shows API calls (when we add them)
 
 **Console.log** - The classic debugger
+
 ```tsx
-console.log('Current state:', state);
-console.log('Props received:', props);
+console.log("Current state:", state);
+console.log("Props received:", props);
 ```
+
 Just remember to remove these before committing!
 
 **React DevTools** - See what's happening
+
 - Install the React DevTools browser extension
 - It shows you component hierarchy, props, and state
 - Super helpful for understanding data flow
 
 **VS Code Debugger** - For the serious stuff
+
 - Set breakpoints in your code
 - Step through execution line by line
 - See variable values at each step
@@ -342,6 +423,38 @@ Just remember to remove these before committing!
 ## Code Style & Best Practices
 
 We want the codebase to be clean, readable, and consistent. Here's how we do things:
+
+### Data Fetching & State Management
+To ensure a seamless user experience, every query-backed view must explicitly handle loading, error, and empty states. We use a standardized QueryStateWrapper to manage this systematically and prevent layout shifts.
+
+When creating a new view that fetches data via `@tanstack/react-query`, always wrap your component logic like this:
+
+```tsx
+import { useQuery } from '@tanstack/react-query';
+import { QueryStateWrapper } from '@/components/QueryState';
+import { GenericPageSkeleton } from '@/components/LoadingSkeletons';
+import { FileSearch } from 'lucide-react'; // Example icon
+
+export function DataBackedView() {
+  const query = useQuery({ queryKey: ['dataKey'], queryFn: fetchApiData });
+
+  return (
+    <QueryStateWrapper
+      query={query}
+      skeleton={<GenericPageSkeleton />}
+      emptyProps={{
+        icon: <FileSearch className="w-10 h-10" />,
+        title: "No Data Found",
+        description: "There is currently nothing to display here."
+      }}
+    >
+      {(data) => <YourDataComponent data={data} />}
+    </QueryStateWrapper>
+  );
+}
+```
+This guarantees that errors offer a retry affordance, loading states use skeletons, and empty states match the app's design system.
+
 
 ### Formatting
 
@@ -359,34 +472,38 @@ Most editors can be configured to format on save, which is super convenient.
 ### Naming Conventions
 
 **Components:** `PascalCase`
+
 ```tsx
 // Good
-export function HuntCard() { }
-export const WalletModal = () => { }
+export function HuntCard() {}
+export const WalletModal = () => {};
 
 // Bad
-export function huntCard() { }
+export function huntCard() {}
 ```
 
 **Functions and variables:** `camelCase`
+
 ```tsx
 // Good
-const handleClick = () => { }
-const userName = "John"
+const handleClick = () => {};
+const userName = "John";
 
 // Bad
-const HandleClick = () => { }
-const user_name = "John"
+const HandleClick = () => {};
+const user_name = "John";
 ```
 
 **Constants:** `UPPER_SNAKE_CASE`
+
 ```tsx
 // Good
-const MAX_HUNTS = 10
-const API_BASE_URL = "https://api.example.com"
+const MAX_HUNTS = 10;
+const API_BASE_URL = "https://api.example.com";
 ```
 
 **Files:** Match the component/function name
+
 - Component files: `HuntCard.tsx`
 - Utility files: `utils.ts`
 - Type files: `types.ts`
@@ -398,9 +515,9 @@ We use TypeScript for type safety. Always type your props and state:
 ```tsx
 // Good
 interface HuntCardProps {
-  title: string
-  description: string
-  onComplete: () => void
+  title: string;
+  description: string;
+  onComplete: () => void;
 }
 
 export function HuntCard({ title, description, onComplete }: HuntCardProps) {
@@ -425,7 +542,7 @@ export function HuntCard({ hunt }: { hunt: Hunt }) {
       <h3>{hunt.title}</h3>
       <p>{hunt.description}</p>
     </div>
-  )
+  );
 }
 
 // Bad - doing too much
@@ -442,11 +559,11 @@ Write comments that explain **why**, not **what**. The code should be self-expla
 // Good
 // We hash answers client-side before sending to prevent
 // the contract from seeing plain text answers
-const hashedAnswer = hashAnswer(userInput)
+const hashedAnswer = hashAnswer(userInput);
 
 // Bad
 // Hash the answer
-const hashedAnswer = hashAnswer(userInput)
+const hashedAnswer = hashAnswer(userInput);
 ```
 
 ### React Best Practices
@@ -474,17 +591,20 @@ This creates a `.next` folder with all the optimized code. If the build succeeds
 ### Deployment Options
 
 **Vercel** (Recommended - it's made by the Next.js team)
+
 1. Push your code to GitHub
 2. Connect your repo to Vercel
 3. It automatically deploys on every push
 4. Free for personal projects!
 
 **Netlify**
+
 - Similar to Vercel
 - Also has automatic deployments
 - Good alternative if you prefer it
 
 **Self-hosting**
+
 - Build the app: `pnpm run build`
 - Start the server: `pnpm start`
 - Point your domain to the server
@@ -493,12 +613,14 @@ This creates a `.next` folder with all the optimized code. If the build succeeds
 ### Environment Variables
 
 Before deploying, make sure to set up environment variables for:
+
 - Contract addresses (when we add them)
 - API endpoints
 - Wallet adapter configuration
 - Any API keys
 
 Refer to `.env.example` for a complete list of all available environment variables with descriptions. In production:
+
 - Copy `.env.example` to `.env.local` for local development
 - Set variables in your hosting platform's dashboard (Vercel, Netlify, etc.)
 - Never commit `.env.local` to version control (it's already in `.gitignore`)
@@ -506,6 +628,7 @@ Refer to `.env.example` for a complete list of all available environment variabl
 ### Before You Deploy
 
 Checklist:
+
 - [ ] Code is linted and formatted
 - [ ] Build succeeds without errors
 - [ ] All environment variables are set (see `.env.example` for the complete list)
@@ -564,6 +687,4 @@ If you want to tackle any of these, check out the issues on GitHub or reach out 
 
 Happy coding! 🚀
 
-*Remember: There are no stupid questions, only questions we haven't answered yet.*
-
-
+_Remember: There are no stupid questions, only questions we haven't answered yet._

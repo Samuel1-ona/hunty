@@ -6,8 +6,6 @@ import {
   getDistanceMeters,
   isLocationWithinGeofence,
 } from '@lib/locationServices';
-import type { Clue } from '@lib/types';
-import * as Location from 'expo-location';
 
 export type GeofenceCheckResult =
   | { allowed: true; distanceMeters: number; radiusMeters: number }

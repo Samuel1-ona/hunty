@@ -6,12 +6,9 @@ import {
   takeHuntStoreSnapshot,
   restoreHuntStoreSnapshot,
   updateHuntStatus,
-  getRegisteredWallets,
-  getHuntById,
 } from "@/lib/huntStore";
 import type { StoredHunt } from "@/lib/types";
 import { queryKeys } from "@/lib/queryKeys";
-import { getNotificationPreferences } from "@/lib/notifications/notificationPreferences";
 
 export function useCreateHuntMutation() {
   const queryClient = useQueryClient();
@@ -47,6 +44,9 @@ export function useActivateHuntMutation() {
   return useMutation({
     mutationFn: async (huntId: number) => {
       updateHuntStatus(huntId, "Active");
+      // Best-effort: notify the creator's followers that a new hunt dropped.
+      // Runs server-side so it can reach every follower; failures are ignored.
+      fetch(`/api/v1/hunts/${huntId}/notify-followers`, { method: "POST" }).catch(() => {});
       return huntId;
     },
     onMutate: async (huntId) => {
@@ -57,33 +57,14 @@ export function useActivateHuntMutation() {
       );
       return { snapshot };
     },
-    onSuccess: async (huntId) => {
-      // Fire hunt_start push to all registered players if they opted in
-      try {
-        const prefs = getNotificationPreferences();
-        if (!prefs.pushEnabled || !prefs.pushHuntStart) return;
-
-        const wallets = getRegisteredWallets(huntId);
-        if (wallets.length === 0) return;
-
-        const hunt = getHuntById(huntId);
-
-        await fetch("/api/push/send", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "hunt_start",
-            walletAddresses: wallets,
-            context: {
-              huntId,
-              huntName: hunt?.title ?? `Hunt #${huntId}`,
-            },
-          }),
-        });
-      } catch {
-        // Push failure is non-fatal — hunt activation already succeeded
-      }
-    },
+    // NOTE: this mutation used to POST directly to /api/push/send from the
+    // browser on success, to fire a hunt_start push to registered players.
+    // That endpoint now requires a service/admin credential (a browser
+    // can't hold a secret without exposing it), so this was removed rather
+    // than left to silently 401. Hunt activation is a purely client-side
+    // store mutation (see updateHuntStatus above) with no server-side
+    // endpoint to hang a credentialed push trigger off of yet — restoring
+    // hunt_start pushes needs one.
     onError: (_error, _variables, context) => {
       if (context?.snapshot) {
         restoreHuntStoreSnapshot(context.snapshot);

@@ -68,3 +68,30 @@ describe("serverTime", () => {
     expect(snap.offsetMs).toBe(1_000)
   })
 })
+
+// ---------------------------------------------------------------------------
+// huntCountdown – locale units extension
+// ---------------------------------------------------------------------------
+describe("huntCountdown – locale-aware labels", () => {
+  it("uses supplied unit strings in the label", () => {
+    const frUnits = { d: "j", h: "h", m: "m", s: "s" }
+    const parts = getCountdownParts(1_090_061, 1_000_000, frUnits) // 1d 1h 1m 1s
+    expect(parts.label).toContain("j") // French days unit
+    expect(parts.label).not.toMatch(/\d+d/)  // English 'd' should not appear
+  })
+
+  it("falls back to English units when none supplied", () => {
+    const parts = getCountdownParts(1_003_661, 1_000_000) // 1h 1m 1s
+    expect(parts.label).toContain("h")
+    expect(parts.label).toContain("m")
+    expect(parts.label).toContain("s")
+  })
+
+  it("expired label uses supplied unit string", () => {
+    const esUnits = { d: "d", h: "h", m: "m", s: "s" }
+    const parts = getCountdownParts(100, 200, esUnits)
+    expect(parts.expired).toBe(true)
+    expect(parts.label).toContain("s")
+  })
+})
+

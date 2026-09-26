@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest"
 import { useWalletStore } from "../wallets/walletStore"
+import type { WalletState } from "../wallets/walletStore"
 
 // Reset zustand store state before each test
 beforeEach(() => {
   useWalletStore.setState({
+    status: "idle",
     connected: false,
     publicKey: "",
     provider: null,
@@ -24,9 +26,14 @@ describe("useWalletStore", () => {
     expect(state.error).toBeNull()
   })
 
-  describe("setConnected", () => {
+  describe("syncFromMachine — connected", () => {
     it("marks wallet as connected and sets publicKey and provider", () => {
-      useWalletStore.getState().setConnected("GTEST123", "freighter")
+      useWalletStore.getState().syncFromMachine({
+        status: "connected",
+        publicKey: "GTEST123",
+        provider: "freighter",
+        error: null,
+      })
       const state = useWalletStore.getState()
       expect(state.connected).toBe(true)
       expect(state.publicKey).toBe("GTEST123")
@@ -37,15 +44,32 @@ describe("useWalletStore", () => {
     })
 
     it("persists lastUsedProvider when changed", () => {
-      useWalletStore.getState().setConnected("GALB123", "albedo")
+      useWalletStore.getState().syncFromMachine({
+        status: "connected",
+        publicKey: "GALB123",
+        provider: "albedo",
+        error: null,
+      })
       expect(useWalletStore.getState().lastUsedProvider).toBe("albedo")
     })
   })
 
-  describe("setDisconnected", () => {
+  describe("syncFromMachine — disconnected", () => {
     it("clears connection state but preserves lastUsedProvider", () => {
-      useWalletStore.getState().setConnected("GTEST123", "xbull")
-      useWalletStore.getState().setDisconnected()
+      // First connect
+      useWalletStore.getState().syncFromMachine({
+        status: "connected",
+        publicKey: "GTEST123",
+        provider: "xbull",
+        error: null,
+      })
+      // Then disconnect
+      useWalletStore.getState().syncFromMachine({
+        status: "disconnected",
+        publicKey: "",
+        provider: null,
+        error: null,
+      })
 
       const state = useWalletStore.getState()
       expect(state.connected).toBe(false)
@@ -58,34 +82,64 @@ describe("useWalletStore", () => {
     })
   })
 
-  describe("setConnecting", () => {
+  describe("syncFromMachine — connecting", () => {
     it("sets connecting flag and clears error", () => {
-      useWalletStore.setState({ error: "previous error" })
-      useWalletStore.getState().setConnecting(true)
+      useWalletStore.setState({ error: "previous error" } as Partial<WalletState>)
+      useWalletStore.getState().syncFromMachine({
+        status: "connecting",
+        publicKey: "",
+        provider: null,
+        error: null,
+      })
       const state = useWalletStore.getState()
       expect(state.connecting).toBe(true)
       expect(state.error).toBeNull()
     })
 
-    it("can clear connecting flag", () => {
-      useWalletStore.getState().setConnecting(true)
-      useWalletStore.getState().setConnecting(false)
+    it("can clear connecting flag when moving to idle", () => {
+      useWalletStore.getState().syncFromMachine({
+        status: "connecting",
+        publicKey: "",
+        provider: null,
+        error: null,
+      })
+      useWalletStore.getState().syncFromMachine({
+        status: "idle",
+        publicKey: "",
+        provider: null,
+        error: null,
+      })
       expect(useWalletStore.getState().connecting).toBe(false)
     })
   })
 
-  describe("setError", () => {
+  describe("syncFromMachine — error", () => {
     it("stores error and clears connecting flag", () => {
-      useWalletStore.setState({ connecting: true })
-      useWalletStore.getState().setError("Connection failed")
+      useWalletStore.setState({ connecting: true } as Partial<WalletState>)
+      useWalletStore.getState().syncFromMachine({
+        status: "error",
+        publicKey: "",
+        provider: null,
+        error: "Connection failed",
+      })
       const state = useWalletStore.getState()
       expect(state.error).toBe("Connection failed")
       expect(state.connecting).toBe(false)
     })
 
-    it("can clear error by passing null", () => {
-      useWalletStore.getState().setError("some error")
-      useWalletStore.getState().setError(null)
+    it("can clear error by transitioning back to idle", () => {
+      useWalletStore.getState().syncFromMachine({
+        status: "error",
+        publicKey: "",
+        provider: null,
+        error: "some error",
+      })
+      useWalletStore.getState().syncFromMachine({
+        status: "idle",
+        publicKey: "",
+        provider: null,
+        error: null,
+      })
       expect(useWalletStore.getState().error).toBeNull()
     })
   })
@@ -101,14 +155,14 @@ describe("useWalletStore", () => {
 
   describe("connection lifecycle", () => {
     it("full connect → disconnect cycle works correctly", () => {
-      const store = useWalletStore.getState()
+      const { syncFromMachine } = useWalletStore.getState()
 
       // Start connecting
-      store.setConnecting(true)
+      syncFromMachine({ status: "connecting", publicKey: "", provider: null, error: null })
       expect(useWalletStore.getState().connecting).toBe(true)
 
       // Connection succeeds
-      store.setConnected("GFREIGHTER123", "freighter")
+      syncFromMachine({ status: "connected", publicKey: "GFREIGHTER123", provider: "freighter", error: null })
       let state = useWalletStore.getState()
       expect(state.connected).toBe(true)
       expect(state.publicKey).toBe("GFREIGHTER123")
@@ -116,7 +170,7 @@ describe("useWalletStore", () => {
       expect(state.lastUsedProvider).toBe("freighter")
 
       // Disconnect
-      store.setDisconnected()
+      syncFromMachine({ status: "disconnected", publicKey: "", provider: null, error: null })
       state = useWalletStore.getState()
       expect(state.connected).toBe(false)
       expect(state.publicKey).toBe("")
@@ -126,9 +180,9 @@ describe("useWalletStore", () => {
     })
 
     it("error during connect sets error and stops connecting", () => {
-      const store = useWalletStore.getState()
-      store.setConnecting(true)
-      store.setError("Extension not found")
+      const { syncFromMachine } = useWalletStore.getState()
+      syncFromMachine({ status: "connecting", publicKey: "", provider: null, error: null })
+      syncFromMachine({ status: "error", publicKey: "", provider: null, error: "Extension not found" })
       const state = useWalletStore.getState()
       expect(state.error).toBe("Extension not found")
       expect(state.connecting).toBe(false)

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 
-import { EmptyState } from '../shared/components/web/EmptyState'
+import { EmptyState } from '@hunty/ui/web'
 
 const meta = {
   title: 'Shared/Web/EmptyState',

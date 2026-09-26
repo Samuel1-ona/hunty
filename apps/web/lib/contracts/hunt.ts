@@ -6,16 +6,26 @@ import {
   getHuntProgress,
 } from "@/lib/huntStore";
 import { withSorobanRpcRetry } from "@/lib/soroban/rpcRetry";
+import { pollTransactionStatus } from "@/lib/soroban/contractHelpers";
 import { normalizeNetworkError, AnswerIncorrectError, SequentialClueError } from "./errors";
 import { SOROBAN_RPC_URL, NETWORK_PASSPHRASE } from "./config";
 import { getActiveWalletAdapter } from "@/lib/walletAdapter";
-import { sha256Hex } from "@/lib/crypto";
 import { logger } from "@/lib/logger";
 import { isOnline, queueProgressUpdate } from "@/lib/offlineSync";
+import { resolveLocalizedText } from "@/lib/clueLocalization";
+import {
+  getClueType,
+  getPublicMultipleChoice,
+  validateClueSubmission,
+  type ClueSubmission,
+} from "@/lib/clueTypeSystem";
 
 import type {
   ClueDifficulty,
   ClueInfo,
+  ClueType,
+  ImageClueMode,
+  MultipleChoiceConfig,
   HuntDifficulty,
   HuntInfo,
   CreateHuntResult,
@@ -40,9 +50,20 @@ export type {
 };
 
 export type ClueInput = {
+  type?: ClueType;
   question: string;
   answer: string;
   points: number;
+  imageCid?: string;
+  imageMode?: ImageClueMode;
+  latitude?: number;
+  longitude?: number;
+  geofenceRadiusMeters?: number;
+  qrPayload?: string;
+  multipleChoice?: MultipleChoiceConfig;
+  mediaCid?: string;
+  questionTranslations?: Partial<Record<string, string>>;
+  hintTranslations?: Partial<Record<string, string>>;
   hint?: string;
   hintCost?: number;
   difficulty?: ClueDifficulty;
@@ -76,8 +97,10 @@ export async function createHunt(
   is_private?: boolean,
   sequential?: boolean,
   /** Overall difficulty tag persisted with the on-chain hunt metadata. */
-  difficulty?: HuntDifficulty
-  maxParticipants?: number
+  difficulty?: HuntDifficulty,
+  maxParticipants?: number,
+  /** Seconds after the hunt ends before unclaimed rewards can be reclaimed. */
+  gracePeriodSeconds?: number,
 ): Promise<CreateHuntResult> {
   if (typeof window === "undefined") throw new Error("Browser environment required");
 
@@ -98,9 +121,9 @@ export async function createHunt(
     ...(is_private ? { is_private: true } : {}),
     ...(sequential ? { sequential: true } : {}),
     ...(difficulty ? { difficulty } : {}),
-  });
     ...(maxParticipants !== undefined ? { max_participants: maxParticipants } : {}),
-  })
+    ...(gracePeriodSeconds !== undefined ? { grace_period_seconds: gracePeriodSeconds } : {}),
+  });
 
   const publicKey = await wallet.getPublicKey();
 
@@ -130,6 +153,16 @@ export async function createHunt(
     hash?: string;
   };
   if (!res || !res.hash) throw new Error("Transaction submission failed");
+
+  await fetch("/api/v1/webhooks/events", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-wallet-address": creator },
+    body: JSON.stringify({
+      type: "hunt.published",
+      creatorAddress: creator,
+      data: { title, transactionHash: res.hash },
+    }),
+  }).catch(() => undefined);
 
   return { txHash: res.hash };
 }
@@ -236,9 +269,36 @@ export async function addCluesBatch(
   const account = (await withSorobanRpcRetry(() => server.getAccount(publicKey))) as Account;
 
   const normalizedClues = clues.map((clue) => ({
+    type: clue.type ?? "text",
     question: clue.question.trim(),
     answer: clue.answer.trim(),
     points: clue.points,
+    ...(clue.imageCid?.trim() ? { image_cid: clue.imageCid.trim() } : {}),
+    ...(clue.imageMode ? { image_mode: clue.imageMode } : {}),
+    ...(clue.mediaCid?.trim() ? { media_cid: clue.mediaCid.trim() } : {}),
+    ...(clue.latitude !== undefined ? { latitude: clue.latitude } : {}),
+    ...(clue.longitude !== undefined ? { longitude: clue.longitude } : {}),
+    ...(clue.geofenceRadiusMeters !== undefined
+      ? { geofence_radius_meters: clue.geofenceRadiusMeters }
+      : {}),
+    ...(clue.qrPayload?.trim() ? { qr_payload: clue.qrPayload.trim() } : {}),
+    ...(clue.multipleChoice
+      ? {
+          multiple_choice: {
+            options: clue.multipleChoice.options.map((option) => ({
+              id: option.id,
+              label: option.label,
+            })),
+            correct_option_id: clue.multipleChoice.correctOptionId,
+          },
+        }
+      : {}),
+    ...(clue.questionTranslations && Object.keys(clue.questionTranslations).length > 0
+      ? { question_translations: Object.fromEntries(Object.entries(clue.questionTranslations).filter(([, value]) => typeof value === "string" && value.trim())) }
+      : {}),
+    ...(clue.hintTranslations && Object.keys(clue.hintTranslations).length > 0
+      ? { hint_translations: Object.fromEntries(Object.entries(clue.hintTranslations).filter(([, value]) => typeof value === "string" && value.trim())) }
+      : {}),
     ...(clue.hint?.trim() ? { hint: clue.hint.trim() } : {}),
     ...(clue.hintCost !== undefined ? { hint_cost: clue.hintCost } : {}),
     ...(clue.difficulty ? { difficulty: clue.difficulty } : {}),
@@ -510,12 +570,23 @@ export async function get_clue_info(huntId: number, clueId: number): Promise<Clu
       }
     }
 
+    const locale = typeof window !== "undefined" ? window.location.pathname.match(/^\/([a-z]{2})(?:\/|$)/i)?.[1] ?? navigator.language : "en";
     return {
       id: clue.id,
-      question: clue.question,
+      question: resolveLocalizedText(clue.questionTranslations, locale, clue.question),
       points: clue.points,
+      type: getClueType(clue),
+      imageCid: clue.imageCid,
+      imageMode: clue.imageMode,
+      multipleChoice: getPublicMultipleChoice(clue),
+      geofenceRadiusMeters:
+        getClueType(clue) === "location"
+          ? clue.geofenceRadiusMeters ?? 100
+          : undefined,
+      questionTranslations: clue.questionTranslations,
+      hintTranslations: clue.hintTranslations,
       hints: clue.hints,
-      hint: clue.hint,
+      hint: resolveLocalizedText(clue.hintTranslations, locale, clue.hint),
       hintCost: clue.hintCost,
       difficulty: clue.difficulty,
     };
@@ -527,58 +598,14 @@ export async function get_clue_info(huntId: number, clueId: number): Promise<Clu
 /**
  * Polls the Soroban RPC for transaction inclusion.
  * Resolves to true if successful, throws if failed or timed out.
+ *
+ * Delegates to the centralised `pollTransactionStatus` helper from
+ * `contractHelpers`, which handles both SDK-native and raw JSON-RPC fallback,
+ * as well as development mock transactions.
  */
 export async function pollTransaction(txHash: string): Promise<boolean> {
   if (typeof window === "undefined") return true;
-  if (txHash.startsWith("mock_tx_")) {
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    return true;
-  }
-
-  const server = new Server(SOROBAN_RPC_URL);
-  const maybeServer = server as typeof server & {
-    getTransaction?: (hash: string) => Promise<{ status: string }>;
-  };
-
-  for (let i = 0; i < 15; i++) {
-    try {
-      // Try using stellar-sdk SorobanRpc method if available
-      if (typeof maybeServer.getTransaction === "function") {
-        const res = await maybeServer.getTransaction(txHash);
-        if (res && res.status !== "NOT_FOUND" && res.status !== "PENDING") {
-          if (res.status === "SUCCESS") return true;
-          throw new Error(`Transaction failed with status: ${res.status}`);
-        }
-      } else {
-        // Fallback to raw JSON-RPC
-        const rpcRes = await fetch(SOROBAN_RPC_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            jsonrpc: "2.0",
-            id: 1,
-            method: "getTransaction",
-            params: { hash: txHash },
-          }),
-        }).then((r) => r.json());
-
-        if (rpcRes?.result) {
-          const status = rpcRes.result.status;
-          if (status !== "NOT_FOUND" && status !== "PENDING") {
-            if (status === "SUCCESS") return true;
-            throw new Error(`Transaction failed with status: ${status}`);
-          }
-        }
-      }
-    } catch (e: unknown) {
-      if (e instanceof Error && e.message.includes("Transaction failed")) {
-        throw e;
-      }
-      logger.warn("Polling error:", e);
-    }
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-  }
-  throw new Error("Transaction polling timed out after 30 seconds");
+  return pollTransactionStatus(txHash, { maxAttempts: 15, pollInterval: 2000 });
 }
 
 async function saveProgressToServer(
@@ -656,7 +683,8 @@ export async function submitAnswer(
   huntId: number,
   clueId: number,
   answer: string,
-  wallet?: string
+  wallet?: string,
+  submission?: ClueSubmission
 ): Promise<SubmitAnswerResult> {
   await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -672,22 +700,19 @@ export async function submitAnswer(
     throw new SequentialClueError();
   }
 
-  const userAnswer = answer.trim().toLowerCase();
-
-  // Detect stored hashed answer (hex SHA-256) vs legacy plain answers.
-  const stored = clue.answer || "";
-  const isHexSha256 = /^[a-f0-9]{64}$/i.test(stored);
-
-  if (isHexSha256) {
-    const salt = `${huntId}_${clue.id}`;
-    const hashed = await sha256Hex(userAnswer + salt);
-    if (hashed !== stored) throw new AnswerIncorrectError();
-  } else {
-    const possibleAnswers = stored
-      .toLowerCase()
-      .split("|")
-      .map((a) => a.trim());
-    if (!possibleAnswers.includes(userAnswer)) throw new AnswerIncorrectError();
+  const validation = await validateClueSubmission(clue, {
+    answer,
+    ...(submission?.location ? { location: submission.location } : {}),
+  });
+  if (!validation.valid) {
+    if (
+      getClueType(clue) === "qr" ||
+      getClueType(clue) === "multiple-choice" ||
+      getClueType(clue) === "location"
+    ) {
+      throw new Error(validation.reason ?? "Unable to validate this clue answer.");
+    }
+    throw new AnswerIncorrectError();
   }
 
   // Calculate speed bonus

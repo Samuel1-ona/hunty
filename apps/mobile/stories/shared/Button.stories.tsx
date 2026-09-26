@@ -1,10 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-native';
 import { View } from 'react-native';
-import { Button } from '../../shared/components/native/Button';
-import type { Meta, StoryObj } from '@storybook/react-native'
-import { View } from 'react-native'
 
-import { Button } from '../../shared/components/native/Button'
+import { Button } from '@hunty/ui/native';
 
 const meta = {
   title: 'Shared/Native/Button',

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 
-import { Card, CardContent, CardDescription, CardFooter,CardHeader, CardTitle } from '../shared/components/web/Card'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@hunty/ui/web'
 
 const meta = {
   title: 'Shared/Web/Card',

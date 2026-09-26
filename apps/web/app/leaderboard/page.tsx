@@ -1,16 +1,24 @@
 "use client"
 
-import { ArrowLeft, Check, Copy, Trophy } from "lucide-react"
+import { ArrowLeft, Check, Copy, Trophy, Users } from "lucide-react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useCallback, useEffect, useState } from "react"
 
 import { Header } from "@/components/Header"
-import { LeaderboardFilterBar } from "@/components/LeaderboardFilterBar"
-import { LeaderboardTable } from "@/components/LeaderBoardTable"
+import { LeaderboardTableSkeleton } from "@/components/LoadingSkeletons"
+import { ReferralLeaderboardTable } from "@/components/ReferralLeaderboardTable"
 import { Button } from "@/components/ui/button"
-import type { LeaderboardFilters, LeaderboardMetric,LeaderboardTimePeriod } from "@/lib/types"
+import type { LeaderboardFilters, LeaderboardMetric, LeaderboardTimePeriod } from "@/lib/types"
 import type { ClueDifficulty } from "@/lib/types"
+
+const LeaderboardFilterBar = dynamic(() =>
+  import("@/components/LeaderboardFilterBar").then((mod) => mod.LeaderboardFilterBar)
+)
+const LeaderboardTable = dynamic(() =>
+  import("@/components/LeaderBoardTable").then((mod) => mod.LeaderboardTable)
+)
 
 const DEFAULT_FILTERS: LeaderboardFilters = {
   timePeriod: "all",
@@ -124,7 +132,11 @@ function LeaderboardContent() {
       )}
 
       <div className="bg-white/5 border border-white/10 rounded-2xl p-6 shadow-inner">
-        <LeaderboardTable huntId={1} filters={filters} />
+        {activeTab === "game" ? (
+          <LeaderboardTable huntId={1} filters={filters} />
+        ) : (
+          <ReferralLeaderboardTable />
+        )}
       </div>
     </>
   )
@@ -143,8 +155,15 @@ export default function LeaderboardPage() {
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 relative z-10">
         <Suspense
           fallback={
-            <div className="flex items-center justify-center py-20">
-              <Trophy className="w-8 h-8 text-zinc-600 animate-pulse" />
+            <div className="space-y-6">
+              <div className="h-10 w-48 rounded-xl bg-white/10 animate-pulse" />
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-6 shadow-inner">
+                <table className="w-full">
+                  <tbody>
+                    <LeaderboardTableSkeleton count={6} />
+                  </tbody>
+                </table>
+              </div>
             </div>
           }
         >

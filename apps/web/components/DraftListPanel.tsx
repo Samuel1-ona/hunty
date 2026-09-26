@@ -3,35 +3,66 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Clock, Trash2, FileEdit, ChevronDown, ChevronUp } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import {
   Card,
   CardTitle,
   CardDescription,
-} from "@/components/ui/card"
-import { listAllDrafts, deleteDraft } from "@/hooks/useHuntDraftAutoSave"
+} from "@hunty/ui"
+import {
+  listAllDrafts,
+  deleteDraft,
+  deleteDraftFromServer,
+  fetchDraftsFromServer,
+} from "@/hooks/useHuntDraftAutoSave"
+import { useWallet } from "@/lib/context/WalletContext"
 import type { HuntDraftSave } from "@/lib/types"
+
+/** Merge local and server drafts, deduped by draftId (newest copy wins), newest first. */
+function mergeDrafts(local: HuntDraftSave[], remote: HuntDraftSave[]): HuntDraftSave[] {
+  const byId = new Map<string, HuntDraftSave>()
+  for (const draft of [...local, ...remote]) {
+    const existing = byId.get(draft.draftId)
+    if (!existing || new Date(draft.savedAt) > new Date(existing.savedAt)) {
+      byId.set(draft.draftId, draft)
+    }
+  }
+  return [...byId.values()].sort(
+    (a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime()
+  )
+}
 
 /**
  * DraftListPanel
  *
- * Renders the list of locally-saved hunt draft auto-saves on the creator
- * dashboard.  Each row shows the label, save time, and quick actions:
+ * Renders the list of hunt draft auto-saves on the creator dashboard,
+ * merging the local (offline-first) copy with the server copy for
+ * connected wallets so drafts saved on another device also show up here.
+ * Each row shows the label, save time, and quick actions:
  *  - Resume: opens /hunty with the draftId query param
- *  - Delete: removes the draft from localStorage
+ *  - Delete: removes the draft locally and (if synced) on the server
  *
  * Collapses to a summary when there are many drafts.
  */
 export function DraftListPanel() {
   const router = useRouter()
+  const { publicKey } = useWallet()
   const [drafts, setDrafts] = useState<HuntDraftSave[]>([])
   const [expanded, setExpanded] = useState(false)
 
-  const loadDrafts = () => setDrafts(listAllDrafts())
+  const loadDrafts = async () => {
+    const local = listAllDrafts()
+    if (!publicKey) {
+      setDrafts(local)
+      return
+    }
+    const remote = await fetchDraftsFromServer(publicKey)
+    setDrafts(mergeDrafts(local, remote))
+  }
 
   useEffect(() => {
-    loadDrafts()
-  }, [])
+    void loadDrafts()
+  }, [publicKey])
 
   if (drafts.length === 0) return null
 
@@ -45,7 +76,8 @@ export function DraftListPanel() {
 
   const handleDelete = (draftId: string) => {
     deleteDraft(draftId)
-    loadDrafts()
+    if (publicKey) void deleteDraftFromServer(draftId)
+    void loadDrafts()
   }
 
   return (

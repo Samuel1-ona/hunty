@@ -26,7 +26,7 @@ export function useHaptics(options: UseHapticsOptions = {}) {
    * Internal gate to enforce cooldown rules
    */
   const executeWithCooldown = useCallback(
-    (action: () => any) => {
+    (action: () => void) => {
       if (!hapticsEnabled) return;
       const now = Date.now();
       if (now - lastTriggeredRef.current >= cooldownMs) {

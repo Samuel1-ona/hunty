@@ -14,8 +14,8 @@ import {
 import Image from "next/image"
 import React, { useEffect,useState } from "react"
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@hunty/ui"
+import { Card, CardContent } from "@hunty/ui"
 import {
   Dialog,
   DialogContent,

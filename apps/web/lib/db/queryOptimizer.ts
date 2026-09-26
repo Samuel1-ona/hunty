@@ -1,4 +1,5 @@
 import { getAllHunts, getHuntById, type StoredHunt } from "@/lib/huntStore";
+import { logger } from "@/lib/logger";
 import { getHuntsWithRatings } from "@/lib/reviews";
 
 type CacheEntry<T> = {
@@ -38,8 +39,7 @@ function writeCache<T>(key: string, value: T, ttlMs = DEFAULT_CACHE_TTL_MS): T {
 
 function logSlowQuery(queryName: string, durationMs: number, meta: Record<string, unknown>) {
   if (durationMs <= SLOW_QUERY_THRESHOLD_MS) return;
-  // eslint-disable-next-line no-console
-  console.warn(`[slow-query] ${queryName} took ${durationMs.toFixed(1)}ms`, meta);
+  logger.warn(`[slow-query] ${queryName} took ${durationMs.toFixed(1)}ms`, meta);
 }
 
 function trackPotentialNPlusOne(queryName: string, requestId?: string) {
@@ -49,8 +49,7 @@ function trackPotentialNPlusOne(queryName: string, requestId?: string) {
   queryCounter.set(key, count);
 
   if (count === 8) {
-    // eslint-disable-next-line no-console
-    console.warn(
+    logger.warn(
       `[n+1-detected] Query ${queryName} was called repeatedly in request ${requestId}.`
     );
   }
@@ -109,6 +108,7 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
   category?: string | null;
   search?: string | null;
   sortBy?: string | null;
+  ageClassification?: string | null;
   tag?: string | null;
   requestId?: string;
 }) {
@@ -121,6 +121,7 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
     category = "all",
     search = "",
     sortBy = "newest",
+    ageClassification = "all",
     tag = "",
     requestId,
   } = params;
@@ -128,13 +129,17 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
 
   return withTimedQuery(
     "listPublicActiveHuntsByCursorOptimized",
-    { cursor, limit, status, reward, difficulty, category, search, sortBy, tag },
+    { cursor, limit, status, reward, difficulty, category, search, sortBy, ageClassification, tag },
     () => {
-      const cacheKey = `active:${cursor ?? "start"}:${limit}:${status ?? "all"}:${reward ?? "all"}:${difficulty ?? "all"}:${category ?? "all"}:${search ?? ""}:${sortBy ?? "newest"}:${tag ?? ""}`;
+      const cacheKey = `active:${cursor ?? "start"}:${limit}:${status ?? "all"}:${reward ?? "all"}:${difficulty ?? "all"}:${category ?? "all"}:${search ?? ""}:${sortBy ?? "newest"}:${ageClassification ?? "all"}:${tag ?? ""}`;
       const cached = readCache<{ data: StoredHunt[]; nextCursor: number | null; total: number }>(
         cacheKey
       );
       if (cached) return cached;
+
+      // Feed categories (trending, new, nearby, featured) alter filtering and sorting
+      const FEED_CATEGORIES = ["trending", "new", "nearby", "featured"];
+      const isFeedCategory = FEED_CATEGORIES.includes(category ?? "");
 
       // Get all hunts (which already filters out private hunts)
       const allHunts = getAllHunts();
@@ -163,8 +168,9 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
             ? true
             : (hunt.difficulty ?? "Medium").toLowerCase() === difficulty.toLowerCase();
 
+        // Feed categories bypass the hunt's own category filter
         const matchesCategory =
-          category === "all" || !category
+          category === "all" || !category || isFeedCategory
             ? true
             : (hunt.category ?? "General").toLowerCase() === category.toLowerCase();
 
@@ -178,18 +184,43 @@ export function listPublicActiveHuntsByCursorOptimized(params: {
         const matchesTag =
           !tag || (hunt.tags ?? []).some((huntTag) => huntTag.toLowerCase() === tag.toLowerCase());
 
+        const matchesAgeClassification =
+          ageClassification === "all" ||
+          !ageClassification ||
+          (hunt.ageClassification ?? "all-ages") === ageClassification;
+
         return (
           matchesStatus &&
           matchesReward &&
           matchesDifficulty &&
           matchesCategory &&
           matchesSearch &&
-          matchesTag
+          matchesTag &&
+          matchesAgeClassification
         );
       });
 
       // Sort hunts
       filteredHunts.sort((a, b) => {
+        // Feed category sorting takes priority
+        if (isFeedCategory) {
+          if (category === "trending") {
+            const aCount = a.playerCount ?? 0;
+            const bCount = b.playerCount ?? 0;
+            if (bCount !== aCount) return bCount - aCount;
+            return b.cluesCount - a.cluesCount;
+          }
+          if (category === "nearby") {
+            return (b.startTime ?? 0) - (a.startTime ?? 0);
+          }
+          if (category === "featured") {
+            const aFeatured = a.isFeaturedOfWeek ? 1 : 0;
+            const bFeatured = b.isFeaturedOfWeek ? 1 : 0;
+            if (bFeatured !== aFeatured) return bFeatured - aFeatured;
+            return (b.startTime ?? 0) - (a.startTime ?? 0);
+          }
+        }
+
         if (sortBy === "rating-high") {
           const ratingA = a.averageRating ?? 0;
           const ratingB = b.averageRating ?? 0;

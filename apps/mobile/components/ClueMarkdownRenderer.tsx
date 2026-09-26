@@ -47,7 +47,14 @@ export function ClueMarkdownRenderer({ text }: ClueMarkdownRendererProps) {
   );
 }
 
-function renderFormattedText(text: string, key: number, colors: any) {
+type ThemeColors = {
+  primary: string
+  secondary: string
+  border: string
+  text: string
+}
+
+function renderFormattedText(text: string, key: number, colors: ThemeColors) {
   if (!text) return null;
 
   // Split by markdown links: /(\[.*?\]\(.*?\))/g

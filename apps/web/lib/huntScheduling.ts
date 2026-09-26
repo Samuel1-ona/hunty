@@ -1,5 +1,25 @@
 import type { StoredHunt } from "@/lib/types"
 
+// ---------------------------------------------------------------------------
+// Scheduling messages (i18n-aware)
+// ---------------------------------------------------------------------------
+
+/**
+ * Validation error strings used by `validateHuntSchedule`.
+ * Pass strings from `next-intl` to get localized errors; omit for English defaults.
+ */
+export interface SchedulingMessages {
+  startMustBeFuture: string
+  endMustBeAfterStart: string
+  endMustBeAfterNow: string
+}
+
+const DEFAULT_SCHEDULING_MESSAGES: SchedulingMessages = {
+  startMustBeFuture: "Start time must be in the future.",
+  endMustBeAfterStart: "End time must be after the start time.",
+  endMustBeAfterNow: "End time must be after the current time.",
+}
+
 export type HuntScheduleValidationResult = {
   isValid: boolean
   errors: Partial<Record<"startAt" | "endAt", string>>
@@ -15,21 +35,25 @@ export function validateHuntSchedule({
   startAt,
   endAt,
   now = Date.now(),
+  messages,
 }: {
   startAt: number
   endAt: number
   now?: number
+  /** Optional locale-translated error strings. Falls back to English when omitted. */
+  messages?: SchedulingMessages
 }): HuntScheduleValidationResult {
+  const msgs = messages ?? DEFAULT_SCHEDULING_MESSAGES
   const errors: Partial<Record<"startAt" | "endAt", string>> = {}
 
   if (startAt < now - VALIDATION_TOLERANCE_MS) {
-    errors.startAt = "Start time must be in the future."
+    errors.startAt = msgs.startMustBeFuture
   }
 
   if (endAt <= startAt) {
-    errors.endAt = "End time must be after the start time."
+    errors.endAt = msgs.endMustBeAfterStart
   } else if (endAt < now - VALIDATION_TOLERANCE_MS) {
-    errors.endAt = "End time must be after the current time."
+    errors.endAt = msgs.endMustBeAfterNow
   }
 
   return {

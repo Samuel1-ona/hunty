@@ -1,7 +1,8 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
 import { FlatCompat } from "@eslint/eslintrc";
 import storybook from "eslint-plugin-storybook";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+
 import baseConfig from "./base.mjs";
 
 const __filename = fileURLToPath(import.meta.url);

@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
         return sendHuntStartReminder({
           hunt,
           recipientEmail,
+          recipientWalletAddress: hunt.creator,
           startTime: hunt.startAt ?? hunt.startTime ?? Math.floor(Date.now() / 1000),
         })
       })

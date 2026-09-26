@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useContext, useCallback } from "react"
 import { WalletContext } from "@/lib/context/WalletContext"
+import { logger } from "@/lib/logger"
 
 export function useFavorites() {
   const wallet = useContext(WalletContext)
@@ -23,7 +24,7 @@ export function useFavorites() {
         setFavorites([])
       }
     } catch (e) {
-      console.error("Failed to parse favorites from local storage", e)
+      logger.error("Failed to parse favorites from local storage", e)
       setFavorites([])
     } finally {
       setIsLoaded(true)
@@ -42,7 +43,7 @@ export function useFavorites() {
       try {
         localStorage.setItem(storageKey, JSON.stringify(nextFavorites))
       } catch (e) {
-        console.error("Failed to save favorites to local storage", e)
+        logger.error("Failed to save favorites to local storage", e)
       }
       
       return nextFavorites

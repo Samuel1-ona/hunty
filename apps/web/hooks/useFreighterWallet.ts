@@ -55,6 +55,9 @@ interface UseFreighterWalletReturn {
  *
  * Usage:
  *   const { connected, publicKey, displayKey, connect, disconnect } = useFreighterWallet()
+ *
+ * @returns Connection state, the active public key, a shortened display key,
+ *   and handlers for connecting or disconnecting the wallet.
  */
 export function useFreighterWallet(): UseFreighterWalletReturn {
   const mounted = useIsMounted();

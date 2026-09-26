@@ -1,25 +1,17 @@
-import * as fs from "fs"
-import * as path from "path"
-
-import { matchesClueAnswer } from "@/lib/clueAnswerVerification"
-import { logger } from "@/lib/logger"
-import { getServerClue } from "@/lib/server/seedClues"
-
-const DATA_DIR = path.join(process.cwd(), "lib", "anti-cheat-data")
-const ANSWERS_FILE = path.join(DATA_DIR, "answers.json")
-const ANOMALIES_FILE = path.join(DATA_DIR, "anomalies.json")
-const BANS_FILE = path.join(DATA_DIR, "bans.json")
-const TRACKING_FILE = path.join(DATA_DIR, "tracking.json")
+import { matchesClueAnswer } from "@/lib/clueAnswerVerification";
+import { getDb } from "@/lib/db";
+import { logger } from "@/lib/logger";
+import { getServerClue } from "@/lib/server/seedClues";
 
 export interface AntiCheatConfig {
-  minClueIntervalMs: number
-  maxSubmissionsPerWindow: number
-  submissionWindowMs: number
-  maxSubmissionsPerWalletPerWindow: number
-  walletSubmissionWindowMs: number
-  maxAnomaliesBeforeFlag: number
-  speedBonusWindowSeconds: number
-  speedBonusMaxPoints: number
+  minClueIntervalMs: number;
+  maxSubmissionsPerWindow: number;
+  submissionWindowMs: number;
+  maxSubmissionsPerWalletPerWindow: number;
+  walletSubmissionWindowMs: number;
+  maxAnomaliesBeforeFlag: number;
+  speedBonusWindowSeconds: number;
+  speedBonusMaxPoints: number;
 }
 
 export const DEFAULT_CONFIG: AntiCheatConfig = {
@@ -31,326 +23,470 @@ export const DEFAULT_CONFIG: AntiCheatConfig = {
   maxAnomaliesBeforeFlag: 3,
   speedBonusWindowSeconds: 60,
   speedBonusMaxPoints: 59,
-}
+};
 
-interface StoredAnswer {
-  huntId: number
-  clueId: number
-  wallet: string
-  ip: string
-  correct: boolean
-  serverTimestamp: number
-  clientTimestamp: number | null
-  score: number
-  bonusPoints: number
-  anomalyFlags: string[]
-}
-
-interface AnomalyRecord {
-  id: string
-  wallet: string
-  ip: string
-  type: "fast_submission" | "rapid_attempts" | "impossible_pattern" | "excessive_frequency" | "suspicious_wallet_ip"
-  details: string
-  timestamp: number
-  huntId: number
-  clueId: number
-}
-
-interface BanRecord {
-  wallet: string
-  ip: string
-  reason: string
-  bannedAt: number
-  bannedBy: string
-}
-
-interface ClueTracking {
-  lastSubmissionTime: number
-  attemptCount: number
-}
-
-interface TrackingData {
-  [key: string]: ClueTracking
-}
-
-function readJSON<T>(filePath: string, fallback: T): T {
-  try {
-    const data = fs.readFileSync(filePath, "utf-8")
-    return JSON.parse(data)
-  } catch {
-    return fallback
-  }
-}
-
-function writeJSON<T>(filePath: string, data: T): void {
-  try {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8")
-  } catch (err) {
-    logger.error("Failed to write anti-cheat data file:", filePath, err)
-  }
-}
-
-function getAnswers(): StoredAnswer[] {
-  return readJSON<StoredAnswer[]>(ANSWERS_FILE, [])
-}
-
-function saveAnswers(answers: StoredAnswer[]): void {
-  writeJSON(ANSWERS_FILE, answers)
-}
-
-function getAnomalies(): AnomalyRecord[] {
-  return readJSON<AnomalyRecord[]>(ANOMALIES_FILE, [])
-}
-
-function saveAnomalies(anomalies: AnomalyRecord[]): void {
-  writeJSON(ANOMALIES_FILE, anomalies)
-}
-
-function getBans(): BanRecord[] {
-  return readJSON<BanRecord[]>(BANS_FILE, [])
-}
-
-function saveBans(bans: BanRecord[]): void {
-  writeJSON(BANS_FILE, bans)
-}
-
-function getTracking(): TrackingData {
-  return readJSON<TrackingData>(TRACKING_FILE, {})
-}
-
-function saveTracking(tracking: TrackingData): void {
-  writeJSON(TRACKING_FILE, tracking)
-}
-
-let config: AntiCheatConfig = { ...DEFAULT_CONFIG }
+let config: AntiCheatConfig = { ...DEFAULT_CONFIG };
 
 export function setConfig(overrides: Partial<AntiCheatConfig>): void {
-  config = { ...config, ...overrides }
+  config = { ...config, ...overrides };
 }
 
 export function getConfig(): AntiCheatConfig {
-  return { ...config }
+  return { ...config };
 }
 
 function trackingKey(wallet: string, huntId: number, clueId: number): string {
-  return `${wallet}_${huntId}_${clueId}`
+  return `${wallet}_${huntId}_${clueId}`;
 }
 
 export function verifyAnswer(huntId: number, clueId: number, answer: string): Promise<boolean> {
-  const clue = getServerClue(huntId, clueId)
-  if (!clue) return Promise.resolve(false)
-  return matchesClueAnswer(answer, clue, huntId)
+  const clue = getServerClue(huntId, clueId);
+  if (!clue) return Promise.resolve(false);
+  return matchesClueAnswer(answer, clue, huntId);
 }
 
-export function checkMinInterval(wallet: string, huntId: number, clueId: number): { allowed: boolean; waitMs: number } {
-  const tracking = getTracking()
-  const key = trackingKey(wallet, huntId, clueId)
-  const record = tracking[key]
+export async function checkMinInterval(
+  wallet: string,
+  huntId: number,
+  clueId: number
+): Promise<{ allowed: boolean; waitMs: number }> {
+  const key = trackingKey(wallet, huntId, clueId);
 
-  if (!record) {
-    return { allowed: true, waitMs: 0 }
+  try {
+    const sql = getDb();
+    const rows = await sql<{ last_submission_time: Date }[]>`
+      SELECT last_submission_time
+      FROM anti_cheat_tracking
+      WHERE key = ${key}
+      LIMIT 1
+    `;
+
+    if (rows.length === 0) {
+      return { allowed: true, waitMs: 0 };
+    }
+
+    const elapsed = Date.now() - rows[0].last_submission_time.getTime();
+    if (elapsed < config.minClueIntervalMs) {
+      return { allowed: false, waitMs: config.minClueIntervalMs - elapsed };
+    }
+
+    return { allowed: true, waitMs: 0 };
+  } catch (err) {
+    logger.error("[Anti-Cheat] checkMinInterval DB error, allowing:", err);
+    return { allowed: true, waitMs: 0 };
   }
-
-  const elapsed = Date.now() - record.lastSubmissionTime
-  if (elapsed < config.minClueIntervalMs) {
-    return { allowed: false, waitMs: config.minClueIntervalMs - elapsed }
-  }
-
-  return { allowed: true, waitMs: 0 }
 }
 
-export function trackClueSubmission(wallet: string, huntId: number, clueId: number): void {
-  const tracking = getTracking()
-  const key = trackingKey(wallet, huntId, clueId)
+export async function trackClueSubmission(
+  wallet: string,
+  huntId: number,
+  clueId: number
+): Promise<void> {
+  const key = trackingKey(wallet, huntId, clueId);
 
-  if (tracking[key]) {
-    tracking[key].lastSubmissionTime = Date.now()
-    tracking[key].attemptCount += 1
-  } else {
-    tracking[key] = { lastSubmissionTime: Date.now(), attemptCount: 1 }
+  try {
+    const sql = getDb();
+    await sql`
+      INSERT INTO anti_cheat_tracking (key, last_submission_time, attempt_count)
+      VALUES (${key}, NOW(), 1)
+      ON CONFLICT (key) DO UPDATE
+        SET last_submission_time = NOW(),
+            attempt_count = anti_cheat_tracking.attempt_count + 1
+    `;
+  } catch (err) {
+    logger.error("[Anti-Cheat] trackClueSubmission DB error:", err);
   }
-
-  saveTracking(tracking)
 }
 
-export function detectAnomalies(
+export async function detectAnomalies(
   wallet: string,
   ip: string,
   huntId: number,
   clueId: number,
-  correct: boolean,
-): string[] {
-  const flags: string[] = []
-  const tracking = getTracking()
-  const key = trackingKey(wallet, huntId, clueId)
-  const record = tracking[key]
+  correct: boolean
+): Promise<string[]> {
+  const flags: string[] = [];
+  const key = trackingKey(wallet, huntId, clueId);
 
-  if (record && record.attemptCount > 5) {
-    flags.push("rapid_attempts")
-  }
+  try {
+    const sql = getDb();
 
-  if (record && record.lastSubmissionTime) {
-    const elapsed = Date.now() - record.lastSubmissionTime
-    if (elapsed < 1000) {
-      flags.push("fast_submission")
+    // Check tracking record for this key
+    const trackRows = await sql<{ last_submission_time: Date; attempt_count: number }[]>`
+      SELECT last_submission_time, attempt_count
+      FROM anti_cheat_tracking
+      WHERE key = ${key}
+      LIMIT 1
+    `;
+
+    if (trackRows.length > 0) {
+      const { last_submission_time, attempt_count } = trackRows[0];
+
+      if (attempt_count > 5) {
+        flags.push("rapid_attempts");
+      }
+
+      const elapsed = Date.now() - last_submission_time.getTime();
+      if (elapsed < 1000) {
+        flags.push("fast_submission");
+      }
+
+      if (correct && attempt_count === 1 && elapsed < 500) {
+        flags.push("impossible_pattern");
+      }
     }
-  }
 
-  if (correct && record && record.attemptCount === 1 && record.lastSubmissionTime) {
-    const elapsedSinceFirst = Date.now() - record.lastSubmissionTime
-    if (elapsedSinceFirst < 500) {
-      flags.push("impossible_pattern")
+    // Check excessive submissions from this wallet in the last 10 s
+    const recentWalletCount = await sql<{ count: number }[]>`
+      SELECT COUNT(*) AS count
+      FROM anti_cheat_answers
+      WHERE wallet = ${wallet}
+        AND server_timestamp > NOW() - INTERVAL '10 seconds'
+    `;
+    if ((recentWalletCount[0]?.count ?? 0) > 10) {
+      flags.push("excessive_frequency");
     }
+
+    // Check for same IP with different wallets in last 5 min
+    const sameIpRows = await sql<{ count: number }[]>`
+      SELECT COUNT(DISTINCT wallet) AS count
+      FROM anti_cheat_answers
+      WHERE ip = ${ip}
+        AND wallet <> ${wallet}
+        AND server_timestamp > NOW() - INTERVAL '5 minutes'
+    `;
+    if ((sameIpRows[0]?.count ?? 0) > 3) {
+      flags.push("suspicious_wallet_ip");
+    }
+
+    // Check for same wallet with different IPs in last hour
+    const sameWalletRows = await sql<{ count: number }[]>`
+      SELECT COUNT(DISTINCT ip) AS count
+      FROM anti_cheat_answers
+      WHERE wallet = ${wallet}
+        AND ip <> ${ip}
+        AND server_timestamp > NOW() - INTERVAL '1 hour'
+    `;
+    if ((sameWalletRows[0]?.count ?? 0) > 2) {
+      flags.push("suspicious_wallet_ip");
+    }
+  } catch (err) {
+    logger.error("[Anti-Cheat] detectAnomalies DB error:", err);
   }
 
-  const answers = getAnswers()
-  const recentWallet = answers.filter(
-    (a) => a.wallet === wallet && Date.now() - a.serverTimestamp < 10_000,
-  )
-  if (recentWallet.length > 10) {
-    flags.push("excessive_frequency")
-  }
-
-  const sameIpDifferentWallets = answers.filter(
-    (a) => a.ip === ip && a.wallet !== wallet && Date.now() - a.serverTimestamp < 300_000,
-  )
-  if (sameIpDifferentWallets.length > 3) {
-    flags.push("suspicious_wallet_ip")
-  }
-
-  const sameWalletDifferentIps = answers.filter(
-    (a) => a.wallet === wallet && a.ip !== ip && Date.now() - a.serverTimestamp < 3600_000,
-  )
-  if (sameWalletDifferentIps.length > 2) {
-    flags.push("suspicious_wallet_ip")
-  }
-
-  return flags
+  return flags;
 }
 
-export function recordAnswer(
+export async function recordAnswer(
   huntId: number,
   clueId: number,
   wallet: string,
   ip: string,
-  answer: string,
+  _answer: string,
   correct: boolean,
   clientTimestamp: number | null,
   score: number,
   bonusPoints: number,
-  anomalyFlags: string[],
-): void {
-  const record: StoredAnswer = {
-    huntId,
-    clueId,
-    wallet,
-    ip,
-    correct,
-    serverTimestamp: Date.now(),
-    clientTimestamp,
-    score,
-    bonusPoints,
-    anomalyFlags,
-  }
+  anomalyFlags: string[]
+): Promise<void> {
+  try {
+    const sql = getDb();
 
-  const answers = getAnswers()
-  answers.push(record)
-  saveAnswers(answers)
+    await sql`
+      INSERT INTO anti_cheat_answers (
+        hunt_id, clue_id, wallet, ip, correct,
+        server_timestamp, client_timestamp,
+        score, bonus_points, anomaly_flags
+      )
+      VALUES (
+        ${huntId}, ${clueId}, ${wallet}, ${ip}, ${correct},
+        NOW(),
+        ${clientTimestamp !== null ? new Date(clientTimestamp) : null},
+        ${score}, ${bonusPoints},
+        ${sql.array(anomalyFlags)}
+      )
+    `;
 
-  for (const flag of anomalyFlags) {
-    const anomaly: AnomalyRecord = {
-      id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      wallet,
-      ip,
-      type: flag as AnomalyRecord["type"],
-      details: `huntId=${huntId} clueId=${clueId} correct=${correct} score=${score}`,
-      timestamp: Date.now(),
-      huntId,
-      clueId,
+    for (const flag of anomalyFlags) {
+      const anomalyId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      await sql`
+        INSERT INTO anti_cheat_anomalies (
+          id, wallet, ip, type, details, timestamp, hunt_id, clue_id
+        )
+        VALUES (
+          ${anomalyId}, ${wallet}, ${ip}, ${flag},
+          ${"huntId=" + huntId + " clueId=" + clueId + " correct=" + correct + " score=" + score},
+          NOW(), ${huntId}, ${clueId}
+        )
+      `;
+      logger.warn(`[Anti-Cheat] Anomaly detected: ${flag} - wallet=${wallet} ip=${ip}`);
     }
-
-    const anomalies = getAnomalies()
-    anomalies.push(anomaly)
-    saveAnomalies(anomalies)
-    logger.warn(`[Anti-Cheat] Anomaly detected: ${flag} - wallet=${wallet} ip=${ip}`)
+  } catch (err) {
+    logger.error("[Anti-Cheat] recordAnswer DB error:", err);
   }
 }
 
-export function isBanned(wallet: string, ip: string): boolean {
-  const bans = getBans()
-  return bans.some((b) => b.wallet === wallet || b.ip === ip)
+export async function isBanned(wallet: string, ip: string): Promise<boolean> {
+  try {
+    const sql = getDb();
+    const rows = await sql<{ count: number }[]>`
+      SELECT COUNT(*) AS count
+      FROM anti_cheat_bans
+      WHERE wallet = ${wallet} OR ip = ${ip}
+    `;
+    return (rows[0]?.count ?? 0) > 0;
+  } catch (err) {
+    logger.error("[Anti-Cheat] isBanned DB error:", err);
+    return false;
+  }
 }
 
-export function getFlaggedUsers(): { wallet: string; ip: string; anomalyCount: number; lastAnomaly: number }[] {
-  const anomalies = getAnomalies()
-  const grouped = new Map<string, { wallet: string; ip: string; anomalyCount: number; lastAnomaly: number }>()
+export async function getFlaggedUsers(): Promise<
+  { wallet: string; ip: string; anomalyCount: number; lastAnomaly: number }[]
+> {
+  try {
+    const sql = getDb();
+    const rows = await sql<
+      {
+        wallet: string;
+        ip: string;
+        anomaly_count: number;
+        last_anomaly: Date;
+      }[]
+    >`
+      SELECT wallet, ip,
+             COUNT(*) AS anomaly_count,
+             MAX(timestamp) AS last_anomaly
+      FROM anti_cheat_anomalies
+      GROUP BY wallet, ip
+      ORDER BY last_anomaly DESC
+    `;
+    return rows.map((r) => ({
+      wallet: r.wallet,
+      ip: r.ip,
+      anomalyCount: Number(r.anomaly_count),
+      lastAnomaly: r.last_anomaly.getTime(),
+    }));
+  } catch (err) {
+    logger.error("[Anti-Cheat] getFlaggedUsers DB error:", err);
+    return [];
+  }
+}
 
-  for (const a of anomalies) {
-    const key = a.wallet || a.ip
-    const existing = grouped.get(key)
-    if (existing) {
-      existing.anomalyCount++
-      if (a.timestamp > existing.lastAnomaly) {
-        existing.lastAnomaly = a.timestamp
-      }
-    } else {
-      grouped.set(key, {
-        wallet: a.wallet,
-        ip: a.ip,
-        anomalyCount: 1,
-        lastAnomaly: a.timestamp,
-      })
+export async function getAnomalyHistory(wallet?: string): Promise<
+  {
+    id: string;
+    wallet: string;
+    ip: string;
+    type: string;
+    details: string;
+    timestamp: number;
+    huntId: number;
+    clueId: number;
+  }[]
+> {
+  try {
+    const sql = getDb();
+    const rows = await (wallet
+      ? sql<
+          {
+            id: string;
+            wallet: string;
+            ip: string;
+            type: string;
+            details: string;
+            timestamp: Date;
+            hunt_id: number;
+            clue_id: number;
+          }[]
+        >`
+          SELECT id, wallet, ip, type, details, timestamp, hunt_id, clue_id
+          FROM anti_cheat_anomalies
+          WHERE wallet = ${wallet}
+          ORDER BY timestamp DESC
+        `
+      : sql<
+          {
+            id: string;
+            wallet: string;
+            ip: string;
+            type: string;
+            details: string;
+            timestamp: Date;
+            hunt_id: number;
+            clue_id: number;
+          }[]
+        >`
+          SELECT id, wallet, ip, type, details, timestamp, hunt_id, clue_id
+          FROM anti_cheat_anomalies
+          ORDER BY timestamp DESC
+        `);
+
+    return rows.map((r) => ({
+      id: r.id,
+      wallet: r.wallet,
+      ip: r.ip,
+      type: r.type,
+      details: r.details,
+      timestamp: r.timestamp.getTime(),
+      huntId: r.hunt_id,
+      clueId: r.clue_id,
+    }));
+  } catch (err) {
+    logger.error("[Anti-Cheat] getAnomalyHistory DB error:", err);
+    return [];
+  }
+}
+
+export async function getSubmissionHistory(wallet?: string): Promise<
+  {
+    huntId: number;
+    clueId: number;
+    wallet: string;
+    ip: string;
+    correct: boolean;
+    serverTimestamp: number;
+    clientTimestamp: number | null;
+    score: number;
+    bonusPoints: number;
+    anomalyFlags: string[];
+  }[]
+> {
+  try {
+    const sql = getDb();
+    const rows = await (wallet
+      ? sql<
+          {
+            hunt_id: number;
+            clue_id: number;
+            wallet: string;
+            ip: string;
+            correct: boolean;
+            server_timestamp: Date;
+            client_timestamp: Date | null;
+            score: number;
+            bonus_points: number;
+            anomaly_flags: string[];
+          }[]
+        >`
+          SELECT hunt_id, clue_id, wallet, ip, correct, server_timestamp,
+                 client_timestamp, score, bonus_points, anomaly_flags
+          FROM anti_cheat_answers
+          WHERE wallet = ${wallet}
+          ORDER BY server_timestamp DESC
+        `
+      : sql<
+          {
+            hunt_id: number;
+            clue_id: number;
+            wallet: string;
+            ip: string;
+            correct: boolean;
+            server_timestamp: Date;
+            client_timestamp: Date | null;
+            score: number;
+            bonus_points: number;
+            anomaly_flags: string[];
+          }[]
+        >`
+          SELECT hunt_id, clue_id, wallet, ip, correct, server_timestamp,
+                 client_timestamp, score, bonus_points, anomaly_flags
+          FROM anti_cheat_answers
+          ORDER BY server_timestamp DESC
+        `);
+
+    return rows.map((r) => ({
+      huntId: r.hunt_id,
+      clueId: r.clue_id,
+      wallet: r.wallet,
+      ip: r.ip,
+      correct: r.correct,
+      serverTimestamp: r.server_timestamp.getTime(),
+      clientTimestamp: r.client_timestamp ? r.client_timestamp.getTime() : null,
+      score: r.score,
+      bonusPoints: r.bonus_points,
+      anomalyFlags: r.anomaly_flags,
+    }));
+  } catch (err) {
+    logger.error("[Anti-Cheat] getSubmissionHistory DB error:", err);
+    return [];
+  }
+}
+
+export async function getBannedUsers(): Promise<
+  { wallet: string; ip: string; reason: string; bannedAt: number; bannedBy: string }[]
+> {
+  try {
+    const sql = getDb();
+    const rows = await sql<
+      { wallet: string; ip: string; reason: string; banned_at: Date; banned_by: string }[]
+    >`
+      SELECT wallet, ip, reason, banned_at, banned_by
+      FROM anti_cheat_bans
+      ORDER BY banned_at DESC
+    `;
+    return rows.map((r) => ({
+      wallet: r.wallet,
+      ip: r.ip,
+      reason: r.reason,
+      bannedAt: r.banned_at.getTime(),
+      bannedBy: r.banned_by,
+    }));
+  } catch (err) {
+    logger.error("[Anti-Cheat] getBannedUsers DB error:", err);
+    return [];
+  }
+}
+
+export async function banUser(
+  wallet: string,
+  ip: string,
+  reason: string,
+  bannedBy: string
+): Promise<void> {
+  try {
+    const sql = getDb();
+    await sql`
+      INSERT INTO anti_cheat_bans (wallet, ip, reason, banned_at, banned_by)
+      VALUES (${wallet}, ${ip}, ${reason}, NOW(), ${bannedBy})
+      ON CONFLICT (wallet) DO NOTHING
+    `;
+    logger.warn(
+      `[Anti-Cheat] User banned: wallet=${wallet} ip=${ip} reason="${reason}" by=${bannedBy}`
+    );
+  } catch (err) {
+    logger.error("[Anti-Cheat] banUser DB error:", err);
+  }
+}
+
+export async function unbanUser(wallet: string): Promise<boolean> {
+  try {
+    const sql = getDb();
+    const rows = await sql`
+      DELETE FROM anti_cheat_bans
+      WHERE wallet = ${wallet}
+      RETURNING wallet
+    `;
+    if (rows.length > 0) {
+      logger.info(`[Anti-Cheat] User unbanned: wallet=${wallet}`);
+      return true;
     }
-  }
-
-  return Array.from(grouped.values()).sort((a, b) => b.lastAnomaly - a.lastAnomaly)
-}
-
-export function getAnomalyHistory(wallet?: string): AnomalyRecord[] {
-  const anomalies = getAnomalies()
-  if (wallet) {
-    return anomalies.filter((a) => a.wallet === wallet).sort((a, b) => b.timestamp - a.timestamp)
-  }
-  return anomalies.sort((a, b) => b.timestamp - a.timestamp)
-}
-
-export function getSubmissionHistory(wallet?: string): StoredAnswer[] {
-  const answers = getAnswers()
-  if (wallet) {
-    return answers.filter((a) => a.wallet === wallet).sort((a, b) => b.serverTimestamp - a.serverTimestamp)
-  }
-  return answers.sort((a, b) => b.serverTimestamp - a.serverTimestamp)
-}
-
-export function getBannedUsers(): BanRecord[] {
-  return getBans()
-}
-
-export function banUser(wallet: string, ip: string, reason: string, bannedBy: string): void {
-  const bans = getBans()
-  if (!bans.some((b) => b.wallet === wallet || b.ip === ip)) {
-    bans.push({ wallet, ip, reason, bannedAt: Date.now(), bannedBy })
-    saveBans(bans)
-    logger.warn(`[Anti-Cheat] User banned: wallet=${wallet} ip=${ip} reason="${reason}" by=${bannedBy}`)
+    return false;
+  } catch (err) {
+    logger.error("[Anti-Cheat] unbanUser DB error:", err);
+    return false;
   }
 }
 
-export function unbanUser(wallet: string): boolean {
-  const bans = getBans()
-  const filtered = bans.filter((b) => b.wallet !== wallet)
-  if (filtered.length === bans.length) return false
-  saveBans(filtered)
-  logger.info(`[Anti-Cheat] User unbanned: wallet=${wallet}`)
-  return true
-}
+export function calculateScore(
+  huntId: number,
+  clueId: number,
+  correct: boolean
+): { score: number; bonusPoints: number } {
+  if (!correct) return { score: 0, bonusPoints: 0 };
 
-export function calculateScore(huntId: number, clueId: number, correct: boolean): { score: number; bonusPoints: number } {
-  if (!correct) return { score: 0, bonusPoints: 0 }
+  const clue = getServerClue(huntId, clueId);
+  if (!clue) return { score: 0, bonusPoints: 0 };
 
-  const clue = getServerClue(huntId, clueId)
-  if (!clue) return { score: 0, bonusPoints: 0 }
-
-  const baseScore = clue.points
-  return { score: baseScore, bonusPoints: 0 }
+  return { score: clue.points, bonusPoints: 0 };
 }

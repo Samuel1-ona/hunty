@@ -1,191 +1,172 @@
-import crypto from "crypto"
-import { promises as fs } from "fs"
-import path from "path"
+/**
+ * Hunt view and hint-usage analytics.
+ *
+ * All reads and writes go through PostgreSQL via the shared `getDb()` client.
+ *
+ * Tables (see migration 008_create_analytics.sql):
+ *   hunt_views          — one row per hunt, view count incremented atomically
+ *   hint_usage_events   — append-only log of hint-reveal events
+ *
+ * Graceful degradation: every exported function catches DB errors and returns
+ * a safe empty/zero value rather than letting analytics failures surface to
+ * end-users.
+ */
 
-import { logger } from "@/lib/logger"
+import crypto from "crypto";
+
+import { getDb } from "@/lib/db";
+import { logger } from "@/lib/logger";
+
+// ─── Hunt view analytics ──────────────────────────────────────────────────────
 
 export type HuntViewStats = {
-  huntId: number
-  views: number
-}
-
-const ANALYTICS_STORE_PATH = path.join(process.cwd(), "data", "hunt-views.json")
-
-async function ensureStoreFile(): Promise<void> {
-  const dir = path.dirname(ANALYTICS_STORE_PATH)
-  await fs.mkdir(dir, { recursive: true })
-  try {
-    await fs.access(ANALYTICS_STORE_PATH)
-  } catch {
-    await fs.writeFile(ANALYTICS_STORE_PATH, JSON.stringify({}, null, 2), "utf8")
-  }
-}
-
-async function readAnalyticsStore(): Promise<Record<string, { views: number }>> {
-  await ensureStoreFile()
-  const raw = await fs.readFile(ANALYTICS_STORE_PATH, "utf8")
-  try {
-    const data = JSON.parse(raw)
-    if (typeof data !== "object" || data === null) {
-      return {}
-    }
-    return data as Record<string, { views: number }>
-  } catch {
-    return {}
-  }
-}
-
-async function writeAnalyticsStore(data: Record<string, { views: number }>): Promise<void> {
-  await ensureStoreFile()
-  await fs.writeFile(ANALYTICS_STORE_PATH, JSON.stringify(data, null, 2), "utf8")
-}
+  huntId: number;
+  views: number;
+};
 
 export function hashHuntId(huntId: number): string {
-  const secret = process.env.HUNT_VIEW_ANALYTICS_SECRET || "hunty-analytics-secret"
-  return crypto.createHmac("sha256", secret).update(String(huntId)).digest("hex")
-}
-
-export async function recordHuntView(huntId: number): Promise<HuntViewStats> {
-  const counts = await readAnalyticsStore()
-  const key = String(huntId)
-  const views = (counts[key]?.views ?? 0) + 1
-  counts[key] = { views }
-  await writeAnalyticsStore(counts)
-
-  if (process.env.HUNT_VIEW_ANALYTICS_ENDPOINT) {
-    const endpoint = process.env.HUNT_VIEW_ANALYTICS_ENDPOINT
-    const payload = {
-      event: "hunt_view",
-      huntIdHash: hashHuntId(huntId),
-      source: "hunt_detail_page",
-      timestamp: new Date().toISOString(),
-    }
-
-    try {
-      await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(process.env.HUNT_VIEW_ANALYTICS_KEY
-            ? { Authorization: `Bearer ${process.env.HUNT_VIEW_ANALYTICS_KEY}` }
-            : {}),
-        },
-        body: JSON.stringify(payload),
-      })
-    } catch (error) {
-      // Privacy-preserving analytics should not break page rendering.
-      logger.warn("Failed to forward hunt view analytics", error)
-    }
-  }
-
-  return { huntId, views }
-}
-
-export async function getHuntViewCount(huntId: number): Promise<number> {
-  const counts = await readAnalyticsStore()
-  return counts[String(huntId)]?.views ?? 0
-}
-
-export async function getAllHuntViewCounts(): Promise<HuntViewStats[]> {
-  const counts = await readAnalyticsStore()
-  return Object.entries(counts).map(([huntId, entry]) => ({
-    huntId: Number(huntId),
-    views: entry.views,
-  }))
-}
-
-// ─── Hint Usage Analytics ─────────────────────────────────────────────────────
-
-export type HintUsageEvent = {
-  huntId: number
-  clueId: number
-  hintIndex: number  // 0-based index of the hint revealed
-  wallet: string
-  timestamp: string
-}
-
-export type HintUsageStats = {
-  huntId: number
-  clueId: number
-  hintIndex: number
-  totalReveals: number
-}
-
-const HINT_ANALYTICS_STORE_PATH = path.join(process.cwd(), "data", "hint-usage.json")
-
-async function ensureHintStoreFile(): Promise<void> {
-  const dir = path.dirname(HINT_ANALYTICS_STORE_PATH)
-  await fs.mkdir(dir, { recursive: true })
-  try {
-    await fs.access(HINT_ANALYTICS_STORE_PATH)
-  } catch {
-    await fs.writeFile(HINT_ANALYTICS_STORE_PATH, JSON.stringify([], null, 2), "utf8")
-  }
-}
-
-async function readHintStore(): Promise<HintUsageEvent[]> {
-  await ensureHintStoreFile()
-  const raw = await fs.readFile(HINT_ANALYTICS_STORE_PATH, "utf8")
-  try {
-    const data = JSON.parse(raw)
-    return Array.isArray(data) ? data : []
-  } catch {
-    return []
-  }
-}
-
-async function writeHintStore(events: HintUsageEvent[]): Promise<void> {
-  await ensureHintStoreFile()
-  await fs.writeFile(HINT_ANALYTICS_STORE_PATH, JSON.stringify(events, null, 2), "utf8")
+  const secret = process.env.HUNT_VIEW_ANALYTICS_SECRET || "hunty-analytics-secret";
+  return crypto.createHmac("sha256", secret).update(String(huntId)).digest("hex");
 }
 
 /**
+ * Increment the view counter for a hunt and return the updated count.
+ * Uses an atomic UPSERT so concurrent requests never produce a lost-update.
+ */
+export async function recordHuntView(huntId: number): Promise<HuntViewStats> {
+  try {
+    const sql = getDb();
+    const rows = await sql<{ views: number }[]>`
+      INSERT INTO hunt_views (hunt_id, views, last_viewed_at)
+      VALUES (${huntId}, 1, NOW())
+      ON CONFLICT (hunt_id) DO UPDATE
+        SET views          = hunt_views.views + 1,
+            last_viewed_at = NOW()
+      RETURNING views
+    `;
+    const views = rows[0]?.views ?? 1;
+
+    // Optional external analytics forwarding (unchanged from original)
+    if (process.env.HUNT_VIEW_ANALYTICS_ENDPOINT) {
+      const endpoint = process.env.HUNT_VIEW_ANALYTICS_ENDPOINT;
+      const payload = {
+        event: "hunt_view",
+        huntIdHash: hashHuntId(huntId),
+        source: "hunt_detail_page",
+        timestamp: new Date().toISOString(),
+      };
+      try {
+        await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(process.env.HUNT_VIEW_ANALYTICS_KEY
+              ? { Authorization: `Bearer ${process.env.HUNT_VIEW_ANALYTICS_KEY}` }
+              : {}),
+          },
+          body: JSON.stringify(payload),
+        });
+      } catch (error) {
+        logger.warn("Failed to forward hunt view analytics", error);
+      }
+    }
+
+    return { huntId, views };
+  } catch (err) {
+    logger.error("[analytics] recordHuntView DB error:", err);
+    return { huntId, views: 0 };
+  }
+}
+
+export async function getHuntViewCount(huntId: number): Promise<number> {
+  try {
+    const sql = getDb();
+    const rows = await sql<{ views: number }[]>`
+      SELECT views FROM hunt_views WHERE hunt_id = ${huntId} LIMIT 1
+    `;
+    return rows[0]?.views ?? 0;
+  } catch (err) {
+    logger.error("[analytics] getHuntViewCount DB error:", err);
+    return 0;
+  }
+}
+
+export async function getAllHuntViewCounts(): Promise<HuntViewStats[]> {
+  try {
+    const sql = getDb();
+    const rows = await sql<{ hunt_id: number; views: number }[]>`
+      SELECT hunt_id, views FROM hunt_views ORDER BY hunt_id
+    `;
+    return rows.map((r) => ({ huntId: r.hunt_id, views: r.views }));
+  } catch (err) {
+    logger.error("[analytics] getAllHuntViewCounts DB error:", err);
+    return [];
+  }
+}
+
+// ─── Hint usage analytics ─────────────────────────────────────────────────────
+
+export type HintUsageEvent = {
+  huntId: number;
+  clueId: number;
+  hintIndex: number;
+  wallet: string;
+  timestamp: string;
+};
+
+export type HintUsageStats = {
+  huntId: number;
+  clueId: number;
+  hintIndex: number;
+  totalReveals: number;
+};
+
+/**
  * Record a single hint reveal event.
- * The wallet address is hashed before storage so raw addresses are never persisted.
+ * The wallet address is HMAC-hashed before storage so raw addresses are never persisted.
  */
 export async function recordHintUsage(
   huntId: number,
   clueId: number,
   hintIndex: number,
-  wallet: string,
+  wallet: string
 ): Promise<void> {
-  const events = await readHintStore()
-  const secret = process.env.HUNT_VIEW_ANALYTICS_SECRET || "hunty-analytics-secret"
-  const walletHash = crypto.createHmac("sha256", secret).update(wallet).digest("hex")
+  try {
+    const secret = process.env.HUNT_VIEW_ANALYTICS_SECRET || "hunty-analytics-secret";
+    const walletHash = crypto.createHmac("sha256", secret).update(wallet).digest("hex");
 
-  events.push({
-    huntId,
-    clueId,
-    hintIndex,
-    wallet: walletHash,
-    timestamp: new Date().toISOString(),
-  })
+    const sql = getDb();
+    await sql`
+      INSERT INTO hint_usage_events (hunt_id, clue_id, hint_index, wallet_hash, occurred_at)
+      VALUES (${huntId}, ${clueId}, ${hintIndex}, ${walletHash}, NOW())
+    `;
 
-  await writeHintStore(events)
-
-  // Optional: forward to external analytics endpoint
-  if (process.env.HUNT_VIEW_ANALYTICS_ENDPOINT) {
-    const payload = {
-      event: "hint_used",
-      huntIdHash: hashHuntId(huntId),
-      clueId,
-      hintIndex,
-      timestamp: new Date().toISOString(),
+    // Optional external analytics forwarding
+    if (process.env.HUNT_VIEW_ANALYTICS_ENDPOINT) {
+      const payload = {
+        event: "hint_used",
+        huntIdHash: hashHuntId(huntId),
+        clueId,
+        hintIndex,
+        timestamp: new Date().toISOString(),
+      };
+      try {
+        await fetch(process.env.HUNT_VIEW_ANALYTICS_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(process.env.HUNT_VIEW_ANALYTICS_KEY
+              ? { Authorization: `Bearer ${process.env.HUNT_VIEW_ANALYTICS_KEY}` }
+              : {}),
+          },
+          body: JSON.stringify(payload),
+        });
+      } catch (error) {
+        logger.warn("Failed to forward hint usage analytics", error);
+      }
     }
-    try {
-      await fetch(process.env.HUNT_VIEW_ANALYTICS_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(process.env.HUNT_VIEW_ANALYTICS_KEY
-            ? { Authorization: `Bearer ${process.env.HUNT_VIEW_ANALYTICS_KEY}` }
-            : {}),
-        },
-        body: JSON.stringify(payload),
-      })
-    } catch (error) {
-      logger.warn("Failed to forward hint usage analytics", error)
-    }
+  } catch (err) {
+    logger.error("[analytics] recordHintUsage DB error:", err);
   }
 }
 
@@ -193,19 +174,30 @@ export async function recordHintUsage(
  * Return aggregated hint usage counts grouped by hunt + clue + hintIndex.
  */
 export async function getHintUsageStats(huntId: number): Promise<HintUsageStats[]> {
-  const events = await readHintStore()
-  const filtered = events.filter((e) => e.huntId === huntId)
-
-  const map = new Map<string, HintUsageStats>()
-  for (const e of filtered) {
-    const key = `${e.huntId}:${e.clueId}:${e.hintIndex}`
-    const existing = map.get(key)
-    if (existing) {
-      existing.totalReveals += 1
-    } else {
-      map.set(key, { huntId: e.huntId, clueId: e.clueId, hintIndex: e.hintIndex, totalReveals: 1 })
-    }
+  try {
+    const sql = getDb();
+    const rows = await sql<
+      {
+        hunt_id: number;
+        clue_id: number;
+        hint_index: number;
+        total_reveals: number;
+      }[]
+    >`
+      SELECT hunt_id, clue_id, hint_index, COUNT(*) AS total_reveals
+      FROM hint_usage_events
+      WHERE hunt_id = ${huntId}
+      GROUP BY hunt_id, clue_id, hint_index
+      ORDER BY clue_id, hint_index
+    `;
+    return rows.map((r) => ({
+      huntId: r.hunt_id,
+      clueId: r.clue_id,
+      hintIndex: r.hint_index,
+      totalReveals: Number(r.total_reveals),
+    }));
+  } catch (err) {
+    logger.error("[analytics] getHintUsageStats DB error:", err);
+    return [];
   }
-
-  return Array.from(map.values())
 }

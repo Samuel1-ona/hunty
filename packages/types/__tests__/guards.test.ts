@@ -60,8 +60,16 @@ const validAchievement: Achievement = {
 
 describe("enum guards", () => {
   it("recognises valid hunt statuses and reward types", () => {
-    expect(isHuntStatus("Active")).toBe(true)
+    for (const status of [
+      "Active", "Completed", "Draft", "Cancelled",
+      "PendingReview", "Scheduled", "Ended",
+    ]) {
+      expect(isHuntStatus(status)).toBe(true)
+    }
     expect(isHuntStatus("active")).toBe(false)
+    expect(isHuntStatus("Paused")).toBe(false)
+    expect(isHuntStatus("")).toBe(false)
+    expect(isHuntStatus(null)).toBe(false)
     expect(isRewardType("Both")).toBe(true)
     expect(isRewardType("DOGE")).toBe(false)
     expect(isAchievementId("legend")).toBe(true)

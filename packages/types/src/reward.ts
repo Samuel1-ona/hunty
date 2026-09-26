@@ -45,3 +45,22 @@ export interface RewardHistoryEntry {
   recipient?: string
   explorerUrl: string
 }
+
+/**
+ * A third-party sponsor contribution to a hunt's reward pool.
+ * Sponsor funds are tracked separately from creator funds so attribution
+ * can be displayed independently.
+ */
+export interface SponsorContribution {
+  /** Unique identifier for this contribution record. */
+  id: string
+  huntId: number
+  /** Stellar wallet address of the sponsoring party. */
+  sponsor: string
+  /** Amount contributed in XLM stroops. */
+  amount: number
+  /** On-chain transaction hash of the sponsorship deposit. */
+  txHash: string
+  /** Unix timestamp in milliseconds when the contribution was made. */
+  createdAt: number
+}

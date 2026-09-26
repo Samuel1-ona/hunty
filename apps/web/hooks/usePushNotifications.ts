@@ -20,7 +20,12 @@ import {
   registerServiceWorker,
   syncSubscriptionToServer,
 } from "@/lib/notifications/webPush"
-import { getNotificationPreferences, setNotificationPreferences } from "@/lib/notifications/notificationPreferences"
+import {
+  getNotificationPreferences,
+  setNotificationPreferences,
+  syncNotificationPreferences,
+} from "@/lib/notifications/notificationPreferences"
+import { logger } from "@/lib/logger"
 
 export type PushState =
   | "unsupported"   // browser does not support Web Push
@@ -100,9 +105,17 @@ export function usePushNotifications(
       const prefs = getNotificationPreferences()
       const updated = { ...prefs, pushEnabled: true }
       setNotificationPreferences(updated)
+      // Keep the canonical wallet document in sync as well as the device
+      // subscription. This lets the server suppress stale subscriptions.
+      await syncNotificationPreferences(walletAddress, updated)
 
       // Re-sync with preferences now that we have the subscription
       await syncSubscriptionToServer(subscription, walletAddress, {
+        enabled: updated.enabled,
+        huntEvents: updated.huntEvents,
+        rewards: updated.rewards,
+        social: updated.social,
+        achievements: updated.achievements,
         huntStart: updated.pushHuntStart,
         overtake: updated.pushOvertake,
         huntCancelled: updated.pushHuntCancelled,
@@ -114,7 +127,7 @@ export function usePushNotifications(
     } catch (err) {
       setState("unsubscribed")
       setError("An unexpected error occurred. Please try again.")
-      console.error("[usePushNotifications] enable error:", err)
+      logger.error("[usePushNotifications] enable error:", err)
     }
   }, [walletAddress])
 
@@ -127,15 +140,17 @@ export function usePushNotifications(
     try {
       await disablePushNotifications(walletAddress)
 
-      // Persist preference
+      // Persist preference in both local storage and the wallet document.
       const prefs = getNotificationPreferences()
-      setNotificationPreferences({ ...prefs, pushEnabled: false })
+      const updated = { ...prefs, pushEnabled: false }
+      setNotificationPreferences(updated)
+      await syncNotificationPreferences(walletAddress, updated)
 
       setState("unsubscribed")
     } catch (err) {
       setState("subscribed")
       setError("Failed to disable push notifications. Please try again.")
-      console.error("[usePushNotifications] disable error:", err)
+      logger.error("[usePushNotifications] disable error:", err)
     }
   }, [walletAddress])
 
