@@ -1,17 +1,38 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { NextRequest } from "next/server";
 
-const walletAddress = "GPLAYER";
+// Store writes are gated on a verified caller, so every mutation must carry
+// wallet credentials. The `valid_test_signature` test bypass is honoured by
+// `@/lib/walletAuth` when NODE_ENV === "test".
+const walletAddress = "GBRPYHIL2CI3FNQ4BXLFMNDLFPPPU2HY52WSGROMKTCVLA5WDWZTVLTC";
+const otherWallet = "GBRPYHIL2CI3FNQ4BXLFMNDLFPPPU2HY52WSGROMKTCVLA5WDWZTVLTD";
+const walletSignature = "valid_test_signature";
+const walletChallenge = "hunty_preferences_challenge_123";
 
-function request(method: string, body?: unknown): Request {
-  return new Request("http://localhost/api/v1/notifications/preferences", {
+function authHeaders(wallet = walletAddress): Record<string, string> {
+  return {
+    "x-wallet-address": wallet,
+    "x-wallet-signature": walletSignature,
+    "x-wallet-challenge": walletChallenge,
+  };
+}
+
+function request(
+  method: string,
+  body?: unknown,
+  wallet = walletAddress
+): NextRequest {
+  return new NextRequest("http://localhost/api/v1/notifications/preferences", {
     method,
-    headers: body ? { "content-type": "application/json" } : undefined,
+    headers: body
+      ? { "content-type": "application/json", ...authHeaders(wallet) }
+      : authHeaders(wallet),
     body: body ? JSON.stringify(body) : undefined,
   });
 }
 
-function getRequest(wallet = walletAddress): Request {
-  return new Request(
+function getRequest(wallet = walletAddress): NextRequest {
+  return new NextRequest(
     `http://localhost/api/v1/notifications/preferences?walletAddress=${encodeURIComponent(wallet)}`
   );
 }
@@ -89,7 +110,7 @@ describe("/api/v1/notifications/preferences", () => {
       })
     );
 
-    const response = await GET(getRequest("GOTHER"));
+    const response = await GET(getRequest(otherWallet));
     const body = await response.json();
     expect(body.preferences.social).toBe(true);
   });
@@ -98,5 +119,46 @@ describe("/api/v1/notifications/preferences", () => {
     const { PUT } = await import("../route");
     const response = await PUT(request("PUT", { preferences: { social: false } }));
     expect(response.status).toBe(400);
+  });
+
+  it("returns 401 for unauthenticated writes (no credentials)", async () => {
+    const { PUT } = await import("../route");
+    const response = await PUT(
+      new NextRequest("http://localhost/api/v1/notifications/preferences", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ walletAddress, preferences: { social: false } }),
+      })
+    );
+
+    expect(response.status).toBe(401);
+    const body = await response.json();
+    expect(body.error).toMatch(/Authentication required/i);
+  });
+
+  it("returns 403 when an authenticated caller writes another wallet's preferences", async () => {
+    const { PUT } = await import("../route");
+    const response = await PUT(
+      request("PUT", { walletAddress, preferences: { social: false } }, otherWallet)
+    );
+
+    expect(response.status).toBe(403);
+    const body = await response.json();
+    expect(body.error).toMatch(/Forbidden/i);
+  });
+
+  it("returns 200 and writes preferences for the verified caller", async () => {
+    const { GET, PUT } = await import("../route");
+    const response = await PUT(
+      request("PUT", { walletAddress, preferences: { rewards: false } })
+    );
+
+    expect(response.status).toBe(200);
+    const saved = await response.json();
+    expect(saved.preferences.rewards).toBe(false);
+
+    const readBack = await GET(getRequest());
+    const readBody = await readBack.json();
+    expect(readBody.preferences.rewards).toBe(false);
   });
 });

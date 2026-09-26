@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 import {
   getStoredNotificationPreferences,
   saveNotificationPreferences,
 } from "@/lib/notifications/notificationPreferencesStore";
 import { withValidation } from "@/lib/api/withValidation";
+import { verifyCallerAuth } from "@/lib/walletAuth";
 import {
   notificationPreferencesBodySchema,
   notificationPreferencesQuerySchema,
@@ -18,6 +20,7 @@ export const dynamic = "force-dynamic";
  *
  * Returns the canonical preference document for a wallet. A new wallet gets
  * the default document without creating a database row until the first write.
+ * Reads stay public; writes are gated on a verified caller.
  */
 export const GET = withValidation(
   { query: notificationPreferencesQuerySchema },
@@ -28,12 +31,32 @@ export const GET = withValidation(
 );
 
 async function writePreferences(
-  _request: Request,
+  request: Request,
   _context: unknown,
   { body }: { body: { walletAddress: string; preferences: Record<string, unknown> } }
 ): Promise<NextResponse> {
-  const current = await getStoredNotificationPreferences(body.walletAddress);
-  const preferences = await saveNotificationPreferences(body.walletAddress, {
+  const auth = await verifyCallerAuth(request as unknown as NextRequest, body);
+  if (!auth.authenticated) {
+    return NextResponse.json({ error: auth.error || "Unauthenticated" }, { status: auth.status || 401 });
+  }
+  if (!auth.authorized) {
+    return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 403 });
+  }
+
+  const actor = auth.actor!;
+  if (actor.toLowerCase() !== body.walletAddress.toLowerCase()) {
+    return NextResponse.json(
+      {
+        error:
+          "Forbidden: authenticated wallet does not match the requested wallet address",
+      },
+      { status: 403 }
+    );
+  }
+
+  // Read and write are keyed by the verified actor, never by the body address.
+  const current = await getStoredNotificationPreferences(actor);
+  const preferences = await saveNotificationPreferences(actor, {
     ...current,
     ...body.preferences,
   });
