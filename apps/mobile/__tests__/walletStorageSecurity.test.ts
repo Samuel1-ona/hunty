@@ -13,17 +13,8 @@ import {
   safeAsyncStorageSet,
   SENSITIVE_STORAGE_KEYS,
 } from '@services/walletStorageMigration';
-import {
-  createPin,
-  setBiometricEnabled,
-  verifyPin,
-} from '@services/walletSecurity';
-import {
-  cacheJoinedHuntClues,
-  queueClueAnswer,
-  writeClues,
-  writeHunts,
-} from '@store/huntStore';
+import { createPin, setBiometricEnabled, verifyPin } from '@services/walletSecurity';
+import { cacheJoinedHuntClues, queueClueAnswer, writeClues, writeHunts } from '@store/huntStore';
 import { useWalletStore } from '@store/useStore';
 
 jest.mock('expo-secure-store');
@@ -157,11 +148,8 @@ describe('Mobile Wallet Session & Sensitive Storage Audit', () => {
         JSON.stringify(clues),
       );
 
-      await queueClueAnswer(42, 1, 'water');
-      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-        'hunty_clue_queue',
-        expect.any(String),
-      );
+      await queueClueAnswer(42, 1, 'water', 'G'.repeat(56));
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith('hunty_clue_queue', expect.any(String));
 
       // Verify no sensitive keys or session tokens were touched
       const calls = (AsyncStorage.setItem as jest.Mock).mock.calls;

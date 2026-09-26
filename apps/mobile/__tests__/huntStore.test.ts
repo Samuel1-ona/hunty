@@ -262,11 +262,11 @@ describe('huntStore', () => {
   describe('queueClueAnswer / getQueuedAnswers / processQueuedAnswers', () => {
     it('queues an answer and retrieves it', async () => {
       (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(null);
-      await queueClueAnswer(1, 1, 'spiral mural');
+      await queueClueAnswer(1, 1, 'spiral mural', 'G'.repeat(56));
 
       expect(AsyncStorage.setItem).toHaveBeenCalledWith(
         'hunty_clue_queue',
-        JSON.stringify([{ huntId: 1, clueId: 1, answer: 'spiral mural' }]),
+        JSON.stringify([{ huntId: 1, clueId: 1, answer: 'spiral mural', wallet: 'G'.repeat(56) }]),
       );
 
       (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(
@@ -278,20 +278,51 @@ describe('huntStore', () => {
     });
 
     it('appends to an existing queue', async () => {
-      const existing = [{ huntId: 1, clueId: 1, answer: 'first' }];
+      const existing = [{ huntId: 1, clueId: 1, answer: 'first', wallet: 'G'.repeat(56) }];
       (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(JSON.stringify(existing));
-      await queueClueAnswer(1, 2, 'second');
+      await queueClueAnswer(1, 2, 'second', 'G'.repeat(56));
 
       const written = JSON.parse((AsyncStorage.setItem as jest.Mock).mock.calls[0][1]);
       expect(written).toHaveLength(2);
     });
 
-    it('processQueuedAnswers clears the queue', async () => {
+    it('submits queued answers and removes the queue on success', async () => {
       (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(
-        JSON.stringify([{ huntId: 1, clueId: 1, answer: 'done' }]),
+        JSON.stringify([{ huntId: 1, clueId: 1, answer: 'done', wallet: 'G'.repeat(56) }]),
       );
+      global.fetch = jest.fn().mockResolvedValue({ ok: true });
+
       await processQueuedAnswers();
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/v1/answers'),
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            huntId: 1,
+            clueId: 1,
+            wallet: 'G'.repeat(56),
+            answer: 'done',
+          }),
+        }),
+      );
       expect(AsyncStorage.removeItem).toHaveBeenCalledWith('hunty_clue_queue');
+    });
+
+    it('keeps failed answers queued after retries', async () => {
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(
+        JSON.stringify([{ huntId: 1, clueId: 1, answer: 'failed', wallet: 'G'.repeat(56) }]),
+      );
+      global.fetch = jest.fn().mockRejectedValue(new Error('offline'));
+
+      await processQueuedAnswers();
+
+      expect(global.fetch).toHaveBeenCalledTimes(3);
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+        'hunty_clue_queue',
+        JSON.stringify([{ huntId: 1, clueId: 1, answer: 'failed', wallet: 'G'.repeat(56) }]),
+      );
+      expect(AsyncStorage.removeItem).not.toHaveBeenCalled();
     });
 
     it('getQueuedAnswers returns empty array on error', async () => {
@@ -363,24 +394,34 @@ describe('huntStore', () => {
   });
 
   describe('submission path (offline queue + process)', () => {
-    it('queues answers offline and clears them on process', async () => {
+    it('queues answers offline and submits them when processing', async () => {
       (AsyncStorage.getItem as jest.Mock)
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(
           JSON.stringify([
-            { huntId: 1, clueId: 1, answer: 'spiral mural' },
-            { huntId: 1, clueId: 2, answer: 'lantern statue' },
+            { huntId: 1, clueId: 1, answer: 'spiral mural', wallet: 'G'.repeat(56) },
+            { huntId: 1, clueId: 2, answer: 'lantern statue', wallet: 'G'.repeat(56) },
+          ]),
+        )
+        .mockResolvedValueOnce(
+          JSON.stringify([
+            { huntId: 1, clueId: 1, answer: 'spiral mural', wallet: 'G'.repeat(56) },
+            { huntId: 1, clueId: 2, answer: 'lantern statue', wallet: 'G'.repeat(56) },
           ]),
         );
 
-      await queueClueAnswer(1, 1, 'spiral mural');
-      await queueClueAnswer(1, 2, 'lantern statue');
+      global.fetch = jest.fn().mockResolvedValue({ ok: true });
+
+      await queueClueAnswer(1, 1, 'spiral mural', 'G'.repeat(56));
+      await queueClueAnswer(1, 2, 'lantern statue', 'G'.repeat(56));
 
       const queued = await getQueuedAnswers();
       expect(queued).toHaveLength(2);
 
       await processQueuedAnswers();
+
+      expect(global.fetch).toHaveBeenCalledTimes(2);
       expect(AsyncStorage.removeItem).toHaveBeenCalledWith('hunty_clue_queue');
     });
   });

@@ -3,6 +3,7 @@
  * Persisted in SecureStore for mobile, with AsyncStorage offline cache for clues.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import env from '@config/env';
 import * as SecureStore from 'expo-secure-store';
 import type { Clue, HuntStatus, StoredHunt } from '@hunty/types';
 import { scheduleHuntExpiryNotification } from '@utils/huntNotifications';
@@ -225,13 +226,19 @@ export async function queueClueAnswer(
   huntId: number,
   clueId: number,
   answer: string,
+  wallet: string,
 ): Promise<void> {
   try {
     const existing = await AsyncStorage.getItem('hunty_clue_queue');
     const queue = existing
-      ? (JSON.parse(existing) as Array<{ huntId: number; clueId: number; answer: string }>)
+      ? (JSON.parse(existing) as Array<{
+          huntId: number;
+          clueId: number;
+          answer: string;
+          wallet: string;
+        }>)
       : [];
-    queue.push({ huntId, clueId, answer });
+    queue.push({ huntId, clueId, answer, wallet });
     await AsyncStorage.setItem('hunty_clue_queue', JSON.stringify(queue));
   } catch {
     // ignore errors
@@ -240,7 +247,7 @@ export async function queueClueAnswer(
 
 // Retrieve queued answers
 export async function getQueuedAnswers(): Promise<
-  Array<{ huntId: number; clueId: number; answer: string }>
+  Array<{ huntId: number; clueId: number; answer: string; wallet: string }>
 > {
   try {
     const data = await AsyncStorage.getItem('hunty_clue_queue');
@@ -253,11 +260,52 @@ export async function getQueuedAnswers(): Promise<
 // Process queued answers: attempt to submit them when back online
 export async function processQueuedAnswers(): Promise<void> {
   const queue = await getQueuedAnswers();
+  const failed: Array<{
+    huntId: number;
+    clueId: number;
+    answer: string;
+    wallet: string;
+  }> = [];
+
   for (const item of queue) {
-    // TODO: integrate with server submission and update local progress
-    // Placeholder: assume success and remove from queue
+    let submitted = false;
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const response = await fetch(`${env.apiUrl}/v1/answers`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            huntId: item.huntId,
+            clueId: item.clueId,
+            wallet: item.wallet,
+            answer: item.answer,
+          }),
+        });
+
+        if (response.ok) {
+          submitted = true;
+          break;
+        }
+      } catch {
+        // Retry below
+      }
+
+      if (attempt < 3) {
+        await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** (attempt - 1)));
+      }
+    }
+
+    if (!submitted) {
+      failed.push(item);
+    }
   }
-  await AsyncStorage.removeItem('hunty_clue_queue');
+
+  if (failed.length > 0) {
+    await AsyncStorage.setItem('hunty_clue_queue', JSON.stringify(failed));
+  } else {
+    await AsyncStorage.removeItem('hunty_clue_queue');
+  }
 }
 
 export async function getOfflineCachedClues(huntId: number): Promise<Clue[]> {
