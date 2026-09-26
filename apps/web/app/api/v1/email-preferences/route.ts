@@ -17,17 +17,15 @@ import { ValidationError } from "@/lib/api/errors"
 import {
   getEmailPreference,
   upsertEmailPreference,
-  updateDigestSubscription,
 } from "@/lib/email/dbStore"
-
-const getParamsSchema = z.object({
-  wallet: z.string().min(1),
-})
+import { requireVerifiedWallet } from "@/lib/api/walletAuth"
 
 const postBodySchema = z.object({
-  walletAddress: z.string().min(1),
+  walletAddress: z.string().min(1).optional(),
   email: z.string().email(),
   digestSubscribed: z.boolean(),
+  challenge: z.string().min(1),
+  signature: z.string().min(1),
 })
 
 /**
@@ -80,10 +78,16 @@ export const POST = withErrorHandling(async (req: Request) => {
     })
   }
 
-  const { walletAddress, email, digestSubscribed } = parsed.data
+  const { walletAddress, email, digestSubscribed, challenge, signature } = parsed.data
+  const actorWallet = requireVerifiedWallet(req, {
+    purpose: "email-preferences-write",
+    challenge,
+    signature,
+    claimedAddress: walletAddress,
+  })
 
   // Create or update preference
-  const preference = await upsertEmailPreference(walletAddress, email, digestSubscribed)
+  const preference = await upsertEmailPreference(actorWallet, email, digestSubscribed)
 
   return NextResponse.json(
     {
