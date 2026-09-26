@@ -3,6 +3,8 @@
  * Persisted in SecureStore for mobile, with AsyncStorage offline cache for clues.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import env from '../config/env';
 import * as SecureStore from 'expo-secure-store';
 import type { Clue, HuntStatus, StoredHunt } from '@hunty/types';
 import { scheduleHuntExpiryNotification } from '@utils/huntNotifications';
@@ -228,9 +230,7 @@ export async function queueClueAnswer(
 ): Promise<void> {
   try {
     const existing = await AsyncStorage.getItem('hunty_clue_queue');
-    const queue = existing
-      ? (JSON.parse(existing) as Array<{ huntId: number; clueId: number; answer: string }>)
-      : [];
+    const queue = existing ? (JSON.parse(existing) as QueuedAnswer[]) : [];
     queue.push({ huntId, clueId, answer });
     await AsyncStorage.setItem('hunty_clue_queue', JSON.stringify(queue));
   } catch {
@@ -239,9 +239,7 @@ export async function queueClueAnswer(
 }
 
 // Retrieve queued answers
-export async function getQueuedAnswers(): Promise<
-  Array<{ huntId: number; clueId: number; answer: string }>
-> {
+export async function getQueuedAnswers(): Promise<QueuedAnswer[]> {
   try {
     const data = await AsyncStorage.getItem('hunty_clue_queue');
     return data ? JSON.parse(data) : [];
@@ -250,14 +248,68 @@ export async function getQueuedAnswers(): Promise<
   }
 }
 
-// Process queued answers: attempt to submit them when back online
-export async function processQueuedAnswers(): Promise<void> {
-  const queue = await getQueuedAnswers();
-  for (const item of queue) {
-    // TODO: integrate with server submission and update local progress
-    // Placeholder: assume success and remove from queue
+export type QueuedAnswer = { huntId: number; clueId: number; answer: string };
+
+/** Transport used to push one queued answer to the server. */
+export type AnswerSubmitter = (item: QueuedAnswer) => Promise<void>;
+
+/**
+ * Default submitter: POST one queued answer to the hunts API.
+ *
+ * Exported (and accepted as a parameter by `processQueuedAnswers`) so a caller
+ * can supply its own transport without this module hard-coding one.
+ */
+export async function submitClueAnswer(item: QueuedAnswer): Promise<void> {
+  const response = await fetch(`${env.apiUrl}/hunts/${item.huntId}/clues/${item.clueId}/answers`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ answer: item.answer }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to sync answer for clue ${item.clueId}: HTTP ${response.status}`);
   }
-  await AsyncStorage.removeItem('hunty_clue_queue');
+}
+
+/**
+ * Submit the answers that were queued while offline.
+ *
+ * Each answer is sent on its own and is removed from storage **only after the
+ * server confirmed it**. Anything that fails (offline again, server error) stays
+ * in the queue for the next attempt — an answer a player typed must never be
+ * dropped silently, which is what the previous version did by clearing the whole
+ * queue without sending anything (issue #1407).
+ *
+ * Returns how many answers were synced and how many are still waiting.
+ */
+export async function processQueuedAnswers(
+  submit: AnswerSubmitter = submitClueAnswer,
+): Promise<{ synced: number; remaining: number }> {
+  const queue = await getQueuedAnswers();
+  if (queue.length === 0) {
+    return { synced: 0, remaining: 0 };
+  }
+
+  const unsynced: QueuedAnswer[] = [];
+  let synced = 0;
+
+  for (const item of queue) {
+    try {
+      await submit(item);
+      synced += 1;
+    } catch {
+      // keep it for the next attempt; see the doc comment above
+      unsynced.push(item);
+    }
+  }
+
+  if (unsynced.length === 0) {
+    await AsyncStorage.removeItem('hunty_clue_queue');
+  } else {
+    await AsyncStorage.setItem('hunty_clue_queue', JSON.stringify(unsynced));
+  }
+
+  return { synced, remaining: unsynced.length };
 }
 
 export async function getOfflineCachedClues(huntId: number): Promise<Clue[]> {

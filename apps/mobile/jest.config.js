@@ -11,7 +11,7 @@ module.exports = {
     '!**/*.config.{js,ts}',
     '!coverage/**',
     '!**/.expo/**',
-    '!path-alias.js'
+    '!path-alias.js',
   ],
   setupFiles: ['<rootDir>/__mocks__/jestSetup.js'],
 
@@ -22,9 +22,15 @@ module.exports = {
     ],
   },
 
-  // Transform expo/* packages since they ship ESM
+  // Transform expo/* packages since they ship ESM.
+  //
+  // `\.pnpm` must be in the allowlist: pnpm stores packages as
+  // node_modules/.pnpm/<pkg>@<ver>/node_modules/<pkg>/..., so without it the
+  // pattern matches at the first `node_modules/` and expo's ESM files
+  // (expo/virtual/env.js) are skipped by the transformer, which makes every
+  // suite that reaches them fail to parse with "Unexpected token 'export'".
   transformIgnorePatterns: [
-    'node_modules/(?!(expo|@expo|expo-notifications|expo-device|expo-constants|expo-secure-store|expo-modules-core|react-native|@react-native))',
+    'node_modules/(?!(\\.pnpm|expo|@expo|expo-notifications|expo-device|expo-constants|expo-secure-store|expo-modules-core|react-native|@react-native)/)',
   ],
 
   // Manual mocks for native/expo modules
