@@ -225,10 +225,10 @@ async function sendToRecords(
           record.subscription as WebPushSubscription,
           jsonPayload
         )
-        .catch((err: { statusCode?: number }) => {
+        .catch(async (err: { statusCode?: number }) => {
           // 410 Gone / 404 Not Found → subscription is expired, remove it
           if (err?.statusCode === 410 || err?.statusCode === 404) {
-            removeSubscription(record.subscription.endpoint as string)
+            await removeSubscription(record.subscription.endpoint as string)
             logger.info(
               "[pushService] Removed stale subscription:",
               record.walletAddress
