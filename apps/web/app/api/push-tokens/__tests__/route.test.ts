@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { clearSubscriptionStore } from "@/lib/notifications/subscriptionStore"
+
 /**
  * Registration is bound to a per-wallet "owner secret" minted on first
  * registration (see route.ts for why: this codebase has no signature-based
@@ -48,6 +50,7 @@ function getRequest(params: Record<string, string>) {
 describe("POST /api/push-tokens", () => {
   beforeEach(() => {
     vi.resetModules()
+    clearSubscriptionStore()
   })
 
   it("rejects a malformed JSON body", async () => {
@@ -173,6 +176,7 @@ describe("POST /api/push-tokens", () => {
 describe("DELETE /api/push-tokens", () => {
   beforeEach(() => {
     vi.resetModules()
+    clearSubscriptionStore()
   })
 
   it("rejects a malformed JSON body", async () => {
@@ -263,6 +267,7 @@ describe("DELETE /api/push-tokens", () => {
 describe("GET /api/push-tokens", () => {
   beforeEach(() => {
     vi.resetModules()
+    clearSubscriptionStore()
   })
 
   it("reports not registered for an unknown wallet", async () => {
