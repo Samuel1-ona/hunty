@@ -146,6 +146,28 @@ mod nft_reward_tests {
         assert_eq!(client.get_owner(&id), Some(bob));
     }
 
+    /// Issue #1402: transferring a token to its current owner must be an
+    /// explicit no-op — the balance, enumerable index and owner are unchanged
+    /// and no duplicate slot appears.
+    #[test]
+    fn test_self_transfer_is_noop() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (minter, client) = setup(&env);
+        let alice = Address::generate(&env);
+
+        let id = client.mint(&minter, &alice, &test_uri(&env, 1));
+        assert_eq!(client.balance_of(&alice), 1);
+
+        client.transfer(&alice, &alice, &id);
+
+        assert_eq!(client.balance_of(&alice), 1);
+        assert_owner_index_consistent(&client, &alice);
+        assert_nft_present(&client, &alice, id);
+        assert_eq!(client.get_owner(&id), Some(alice));
+        assert_eq!(client.total_supply(), 1);
+    }
+
     // ── issue #848 core test: mint → transfer → burn consistency ─────────────
 
     /// Interleaved mint / transfer / burn sequence.
@@ -273,6 +295,24 @@ mod nft_reward_tests {
         let id = client.mint(&minter, &alice, &test_uri(&env, 1));
         // eve claims to be 'from' but is not the owner
         client.transfer(&eve, &bob, &id);
+    }
+
+    /// Issue #1402: once a token is burned it no longer exists, so a transfer
+    /// must fail with `NftError::TokenNotFound` instead of resurrecting it.
+    #[test]
+    #[should_panic]
+    fn test_transfer_burned_token_is_not_found() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (minter, client) = setup(&env);
+        let alice = Address::generate(&env);
+        let bob = Address::generate(&env);
+
+        let id = client.mint(&minter, &alice, &test_uri(&env, 1));
+        client.burn(&alice, &id);
+
+        // `alice` is no longer the owner because the token is gone.
+        client.transfer(&alice, &bob, &id);
     }
 
     // ── swap-and-pop edge cases ───────────────────────────────────────────────
