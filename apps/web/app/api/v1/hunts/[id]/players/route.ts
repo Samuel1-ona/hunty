@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 import { ValidationError } from "@/lib/api/errors"
 import { withErrorHandling } from "@/lib/api/withErrorHandling"
-import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit"
+import { getIP, rateLimit, rateLimitPresets, rateLimitResponse } from "@/lib/rate-limit"
 import {
   getAllProgressForHunt,
   getActivePlayersForHunt,
@@ -14,10 +14,7 @@ export const GET = withErrorHandling<{
   params: Promise<{ id: string }>
 }>(async (req, { params }) => {
   const ip = getIP(req)
-  const { success, reset } = await rateLimit(ip, {
-    limit: 60,
-    windowMs: 60 * 1000,
-  })
+  const { success, reset } = await rateLimit(ip, rateLimitPresets.read)
   if (!success) {
     return rateLimitResponse(reset)
   }

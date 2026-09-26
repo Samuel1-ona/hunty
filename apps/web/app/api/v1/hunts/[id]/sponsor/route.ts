@@ -4,7 +4,7 @@ import { z } from "zod";
 import { withValidation } from "@/lib/api/withValidation";
 import { ValidationError, NotFoundError } from "@/lib/api/errors";
 import { huntSponsorBodySchema } from "@hunty/types/api-schemas";
-import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { getIP, rateLimit, rateLimitPresets, rateLimitResponse } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 const paramsSchema = z.object({ id: z.string() });
@@ -30,7 +30,7 @@ export const POST = withValidation(
   { body: huntSponsorBodySchema, params: paramsSchema },
   async (req, _context, { body, params }) => {
     const ip = getIP(req);
-    const { success, reset } = await rateLimit(ip, { limit: 30, windowMs: 60 * 1000 });
+    const { success, reset } = await rateLimit(ip, rateLimitPresets.write);
     if (!success) return rateLimitResponse(reset);
 
     const huntId = parseInt(params!.id, 10);
@@ -97,7 +97,7 @@ export const GET = withValidation(
   { params: paramsSchema },
   async (req, _context, { params }) => {
     const ip = getIP(req);
-    const { success, reset } = await rateLimit(ip, { limit: 60, windowMs: 60 * 1000 });
+    const { success, reset } = await rateLimit(ip, rateLimitPresets.read);
     if (!success) return rateLimitResponse(reset);
 
     const huntId = parseInt(params!.id, 10);

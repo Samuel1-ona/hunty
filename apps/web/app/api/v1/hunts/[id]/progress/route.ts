@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { ValidationError } from "@/lib/api/errors"
 import { withErrorHandling } from "@/lib/api/withErrorHandling"
 import { withValidation } from "@/lib/api/withValidation"
-import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit"
+import { getIP, rateLimit, rateLimitPresets, rateLimitResponse } from "@/lib/rate-limit"
 import {
   getPlayerProgress,
   savePlayerProgress,
@@ -17,10 +17,7 @@ const paramsSchema = z.object({ id: z.string() })
 
 export const GET = withErrorHandling(async (req: Request, context: RouteContext) => {
   const ip = getIP(req)
-  const { success, reset } = await rateLimit(ip, {
-    limit: 100,
-    windowMs: 60 * 1000,
-  })
+  const { success, reset } = await rateLimit(ip, rateLimitPresets.read)
   if (!success) {
     return rateLimitResponse(reset)
   }
@@ -51,10 +48,7 @@ export const POST = withValidation(
   { body: huntProgressBodySchema, params: paramsSchema },
   async (req, _context, { body, params }) => {
     const ip = getIP(req)
-    const { success, reset } = await rateLimit(ip, {
-      limit: 60,
-      windowMs: 60 * 1000,
-    })
+    const { success, reset } = await rateLimit(ip, rateLimitPresets.write)
     if (!success) {
       return rateLimitResponse(reset)
     }

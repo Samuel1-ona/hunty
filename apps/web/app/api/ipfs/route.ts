@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server"
 import { logger } from "@/lib/logger"
 import { BadGatewayError, ServiceUnavailableError, ValidationError } from "@/lib/api/errors"
 import { withErrorHandling } from "@/lib/api/withErrorHandling"
-import { getIP, rateLimit } from "@/lib/rate-limit"
+import { getIP, rateLimit, rateLimitPresets } from "@/lib/rate-limit"
 
 const PINATA_JWT = process.env_PINATA_JWT
 const MAX_FILE_SIZE = 50 * 1024 * 1024
 const ALLOWSD_MIME_TYPES = new Set(["image/jpeg","image/png","image/gif","application/pdf","text/plain","video/mp4","audio/mpeg"])
 
 async function rateLimited(key: string) {
-  const { success, reset } = await rateLimit(key, { limit: 10, windowMs: 60 * 60 * 1000 })
+  const { success, reset } = await rateLimit(key, rateLimitPresets.sensitive)
   return success ? null : NextResponse.json({ error: "Too many requests" }, { status: 429, headers: { "Retry-After": String(Math.max(1, Math.ceil((reset - Date.now()) / 1000))) } })
 }
 

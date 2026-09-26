@@ -3,7 +3,7 @@ import { submitHuntForModeration } from "@/lib/moderation/dbStore";
 import type { StoredHunt } from "@/lib/types";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
 import { AuthError, RateLimitError, ValidationError } from "@/lib/api/errors";
-import { getIP, rateLimit } from "@/lib/rate-limit";
+import { getIP, rateLimit, rateLimitPresets } from "@/lib/rate-limit";
 import { verifySignedMessage } from "@/lib/signature";
 
 export const POST = withErrorHandling(async (req: Request) => {
@@ -14,7 +14,7 @@ export const POST = withErrorHandling(async (req: Request) => {
     throw new AuthError("Wallet address required", { header: "x-wallet-address" });
   }
 
-  const walletResult = await rateLimit(`submit_wallet:${wallet}`, { limit: 10, windowMs: 60 * 1000 });
+  const walletResult = await rateLimit(`submit_wallet:${wallet}`, rateLimitPresets.sensitive);
   if (!walletResult.success) {
     throw new RateLimitError("Too many submissions from this wallet", {
       reset: walletResult.reset,
@@ -22,7 +22,7 @@ export const POST = withErrorHandling(async (req: Request) => {
     });
   }
 
-  const ipResult = await rateLimit(`submit_ip:${ip}`, { limit: 100, windowMs: 60 * 1000 });
+  const ipResult = await rateLimit(`submit_ip:${ip}`, rateLimitPresets.read);
   if (!ipResult.success) {
     throw new RateLimitError("Too many submissions from this IP", {
       reset: ipResult.reset,

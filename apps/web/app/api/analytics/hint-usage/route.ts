@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit"
+import { rateLimit, rateLimitPresets, getIP, rateLimitResponse } from "@/lib/rate-limit"
 import { recordHintUsage, getHintUsageStats } from "@/lib/analytics"
 import { logger } from "@/lib/logger"
 import { withValidation } from "@/lib/api/withValidation"
@@ -17,7 +17,7 @@ export const POST = withValidation(
   { body: hintUsageBodySchema },
   async (req, _context, { body }) => {
     const ip = getIP(req)
-    const { success, reset } = await rateLimit(ip, { limit: 60, windowMs: 60_000 })
+    const { success, reset } = await rateLimit(ip, rateLimitPresets.write)
     if (!success) return rateLimitResponse(reset)
 
     try {

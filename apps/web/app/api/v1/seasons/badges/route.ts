@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPlayerSeasonBadges, getAllSeasonBadges, awardSeasonBadge, getSeasonTiers, setSeasonTiers, getPlayerProgress, updatePlayerProgress } from "@/lib/seasonStore";
-import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
+import { rateLimit, rateLimitPresets, getIP, rateLimitResponse } from "@/lib/rate-limit";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
 import { withValidation } from "@/lib/api/withValidation";
 import { seasonBadgeBodySchema, seasonTiersBodySchema, playerProgressBodySchema } from "@hunty/types/api-schemas";
@@ -13,7 +13,7 @@ import { seasonBadgeBodySchema, seasonTiersBodySchema, playerProgressBodySchema 
  */
 export const GET = withErrorHandling(async (req: Request) => {
   const ip = getIP(req);
-  const { success, reset } = await rateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
+  const { success, reset } = await rateLimit(ip, rateLimitPresets.read);
   if (!success) return rateLimitResponse(reset);
 
   const { searchParams } = new URL(req.url);
@@ -43,7 +43,7 @@ export const POST = withValidation(
   { body: seasonBadgeBodySchema },
   async (req, _context, { body }) => {
     const ip = getIP(req);
-    const { success, reset } = await rateLimit(ip, { limit: 10, windowMs: 60 * 1000 });
+    const { success, reset } = await rateLimit(ip, rateLimitPresets.sensitive);
     if (!success) return rateLimitResponse(reset);
 
     const badge = awardSeasonBadge(body.seasonId, body.address, body.name, body.rank);
@@ -60,7 +60,7 @@ export const PUT = withValidation(
   { body: seasonTiersBodySchema },
   async (req, _context, { body }) => {
     const ip = getIP(req);
-    const { success, reset } = await rateLimit(ip, { limit: 10, windowMs: 60 * 1000 });
+    const { success, reset } = await rateLimit(ip, rateLimitPresets.sensitive);
     if (!success) return rateLimitResponse(reset);
 
     const tiers = setSeasonTiers(body.seasonId, body.tiers);
@@ -77,7 +77,7 @@ export const PATCH = withValidation(
   { body: playerProgressBodySchema },
   async (req, _context, { body }) => {
     const ip = getIP(req);
-    const { success, reset } = await rateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
+    const { success, reset } = await rateLimit(ip, rateLimitPresets.read);
     if (!success) return rateLimitResponse(reset);
 
     const progress = updatePlayerProgress(body.seasonId, body.address, body.progressDelta);
