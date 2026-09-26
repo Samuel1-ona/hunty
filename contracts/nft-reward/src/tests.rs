@@ -14,7 +14,9 @@
 mod nft_reward_tests {
     use soroban_sdk::{testutils::Address as _, Address, Env, String};
 
-    use crate::{NftRewardContract, NftRewardContractClient};
+    use crate::{
+        NftRewardContract, NftRewardContractClient, DEFAULT_NFT_PAGE_SIZE, MAX_NFT_PAGE_SIZE,
+    };
 
     // ── helpers ───────────────────────────────────────────────────────────────
 
@@ -318,5 +320,119 @@ mod nft_reward_tests {
         assert_nft_absent(&client, &player, id3);
         assert_nft_present(&client, &player, id1);
         assert_nft_present(&client, &player, id2);
+    }
+
+    // ── issue #1404 — bounded paginated reads ────────────────────────────────
+
+    /// Mint `count` NFTs to a fresh player.
+    fn seeded_player(
+        env: &Env,
+        minter: &Address,
+        client: &NftRewardContractClient,
+        count: u32,
+    ) -> Address {
+        let player = Address::generate(env);
+        for i in 0..count {
+            client.mint(minter, &player, &test_uri(env, i));
+        }
+        player
+    }
+
+    /// #1404: a page returns exactly the requested window, and walking the pages
+    /// reproduces the full unpaginated read in order, with no gaps or overlaps.
+    #[test]
+    fn page_returns_the_requested_window_and_matches_the_full_read() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (minter, client) = setup(&env);
+        let player = seeded_player(&env, &minter, &client, 25);
+
+        let all = client.get_player_nfts(&player);
+        assert_eq!(all.len(), 25);
+
+        let first = client.get_player_nfts_page(&player, &0u32, &10u32);
+        let second = client.get_player_nfts_page(&player, &10u32, &10u32);
+        let third = client.get_player_nfts_page(&player, &20u32, &10u32);
+        assert_eq!(first.len(), 10, "first page should be full");
+        assert_eq!(second.len(), 10, "second page should be full");
+        assert_eq!(third.len(), 5, "last page should be the remainder");
+
+        let pages = [first, second, third];
+        let mut seen = 0u32;
+        for (page_i, page) in pages.iter().enumerate() {
+            for i in 0..page.len() {
+                assert_eq!(
+                    page.get(i).unwrap(),
+                    all.get(seen).unwrap(),
+                    "page {page_i} diverged from the full read at offset {seen}"
+                );
+                seen += 1;
+            }
+        }
+        assert_eq!(seen, 25, "pages did not cover the whole collection");
+    }
+
+    /// #1404: `page_size == 0` means the documented default, and an oversized
+    /// request is clamped to the ceiling instead of being served unbounded.
+    #[test]
+    fn page_size_defaults_and_clamps() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (minter, client) = setup(&env);
+        let player = seeded_player(&env, &minter, &client, MAX_NFT_PAGE_SIZE + 50);
+
+        let default_page = client.get_player_nfts_page(&player, &0u32, &0u32);
+        assert_eq!(
+            default_page.len(),
+            DEFAULT_NFT_PAGE_SIZE,
+            "0 should mean the default page size"
+        );
+
+        let clamped = client.get_player_nfts_page(&player, &0u32, &u32::MAX);
+        assert_eq!(
+            clamped.len(),
+            MAX_NFT_PAGE_SIZE,
+            "oversized page_size should clamp to the ceiling"
+        );
+
+        let full = client.get_player_nfts(&player);
+        assert_eq!(clamped.get(0).unwrap(), full.get(0).unwrap());
+        assert_eq!(
+            clamped.get(MAX_NFT_PAGE_SIZE - 1).unwrap(),
+            full.get(MAX_NFT_PAGE_SIZE - 1).unwrap()
+        );
+    }
+
+    /// #1404: a cursor at or past the end is an empty page, not a panic — a client
+    /// paginating to the end should not need a special case.
+    #[test]
+    fn cursor_at_or_past_the_end_is_an_empty_page() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (minter, client) = setup(&env);
+        let player = seeded_player(&env, &minter, &client, 7);
+
+        assert_eq!(
+            client.get_player_nfts_page(&player, &6u32, &10u32).len(),
+            1,
+            "cursor at the last element should return one id"
+        );
+        assert_eq!(
+            client.get_player_nfts_page(&player, &7u32, &10u32).len(),
+            0,
+            "cursor exactly at the end should be empty"
+        );
+        assert_eq!(
+            client.get_player_nfts_page(&player, &999u32, &10u32).len(),
+            0,
+            "cursor far past the end should be empty"
+        );
+
+        let empty_owner = Address::generate(&env);
+        assert_eq!(
+            client.get_player_nfts_page(&empty_owner, &0u32, &10u32).len(),
+            0,
+            "an owner with no NFTs should page to nothing"
+        );
     }
 }
