@@ -8,6 +8,12 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 testutils = ["soroban-sdk/testutils"]
+# Require every metadata URI to use the `ipfs://` scheme (issue #1403).
+#
+# Off by default: Hunty also serves `https://` metadata today, so enabling this
+# would reject URIs that are currently valid. Turn it on once all minters
+# publish to IPFS. The non-empty and length rules apply either way.
+require-ipfs-uri = []
 
 [dependencies]
 soroban-sdk = "=20.0.0"
