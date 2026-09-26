@@ -219,11 +219,8 @@ Before deploying, please verify:
 ## FILES SUMMARY
 
 ### Documentation (7 files, 3000+ lines):
-1. `NETWORK_SWITCHING_GUIDE.md` - Complete user/developer guide
-2. `NETWORK_MIGRATION.md` - Migration for existing deployments
-3. `NETWORK_SWITCHING_IMPLEMENTATION_SUMMARY.md` - Implementation overview
-4. `TEST_NETWORK_SWITCHING.md` - Testing guide with checklists
-5. `NETWORK_QUICK_REFERENCE.md` - Developer quick reference
+1. `docs/network-switching.md` - Complete user/developer guide, migration, quick reference and implementation overview (consolidated)
+2. `TEST_NETWORK_SWITCHING.md` - Testing guide with checklists
 6. `BUGS_FIXED.md` - List of bugs found and fixed
 7. `DEPLOYMENT_CHECKLIST.md` - Pre-deployment verification
 

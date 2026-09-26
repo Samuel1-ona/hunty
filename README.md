@@ -223,6 +223,7 @@ See [turbo.json](./turbo.json) for the full task pipeline configuration.
 ## Documentation
 
 - See [`docs/`](./docs/) for detailed guides on achievements, security, testing, and development setup.
+- See [`docs/network-switching.md`](./docs/network-switching.md) for the Stellar testnet/mainnet network-switching guide (selection, contract addresses, migration, and testing).
 ## Architecture
 
 ```mermaid
