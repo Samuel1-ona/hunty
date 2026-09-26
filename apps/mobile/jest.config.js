@@ -1,7 +1,12 @@
 /** @type {import('jest').Config} */
 module.exports = {
-  // Don't use jest-expo preset — expo-modules-core is not fully installed.
-  // We configure transforms manually below.
+  // `react-native`'s preset (not jest-expo: expo-modules-core is not fully
+  // installed) supplies the transform for react-native's Flow sources plus the
+  // native-module mocks its entry point needs. Without it any test that imports
+  // a component dies inside NativeReactNativeFeatureFlags before rendering.
+  // Side effect to know about: the preset makes Jest resolve `.native.*`
+  // files, which is why the AsyncStorage manual mock below exists.
+  preset: 'react-native',
   testEnvironment: 'node',
   collectCoverageFrom: [
     '**/*.{ts,tsx,js,jsx}',
@@ -11,7 +16,7 @@ module.exports = {
     '!**/*.config.{js,ts}',
     '!coverage/**',
     '!**/.expo/**',
-    '!path-alias.js'
+    '!path-alias.js',
   ],
   setupFiles: ['<rootDir>/__mocks__/jestSetup.js'],
 
@@ -22,9 +27,14 @@ module.exports = {
     ],
   },
 
-  // Transform expo/* packages since they ship ESM
+  // Transform expo/* and react-native/* sources, which ship ESM/Flow.
+  // Under pnpm the real file lives at
+  // node_modules/.pnpm/<pkg>@<version>/node_modules/<pkg>/..., so the pattern
+  // must match that segment too; otherwise react-native's own setup file is
+  // handed to Node untransformed and every component test dies with
+  // "Cannot use import statement outside a module".
   transformIgnorePatterns: [
-    'node_modules/(?!(expo|@expo|expo-notifications|expo-device|expo-constants|expo-secure-store|expo-modules-core|react-native|@react-native))',
+    'node_modules/(?!(\.pnpm/[^/]+/node_modules/)?(expo|@expo|expo-[^/]+|react-native|@react-native)(@|/))',
   ],
 
   // Manual mocks for native/expo modules
