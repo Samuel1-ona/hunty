@@ -1,4 +1,4 @@
-use client";
+"use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -113,7 +113,7 @@ export default function SpectatorLeaderboard({ huntId }: { huntId: string }) {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0b0c10] text-white flex items-center justify-center">
-        <div className="animate-spin rounded-h l-12 h-12 w-12 border-t-2 border-b-2 border-violet-500" />
+        <div className="h-12 w-12 animate-spin rounded-full border-t-2 border-b-2 border-violet-500" />
       </div>
     );
   }
@@ -123,7 +123,7 @@ export default function SpectatorLeaderboard({ huntId }: { huntId: string }) {
       <div className="min-h-screen bg-[#0b0c10] text-white flex flex-col items-center justify-center space-y-4">
         <p className="text-xl text-red-400">Failed to load leaderboard</p>
         <button
-          className="px-4 py-2 bg-violet-600 hover:bg-violet-700 roundled-transition"
+          className="rounded-md bg-violet-600 px-4 py-2 transition hover:bg-violet-700"
           onClick={fetchLeaderboard}
         >
           Retry
@@ -135,8 +135,8 @@ export default function SpectatorLeaderboard({ huntId }: { huntId: string }) {
   return (
     <div className="min-h-screen bg-[#0b0c10] text-white pb-24">
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/3 w-150 h-100 bg-violet-700/20 rounded-filter blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 w-100p h-75 bg-indigo-600/15 rounded-filter blur-[100px]" />
+        <div className="absolute top-0 left-1/3 h-96 w-96 rounded-full bg-violet-700/20 blur-[120px]" />
+        <div className="absolute bottom-0 right-1/4 h-72 w-72 rounded-full bg-indigo-600/15 blur-[100px]" />
       </div>
 
       <div role="main" className="relative max-w-4xl mx-auto px-6 pt-16">
@@ -148,23 +148,23 @@ export default function SpectatorLeaderboard({ huntId }: { huntId: string }) {
             </span>
           </div>
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white leading-tight mb-2">
-            {data.hunt.title || "Hunt Spectator"}
+            {data.hunt?.title || "Hunt Spectator"}
           </h1>
-          {data.hunt.description && (
+          {data.hunt?.description && (
             <p className="text-zinc-400 text-lg leading-relaxed">{data.hunt.description}</p>
           )}
         </div>
 
-        <div className="grid grid-cols-1 md-grid-cols-3 gap-4 mb-8">
-          <div className="bg-white/5 border border-white/10 rounded-2x p-5">
+        <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
             <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Top Player</p>
             <p className="text-white font-semibold text-lg">{data.summary.topRankName}</p>
           </div>
-          <div className="bg-white/5 border border-white/10 rounded-2x p-5">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
             <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Top Points</p>
             <p className="text-white font-semibold text-lg">{data.summary.topRankPoints}</p>
           </div>
-          <div className="bg-white/5 border border-white/10 rounded-2x p-5">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
             <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Players</p>
             <p className="text-white font-semibold text-lg">{data.summary.playerCount}</p>
           </div>
@@ -179,7 +179,7 @@ export default function SpectatorLeaderboard({ huntId }: { huntId: string }) {
           role="status"
         />
 
-        <div className="bg-white/5 border border-white/10 rounded-2x overflow-hidden">
+        <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
           <div className="px-6 py-4 border-b border-white/10 bg-white/[0.03]">
             <h2 className="text-xl font-semibold">Leaderboard</h2>
           </div>
@@ -203,7 +203,7 @@ export default function SpectatorLeaderboard({ huntId }: { huntId: string }) {
                   <span className="text-xl font-bold text-emerald-400">{entry.points} pts</span>
                 </div>
               ))
-            )
+            )}
           </div>
         </div>
 

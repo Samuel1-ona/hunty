@@ -194,6 +194,28 @@ describe("withValidation — body validation", () => {
     expect(json.code).toBe("VALIDATION_ERROR")
     expect(json.details.fieldErrors).toBeDefined()
   })
+
+  it("keeps all messages for the same field when multiple validations fail", async () => {
+    const multiIssueSchema = z.object({
+      code: z
+        .string()
+        .min(5, "code must be at least 5 characters")
+        .regex(/^[A-Z]+$/, "code must be uppercase letters only"),
+    })
+    const handler = withValidation({ body: multiIssueSchema }, vi.fn())
+
+    const res = await handler(jsonRequest({ code: "a" }), {})
+    expect(res.status).toBe(400)
+    const json = await res.json()
+    const errors = json.details.fieldErrors.code as string[]
+    expect(errors).toEqual(
+      expect.arrayContaining([
+        "code must be at least 5 characters",
+        "code must be uppercase letters only",
+      ]),
+    )
+    expect(errors.length).toBeGreaterThanOrEqual(2)
+  })
 })
 
 // ─── Query-param validation ───────────────────────────────────────────────────
@@ -331,6 +353,33 @@ describe("withValidation — params validation", () => {
     const res = await handler(new Request("http://localhost/api/test/99"), context)
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ id: "99" })
+  })
+
+  it("returns 400 (not 500) when context is undefined", async () => {
+    const handler = withValidation({ params: paramsSchema }, vi.fn())
+
+    const res = await handler(new Request("http://localhost/api/test"), undefined)
+    expect(res.status).toBe(400)
+    const json = await res.json()
+    expect(json.code).toBe("VALIDATION_ERROR")
+  })
+
+  it("does not read context.params when context does not expose a params key", async () => {
+    const handler = withValidation({ params: paramsSchema }, vi.fn())
+    const context = new Proxy(
+      {},
+      {
+        has: () => false,
+        get: () => {
+          throw new Error("context.params should not be read")
+        },
+      },
+    )
+
+    const res = await handler(new Request("http://localhost/api/test"), context)
+    expect(res.status).toBe(400)
+    const json = await res.json()
+    expect(json.code).toBe("VALIDATION_ERROR")
   })
 })
 
