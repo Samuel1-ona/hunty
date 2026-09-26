@@ -42,6 +42,8 @@ export const queryKeys = {
     leaderboardPaginated: (huntId: number, page: number, limit: number) =>
       ["hunt", "leaderboard", huntId, "paginated", page, limit] as const,
     fastestPlayers: (huntId: number) => ["hunt", "fastestPlayers", huntId] as const,
+    players: (huntId: number, filter: string | null) =>
+      ["hunt", "players", huntId, filter ?? "all"] as const,
   },
 } as const
 
@@ -103,6 +105,10 @@ export const queryCachePolicy = {
     gcTime: 5 * 60 * 1000,
   },
   huntFastestPlayers: {
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+  },
+  huntPlayers: {
     staleTime: 60 * 1000,
     gcTime: 5 * 60 * 1000,
   },
