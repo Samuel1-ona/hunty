@@ -49,8 +49,6 @@ export async function dbSaveCollaborators(huntId: number, list: HuntCollaborator
     `
   }
 }
-  })
-}
 
 export async function dbUpsertCollaborator(huntId: number, collaborator: HuntCollaborator): Promise<void> {
   const sql = getDb()

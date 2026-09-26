@@ -1,5 +1,5 @@
 // apps/web/lib/contracts/player-registration/constants.ts
-Constants for player registration contract interactions.
+// Constants for player registration contract interactions.
 
 export const PLAYER_REGISTRATION_CONTRACT_ADDRESS =
   process.env.NEXT_PUBLIC_PLAYER_REGISTRATION_CONTRACT_ADDRESS ?? 
