@@ -11,14 +11,14 @@ module.exports = {
     '!**/*.config.{js,ts}',
     '!coverage/**',
     '!**/.expo/**',
-    '!path-alias.js'
+    '!path-alias.js',
   ],
   setupFiles: ['<rootDir>/__mocks__/jestSetup.js'],
 
   transform: {
     '^.+\\.[jt]sx?$': [
       'babel-jest',
-      { configFile: require('path').resolve(__dirname, 'babel.config.js') },
+      { configFile: require('path').resolve(__dirname, 'babel.config.test.js') },
     ],
   },
 
@@ -29,6 +29,7 @@ module.exports = {
 
   // Manual mocks for native/expo modules
   moduleNameMapper: {
+    '^expo/virtual/env$': '<rootDir>/__mocks__/expo-virtual-env.js',
     '^@config/(.*)$': '<rootDir>/config/$1',
     '^@services/(.*)$': '<rootDir>/services/$1',
     '^@hooks/(.*)$': '<rootDir>/hooks/$1',
