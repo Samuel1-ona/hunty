@@ -312,7 +312,7 @@ export const huntDeleteBodySchema = z.object({
 // ─── v1 / Hunts / [id] / Refund ─────────────────────────────────────────────────
 
 export const huntRefundBodySchema = z.object({
-  creatorAddress: stellarAddressSchema,
+  creatorAddress: nonEmptyStringSchema,
 })
 
 // ─── v1 / Hunts / Versions ──────────────────────────────────────────────────
