@@ -22,8 +22,7 @@ vi.mock("@/lib/notifications/huntScheduleNotifications", () => ({
 }))
 
 describe("POST /api/hunts/schedule authentication & authorization", () => {
-  const secretKey = "SD12345678901234567890123456789012345678901234567890"
-  const kp = Keypair.random()
+  const kp = Keypair.fromRawEd25519Seed(new Uint8Array(Buffer.from("12345678901234567890123456789012")))
   const address = kp.publicKey()
 
   beforeEach(() => {
