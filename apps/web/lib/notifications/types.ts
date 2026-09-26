@@ -34,6 +34,8 @@ export interface WebPushSubscriptionRecord {
     playerRegistered?: boolean
     firstCompletion?: boolean
   }
+  /** Per-wallet owner secret for push registration auth (see push-tokens/route.ts). */
+  ownerSecret?: string
 }
 
 /**
