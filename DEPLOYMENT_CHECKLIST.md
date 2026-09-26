@@ -252,11 +252,8 @@ Screen reader (optional):
 
 Verify all docs are present:
 
-- [ ] `NETWORK_SWITCHING_GUIDE.md` exists
-- [ ] `NETWORK_MIGRATION.md` exists
-- [ ] `NETWORK_SWITCHING_IMPLEMENTATION_SUMMARY.md` exists
+- [ ] `docs/network-switching.md` exists (the single consolidated network-switching guide)
 - [ ] `TEST_NETWORK_SWITCHING.md` exists
-- [ ] `NETWORK_QUICK_REFERENCE.md` exists
 - [ ] `BUGS_FIXED.md` exists
 - [ ] `DEPLOYMENT_CHECKLIST.md` exists (this file)
 
