@@ -1,15 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { getPublicHuntByIdOptimized } from "@/lib/db/queryOptimizer";
 import { getHuntVersion, listHuntVersions } from "@/lib/db/huntVersions";
 import { recordHuntAudit } from "@/lib/db/huntAuditLog";
 import { createHuntVersion } from "@/lib/db/huntVersions";
-import { ForbiddenError, NotFoundError, ValidationError } from "@/lib/api/errors";
+import { AuthError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
 import { withValidation } from "@/lib/api/withValidation";
 import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { huntVersionEditBodySchema } from "@hunty/types/api-schemas";
+import { verifyCallerAuth } from "@/lib/walletAuth";
 
 const paramsSchema = z.object({ id: z.string() });
 
@@ -74,13 +75,25 @@ export const GET = withErrorHandling<{ params: Promise<{ id: string }> }>(async 
  */
 export const PATCH = withValidation(
   { body: huntVersionEditBodySchema, params: paramsSchema },
-  async (_req, _context, { body, params }) => {
+  async (req, _context, { body, params }) => {
+    // Privileged write: reject unauthenticated callers before touching state.
+    const auth = await verifyCallerAuth(req as NextRequest);
+    if (!auth.authenticated) {
+      throw new AuthError(auth.error ?? "Authentication required");
+    }
+    if (!auth.authorized) {
+      throw new ForbiddenError(auth.error ?? "Access denied");
+    }
+
+    // The actor is derived from the verified wallet/session, never from the body.
+    const actor = auth.actor ?? "";
+
     const huntId = Number(params!.id);
     if (!Number.isInteger(huntId) || huntId <= 0 || body!.snapshot.id !== huntId) {
       throw new ValidationError("Invalid hunt ID", { id: params!.id });
     }
 
-    assertCreator(body!.snapshot, body!.actorAddress);
+    assertCreator(body!.snapshot, actor);
 
     // Fetch the latest snapshot for diff computation before creating the new version.
     const versions = await listHuntVersions(huntId);
@@ -90,10 +103,10 @@ export const PATCH = withValidation(
       if (latest) previousSnapshot = latest.snapshot;
     }
 
-    const version = await createHuntVersion(huntId, body!.snapshot, body!.actorAddress);
+    const version = await createHuntVersion(huntId, body!.snapshot, actor);
 
     const diff = previousSnapshot ? computeDiff(previousSnapshot, body!.snapshot) : { created: true };
-    await recordHuntAudit(huntId, "hunt edited", body!.actorAddress, diff);
+    await recordHuntAudit(huntId, "hunt edited", actor, diff);
 
     return NextResponse.json({ data: version }, { status: 201 });
   },
