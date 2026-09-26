@@ -103,7 +103,7 @@
     "babel-jest": "^29.7.0",
     "babel-plugin-module-resolver": "^5.0.0",
     "babel-preset-expo": "~55.0.0",
-    "eas-cli": "^7.1.0",
+    "eas-cli": "^14.0.0",
     "@hunty/config": "workspace:*",
     "jest": "^29.7.0",
     "@storybook/react-native": "^10.4.7",

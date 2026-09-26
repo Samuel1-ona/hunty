@@ -1,17 +1,19 @@
-/**
- * Tests for badgeService — badge count increment, reset, and retrieval.
- */
-
+(globalThis as any).__DEV__ = true;
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getBadgeCount,
   incrementBadge,
   resetBadge,
+  handleDeviceNotRegistered,
 } from '../../services/notifications/badgeService';
 import * as Notifications from 'expo-notifications';
+import * as tokenRegistry from '../../services/notifications/tokenRegistry';
 
 jest.mock('expo-notifications');
 jest.mock('@react-native-async-storage/async-storage');
+jest.mock('../../services/notifications/tokenRegistry', () => ({
+  unregisterPushToken: jest.fn().mockResolvedValue(undefined),
+}));
 
 const mockAsyncStorage = AsyncStorage as jest.Mocked<typeof AsyncStorage>;
 const mockNotifications = Notifications as jest.Mocked<typeof Notifications>;
@@ -91,5 +93,26 @@ describe('resetBadge', () => {
   it('does not throw when storage fails', async () => {
     mockAsyncStorage.setItem.mockRejectedValueOnce(new Error('Write error'));
     await expect(resetBadge()).resolves.not.toThrow();
+  });
+});
+
+// ─── handleDeviceNotRegistered ────────────────────────────────────────────────
+
+describe('handleDeviceNotRegistered', () => {
+  it('calls unregisterPushToken and resets badge when DeviceNotRegistered error occurs', async () => {
+    const error = new Error('DeviceNotRegistered: push token is no longer valid');
+    const handled = await handleDeviceNotRegistered(error);
+
+    expect(handled).toBe(true);
+    expect(tokenRegistry.unregisterPushToken).toHaveBeenCalledTimes(1);
+    expect(mockAsyncStorage.setItem).toHaveBeenCalledWith('hunty_badge_count', '0');
+  });
+
+  it('returns false and does not unregister when error is unrelated', async () => {
+    const error = new Error('Network failure');
+    const handled = await handleDeviceNotRegistered(error);
+
+    expect(handled).toBe(false);
+    expect(tokenRegistry.unregisterPushToken).not.toHaveBeenCalled();
   });
 });

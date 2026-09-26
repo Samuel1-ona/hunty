@@ -6,6 +6,11 @@ allowBuilds:
   '@parcel/watcher': true
   '@sentry/cli': true
   '@swc/core': true
+  dtrace-provider: true
   esbuild: true
   sharp: true
   unrs-resolver: true
+
+overrides:
+  react: "19.0.0"
+  react-dom: "19.0.0"
