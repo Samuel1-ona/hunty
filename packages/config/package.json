@@ -6,7 +6,8 @@
   "scripts": {
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/validate-exports.mjs"
+    "check:next-pins": "node scripts/check-next-eslint-pins.mjs",
+    "test": "node scripts/validate-exports.mjs && node scripts/check-next-eslint-pins.mjs"
   },
   "exports": {
     "./eslint/base.mjs": "./eslint/base.mjs",
