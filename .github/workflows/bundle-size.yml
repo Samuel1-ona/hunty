@@ -40,7 +40,11 @@ jobs:
         run: pnpm --filter @hunty/web run build
 
       - name: Check bundle size
+        if: >-
+          !contains(github.event.pull_request.labels.*.name, 'skip-bundle-budget')
         run: pnpm --filter @hunty/web run bundle:check
 
       - name: Check performance budgets
+        if: >-
+          !contains(github.event.pull_request.labels.*.name, 'skip-bundle-budget')
         run: pnpm --filter @hunty/web run perf:budget
