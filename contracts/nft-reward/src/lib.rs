@@ -39,6 +39,14 @@ pub enum NftError {
 
 // ─── contract ─────────────────────────────────────────────────────────────────
 
+/// Page size used by [`NftRewardContract::get_player_nfts_page`] when the caller
+/// passes `0` (issue #1404).
+pub const DEFAULT_NFT_PAGE_SIZE: u32 = 50;
+
+/// Hard ceiling on a single page (issue #1404): a request above this is clamped,
+/// so the bounded read cannot be defeated by a large `page_size`.
+pub const MAX_NFT_PAGE_SIZE: u32 = 200;
+
 #[contract]
 pub struct NftRewardContract;
 
@@ -165,8 +173,46 @@ impl NftRewardContract {
     }
 
     /// Return all NFT ids currently owned by `owner`.
+    ///
+    /// Kept for compatibility. Prefer [`Self::get_player_nfts_page`] for players
+    /// with a large collection: see issue #1404.
     pub fn get_player_nfts(env: Env, owner: Address) -> Vec<u64> {
         storage::get_owner_nfts(&env, &owner)
+    }
+
+    /// Return one bounded page of the NFT ids currently owned by `owner`.
+    ///
+    /// `cursor` is an offset into the owner's list and `page_size` the maximum
+    /// number of ids to return.
+    ///
+    /// * `page_size == 0` means [`DEFAULT_NFT_PAGE_SIZE`].
+    /// * `page_size` is clamped to [`MAX_NFT_PAGE_SIZE`], so a caller cannot ask
+    ///   for an unbounded read through this entry point (issue #1404: a heavy
+    ///   player's full `Vec` is what hits the Soroban read limit).
+    /// * A `cursor` at or past the end returns an empty vector rather than
+    ///   panicking, so a client paginating to the end does not need a special case.
+    pub fn get_player_nfts_page(env: Env, owner: Address, cursor: u32, page_size: u32) -> Vec<u64> {
+        let all = storage::get_owner_nfts(&env, &owner);
+        let size = if page_size == 0 {
+            DEFAULT_NFT_PAGE_SIZE
+        } else {
+            page_size.min(MAX_NFT_PAGE_SIZE)
+        };
+
+        let mut page = Vec::new(&env);
+        if cursor >= all.len() {
+            return page;
+        }
+
+        let end = (cursor + size).min(all.len());
+        let mut i = cursor;
+        while i < end {
+            if let Some(id) = all.get(i) {
+                page.push_back(id);
+            }
+            i += 1;
+        }
+        page
     }
 
     /// Return the number of NFTs currently owned by `owner`.

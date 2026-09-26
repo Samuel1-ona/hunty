@@ -286,12 +286,61 @@ describe('huntStore', () => {
       expect(written).toHaveLength(2);
     });
 
-    it('processQueuedAnswers clears the queue', async () => {
-      (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(
-        JSON.stringify([{ huntId: 1, clueId: 1, answer: 'done' }]),
-      );
-      await processQueuedAnswers();
+    // Issue #1407: the previous version cleared the queue without sending
+    // anything, so an offline answer was destroyed. These four tests pin the
+    // fixed contract: send first, remove only what the server confirmed.
+    it('clears the queue once every answer is confirmed', async () => {
+      const item = { huntId: 1, clueId: 1, answer: 'done' };
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(JSON.stringify([item]));
+      const submit = jest.fn().mockResolvedValue(undefined);
+
+      const result = await processQueuedAnswers(submit);
+
+      expect(submit).toHaveBeenCalledWith(item);
+      expect(result).toEqual({ synced: 1, remaining: 0 });
       expect(AsyncStorage.removeItem).toHaveBeenCalledWith('hunty_clue_queue');
+    });
+
+    it('keeps an answer in the queue when its sync fails', async () => {
+      const item = { huntId: 1, clueId: 1, answer: 'typed while offline' };
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(JSON.stringify([item]));
+      const submit = jest.fn().mockRejectedValue(new Error('offline'));
+
+      const result = await processQueuedAnswers(submit);
+
+      expect(result).toEqual({ synced: 0, remaining: 1 });
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith('hunty_clue_queue', JSON.stringify([item]));
+      expect(AsyncStorage.removeItem).not.toHaveBeenCalled();
+    });
+
+    it('only drops the answers that actually synced', async () => {
+      const synced = { huntId: 1, clueId: 1, answer: 'first' };
+      const failed = { huntId: 2, clueId: 2, answer: 'second' };
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(JSON.stringify([synced, failed]));
+      const submit = jest
+        .fn()
+        .mockResolvedValueOnce(undefined)
+        .mockRejectedValueOnce(new Error('offline'));
+
+      const result = await processQueuedAnswers(submit);
+
+      expect(result).toEqual({ synced: 1, remaining: 1 });
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+        'hunty_clue_queue',
+        JSON.stringify([failed]),
+      );
+      expect(AsyncStorage.removeItem).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when the queue is empty', async () => {
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(null);
+      const submit = jest.fn();
+
+      const result = await processQueuedAnswers(submit);
+
+      expect(submit).not.toHaveBeenCalled();
+      expect(result).toEqual({ synced: 0, remaining: 0 });
+      expect(AsyncStorage.removeItem).not.toHaveBeenCalled();
     });
 
     it('getQueuedAnswers returns empty array on error', async () => {
@@ -364,15 +413,15 @@ describe('huntStore', () => {
 
   describe('submission path (offline queue + process)', () => {
     it('queues answers offline and clears them on process', async () => {
+      const offlineQueue = JSON.stringify([
+        { huntId: 1, clueId: 1, answer: 'spiral mural' },
+        { huntId: 1, clueId: 2, answer: 'lantern statue' },
+      ]);
       (AsyncStorage.getItem as jest.Mock)
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(
-          JSON.stringify([
-            { huntId: 1, clueId: 1, answer: 'spiral mural' },
-            { huntId: 1, clueId: 2, answer: 'lantern statue' },
-          ]),
-        );
+        .mockResolvedValueOnce(null) // first queueClueAnswer: nothing queued yet
+        .mockResolvedValueOnce(null) // second queueClueAnswer: nothing queued yet
+        .mockResolvedValueOnce(offlineQueue) // getQueuedAnswers() reads both
+        .mockResolvedValueOnce(offlineQueue); // processQueuedAnswers() reads them again
 
       await queueClueAnswer(1, 1, 'spiral mural');
       await queueClueAnswer(1, 2, 'lantern statue');
@@ -380,7 +429,14 @@ describe('huntStore', () => {
       const queued = await getQueuedAnswers();
       expect(queued).toHaveLength(2);
 
-      await processQueuedAnswers();
+      const submit = jest.fn().mockResolvedValue(undefined);
+      const result = await processQueuedAnswers(submit);
+
+      // both offline answers reach the server before anything is cleared (#1407)
+      expect(submit).toHaveBeenCalledTimes(2);
+      expect(submit).toHaveBeenCalledWith({ huntId: 1, clueId: 1, answer: 'spiral mural' });
+      expect(submit).toHaveBeenCalledWith({ huntId: 1, clueId: 2, answer: 'lantern statue' });
+      expect(result).toEqual({ synced: 2, remaining: 0 });
       expect(AsyncStorage.removeItem).toHaveBeenCalledWith('hunty_clue_queue');
     });
   });
