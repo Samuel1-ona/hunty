@@ -1,4 +1,4 @@
-use client";
+"use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -203,7 +203,7 @@ export default function SpectatorLeaderboard({ huntId }: { huntId: string }) {
                   <span className="text-xl font-bold text-emerald-400">{entry.points} pts</span>
                 </div>
               ))
-            )
+            )}
           </div>
         </div>
 

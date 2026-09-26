@@ -27,7 +27,8 @@ async function sendEmail(event: AlertEvent): Promise<boolean> {
         from: MONITORING.alerts.channels.email.from,
         to: MONITORING.alerts.channels.email.to,
         subject: `[${event.level.toUpperCase()}] ${event.title}`,
-        text: `${event.message}\n\nSource: ${event.source}\nTime: ${event.timestamp}${event.metadata ? `\nMetadata: ${JSON.stringify(event.metadata, null, 2)}` : ""}`,
+        text: `${event.message}\n\nSource: ${event.source}\nTime: ${event.timestamp}${event.metadata ? `
+Metadata: ${JSON.stringify(event.metadata, null, 2)}` : ""}`,
       }),
     })
     return response.ok

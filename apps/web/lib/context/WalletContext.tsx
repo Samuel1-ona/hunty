@@ -153,7 +153,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, [storeSetConnected])
 
-  }, [status, publicKey, provider, error, storeSync]);
 
   // ── Connect wrapper (matches existing interface) ───────────────────
   // machineConnect handles all errors internally by dispatching CONNECT_ERROR.
