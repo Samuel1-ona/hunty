@@ -237,6 +237,29 @@ export const notificationPreferencesBodySchema = z.object({
   preferences: notificationPreferencesPatchSchema,
 })
 
+export const notificationPreferencesDocumentSchema = z.object({
+  enabled: z.boolean(),
+  huntEvents: z.boolean(),
+  rewards: z.boolean(),
+  social: z.boolean(),
+  achievements: z.boolean(),
+  rankImproved: z.boolean(),
+  rankDropped: z.boolean(),
+  overtaken: z.boolean(),
+  weeklyDigest: z.boolean(),
+  threshold: z.number().int().min(1),
+  pushEnabled: z.boolean(),
+  pushHuntStart: z.boolean(),
+  pushOvertake: z.boolean(),
+  pushHuntCancelled: z.boolean(),
+  pushPlayerRegistered: z.boolean(),
+  pushFirstCompletion: z.boolean(),
+})
+
+export const notificationPreferencesResponseSchema = z.object({
+  preferences: notificationPreferencesDocumentSchema,
+})
+
 export const moderationSubmitBodySchema = z.object({
   hunt: z
     .object({
@@ -283,6 +306,18 @@ export const tagsBodySchema = z.object({
   tags: z.array(z.string()).optional(),
 });
 
+export const tagsGetResponseSchema = z.object({
+  autocomplete: z.array(z.string()),
+  suggestions: z.array(z.string()),
+  corpusSize: z.number().int().min(0),
+})
+
+export const tagsPostResponseSchema = z.object({
+  ok: z.literal(true),
+  category: z.string().nullable(),
+  tags: z.array(z.string()),
+})
+
 // ─── v1 / Hunts / Bulk ───────────────────────────────────────────────────────
 
 export const huntsBulkBodySchema = z.object({
@@ -308,6 +343,10 @@ export const huntDeleteBodySchema = z.object({
   confirmed: z.boolean().optional(),
   actorAddress: nonEmptyStringSchema,
 });
+
+export const huntRefundBodySchema = z.object({
+  creatorAddress: nonEmptyStringSchema,
+})
 
 // ─── v1 / Hunts / Versions ──────────────────────────────────────────────────
 
@@ -539,6 +578,33 @@ export const referralPayoutBodySchema = z.object({
   execute: z.boolean().optional().default(false),
 })
 
+export const referralLeaderboardEntrySchema = z.object({
+  rank: z.number().int().min(1),
+  referrerAddress: z.string(),
+  displayName: z.string().optional(),
+  successfulReferrals: z.number().int().min(0),
+  totalInvites: z.number().int().min(0),
+  bonusPoints: z.number().int().min(0),
+  lastActiveAt: z.number().int().min(0),
+  rewardPayoutStatus: z.enum(["pending", "processing", "paid", "failed"]).optional(),
+  rewardAmount: z.number().optional(),
+})
+
+export const referralLeaderboardStatsSchema = z.object({
+  totalReferrers: z.number().int().min(0),
+  totalSuccessfulReferrals: z.number().int().min(0),
+  totalBonusDistributed: z.number().min(0),
+  activeRewardPool: z.number().min(0),
+})
+
+export const referralLeaderboardResponseSchema = z.object({
+  leaderboard: z.array(referralLeaderboardEntrySchema),
+  stats: referralLeaderboardStatsSchema,
+  playerRank: referralLeaderboardEntrySchema.optional(),
+  period: z.enum(["all", "week", "month"]),
+  generatedAt: z.number().int().min(0),
+})
+
 // ─── Re-export convenience map ───────────────────────────────────────────────
 
 export const apiSchemas = {
@@ -558,12 +624,15 @@ export const apiSchemas = {
   notificationPreferencesPatch: notificationPreferencesPatchSchema,
   notificationPreferencesQuery: notificationPreferencesQuerySchema,
   notificationPreferencesBody: notificationPreferencesBodySchema,
+  notificationPreferencesResponse: notificationPreferencesResponseSchema,
   moderationSubmitBody: moderationSubmitBodySchema,
   moderationSyncBody: moderationSyncBodySchema,
   moderationSyncQuery: moderationSyncQuerySchema,
   notificationsCompleteBody: notificationsCompleteBodySchema,
   tagsQuery: tagsQuerySchema,
   tagsBody: tagsBodySchema,
+  tagsGetResponse: tagsGetResponseSchema,
+  tagsPostResponse: tagsPostResponseSchema,
   huntsBulkBody: huntsBulkBodySchema,
   huntArchiveBody: huntArchiveBodySchema,
   huntDeleteBody: huntDeleteBodySchema,
@@ -587,6 +656,7 @@ export const apiSchemas = {
   paymasterSponsorBody: paymasterSponsorBodySchema,
   paymasterAdminConfigBody: paymasterAdminConfigBodySchema,
   referralLeaderboardQuery: referralLeaderboardQuerySchema,
+  referralLeaderboardResponse: referralLeaderboardResponseSchema,
   referralTrackBody: referralTrackBodySchema,
   referralPayoutBody: referralPayoutBodySchema,
 } as const;
