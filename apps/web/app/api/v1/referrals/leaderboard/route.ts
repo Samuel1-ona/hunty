@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { withValidation } from "@/lib/api/withValidation"
-import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit"
+import { getIP, rateLimit, rateLimitPresets, rateLimitResponse } from "@/lib/rate-limit"
 import {
   getReferralLeaderboard,
   getReferralLeaderboardStats,
@@ -23,7 +23,7 @@ export const GET = withValidation(
   { query: referralLeaderboardQuerySchema },
   async (req: Request, _context, { query }) => {
     const ip = getIP(req)
-    const { success, reset } = await rateLimit(ip, { limit: 100, windowMs: 60_000 })
+    const { success, reset } = await rateLimit(ip, rateLimitPresets.read)
     if (!success) return rateLimitResponse(reset)
 
     const period = (query.period ?? "all") as ReferralLeaderboardPeriod

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
+import { rateLimit, rateLimitPresets, getIP, rateLimitResponse } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { ValidationError } from "@/lib/api/errors";
 import { withValidation } from "@/lib/api/withValidation";
@@ -17,7 +17,7 @@ export const POST = withValidation(
   { body: huntArchiveBodySchema, params: paramsSchema },
   async (req, _context, { body, params }) => {
     const ip = getIP(req);
-    const { success, reset } = await rateLimit(ip, { limit: 30, windowMs: 60 * 1000 });
+    const { success, reset } = await rateLimit(ip, rateLimitPresets.write);
     if (!success) return rateLimitResponse(reset);
 
     const huntId = parseInt(params!.id, 10);

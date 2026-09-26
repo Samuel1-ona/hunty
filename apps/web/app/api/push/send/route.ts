@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { AuthError, InternalError, ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
 import { logger } from "@/lib/logger";
-import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { getIP, rateLimit, rateLimitPresets, rateLimitResponse } from "@/lib/rate-limit";
 import { notifyWallet, notifyWallets } from "@/lib/notifications/pushService";
 import type { PushEventType } from "@/lib/notifications/types";
 
@@ -35,7 +35,7 @@ const validTypes: PushEventType[] = [
 
 export const POST = withErrorHandling(async (request: NextRequest) => {
   const ip = getIP(request);
-  const { success, reset } = await rateLimit(ip, { limit: 50, windowMs: 60 * 1000 });
+  const { success, reset } = await rateLimit(ip, rateLimitPresets.write);
   if (!success) return rateLimitResponse(reset);
 
   assertServiceOrAdminAuth(request);

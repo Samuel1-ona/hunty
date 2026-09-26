@@ -4,7 +4,7 @@ import { z } from "zod";
 import { ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
 import { logger } from "@/lib/logger";
-import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { getIP, rateLimit, rateLimitPresets, rateLimitResponse } from "@/lib/rate-limit";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -21,7 +21,7 @@ const MAX_BODY_BYTES = 16 * 1024; // 16 KB
  * A real browser sends at most one report per policy violation per page load,
  * so 30/min per IP is more than sufficient for legitimate traffic.
  */
-const RATE_LIMIT_CONFIG = { limit: 30, windowMs: 60 * 1_000 };
+const RATE_LIMIT_CONFIG = rateLimitPresets.write;
 
 /**
  * Log only 1-in-N valid reports to avoid log flooding while preserving signal.

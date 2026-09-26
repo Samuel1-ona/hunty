@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit"
+import { rateLimit, rateLimitPresets, getIP, rateLimitResponse } from "@/lib/rate-limit"
 import { getAllHunts } from "@/lib/huntStore"
 import { autocompleteTags, normalizeTag, suggestTagsFromContent } from "@/lib/tags"
 import { isHuntCategoryId } from "@/lib/categories"
@@ -14,7 +14,7 @@ import { tagsBodySchema, tagsQuerySchema } from "@hunty/types/api-schemas"
  */
 export const GET = withErrorHandling(async (req: Request) => {
   const ip = getIP(req)
-  const { success, reset } = await rateLimit(ip, { limit: 120, windowMs: 60_000 })
+  const { success, reset } = await rateLimit(ip, rateLimitPresets.read)
   if (!success) return rateLimitResponse(reset)
 
   const { searchParams } = new URL(req.url)
@@ -53,7 +53,7 @@ export const POST = withValidation(
   { body: tagsBodySchema },
   async (req, _context, { body }) => {
     const ip = getIP(req)
-    const { success, reset } = await rateLimit(ip, { limit: 60, windowMs: 60_000 })
+    const { success, reset } = await rateLimit(ip, rateLimitPresets.write)
     if (!success) return rateLimitResponse(reset)
 
     if (body.category && !isHuntCategoryId(body.category)) {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
+import { rateLimit, rateLimitPresets, getIP, rateLimitResponse } from "@/lib/rate-limit";
 import { NotFoundError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
 import { withValidation } from "@/lib/api/withValidation";
@@ -20,7 +20,7 @@ import { getBattlePassTiers } from "@/lib/battlePassStore";
  */
 export const GET = withErrorHandling(async (req: Request) => {
   const ip = getIP(req);
-  const { success, reset } = await rateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
+  const { success, reset } = await rateLimit(ip, rateLimitPresets.read);
   if (!success) return rateLimitResponse(reset);
 
   const { searchParams } = new URL(req.url);
@@ -58,7 +58,7 @@ export const POST = withValidation(
   { body: seasonCreateBodySchema },
   async (req, _context, { body }) => {
     const ip = getIP(req);
-    const { success, reset } = await rateLimit(ip, { limit: 10, windowMs: 60 * 1000 });
+    const { success, reset } = await rateLimit(ip, rateLimitPresets.sensitive);
     if (!success) return rateLimitResponse(reset);
 
     const season = createSeason({

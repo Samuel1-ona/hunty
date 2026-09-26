@@ -74,6 +74,12 @@ function getStore(): Promise<Store> {
   return storePromise
 }
 
+export const rateLimitPresets = {
+  read: { limit: 100, windowMs: 60_000 },
+  write: { limit: 30, windowMs: 60_000 },
+  sensitive: { limit: 10, windowMs: 60_000 },
+} as const;
+
 export async function rateLimit(
   ip: string,
   config: RateLimitConfig = { limit: 60, windowMs: 60 * 1000 },

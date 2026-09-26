@@ -11,7 +11,7 @@ import { NextResponse } from "next/server";
 import { ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
 import { withValidation } from "@/lib/api/withValidation";
-import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { getIP, rateLimit, rateLimitPresets, rateLimitResponse } from "@/lib/rate-limit";
 import {
   followCreator,
   getFollowersCount,
@@ -34,7 +34,7 @@ export const POST = withValidation(
   { body: bodySchema, params: paramsSchema },
   async (_req: Request, _context: Context, { body, params }) => {
     const ip = getIP(_req);
-    const { success, reset } = await rateLimit(ip, { limit: 50, windowMs: 60 * 1000 });
+    const { success, reset } = await rateLimit(ip, rateLimitPresets.write);
     if (!success) return rateLimitResponse(reset);
 
     const record = followCreator(body.followerWallet, params.id);
@@ -52,7 +52,7 @@ export const DELETE = withValidation(
   { body: bodySchema, params: paramsSchema },
   async (_req: Request, _context: Context, { body, params }) => {
     const ip = getIP(_req);
-    const { success, reset } = await rateLimit(ip, { limit: 50, windowMs: 60 * 1000 });
+    const { success, reset } = await rateLimit(ip, rateLimitPresets.write);
     if (!success) return rateLimitResponse(reset);
 
     const removed = unfollowCreator(body.followerWallet, params.id);

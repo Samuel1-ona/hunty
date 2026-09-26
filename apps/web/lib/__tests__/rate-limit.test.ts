@@ -11,7 +11,7 @@ mockSql.json = (v: unknown) => v;
 
 vi.mock("@/lib/db", () => ({ getDb: () => mockSql }));
 
-import { getIP, rateLimit, rateLimitResponse } from "../rate-limit";
+import { getIP, rateLimit, rateLimitResponse, rateLimitPresets } from "../rate-limit";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -176,5 +176,42 @@ describe("rateLimitResponse", () => {
     const reset = Date.now() + 60_000;
     const response = rateLimitResponse(reset);
     expect(response.headers.get("content-type")).toMatch(/application\/json/);
+  });
+});
+
+// ── rateLimitPresets ──────────────────────────────────────────────────
+
+describe("rateLimitPresets", () => {
+  it("has a read preset with limit 100 and windowMs 60_000", () => {
+    expect(rateLimitPresets.read).toEqual({ limit: 100, windowMs: 60_000 });
+  });
+
+  it("has a write preset with limit 30 and windowMs 60_000", () => {
+    expect(rateLimitPresets.write).toEqual({ limit: 30, windowMs: 60_000 });
+  });
+
+  it("has a sensitive preset with limit 10 and windowMs 60_000", () => {
+    expect(rateLimitPresets.sensitive).toEqual({ limit: 10, windowMs: 60_000 });
+  });
+
+  it("read preset allows a request within the limit", async () => {
+    setupCount(50);
+    const result = await rateLimit("10.0.0.1", rateLimitPresets.read);
+    expect(result.success).toBe(true);
+    expect(result.remaining).toBe(50);
+  });
+
+  it("write preset blocks when over the limit", async () => {
+    setupCount(31);
+    const result = await rateLimit("10.0.0.2", rateLimitPresets.write);
+    expect(result.success).toBe(false);
+    expect(result.remaining).toBe(0);
+  });
+
+  it("sensitive preset blocks when over the limit", async () => {
+    setupCount(11);
+    const result = await rateLimit("10.0.0.3", rateLimitPresets.sensitive);
+    expect(result.success).toBe(false);
+    expect(result.remaining).toBe(0);
   });
 });

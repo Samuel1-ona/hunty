@@ -24,7 +24,7 @@ import { z } from "zod";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
 import { withValidation } from "@/lib/api/withValidation";
 import { ValidationError, UnauthorizedError } from "@/lib/api/errors";
-import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { getIP, rateLimit, rateLimitPresets, rateLimitResponse } from "@/lib/rate-limit";
 import { getCreatorHunts } from "@/lib/huntStore";
 import { duplicateHuntAsDraft } from "@/lib/huntDuplication";
 
@@ -43,7 +43,7 @@ export const POST = withValidation(
   },
   async (req, { params: paramsPromise }, { body }) => {
     const ip = getIP(req);
-    const { success, reset } = await rateLimit(ip, { limit: 20, windowMs: 60 * 1000 });
+    const { success, reset } = await rateLimit(ip, rateLimitPresets.write);
 
     if (!success) {
       return rateLimitResponse(reset);

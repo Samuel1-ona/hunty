@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getArchivedSeasons, getArchivedSeasonById } from "@/lib/seasonStore";
-import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
+import { rateLimit, rateLimitPresets, getIP, rateLimitResponse } from "@/lib/rate-limit";
 import { NotFoundError, ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
 
@@ -17,7 +17,7 @@ const bp = (s: any) => ({
 
 export const GET = withErrorHandling(async (req: Request) => {
   const ip = getIP(req);
-  const { success, reset } = await rateLimit(ip, { limit: 100, windowMs: 60000 });
+  const { success, reset } = await rateLimit(ip, rateLimitPresets.read);
   if (!success) return rateLimitResponse(reset);
 
   const { searchParams } = new URL(req.url);

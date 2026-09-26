@@ -8,14 +8,14 @@ import { assertAdminAuth } from "@/lib/api/adminAuth"
 import { NotFoundError, RateLimitError } from "@/lib/api/errors"
 import { withErrorHandling } from "@/lib/api/withErrorHandling"
 import { withValidation } from "@/lib/api/withValidation"
-import { getIP, rateLimit } from "@/lib/rate-limit"
+import { getIP, rateLimit, rateLimitPresets } from "@/lib/rate-limit"
 import { moderationSyncBodySchema } from "@hunty/types/api-schemas"
 
 export const GET = withErrorHandling(async (req: NextRequest) => {
   assertAdminAuth(req)
 
   const ip = getIP(req)
-  const ipResult = await rateLimit(`sync_ip:${ip}`, { limit: 60, windowMs: 60 * 1000 })
+  const ipResult = await rateLimit(`sync_ip:${ip}`, rateLimitPresets.read)
   if (!ipResult.success) {
     throw new RateLimitError("Too many sync requests from this IP", {
       reset: ipResult.reset,
@@ -45,7 +45,7 @@ export const POST = withErrorHandling(
       assertAdminAuth(req)
 
       const ip = getIP(req)
-      const ipResult = await rateLimit(`sync_ip:${ip}`, { limit: 60, windowMs: 60 * 1000 })
+      const ipResult = await rateLimit(`sync_ip:${ip}`, rateLimitPresets.read)
       if (!ipResult.success) {
         throw new RateLimitError("Too many sync requests from this IP", {
           reset: ipResult.reset,

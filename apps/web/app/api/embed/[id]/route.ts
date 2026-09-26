@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
+import { rateLimit, rateLimitPresets, getIP, rateLimitResponse } from "@/lib/rate-limit";
 import { getHuntById } from "@/lib/huntStore";
 
 /**
@@ -12,7 +12,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const ip = getIP(req);
-  const { success, reset } = await rateLimit(ip, { limit: 120, windowMs: 60 * 1000 });
+  const { success, reset } = await rateLimit(ip, rateLimitPresets.read);
 
   if (!success) {
     return rateLimitResponse(reset);

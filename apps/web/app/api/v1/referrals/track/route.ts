@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { withValidation } from "@/lib/api/withValidation"
-import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit"
+import { getIP, rateLimit, rateLimitPresets, rateLimitResponse } from "@/lib/rate-limit"
 import { recordReferral } from "@/lib/referralStore"
 import { referralTrackBodySchema } from "@hunty/types/api-schemas"
 
@@ -25,7 +25,7 @@ export const POST = withValidation(
   { body: referralTrackBodySchema },
   async (req: Request, _context, { body }) => {
     const ip = getIP(req)
-    const { success, reset } = await rateLimit(ip, { limit: 30, windowMs: 60_000 })
+    const { success, reset } = await rateLimit(ip, rateLimitPresets.write)
     if (!success) return rateLimitResponse(reset)
 
     const result = recordReferral({
