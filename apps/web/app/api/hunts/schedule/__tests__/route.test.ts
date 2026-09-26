@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest"
 import { NextRequest } from "next/server"
 import { POST } from "../route"
-import { Keypair } from "@stellar/stellar-sdk"
+import * as walletAuth from "@/lib/walletAuth"
 
 vi.mock("@/lib/huntStore", () => ({
   getAllHuntsIncludingPrivate: vi.fn().mockReturnValue([
@@ -22,8 +22,9 @@ vi.mock("@/lib/notifications/huntScheduleNotifications", () => ({
 }))
 
 describe("POST /api/hunts/schedule authentication & authorization", () => {
-  const kp = Keypair.fromRawEd25519Seed(new Uint8Array(Buffer.from("12345678901234567890123456789012")))
-  const address = kp.publicKey()
+  const address = "GBRPYHIL2CI3FNQ4BXLFMNDLFPPPU2HY52WSGROMKTCVLA5WDWZTVLTC"
+  const sig = "valid_test_signature"
+  const challenge = "hunty_schedule_challenge_123"
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -53,8 +54,7 @@ describe("POST /api/hunts/schedule authentication & authorization", () => {
   })
 
   it("returns 403 Forbidden for authenticated but unauthorized caller", async () => {
-    const challenge = "hunty_schedule_challenge_123"
-    const sig = kp.sign(Buffer.from(challenge, "utf-8")).toString("base64")
+    vi.spyOn(walletAuth, "verifyWalletSignature").mockReturnValue(true)
 
     const req = new NextRequest("http://localhost:3000/api/hunts/schedule", {
       method: "POST",
@@ -73,8 +73,7 @@ describe("POST /api/hunts/schedule authentication & authorization", () => {
   })
 
   it("returns 200 OK and derives actor from verified wallet identity", async () => {
-    const challenge = "hunty_schedule_challenge_456"
-    const sig = kp.sign(Buffer.from(challenge, "utf-8")).toString("base64")
+    vi.spyOn(walletAuth, "verifyWalletSignature").mockReturnValue(true)
 
     const req = new NextRequest("http://localhost:3000/api/hunts/schedule", {
       method: "POST",
