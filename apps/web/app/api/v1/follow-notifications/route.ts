@@ -19,7 +19,7 @@ export const GET = withErrorHandling(async (req: Request) => {
   const wallet = new URL(req.url).searchParams.get("wallet");
   if (!wallet) throw new ValidationError("wallet query parameter is required");
 
-  const notifications = getFollowNotifications(wallet);
+  const notifications = await getFollowNotifications(wallet);
 
   return NextResponse.json({ data: notifications });
 });

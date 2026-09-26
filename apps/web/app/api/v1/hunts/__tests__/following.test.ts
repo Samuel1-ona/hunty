@@ -40,7 +40,7 @@ describe("hunts feed following filter", () => {
     const { GET } = await loadRoute()
     const follows = await import("@/lib/follows")
     follows.resetFollowsStore()
-    follows.followCreator(FOLLOWER, CREATOR)
+    await follows.followCreator(FOLLOWER, CREATOR)
 
     const res = await GET(get(FOLLOWER) as any)
     const body = await res.json()

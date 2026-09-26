@@ -38,7 +38,7 @@ describe("hunts/:id/notify-followers API", () => {
     const { POST } = await loadRoute()
     const follows = await import("@/lib/follows")
     follows.resetFollowsStore()
-    follows.followCreator(FOLLOWER, CREATOR)
+    await follows.followCreator(FOLLOWER, CREATOR)
 
     const res = await POST(post(HUNT_ID) as any, ctx(HUNT_ID) as any)
     expect(res.status).toBe(200)

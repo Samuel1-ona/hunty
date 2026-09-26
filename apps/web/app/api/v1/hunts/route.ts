@@ -71,7 +71,7 @@ export const GET = withErrorHandling(async (req: Request) => {
   let filteredData = data;
   let filteredTotal = total;
   if (following) {
-    const follows = getFollowing(following);
+    const follows = await getFollowing(following);
     const followSet = new Set(follows.map((w) => w.toLowerCase()));
     filteredData = data.filter((hunt) => {
       const creator = (hunt as StoredHunt & { creator?: string }).creator;
