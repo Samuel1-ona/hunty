@@ -4,12 +4,18 @@ import type { HuntReview } from "@/lib/types"
 import { withErrorHandling } from "@/lib/api/withErrorHandling"
 import { withValidation } from "@/lib/api/withValidation"
 import { ValidationError } from "@/lib/api/errors"
+import { requireVerifiedWallet } from "@/lib/api/walletAuth"
 import { huntReviewBodySchema } from "@hunty/types/api-schemas"
 import { z } from "zod"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
 const paramsSchema = z.object({ id: z.string() })
+const postBodySchema = huntReviewBodySchema.omit({ playerAddress: true }).extend({
+  playerAddress: z.string().min(1).optional(),
+  challenge: z.string().min(1),
+  signature: z.string().min(1),
+})
 
 /**
  * GET /api/v1/hunts/[id]/reviews
@@ -38,18 +44,26 @@ export const GET = withErrorHandling(async (_req: Request, context: RouteContext
  * - Verification that player has completed the hunt.
  */
 export const POST = withValidation(
-  { body: huntReviewBodySchema, params: paramsSchema },
-  async (_req, _context, { body, params }) => {
+  { body: postBodySchema, params: paramsSchema },
+  async (req, _context, { body, params }) => {
     const huntId = parseInt(params!.id, 10)
     if (isNaN(huntId)) {
       throw new ValidationError("Invalid hunt ID", { id: params!.id })
     }
 
+    const actorWallet = requireVerifiedWallet(req, {
+      purpose: "hunt-review-write",
+      challenge: body.challenge,
+      signature: body.signature,
+      claimedAddress: body.playerAddress,
+    })
     const ratingVal = Number(body.rating)
 
     // 1. Enforce hunt completion verification
     const completions = await readCompletions()
-    const completed = completions[huntId]?.[body.playerAddress] === true
+    const completed = Object.entries(completions[huntId] ?? {}).some(
+      ([address, done]) => done === true && address.toLowerCase() === actorWallet,
+    )
     if (!completed) {
       return NextResponse.json(
         { error: "You must complete this hunt before submitting a review" },
@@ -62,7 +76,7 @@ export const POST = withValidation(
     const duplicate = reviews.some(
       (r) =>
         r.huntId === huntId &&
-        r.playerAddress.toLowerCase() === body.playerAddress.toLowerCase() &&
+        r.playerAddress.toLowerCase() === actorWallet &&
         !r.moderated
     )
     if (duplicate) {
@@ -72,7 +86,7 @@ export const POST = withValidation(
     const newReview: HuntReview = {
       id: Math.random().toString(36).substring(2, 15) + Date.now().toString(36),
       huntId,
-      playerAddress: body.playerAddress,
+      playerAddress: actorWallet,
       rating: ratingVal,
       text: typeof body.text === "string" ? body.text.trim() : undefined,
       difficultyRating: typeof body.difficultyRating === "string" ? body.difficultyRating : undefined,
