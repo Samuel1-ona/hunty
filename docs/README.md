@@ -7,7 +7,7 @@ This directory contains project documentation organized by topic.
 - **[achievements/](./achievements/)** — Achievement/badge system for players (issue #381)
 - **[security/](./security/)** — CSP implementation, answer hashing, and security guides
 - **[testing/](./testing/)** — E2E testing guide, huntStore tests, leaderboard optimization tests
-- **[development/](./development/)** — CI/CD pipeline, environment config, EAS setup, seasonal leaderboard, issue solver
+- **[development/](./development/)** — CI/CD pipeline, environment config, EAS setup, seasonal leaderboard, Next.js ESLint pinning, issue solver
 - **[analytics.md](./analytics.md)** — Analytics documentation
 - **[api.md](./api.md)** — API documentation
 - **[monitoring/](./monitoring/)** — Monitoring and recovery runbooks
@@ -25,6 +25,7 @@ This directory contains project documentation organized by topic.
 | huntStore test coverage | [testing/HUNTSTORE_TESTS_SUMMARY.md](./testing/HUNTSTORE_TESTS_SUMMARY.md) |
 | Leaderboard optimization tests | [testing/TESTING_GUIDE_LEADERBOARD_OPTIMIZATION.md](./testing/TESTING_GUIDE_LEADERBOARD_OPTIMIZATION.md) |
 | CI/CD pipeline | [development/CICD_PIPELINE.md](./development/CICD_PIPELINE.md) |
+| Next.js ESLint version pinning | [development/NEXT_ESLINT_PINNING.md](./development/NEXT_ESLINT_PINNING.md) |
 | Environment setup | [development/ENVIRONMENT_SETUP.md](./development/ENVIRONMENT_SETUP.md) |
 | EAS Build & Update Guide | [mobile/EAS_GUIDE.md](./mobile/EAS_GUIDE.md) |
 | EAS Quick Reference | [mobile/QUICK_REFERENCE.md](./mobile/QUICK_REFERENCE.md) |

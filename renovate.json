@@ -97,6 +97,25 @@
       "semanticCommits": false,
       "semanticCommitType": "chore",
       "semanticCommitScope": "playwright"
+    },
+    {
+      "description": "Keep next and its ESLint packages pinned to one version (see docs/development/NEXT_ESLINT_PINNING.md)",
+      "matchPackageNames": [
+        "next",
+        "eslint-config-next",
+        "@next/eslint-plugin-next"
+      ],
+      "groupName": "next.js packages",
+      "groupSlug": "nextjs-group",
+      "rangeStrategy": "pin",
+      "labels": [
+        "dependencies",
+        "nextjs"
+      ],
+      "automerge": false,
+      "semanticCommits": false,
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "nextjs"
     }
   ],
   "vulnerabilityAlerts": {

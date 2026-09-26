@@ -1,0 +1,83 @@
+name: Next ESLint Pins
+
+# `eslint-config-next` and `@next/eslint-plugin-next` are published in lockstep
+# with `next`, and Renovate keeps the three in one group (renovate.json ->
+# "next.js packages"). This workflow is the guard rail: it fails whenever a
+# workspace declares a different Next version or unpins one of the ESLint
+# packages, so the group rule cannot be bypassed by a manual bump.
+# See docs/development/NEXT_ESLINT_PINNING.md.
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'package.json'
+      - 'apps/web/package.json'
+      - 'apps/mobile/package.json'
+      - 'packages/config/package.json'
+      - 'packages/ui/package.json'
+      - 'packages/types/package.json'
+      - 'packages/config/scripts/check-next-eslint-pins.mjs'
+      - '.github/workflows/next-eslint-pins.yml'
+  push:
+    branches: [main, develop]
+    paths:
+      - 'package.json'
+      - 'apps/web/package.json'
+      - 'apps/mobile/package.json'
+      - 'packages/config/package.json'
+      - 'packages/ui/package.json'
+      - 'packages/types/package.json'
+      - 'packages/config/scripts/check-next-eslint-pins.mjs'
+      - '.github/workflows/next-eslint-pins.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  next-eslint-pins:
+    name: Verify next ESLint pins
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Dependency-free: reads the workspace manifests directly, so no pnpm
+      # install (and therefore no lockfile coupling) is required.
+      - name: Check next, eslint-config-next and @next/eslint-plugin-next agree
+        run: node packages/config/scripts/check-next-eslint-pins.mjs
+
+  self-check-mismatch-detection:
+    name: Verify a pin mismatch fails the check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Introduce a deliberate pin mismatch
+        run: |
+          node -e "
+            const fs = require('fs');
+            const file = 'packages/config/package.json';
+            const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
+            pkg.devDependencies['eslint-config-next'] = '0.0.0-mismatch';
+            fs.writeFileSync(file, JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+      - name: Confirm the pin check fails on mismatch
+        run: |
+          if node packages/config/scripts/check-next-eslint-pins.mjs; then
+            echo "::error::check-next-eslint-pins.mjs passed despite a deliberate pin mismatch. The Next ESLint pin check is not catching drift."
+            exit 1
+          fi
+          echo "Confirmed: the pin check correctly failed on a mismatched eslint-config-next version."
