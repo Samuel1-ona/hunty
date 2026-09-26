@@ -12,7 +12,7 @@
 
 #[cfg(test)]
 mod nft_reward_tests {
-    use soroban_sdk::{testutils::Address as _, Address, Env, String};
+    use soroban_sdk::{testutils::Address as _, Address, Env, String, Vec};
 
     use crate::{NftRewardContract, NftRewardContractClient};
 
@@ -68,10 +68,25 @@ mod nft_reward_tests {
         );
     }
 
-    fn setup(env: &Env) -> (Address, NftRewardContractClient<'_>) {
+    /// Register the contract and run the one-time `initialize`, returning the
+    /// client plus the generated admin and minter addresses.  The minter is
+    /// placed on the allow-list so the pre-existing mint tests keep working
+    /// under the issue #1399 allow-list model.
+    fn setup_initialized(env: &Env) -> (Address, Address, NftRewardContractClient<'_>) {
         let contract_id = env.register(NftRewardContract, ());
         let client = NftRewardContractClient::new(env, &contract_id);
+        let admin = Address::generate(env);
         let minter = Address::generate(env);
+
+        let mut minters = Vec::new(env);
+        minters.push_back(minter.clone());
+        client.initialize(&admin, &minters);
+
+        (admin, minter, client)
+    }
+
+    fn setup(env: &Env) -> (Address, NftRewardContractClient<'_>) {
+        let (_admin, minter, client) = setup_initialized(env);
         (minter, client)
     }
 
@@ -144,6 +159,99 @@ mod nft_reward_tests {
         assert_nft_absent(&client, &alice, id);
         assert_nft_present(&client, &bob, id);
         assert_eq!(client.get_owner(&id), Some(bob));
+    }
+
+    // ── issue #1399: minter allow-list ───────────────────────────────────────
+
+    /// The minter configured by `setup_initialized` is allow-listed, so it can
+    /// mint; the existing tests above exercise this implicitly and this test
+    /// pins it explicitly.
+    #[test]
+    fn test_mint_allowed_minter_succeeds() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (_admin, minter, client) = setup_initialized(&env);
+        let player = Address::generate(&env);
+
+        let id = client.mint(&minter, &player, &test_uri(&env, 1));
+
+        assert_eq!(client.balance_of(&player), 1);
+        assert_eq!(client.get_owner(&id), Some(player));
+    }
+
+    /// A caller that is not on the allow-list must be rejected with
+    /// `NftError::Unauthorized`, even though it can satisfy `require_auth`
+    /// under `mock_all_auths` — proving the check is the allow-list, not
+    /// merely key ownership.
+    #[test]
+    #[should_panic]
+    fn test_mint_rejected_for_non_allowed_minter() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (_admin, _minter, client) = setup_initialized(&env);
+        let stranger = Address::generate(&env);
+        let player = Address::generate(&env);
+
+        client.mint(&stranger, &player, &test_uri(&env, 1));
+    }
+
+    #[test]
+    fn test_admin_can_add_minter() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (admin, _minter, client) = setup_initialized(&env);
+        let new_minter = Address::generate(&env);
+        let player = Address::generate(&env);
+
+        client.add_minter(&admin, &new_minter);
+        let id = client.mint(&new_minter, &player, &test_uri(&env, 1));
+
+        assert_eq!(client.balance_of(&player), 1);
+        assert_eq!(client.get_owner(&id), Some(player));
+    }
+
+    /// Removing a minter revokes the right to mint.
+    #[test]
+    #[should_panic]
+    fn test_removed_minter_cannot_mint() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (admin, _minter, client) = setup_initialized(&env);
+        let new_minter = Address::generate(&env);
+        let player = Address::generate(&env);
+
+        client.add_minter(&admin, &new_minter);
+        client.remove_minter(&admin, &new_minter);
+
+        client.mint(&new_minter, &player, &test_uri(&env, 1));
+    }
+
+    /// Only the stored admin may change the allow-list.
+    #[test]
+    #[should_panic]
+    fn test_non_admin_cannot_add_minter() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (_admin, _minter, client) = setup_initialized(&env);
+        let stranger = Address::generate(&env);
+        let new_minter = Address::generate(&env);
+
+        client.add_minter(&stranger, &new_minter);
+    }
+
+    /// `initialize` is one-shot: a second call must be rejected so the admin
+    /// and allow-list cannot be replaced after deployment.
+    #[test]
+    #[should_panic]
+    fn test_initialize_rejects_reinitialization() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (admin, _minter, client) = setup_initialized(&env);
+        let other = Address::generate(&env);
+
+        let mut minters = Vec::new(&env);
+        minters.push_back(other);
+        client.initialize(&admin, &minters);
     }
 
     // ── issue #848 core test: mint → transfer → burn consistency ─────────────
