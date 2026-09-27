@@ -1,7 +1,6 @@
 /** @type {import('jest').Config} */
 module.exports = {
-  // Don't use jest-expo preset — expo-modules-core is not fully installed.
-  // We configure transforms manually below.
+  preset: 'jest-expo',
   testEnvironment: 'node',
   collectCoverageFrom: [
     '**/*.{ts,tsx,js,jsx}',
@@ -11,21 +10,13 @@ module.exports = {
     '!**/*.config.{js,ts}',
     '!coverage/**',
     '!**/.expo/**',
-    '!path-alias.js'
+    '!path-alias.js',
   ],
   setupFiles: ['<rootDir>/__mocks__/jestSetup.js'],
 
   transform: {
-    '^.+\\.[jt]sx?$': [
-      'babel-jest',
-      { configFile: require('path').resolve(__dirname, 'babel.config.js') },
-    ],
+    '^.+\\.[jt]sx?$': ['babel-jest', { configFile: require.resolve('./babel.config.js') }],
   },
-
-  // Transform expo/* packages since they ship ESM
-  transformIgnorePatterns: [
-    'node_modules/(?!(expo|@expo|expo-notifications|expo-device|expo-constants|expo-secure-store|expo-modules-core|react-native|@react-native))',
-  ],
 
   // Manual mocks for native/expo modules
   moduleNameMapper: {

@@ -126,7 +126,7 @@
     "lint-staged": "15.5.2",
     "node-mocks-http": "^1.12.1",
     "playwright": "^1.61.0",
-    "pnpm": "^10.33.0",
+    "pnpm": "10.33.0",
     "prettier": "3.5.3",
     "sharp": "^0.35.2",
     "storybook": "^10.4.6",

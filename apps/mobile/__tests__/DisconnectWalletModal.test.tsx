@@ -13,26 +13,19 @@ jest.mock('@providers/ThemeProvider', () => ({
     },
   }),
 }));
+jest.mock('@expo/vector-icons', () => ({
+  Ionicons: () => null,
+}));
 
 describe('DisconnectWalletModal', () => {
   it('opens and confirms disconnect', () => {
     const onCancel = jest.fn();
     const onConfirm = jest.fn();
     const { getByLabelText, getByText, rerender } = render(
-      <DisconnectWalletModal
-        visible={false}
-        onCancel={onCancel}
-        onConfirm={onConfirm}
-      />,
+      <DisconnectWalletModal visible={false} onCancel={onCancel} onConfirm={onConfirm} />,
     );
 
-    rerender(
-      <DisconnectWalletModal
-        visible
-        onCancel={onCancel}
-        onConfirm={onConfirm}
-      />,
-    );
+    rerender(<DisconnectWalletModal visible onCancel={onCancel} onConfirm={onConfirm} />);
 
     expect(getByText('Disconnect Wallet')).toBeTruthy();
     fireEvent.press(getByLabelText('Confirm disconnect wallet'));

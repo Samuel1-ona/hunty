@@ -49,6 +49,7 @@
     "submit:all": "eas submit --platform all --profile production"
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.1.1",
     "@expo/metro-runtime": "~55.0.11",
     "@gorhom/bottom-sheet": "^5.2.14",
     "@react-native-async-storage/async-storage": "^2.0.0",

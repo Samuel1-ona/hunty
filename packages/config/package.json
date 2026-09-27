@@ -20,6 +20,8 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@next/eslint-plugin-next": "15.3.4",
+    "@typescript-eslint/eslint-plugin": "^8.68.0",
+    "@typescript-eslint/parser": "^8.68.0",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
     "eslint-plugin-jsx-a11y": "^6.10.2",
