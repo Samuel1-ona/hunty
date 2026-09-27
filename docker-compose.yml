@@ -1,17 +1,18 @@
+version: '3.9'
 services:
   web:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile
+      dockerfile: Dockerfile
     ports:
       - '3000:3000'
     volumes:
-      - .:/app:cached
-      - /app/node_modules
+      - .:/usr/src/app:cached
+      - /usr/src/app/node_modules
     environment:
       NODE_ENV: development
       NEXT_TELEMETRY_DISABLED: 1
-    command: pnpm --filter @hunty/web dev -- --hostname 0.0.0.0 --port 3000
+    command: pnpm dev -- --hostname 0.0.0.0 --port 3000
     depends_on:
       - db
     stdin_open: true

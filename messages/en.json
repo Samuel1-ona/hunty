@@ -1,0 +1,148 @@
+{
+  "common": {
+    "appName": "Hunty",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "continue": "Continue",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "submit": "Submit",
+    "reset": "Reset",
+    "noResults": "No results found",
+    "skipToContent": "Skip to content",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "header": {
+    "connectWallet": "Connect Wallet",
+    "connectedWallet": "Connected wallet",
+    "copyAddress": "Copy address",
+    "copied": "Copied!",
+    "disconnectWallet": "Disconnect wallet",
+    "balance": "Balance"
+  },
+  "home": {
+    "title": "The Ultimate Web3 Game Arcade",
+    "metaTitle": "Hunty - Decentralized Scavenger Hunt Game",
+    "metaDescription": "Create thrilling scavenger hunts with multiple clues and challenges. Engage players in immersive treasure hunts and reward them with XLM tokens or exclusive NFTs on the Stellar blockchain.",
+    "createGame": "Create Game",
+    "myHunts": "My Hunts",
+    "leaderboard": "Leaderboard",
+    "playGame": "Play Game",
+    "enterGameLink": "Enter Game Link",
+    "gameLinkPlaceholder": "https://www.galagorch.com/g/***",
+    "howToPlay": "How To Play Hunty",
+    "hintToUnlock": "Hint To Unlock",
+    "enterCodePlaceholder": "Enter code to unlock",
+    "globalLeaderboard": "Global Leaderboard",
+    "discoveryArcade": "Discovery Arcade",
+    "discoverySubtitle": "Find the perfect challenge for you",
+    "olderInactiveHunts": "Older / Inactive Hunts",
+    "loadingArchive": "Loading archive...",
+    "loadingMoreHunts": "Loading more hunts...",
+    "endOfArchive": "You've reached the end of the hunt archive.",
+    "noInactiveHunts": "No inactive hunts yet.",
+    "noActiveHunts": "No active hunts available right now.",
+    "noSearchResults": "No hunts match your search query.",
+    "beFirstToCreate": "Be the first to create one!",
+    "searchTitle": "Search title..."
+  },
+  "hunt": {
+    "clue": "Clue",
+    "clues": "Clues",
+    "reward": "Reward",
+    "trending": "Trending",
+    "play": "Play",
+    "watchLive": "Watch Live",
+    "players": "players",
+    "player": "player",
+    "status": {
+      "active": "Active",
+      "completed": "Completed",
+      "inactive": "Inactive"
+    }
+  },
+  "filters": {
+    "allPrizes": "All Prizes",
+    "all": "All",
+    "live": "Live",
+    "ended": "Ended",
+    "newestFirst": "Newest First",
+    "oldestFirst": "Oldest First",
+    "mostClues": "Most Clues",
+    "fewestClues": "Fewest Clues",
+    "results": "{count} result",
+    "resultsPlural": "{count} results",
+    "loadedOf": "{visible} of {total} loaded"
+  },
+  "wallet": {
+    "connectTitle": "Connect a wallet",
+    "noWalletOptions": "No wallet options available.",
+    "walletAddress": "Wallet Address",
+    "displayName": "Set a Display Name (optional)",
+    "displayNamePlaceholder": "DisplayName"
+  },
+  "navigation": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "settings": "Settings",
+    "help": "Help",
+    "admin": "Admin"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "myHunts": "My Hunts",
+    "createNew": "Create New Hunt",
+    "noHunts": "You haven't created any hunts yet."
+  },
+  "profile": {
+    "title": "Profile",
+    "editProfile": "Edit Profile",
+    "username": "Username",
+    "email": "Email",
+    "walletAddress": "Wallet Address",
+    "joinedDate": "Joined",
+    "huntsCreated": "Hunts Created",
+    "huntsCompleted": "Hunts Completed"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "selectLanguage": "Select Language",
+    "theme": "Theme",
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode",
+    "systemDefault": "System Default",
+    "notifications": "Notifications",
+    "account": "Account",
+    "privacy": "Privacy",
+    "security": "Security"
+  },
+  "footer": {
+    "rights": "All rights reserved.",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "contact": "Contact"
+  },
+  "errors": {
+    "notFound": "Page not found",
+    "serverError": "Server error",
+    "unauthorized": "Unauthorized",
+    "networkError": "Network error. Please try again."
+  },
+  "language": {
+    "en": "English",
+    "es": "Spanish"
+  }
+}

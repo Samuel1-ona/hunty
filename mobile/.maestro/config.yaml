@@ -1,0 +1,11 @@
+# Maestro E2E configuration for Hunty Mobile
+#
+# Prerequisites:
+#   brew tap mobile-dev-inc/tap && brew install maestro
+#   cd mobile && pnpm start
+#   In another terminal: pnpm test:e2e
+#
+# CI runs these flows against an Android emulator via .github/workflows/mobile-e2e.yml
+
+flows:
+  - flows/feed-and-wallet.yaml

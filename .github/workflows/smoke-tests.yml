@@ -30,8 +30,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js with pnpm
-        uses: ./.github/actions/setup-node-pnpm
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
@@ -45,7 +50,7 @@ jobs:
           echo "Running smoke tests against $SMOKE_BASE_URL"
 
       - name: Run production smoke tests
-        run: pnpm smoke
+        run: npm run smoke
 
       - name: Upload Playwright report
         if: always()

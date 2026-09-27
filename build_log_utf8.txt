@@ -1,0 +1,237 @@
+﻿
+> galagiorchi@0.1.0 build
+> next build
+
+   Γû▓ Next.js 15.3.4
+
+   Creating an optimized production build ...
+node.exe :  ΓÜá 
+Compiled with 
+warnings in 2000ms
+At line:1 char:1
++ & "C:\Program Files\
+nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: ( ΓÜá Compi   
+ led with warnings    
+ in 2000ms:String    
+) [], RemoteExcep    
+tion
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+
+./app/creator/page.tsx
+Attempted import 
+error: 
+'getHuntsByCreator' 
+is not exported from 
+'@/lib/huntStore' 
+(imported as 
+'getHuntsByCreator').
+
+Import trace for 
+requested module:
+./app/creator/page.tsx
+
+./app/creator/stats/[i
+d]/page.tsx
+Attempted import 
+error: 'getHuntById' 
+is not exported from 
+'@/lib/huntStore' 
+(imported as 
+'getHuntById').
+
+Import trace for 
+requested module:
+./app/creator/stats/[i
+d]/page.tsx
+
+ ΓÜá Compiled with 
+warnings in 4.0s
+
+./app/creator/page.tsx
+Attempted import 
+error: 
+'getHuntsByCreator' 
+is not exported from 
+'@/lib/huntStore' 
+(imported as 
+'getHuntsByCreator').
+
+Import trace for 
+requested module:
+./app/creator/page.tsx
+
+./app/creator/stats/[i
+d]/page.tsx
+Attempted import 
+error: 'getHuntById' 
+is not exported from 
+'@/lib/huntStore' 
+(imported as 
+'getHuntById').
+
+Import trace for 
+requested module:
+./app/creator/stats/[i
+d]/page.tsx
+
+ Γ£ô Compiled successfully in 6.0s
+   Linting and checking validity of types ...
+
+Failed to compile.
+
+./app/hunt/[id]/share.
+tsx
+190:33  Error: 
+'txHash' is defined 
+but never used.  @type
+script-eslint/no-unuse
+d-vars
+
+./app/hunty/page.tsx
+28:8  Error: 'Replay' 
+is defined but never 
+used.  @typescript-esl
+int/no-unused-vars
+87:10  Error: 
+'huntId' is assigned 
+a value but never 
+used.  @typescript-esl
+int/no-unused-vars
+95:29  Error: 
+Unexpected any. 
+Specify a different 
+type.  @typescript-esl
+int/no-explicit-any
+152:9  Error: 
+'leaderboardData' is 
+assigned a value but 
+never used.  @typescri
+pt-eslint/no-unused-va
+rs
+269:9  Error: 
+'handleTest' is 
+assigned a value but 
+never used.  @typescri
+pt-eslint/no-unused-va
+rs
+
+./app/layout.tsx
+6:10  Error: 
+'SorobanProvider' is 
+defined but never 
+used.  @typescript-esl
+int/no-unused-vars
+
+./app/page.tsx
+59:31  Error: 
+'wallet' is defined 
+but never used.  @type
+script-eslint/no-unuse
+d-vars
+
+./app/profile/page.tsx
+90:21  Error: 
+Unexpected any. 
+Specify a different 
+type.  @typescript-esl
+int/no-explicit-any
+
+./components/GameCompl
+eteModal.tsx
+31:152  Error: `'` 
+can be escaped with 
+`&apos;`, `&lsquo;`, 
+`&#39;`, `&rsquo;`.  r
+eact/no-unescaped-enti
+ties
+
+./components/HuntContr
+ols.tsx
+120:19  Error: 
+Unexpected any. 
+Specify a different 
+type.  @typescript-esl
+int/no-explicit-any
+121:21  Error: 
+Unexpected any. 
+Specify a different 
+type.  @typescript-esl
+int/no-explicit-any
+160:72  Error: `"` 
+can be escaped with 
+`&quot;`, `&ldquo;`, 
+`&#34;`, `&rdquo;`.  r
+eact/no-unescaped-enti
+ties
+160:84  Error: `"` 
+can be escaped with 
+`&quot;`, `&ldquo;`, 
+`&#34;`, `&rdquo;`.  r
+eact/no-unescaped-enti
+ties
+192:60  Error: 
+Unexpected any. 
+Specify a different 
+type.  @typescript-esl
+int/no-explicit-any
+237:12  Error: 
+'error' is assigned a 
+value but never used. 
+ @typescript-eslint/no
+-unused-vars
+
+./components/Registrat
+ionButton.tsx
+4:10  Error: 'Button' 
+is defined but never 
+used.  @typescript-esl
+int/no-unused-vars
+16:3  Error: 'huntId' 
+is defined but never 
+used.  @typescript-esl
+int/no-unused-vars
+17:3  Error: 
+'playerAddress' is 
+defined but never 
+used.  @typescript-esl
+int/no-unused-vars
+143:50  Error: `'` 
+can be escaped with 
+`&apos;`, `&lsquo;`, 
+`&#39;`, `&rsquo;`.  r
+eact/no-unescaped-enti
+ties
+
+./lib/contracts/player
+-registration.ts
+296:13  Error: 
+'server' is assigned 
+a value but never 
+used.  @typescript-esl
+int/no-unused-vars
+300:13  Error: 
+'payload' is assigned 
+a value but never 
+used.  @typescript-esl
+int/no-unused-vars
+
+info  - Need to 
+disable some ESLint 
+rules? Learn more 
+here: https://nextjs.o
+rg/docs/app/api-refere
+nce/config/eslint#disa
+bling-rules

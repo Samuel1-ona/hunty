@@ -1,6 +1,5 @@
 # Load Testing — hunty API
 
-
 Load tests using [k6](https://k6.io/) covering the acceptance criteria for issue #667.
 
 ## Acceptance Criteria
