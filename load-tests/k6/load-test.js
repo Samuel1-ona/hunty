@@ -1,6 +1,6 @@
+import { check, group,sleep } from 'k6';
 import http from 'k6/http';
-import { check, sleep, group } from 'k6';
-import { Rate, Trend, Counter } from 'k6/metrics';
+import { Counter,Rate, Trend } from 'k6/metrics';
 
 // ─── Custom Metrics ────────────────────────────────────────────────────────────
 const errorRate = new Rate('error_rate');
