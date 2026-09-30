@@ -1,7 +1,6 @@
-import { beforeEach, describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
+import { createMockSql, resetTables, type Row } from "@/lib/test-utils/mockSql"
 import {
-  _clearReferralStore,
-  _injectReferralRecord,
   awardServerReferralBonus,
   getAllPayouts,
   getReferralLeaderboard,
@@ -12,6 +11,22 @@ import {
   updatePayoutStatus,
   validateReferralEligibility,
 } from "@/lib/referralStore"
+
+// ---------------------------------------------------------------------------
+// In-memory table store — shared across all queries in a single test.
+// ---------------------------------------------------------------------------
+
+const tables: Record<string, Row[]> = {
+  referrals: [],
+  referrer_devices: [],
+  referral_payouts: [],
+}
+
+const mockSql = createMockSql(tables)
+
+vi.mock("@/lib/db", () => ({
+  getDb: () => mockSql,
+}))
 
 describe("referralStore payout idempotency & IP anti-self-referral validation", () => {
   const REFERRER_A = "GREFERRER_AAA11111111111111111111111111111111111111111111"
@@ -26,13 +41,13 @@ describe("referralStore payout idempotency & IP anti-self-referral validation", 
   const IPV6_REFERRED = "2001:db8:3333:4444:5555:6666:7777:9999"
 
   beforeEach(() => {
-    _clearReferralStore()
+    resetTables(tables)
   })
 
   describe("Payout and Bonus Idempotency", () => {
-    it("ensures awarding the same referral payout/bonus twice has no effect", () => {
+    it("ensures awarding the same referral payout/bonus twice has no effect", async () => {
       // 1. Initial valid referral
-      const initialRecord = recordReferral({
+      const initialRecord = await recordReferral({
         code: `wallet:${REFERRER_A}`,
         referrerAddress: REFERRER_A,
         referredAddress: REFERRED_B,
@@ -42,7 +57,7 @@ describe("referralStore payout idempotency & IP anti-self-referral validation", 
       expect(initialRecord.success).toBe(true)
 
       // 2. Award bonus first time
-      const firstAward = awardServerReferralBonus(REFERRED_B, 10, 50)
+      const firstAward = await awardServerReferralBonus(REFERRED_B, 10, 50)
       expect(firstAward).not.toBeNull()
       expect(firstAward?.bonusAwarded).toBe(true)
       expect(firstAward?.bonusPoints).toBe(50)
@@ -51,47 +66,47 @@ describe("referralStore payout idempotency & IP anti-self-referral validation", 
       expect(originalCompletedAt).toBeDefined()
 
       // Verify stats and leaderboard reflection after first payout
-      const statsAfterFirst = getReferralLeaderboardStats()
+      const statsAfterFirst = await getReferralLeaderboardStats()
       expect(statsAfterFirst.totalSuccessfulReferrals).toBe(1)
       expect(statsAfterFirst.totalBonusDistributed).toBe(50)
 
-      const leaderboardAfterFirst = getReferralLeaderboard()
+      const leaderboardAfterFirst = await getReferralLeaderboard()
       expect(leaderboardAfterFirst[0].successfulReferrals).toBe(1)
       expect(leaderboardAfterFirst[0].bonusPoints).toBe(50)
 
       // 3. Award bonus second time for the exact same referral
-      const secondAward = awardServerReferralBonus(REFERRED_B, 10, 50)
+      const secondAward = await awardServerReferralBonus(REFERRED_B, 10, 50)
       expect(secondAward).not.toBeNull()
       expect(secondAward?.bonusAwarded).toBe(true)
       expect(secondAward?.bonusPoints).toBe(50) // points MUST NOT double to 100
       expect(secondAward?.firstCompletedAt).toBe(originalCompletedAt) // timestamp unchanged
 
       // 4. Award bonus third time with different points/huntId (must be ignored)
-      const thirdAward = awardServerReferralBonus(REFERRED_B, 999, 100)
+      const thirdAward = await awardServerReferralBonus(REFERRED_B, 999, 100)
       expect(thirdAward?.bonusPoints).toBe(50)
       expect(thirdAward?.firstCompletedHuntId).toBe(10)
 
       // 5. Verify stats and leaderboard did not change (idempotency preserved)
-      const statsAfterSecond = getReferralLeaderboardStats()
+      const statsAfterSecond = await getReferralLeaderboardStats()
       expect(statsAfterSecond.totalSuccessfulReferrals).toBe(1)
       expect(statsAfterSecond.totalBonusDistributed).toBe(50)
 
-      const leaderboardAfterSecond = getReferralLeaderboard()
+      const leaderboardAfterSecond = await getReferralLeaderboard()
       expect(leaderboardAfterSecond[0].successfulReferrals).toBe(1)
       expect(leaderboardAfterSecond[0].bonusPoints).toBe(50)
     })
 
-    it("returns null when attempting to award bonus to an unregistered wallet", () => {
-      const result = awardServerReferralBonus("GUNREGISTERED_WALLET", 1, 25)
+    it("returns null when attempting to award bonus to an unregistered wallet", async () => {
+      const result = await awardServerReferralBonus("GUNREGISTERED_WALLET", 1, 25)
       expect(result).toBeNull()
 
-      const stats = getReferralLeaderboardStats()
+      const stats = await getReferralLeaderboardStats()
       expect(stats.totalSuccessfulReferrals).toBe(0)
       expect(stats.totalBonusDistributed).toBe(0)
     })
 
-    it("ensures duplicate referral recording for the same wallet is rejected without duplicate payouts", () => {
-      const first = recordReferral({
+    it("ensures duplicate referral recording for the same wallet is rejected without duplicate payouts", async () => {
+      const first = await recordReferral({
         code: `wallet:${REFERRER_A}`,
         referrerAddress: REFERRER_A,
         referredAddress: REFERRED_B,
@@ -99,7 +114,7 @@ describe("referralStore payout idempotency & IP anti-self-referral validation", 
       expect(first.success).toBe(true)
 
       // Second attempt to record the same referred wallet
-      const second = recordReferral({
+      const second = await recordReferral({
         code: `wallet:${REFERRER_A}`,
         referrerAddress: REFERRER_A,
         referredAddress: REFERRED_B,
@@ -110,42 +125,42 @@ describe("referralStore payout idempotency & IP anti-self-referral validation", 
       }
 
       // Leaderboard should only count the wallet once
-      const board = getReferralLeaderboard()
+      const board = await getReferralLeaderboard()
       expect(board[0].totalInvites).toBe(1)
     })
 
-    it("handles updatePayoutStatus idempotently", () => {
+    it("handles updatePayoutStatus idempotently", async () => {
       const allocations = [
         { rank: 1, referrerAddress: REFERRER_A, amount: 500, rewardType: "xlm" as const },
       ]
-      const result = processReferralPayouts("weekly", allocations, true)
+      const result = await processReferralPayouts("weekly", allocations, true)
       expect(result.payouts.length).toBe(1)
       const payoutId = result.payouts[0].id
 
       // Initial update to paid
-      const updated = updatePayoutStatus(payoutId, "paid", "tx_hash_123")
+      const updated = await updatePayoutStatus(payoutId, "paid", "tx_hash_123")
       expect(updated?.status).toBe("paid")
       expect(updated?.txHash).toBe("tx_hash_123")
 
       // Subsequent identical update has no negative side effects
-      const secondUpdate = updatePayoutStatus(payoutId, "paid", "tx_hash_123")
+      const secondUpdate = await updatePayoutStatus(payoutId, "paid", "tx_hash_123")
       expect(secondUpdate?.status).toBe("paid")
       expect(secondUpdate?.txHash).toBe("tx_hash_123")
 
-      const allPayouts = getAllPayouts()
+      const allPayouts = await getAllPayouts()
       expect(allPayouts.length).toBe(1)
       expect(allPayouts[0].status).toBe("paid")
     })
 
-    it("preserves payout idempotency across multiple distinct referred players", () => {
+    it("preserves payout idempotency across multiple distinct referred players", async () => {
       // Setup referrals for two distinct players
-      recordReferral({
+      await recordReferral({
         code: `wallet:${REFERRER_A}`,
         referrerAddress: REFERRER_A,
         referredAddress: REFERRED_B,
         clientIp: LEGIT_PLAYER_IP,
       })
-      recordReferral({
+      await recordReferral({
         code: `wallet:${REFERRER_A}`,
         referrerAddress: REFERRER_A,
         referredAddress: REFERRED_C,
@@ -153,17 +168,17 @@ describe("referralStore payout idempotency & IP anti-self-referral validation", 
       })
 
       // Award bonus for Player B twice
-      awardServerReferralBonus(REFERRED_B, 1, 25)
-      awardServerReferralBonus(REFERRED_B, 1, 25)
+      await awardServerReferralBonus(REFERRED_B, 1, 25)
+      await awardServerReferralBonus(REFERRED_B, 1, 25)
 
       // Award bonus for Player C once
-      awardServerReferralBonus(REFERRED_C, 2, 25)
+      await awardServerReferralBonus(REFERRED_C, 2, 25)
 
-      const stats = getReferralLeaderboardStats()
+      const stats = await getReferralLeaderboardStats()
       expect(stats.totalSuccessfulReferrals).toBe(2)
       expect(stats.totalBonusDistributed).toBe(50)
 
-      const rank = getReferrerRank(REFERRER_A)
+      const rank = await getReferrerRank(REFERRER_A)
       expect(rank?.successfulReferrals).toBe(2)
       expect(rank?.bonusPoints).toBe(50)
       expect(rank?.totalInvites).toBe(2)
@@ -171,9 +186,9 @@ describe("referralStore payout idempotency & IP anti-self-referral validation", 
   })
 
   describe("IP Anti-Self-Referral Validation", () => {
-    it("rejects referrals when client IP matches the referrer IP recorded during initial link creation", () => {
+    it("rejects referrals when client IP matches the referrer IP recorded during initial link creation", async () => {
       // Referrer initiates referral link with REFERRER_IP
-      const setupResult = recordReferral({
+      const setupResult = await recordReferral({
         code: `wallet:${REFERRER_A}`,
         referrerAddress: REFERRER_A,
         referredAddress: REFERRED_B,
@@ -182,7 +197,7 @@ describe("referralStore payout idempotency & IP anti-self-referral validation", 
       expect(setupResult.success).toBe(true)
 
       // Another referred wallet attempts to use the referral link from the SAME IP
-      const validation = validateReferralEligibility(
+      const validation = await validateReferralEligibility(
         REFERRER_A,
         REFERRED_C,
         REFERRER_IP
@@ -190,7 +205,7 @@ describe("referralStore payout idempotency & IP anti-self-referral validation", 
       expect(validation).toEqual({ valid: false, reason: "self_referral_ip" })
 
       // Attempting to record should fail with self_referral_ip
-      const recordAttempt = recordReferral({
+      const recordAttempt = await recordReferral({
         code: `wallet:${REFERRER_A}`,
         referrerAddress: REFERRER_A,
         referredAddress: REFERRED_C,
@@ -202,15 +217,15 @@ describe("referralStore payout idempotency & IP anti-self-referral validation", 
       }
 
       // Verify second referred wallet was never recorded
-      const stats = getReferralLeaderboardStats()
+      const stats = await getReferralLeaderboardStats()
       expect(stats.totalReferrers).toBe(1)
-      const board = getReferralLeaderboard()
+      const board = await getReferralLeaderboard()
       expect(board[0].totalInvites).toBe(1) // only initial referral counted
     })
 
-    it("accepts referrals from a different IP address", () => {
+    it("accepts referrals from a different IP address", async () => {
       // Referrer initiates with REFERRER_IP
-      recordReferral({
+      await recordReferral({
         code: `wallet:${REFERRER_A}`,
         referrerAddress: REFERRER_A,
         referredAddress: REFERRED_B,
@@ -218,14 +233,14 @@ describe("referralStore payout idempotency & IP anti-self-referral validation", 
       })
 
       // Legitimate friend connects from distinct IP
-      const validation = validateReferralEligibility(
+      const validation = await validateReferralEligibility(
         REFERRER_A,
         REFERRED_C,
         LEGIT_PLAYER_IP
       )
       expect(validation).toEqual({ valid: true })
 
-      const recordAttempt = recordReferral({
+      const recordAttempt = await recordReferral({
         code: `wallet:${REFERRER_A}`,
         referrerAddress: REFERRER_A,
         referredAddress: REFERRED_C,
@@ -234,9 +249,9 @@ describe("referralStore payout idempotency & IP anti-self-referral validation", 
       expect(recordAttempt.success).toBe(true)
     })
 
-    it("handles null and undefined clientIp without false-positive self-referral rejections", () => {
+    it("handles null and undefined clientIp without false-positive self-referral rejections", async () => {
       // Referrer registered with an IP
-      recordReferral({
+      await recordReferral({
         code: `wallet:${REFERRER_A}`,
         referrerAddress: REFERRER_A,
         referredAddress: REFERRED_B,
@@ -244,24 +259,23 @@ describe("referralStore payout idempotency & IP anti-self-referral validation", 
       })
 
       // Client connecting without IP header (e.g. proxy stripped IP)
-      const nullIpValidation = validateReferralEligibility(
+      const nullIpValidation = await validateReferralEligibility(
         REFERRER_A,
         REFERRED_C,
         null
       )
       expect(nullIpValidation).toEqual({ valid: true })
 
-      const undefinedIpValidation = validateReferralEligibility(
+      const undefinedIpValidation = await validateReferralEligibility(
         REFERRER_A,
-        REFERRED_D,
-        undefined
+        REFERRED_D
       )
       expect(undefinedIpValidation).toEqual({ valid: true })
     })
 
-    it("validates and rejects self-referral using IPv6 addresses", () => {
+    it("validates and rejects self-referral using IPv6 addresses", async () => {
       // Register with IPv6
-      const reg = recordReferral({
+      const reg = await recordReferral({
         code: `wallet:${REFERRER_A}`,
         referrerAddress: REFERRER_A,
         referredAddress: REFERRED_B,
@@ -270,7 +284,7 @@ describe("referralStore payout idempotency & IP anti-self-referral validation", 
       expect(reg.success).toBe(true)
 
       // Same IPv6 rejected
-      const sameIpValidation = validateReferralEligibility(
+      const sameIpValidation = await validateReferralEligibility(
         REFERRER_A,
         REFERRED_C,
         IPV6_REFERRER
@@ -278,7 +292,7 @@ describe("referralStore payout idempotency & IP anti-self-referral validation", 
       expect(sameIpValidation).toEqual({ valid: false, reason: "self_referral_ip" })
 
       // Different IPv6 accepted
-      const diffIpValidation = validateReferralEligibility(
+      const diffIpValidation = await validateReferralEligibility(
         REFERRER_A,
         REFERRED_C,
         IPV6_REFERRED
@@ -286,9 +300,9 @@ describe("referralStore payout idempotency & IP anti-self-referral validation", 
       expect(diffIpValidation).toEqual({ valid: true })
     })
 
-    it("prioritizes wallet match over IP match in error reporting hierarchy", () => {
+    it("prioritizes wallet match over IP match in error reporting hierarchy", async () => {
       // Same wallet AND same IP
-      const result = validateReferralEligibility(
+      const result = await validateReferralEligibility(
         REFERRER_A,
         REFERRER_A,
         REFERRER_IP

@@ -7,10 +7,18 @@
  *  - Build a ranked referral leaderboard from stored records.
  *  - Process reward payout allocations for top referrers.
  *
- * Storage: in-memory Map (process-scoped, suitable for edge runtime / serverless
- * cold starts). In production this would be replaced by a database layer.
+ * Storage: PostgreSQL via the shared `getDb()` client (see lib/db). This
+ * replaces the previous in-memory Map implementation, which was process-scoped
+ * and lost on every deploy / serverless cold start.
+ *
+ * Tables (migration 012_create_referrals.sql):
+ *  - referrals          → one row per referred wallet
+ *  - referrer_devices   → IP / session per referrer (anti-self-referral)
+ *  - referral_payouts   → one payout record per (period, referrer) — the
+ *                         UNIQUE constraint makes payout creation idempotent.
  */
 
+import { getDb } from "@/lib/db"
 import type {
   ReferralLeaderboardEntry,
   ReferralLeaderboardPeriod,
@@ -20,25 +28,73 @@ import type {
   ReferralRecord,
 } from "@/lib/types"
 
-// ─── In-memory stores ─────────────────────────────────────────────────────────
+// ─── DB row types ─────────────────────────────────────────────────────────────
 
-/** All referral records, keyed by referredAddress (one record per referred wallet). */
-const referralMap = new Map<string, ReferralRecord>()
+interface ReferralRow {
+  code: string
+  referrer_address: string
+  referred_address: string
+  registered_at: Date
+  first_completed_at: Date | null
+  first_completed_hunt_id: number | null
+  bonus_awarded: boolean
+  bonus_points: number
+}
 
-/** All payout records, keyed by payout ID. */
-const payoutMap = new Map<string, ReferralPayoutRecord>()
+interface ReferralPayoutRow {
+  id: string
+  period: "weekly" | "monthly" | "seasonal" | "manual"
+  referrer_address: string
+  rank: number
+  reward_amount: number
+  reward_type: "xlm" | "points"
+  status: ReferralPayoutStatus
+  created_at: Date
+  processed_at: Date | null
+  tx_hash: string | null
+}
 
-/**
- * Tracks the IP address used when each referrer first created their referral link.
- * Key: referrerAddress (normalised), Value: IP string.
- */
-const referrerIpMap = new Map<string, string>()
+const REFERRAL_COLUMNS = `
+  code, referrer_address, referred_address, registered_at,
+  first_completed_at, first_completed_hunt_id, bonus_awarded, bonus_points
+` as const
 
-/**
- * Tracks the session ID used when each referrer created their referral link.
- * Key: referrerAddress (normalised), Value: session ID string.
- */
-const referrerSessionMap = new Map<string, string>()
+const PAYOUT_COLUMNS = `
+  id, period, referrer_address, rank, reward_amount, reward_type,
+  status, created_at, processed_at, tx_hash
+` as const
+
+function mapReferralRow(row: ReferralRow): ReferralRecord {
+  return {
+    code: row.code,
+    referrerAddress: row.referrer_address,
+    referredAddress: row.referred_address,
+    registeredAt: new Date(row.registered_at).getTime(),
+    ...(row.first_completed_at !== null
+      ? { firstCompletedAt: new Date(row.first_completed_at).getTime() }
+      : {}),
+    ...(row.first_completed_hunt_id !== null && row.first_completed_hunt_id !== undefined
+      ? { firstCompletedHuntId: row.first_completed_hunt_id }
+      : {}),
+    bonusAwarded: Boolean(row.bonus_awarded),
+    bonusPoints: row.bonus_points,
+  }
+}
+
+function mapPayoutRow(row: ReferralPayoutRow): ReferralPayoutRecord {
+  return {
+    id: row.id,
+    period: row.period,
+    referrerAddress: row.referrer_address,
+    rank: row.rank,
+    rewardAmount: Number(row.reward_amount),
+    rewardType: row.reward_type,
+    status: row.status,
+    createdAt: new Date(row.created_at).getTime(),
+    ...(row.processed_at !== null ? { processedAt: new Date(row.processed_at).getTime() } : {}),
+    ...(row.tx_hash !== null ? { txHash: row.tx_hash } : {}),
+  }
+}
 
 // ─── Anti-self-referral validation ───────────────────────────────────────────
 
@@ -55,12 +111,12 @@ export type ReferralValidationResult =
  * 3. Session ID match — referred's session must not match the referrer session.
  * 4. Duplicate referral — the referred wallet must not already have a record.
  */
-export function validateReferralEligibility(
+export async function validateReferralEligibility(
   referrerAddress: string,
   referredAddress: string,
   clientIp?: string | null,
   sessionId?: string | null
-): ReferralValidationResult {
+): Promise<ReferralValidationResult> {
   const normReferrer = normaliseAddress(referrerAddress)
   const normReferred = normaliseAddress(referredAddress)
 
@@ -69,24 +125,33 @@ export function validateReferralEligibility(
     return { valid: false, reason: "self_referral_wallet" }
   }
 
+  const sql = getDb()
+  const devices = await sql<Array<{ client_ip: string | null; session_id: string | null }>>`
+    SELECT client_ip, session_id
+    FROM   referrer_devices
+    WHERE  referrer_address = ${normReferrer}
+    LIMIT  1
+  `
+  const device = devices[0]
+
   // Rule 2: IP match
-  if (clientIp) {
-    const referrerIp = referrerIpMap.get(normReferrer)
-    if (referrerIp && referrerIp === clientIp) {
-      return { valid: false, reason: "self_referral_ip" }
-    }
+  if (clientIp && device?.client_ip && device.client_ip === clientIp) {
+    return { valid: false, reason: "self_referral_ip" }
   }
 
   // Rule 3: session ID match
-  if (sessionId) {
-    const referrerSession = referrerSessionMap.get(normReferrer)
-    if (referrerSession && referrerSession === sessionId) {
-      return { valid: false, reason: "self_referral_session" }
-    }
+  if (sessionId && device?.session_id && device.session_id === sessionId) {
+    return { valid: false, reason: "self_referral_session" }
   }
 
   // Rule 4: already referred
-  if (referralMap.has(normReferred)) {
+  const existing = await sql<Array<{ referred_address: string }>>`
+    SELECT referred_address
+    FROM   referrals
+    WHERE  referred_address = ${normReferred}
+    LIMIT  1
+  `
+  if (existing.length > 0) {
     return { valid: false, reason: "already_referred" }
   }
 
@@ -119,13 +184,13 @@ export interface RecordReferralOptions {
  * This function is idempotent: if the referred wallet already has a record the
  * existing record is returned without modification.
  */
-export function recordReferral(
+export async function recordReferral(
   opts: RecordReferralOptions
-): { success: true; record: ReferralRecord } | { success: false; reason: string } {
+): Promise<{ success: true; record: ReferralRecord } | { success: false; reason: string }> {
   const referrerAddress = normaliseAddress(opts.referrerAddress)
   const referredAddress = normaliseAddress(opts.referredAddress)
 
-  const validation = validateReferralEligibility(
+  const validation = await validateReferralEligibility(
     referrerAddress,
     referredAddress,
     opts.clientIp,
@@ -135,11 +200,6 @@ export function recordReferral(
   if (!validation.valid) {
     return { success: false, reason: validation.reason }
   }
-
-  // Store the referrer's IP and session so future referred wallets from the same
-  // device/session can be blocked.
-  if (opts.clientIp) referrerIpMap.set(referrerAddress, opts.clientIp)
-  if (opts.sessionId) referrerSessionMap.set(referrerAddress, opts.sessionId)
 
   const record: ReferralRecord = {
     code: opts.code,
@@ -151,7 +211,36 @@ export function recordReferral(
     ...(opts.huntId !== undefined ? { firstCompletedHuntId: opts.huntId } : {}),
   }
 
-  referralMap.set(referredAddress, record)
+  const sql = getDb()
+
+  // Store the referrer's IP and session so future referred wallets from the same
+  // device/session can be blocked. Each column is upserted independently so the
+  // other source (IP vs session) is preserved when only one is present.
+  if (opts.clientIp) {
+    await sql`
+      INSERT INTO referrer_devices (referrer_address, client_ip)
+      VALUES (${referrerAddress}, ${opts.clientIp})
+      ON CONFLICT (referrer_address) DO UPDATE
+        SET client_ip = EXCLUDED.client_ip
+    `
+  }
+  if (opts.sessionId) {
+    await sql`
+      INSERT INTO referrer_devices (referrer_address, session_id)
+      VALUES (${referrerAddress}, ${opts.sessionId})
+      ON CONFLICT (referrer_address) DO UPDATE
+        SET session_id = EXCLUDED.session_id
+    `
+  }
+
+  await sql`
+    INSERT INTO referrals (code, referrer_address, referred_address, registered_at,
+                           bonus_awarded, bonus_points, first_completed_hunt_id)
+    VALUES (${record.code}, ${record.referrerAddress}, ${record.referredAddress},
+            NOW(), ${record.bonusAwarded}, ${record.bonusPoints},
+            ${record.firstCompletedHuntId ?? null})
+  `
+
   return { success: true, record }
 }
 
@@ -159,24 +248,39 @@ export function recordReferral(
  * Marks the referred player's first hunt completion and awards bonus points
  * to the referrer record. Idempotent — does nothing if already awarded.
  */
-export function awardServerReferralBonus(
+export async function awardServerReferralBonus(
   referredAddress: string,
   huntId: number,
   bonusPoints = 25
-): ReferralRecord | null {
+): Promise<ReferralRecord | null> {
   const normReferred = normaliseAddress(referredAddress)
-  const record = referralMap.get(normReferred)
-  if (!record || record.bonusAwarded) return record ?? null
+  const sql = getDb()
 
-  const updated: ReferralRecord = {
-    ...record,
-    bonusAwarded: true,
-    bonusPoints,
-    firstCompletedAt: Date.now(),
-    firstCompletedHuntId: huntId,
+  // Atomic conditional update: only an unawarded record is upgraded, so a
+  // concurrent duplicate award cannot double the points.
+  const updated = await sql<ReferralRow[]>`
+    UPDATE referrals
+    SET    bonus_awarded = true,
+           bonus_points = ${bonusPoints},
+           first_completed_at = NOW(),
+           first_completed_hunt_id = ${huntId}
+    WHERE  referred_address = ${normReferred} AND bonus_awarded = false
+    RETURNING ${REFERRAL_COLUMNS}
+  `
+
+  if (updated.length > 0) {
+    return mapReferralRow(updated[0])
   }
-  referralMap.set(normReferred, updated)
-  return updated
+
+  // No row was upgraded — either the record is absent or the bonus was already
+  // awarded. Return the existing record so callers observe the idempotent state.
+  const existing = await sql<ReferralRow[]>`
+    SELECT ${REFERRAL_COLUMNS}
+    FROM   referrals
+    WHERE  referred_address = ${normReferred}
+    LIMIT  1
+  `
+  return existing.length > 0 ? mapReferralRow(existing[0]) : null
 }
 
 // ─── Leaderboard ─────────────────────────────────────────────────────────────
@@ -198,14 +302,23 @@ function periodCutoff(period: ReferralLeaderboardPeriod): number {
  *
  * Ties in positions 1 & 2 share a rank (standard competition ranking).
  */
-export function getReferralLeaderboard(
+export async function getReferralLeaderboard(
   options: {
     period?: ReferralLeaderboardPeriod
     limit?: number
   } = {}
-): ReferralLeaderboardEntry[] {
+): Promise<ReferralLeaderboardEntry[]> {
   const { period = "all", limit = 50 } = options
   const cutoff = periodCutoff(period)
+
+  const sql = getDb()
+
+  const [referrals, payouts] = await Promise.all([
+    sql<ReferralRow[]>`SELECT ${REFERRAL_COLUMNS} FROM referrals`,
+    sql<ReferralPayoutRow[]>`SELECT ${PAYOUT_COLUMNS} FROM referral_payouts`,
+  ])
+
+  const records = referrals.map(mapReferralRow)
 
   // Aggregate by referrerAddress
   const byReferrer = new Map<
@@ -213,7 +326,7 @@ export function getReferralLeaderboard(
     { totalInvites: number; successfulReferrals: number; bonusPoints: number; lastActiveAt: number }
   >()
 
-  for (const record of referralMap.values()) {
+  for (const record of records) {
     if (record.registeredAt < cutoff) continue
 
     const existing = byReferrer.get(record.referrerAddress) ?? {
@@ -229,6 +342,15 @@ export function getReferralLeaderboard(
       bonusPoints: existing.bonusPoints + record.bonusPoints,
       lastActiveAt: Math.max(existing.lastActiveAt, record.registeredAt),
     })
+  }
+
+  // First payout per referrer wins (earliest created_at).
+  const payoutByReferrer = new Map<string, ReferralPayoutRecord>()
+  for (const payoutRow of payouts) {
+    const payout = mapPayoutRow(payoutRow)
+    if (!payoutByReferrer.has(payout.referrerAddress)) {
+      payoutByReferrer.set(payout.referrerAddress, payout)
+    }
   }
 
   // Sort by successfulReferrals desc, then bonusPoints desc, then lastActiveAt asc
@@ -252,15 +374,7 @@ export function getReferralLeaderboard(
     }
 
     // Look up latest payout status for this referrer
-    let rewardPayoutStatus: ReferralPayoutStatus | undefined
-    let rewardAmount: number | undefined
-    for (const payout of payoutMap.values()) {
-      if (payout.referrerAddress === address) {
-        rewardPayoutStatus = payout.status
-        rewardAmount = payout.rewardAmount
-        break
-      }
-    }
+    const payout = payoutByReferrer.get(address)
 
     result.push({
       rank: lastRank,
@@ -269,21 +383,25 @@ export function getReferralLeaderboard(
       totalInvites: agg.totalInvites,
       bonusPoints: agg.bonusPoints,
       lastActiveAt: agg.lastActiveAt,
-      ...(rewardPayoutStatus !== undefined ? { rewardPayoutStatus, rewardAmount } : {}),
+      ...(payout ? { rewardPayoutStatus: payout.status, rewardAmount: payout.rewardAmount } : {}),
     })
   }
 
   return result
 }
 
-/** Computes aggregate stats from the full referral map. */
-export function getReferralLeaderboardStats(): ReferralLeaderboardStats {
+/** Computes aggregate stats from all referral records. */
+export async function getReferralLeaderboardStats(): Promise<ReferralLeaderboardStats> {
+  const sql = getDb()
+  const rows = await sql<ReferralRow[]>`SELECT ${REFERRAL_COLUMNS} FROM referrals`
+  const records = rows.map(mapReferralRow)
+
   let totalReferrers = 0
   let totalSuccessfulReferrals = 0
   let totalBonusDistributed = 0
 
   const seen = new Set<string>()
-  for (const record of referralMap.values()) {
+  for (const record of records) {
     if (!seen.has(record.referrerAddress)) {
       seen.add(record.referrerAddress)
       totalReferrers++
@@ -305,11 +423,11 @@ export function getReferralLeaderboardStats(): ReferralLeaderboardStats {
 /**
  * Returns the leaderboard entry for a single address, or null if not present.
  */
-export function getReferrerRank(
+export async function getReferrerRank(
   address: string,
   period: ReferralLeaderboardPeriod = "all"
-): ReferralLeaderboardEntry | null {
-  const board = getReferralLeaderboard({ period, limit: 1000 })
+): Promise<ReferralLeaderboardEntry | null> {
+  const board = await getReferralLeaderboard({ period, limit: 1000 })
   const norm = normaliseAddress(address)
   return board.find((e) => e.referrerAddress === norm) ?? null
 }
@@ -336,30 +454,68 @@ export interface ProcessPayoutsResult {
  * writing any records to the store. When `execute` is true, records are
  * persisted with status "pending" (a background job / on-chain call would
  * then transition them to "processing" -> "paid").
+ *
+ * Payout creation is idempotent per (period, referrer): re-running the same
+ * allocations reuses the existing payout record instead of creating a
+ * duplicate. A UNIQUE (period, referrer_address) constraint in the DB backs
+ * this up.
  */
-export function processReferralPayouts(
+export async function processReferralPayouts(
   period: "weekly" | "monthly" | "seasonal" | "manual",
   allocations: PayoutAllocation[],
   execute = false
-): ProcessPayoutsResult {
+): Promise<ProcessPayoutsResult> {
   const now = Date.now()
   const records: ReferralPayoutRecord[] = []
   let totalAmount = 0
 
+  const sql = getDb()
+
   for (const alloc of allocations) {
-    const record: ReferralPayoutRecord = {
-      id: generateId(),
-      period,
-      referrerAddress: normaliseAddress(alloc.referrerAddress),
-      rank: alloc.rank,
-      rewardAmount: alloc.amount,
-      rewardType: alloc.rewardType,
-      status: "pending" as ReferralPayoutStatus,
-      createdAt: now,
-    }
+    const referrerAddress = normaliseAddress(alloc.referrerAddress)
+
+    let record: ReferralPayoutRecord
 
     if (execute) {
-      payoutMap.set(record.id, record)
+      const existing = await sql<ReferralPayoutRow[]>`
+        SELECT ${PAYOUT_COLUMNS}
+        FROM   referral_payouts
+        WHERE  period = ${period} AND referrer_address = ${referrerAddress}
+        LIMIT  1
+      `
+
+      if (existing.length > 0) {
+        record = mapPayoutRow(existing[0])
+      } else {
+        record = {
+          id: generateId(),
+          period,
+          referrerAddress,
+          rank: alloc.rank,
+          rewardAmount: alloc.amount,
+          rewardType: alloc.rewardType,
+          status: "pending" as ReferralPayoutStatus,
+          createdAt: now,
+        }
+
+        await sql`
+          INSERT INTO referral_payouts (id, period, referrer_address, rank,
+                                        reward_amount, reward_type, status, created_at)
+          VALUES (${record.id}, ${record.period}, ${record.referrerAddress}, ${record.rank},
+                  ${record.rewardAmount}, ${record.rewardType}, ${record.status}, NOW())
+        `
+      }
+    } else {
+      record = {
+        id: generateId(),
+        period,
+        referrerAddress,
+        rank: alloc.rank,
+        rewardAmount: alloc.amount,
+        rewardType: alloc.rewardType,
+        status: "pending" as ReferralPayoutStatus,
+        createdAt: now,
+      }
     }
 
     records.push(record)
@@ -370,41 +526,66 @@ export function processReferralPayouts(
 }
 
 /** Returns all payout records. */
-export function getAllPayouts(): ReferralPayoutRecord[] {
-  return [...payoutMap.values()]
+export async function getAllPayouts(): Promise<ReferralPayoutRecord[]> {
+  const sql = getDb()
+  const rows = await sql<ReferralPayoutRow[]>`
+    SELECT ${PAYOUT_COLUMNS}
+    FROM   referral_payouts
+    ORDER  BY created_at ASC
+  `
+  return rows.map(mapPayoutRow)
 }
 
 /** Updates a payout's status (e.g. from "pending" to "paid"). */
-export function updatePayoutStatus(
+export async function updatePayoutStatus(
   payoutId: string,
   status: ReferralPayoutStatus,
   txHash?: string
-): ReferralPayoutRecord | null {
-  const record = payoutMap.get(payoutId)
-  if (!record) return null
+): Promise<ReferralPayoutRecord | null> {
+  const sql = getDb()
 
-  const updated: ReferralPayoutRecord = {
-    ...record,
-    status,
-    processedAt: Date.now(),
-    ...(txHash ? { txHash } : {}),
-  }
-  payoutMap.set(payoutId, updated)
-  return updated
+  const updated = txHash
+    ? await sql<ReferralPayoutRow[]>`
+        UPDATE referral_payouts
+        SET    status = ${status},
+               processed_at = NOW(),
+               tx_hash = ${txHash}
+        WHERE  id = ${payoutId}
+        RETURNING ${PAYOUT_COLUMNS}
+      `
+    : await sql<ReferralPayoutRow[]>`
+        UPDATE referral_payouts
+        SET    status = ${status},
+               processed_at = NOW()
+        WHERE  id = ${payoutId}
+        RETURNING ${PAYOUT_COLUMNS}
+      `
+
+  return updated.length > 0 ? mapPayoutRow(updated[0]) : null
 }
 
 // ─── Test helpers ─────────────────────────────────────────────────────────────
 // Exported only for unit-test usage — not part of the public API surface.
 
-/** Clears all in-memory state. Call in beforeEach in tests. */
-export function _clearReferralStore(): void {
-  referralMap.clear()
-  payoutMap.clear()
-  referrerIpMap.clear()
-  referrerSessionMap.clear()
+/** Clears all persisted state. Call in beforeEach in tests. */
+export async function _clearReferralStore(): Promise<void> {
+  const sql = getDb()
+  await sql`DELETE FROM referrals`
+  await sql`DELETE FROM referrer_devices`
+  await sql`DELETE FROM referral_payouts`
 }
 
 /** Directly injects a referral record (bypasses validation). Tests only. */
-export function _injectReferralRecord(record: ReferralRecord): void {
-  referralMap.set(record.referredAddress, record)
+export async function _injectReferralRecord(record: ReferralRecord): Promise<void> {
+  const sql = getDb()
+  await sql`
+    INSERT INTO referrals (code, referrer_address, referred_address, registered_at,
+                           first_completed_at, first_completed_hunt_id,
+                           bonus_awarded, bonus_points)
+    VALUES (${record.code}, ${record.referrerAddress}, ${record.referredAddress},
+            ${new Date(record.registeredAt).toISOString()},
+            ${record.firstCompletedAt !== undefined ? new Date(record.firstCompletedAt).toISOString() : null},
+            ${record.firstCompletedHuntId ?? null},
+            ${record.bonusAwarded}, ${record.bonusPoints})
+  `
 }
