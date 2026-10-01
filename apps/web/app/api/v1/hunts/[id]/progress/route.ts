@@ -47,6 +47,21 @@ export const GET = withErrorHandling(async (req: Request, context: RouteContext)
 export const POST = withValidation(
   { body: huntProgressBodySchema, params: paramsSchema },
   async (req, _context, { body, params }) => {
+    const auth = await verifyCallerAuth(req, body)
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error || "Unauthenticated" }, { status: auth.status || 401 })
+    }
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 403 })
+    }
+    const actor = auth.actor
+    if (!actor) {
+      return NextResponse.json({ error: "Authenticated actor is missing" }, { status: 401 })
+    }
+    if (actor !== body.wallet) {
+      return NextResponse.json({ error: "Forbidden: progress can only be updated for the verified player" }, { status: 403 })
+    }
+
     const ip = getIP(req)
     const { success, reset } = await rateLimit(ip, rateLimitPresets.write)
     if (!success) {

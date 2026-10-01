@@ -83,6 +83,7 @@ const ManualCodeEntryForm: React.FC<ManualCodeEntryFormProps> = ({ onSubmit, onC
 
       <TextInput
         ref={inputRef}
+        testID="manual-code-input"
         accessible={true}
         accessibilityLabel="QR code value"
         accessibilityHint="Type the code shown on your QR code"
@@ -112,6 +113,7 @@ const ManualCodeEntryForm: React.FC<ManualCodeEntryFormProps> = ({ onSubmit, onC
 
       <View style={styles.manualEntryActions}>
         <TouchableOpacity
+          testID="manual-code-submit"
           accessible={true}
           accessibilityRole="button"
           accessibilityLabel="Submit code"
@@ -149,6 +151,7 @@ const renderManualEntryOrButton = (
   }
   return (
     <TouchableOpacity
+      testID="manual-entry-button"
       accessible={true}
       accessibilityRole="button"
       accessibilityLabel="Enter code manually"
@@ -440,6 +443,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
 
             {!scanned && (
               <TouchableOpacity
+                testID="manual-entry-button"
                 accessible={true}
                 accessibilityRole="button"
                 accessibilityLabel="Enter code manually"

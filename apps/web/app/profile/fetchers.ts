@@ -1,7 +1,6 @@
 import type { NftRewardDetail } from "@/components/NftDetailModal";
+import { fetchPlayerNftsOnChain } from "@/lib/nft/fetchPlayerNftsOnChain";
 import type { PlayerHuntProgress, RegisteredHunt } from "./types";
-
-type NftReward = NftRewardDetail;
 
 /**
  * Fetch all hunts the player has registered for from the PlayerRegistration
@@ -75,51 +74,17 @@ export async function fetchPlayerHunts(address: string): Promise<PlayerHuntProgr
   ];
 }
 
-export async function fetchPlayerRewards(address: string): Promise<NftReward[]> {
-  if (!address) return [];
-
-  return [
-    {
-      id: 1,
-      name: "Golden Compass",
-      description:
-        "A legendary artifact awarded to those who uncover all secret murals in the City Secrets hunt.",
-      imageUri: "/static-images/nft1.png",
-      earnedAt: "2026-02-10T15:16:00Z",
-      claimed: true,
-      huntName: "City Secrets",
-      attributes: [
-        { trait_type: "Rarity", value: "Legendary" },
-        { trait_type: "Type", value: "Utility" },
-      ],
-    },
-    {
-      id: 2,
-      name: "Explorer Trophy",
-      description:
-        "Granted for successfully completing the Office Onboarding challenge within the time limit.",
-      imageUri: "/static-images/nft2.png",
-      earnedAt: "2026-02-20T11:26:00Z",
-      claimed: false,
-      huntName: "Office Onboarding",
-      attributes: [
-        { trait_type: "Rarity", value: "Rare" },
-        { trait_type: "Level", value: 5 },
-      ],
-    },
-    {
-      id: 3,
-      name: "Soroban Sage",
-      description:
-        "Awarded to players who demonstrate exceptional knowledge of smart contract riddles.",
-      imageUri: "ipfs://QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-      earnedAt: "2026-03-05T09:45:00Z",
-      claimed: true,
-      huntName: "Stellar Developer Hunt",
-      attributes: [
-        { trait_type: "Rarity", value: "Epic" },
-        { trait_type: "Skill", value: "Contracting" },
-      ],
-    },
-  ];
-      }
+/**
+ * Fetches NFT rewards for the given player address from the on-chain
+ * NFT_REWARD Soroban contract.
+ *
+ * Calls `get_player_nfts(owner)` → `Vec<u64>`, resolves each URI with
+ * `get_nft_uri(id)`, and fetches the SEP-0039 IPFS metadata JSON from the
+ * gateway.  Returns an empty array when the wallet has no NFTs or the
+ * contract address is not configured.
+ */
+export async function fetchPlayerRewards(
+  address: string,
+): Promise<NftRewardDetail[]> {
+  return fetchPlayerNftsOnChain(address);
+}

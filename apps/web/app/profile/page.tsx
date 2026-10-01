@@ -343,7 +343,7 @@ export default function UserProfilePage() {
             </section>
 
             <section aria-label="NFT gallery" className="mt-6">
-              <NftGallery rewards={nftRewards} />
+              <NftGallery nfts={nftRewards} />
             </section>
 
             <section aria-label="Reward history" className="mt-6">

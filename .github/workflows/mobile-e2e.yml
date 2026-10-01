@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'apps/mobile/**'
+      - '.github/workflows/mobile-e2e.yml'
   workflow_dispatch:
 concurrency:
   group: mobile-e2e-${{ github.ref }}
@@ -28,3 +29,127 @@ jobs:
           echo "$HOME/.maestro/bin" >> $GITHUB_PATH
       - name: Verify Maestro CLI
         run: maestro --version
+
+  # ─── QR clue play loop on real emulators ────────────────────────────────
+  # Both jobs build a release binary (JS bundled in, no Metro needed), install it
+  # on an emulator/simulator and run .maestro/flows/scan-qr-clue.yaml.
+  #
+  # continue-on-error: the mobile app does not currently bundle on main, so these
+  # jobs report results without blocking PRs. Remove it once they pass.
+
+  android:
+    name: Maestro QR flow (Android emulator)
+    needs: maestro
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    continue-on-error: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js with pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '22'
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Enable KVM for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Generate native Android project
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform android --no-install
+      - name: Build release APK
+        working-directory: apps/mobile/android
+        run: ./gradlew assembleRelease --no-daemon
+      - name: Install Maestro CLI
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+      - name: Run QR clue flow
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            adb install -r apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+            maestro test apps/mobile/.maestro/flows/scan-qr-clue.yaml --format junit --output maestro-android.xml
+      - name: Upload Maestro results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-android
+          path: |
+            maestro-android.xml
+            ~/.maestro/tests/
+          if-no-files-found: ignore
+
+  ios:
+    name: Maestro QR flow (iOS simulator)
+    needs: maestro
+    runs-on: macos-15
+    timeout-minutes: 90
+    continue-on-error: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js with pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '22'
+      - name: Setup Java (required by Maestro)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Generate native iOS project
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform ios
+      - name: Build release app for the simulator
+        working-directory: apps/mobile/ios
+        shell: bash
+        run: |
+          WORKSPACE=$(ls -d *.xcworkspace | head -n 1)
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "${WORKSPACE%.xcworkspace}" \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+      - name: Boot simulator and install app
+        shell: bash
+        run: |
+          UDID=$(xcrun simctl list devices available -j \
+            | jq -r '[.devices[][] | select(.name | startswith("iPhone"))][0].udid')
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          APP=$(find apps/mobile/ios/build/Build/Products/Release-iphonesimulator -maxdepth 1 -name '*.app' | head -n 1)
+          xcrun simctl install "$UDID" "$APP"
+          echo "SIM_UDID=$UDID" >> "$GITHUB_ENV"
+      - name: Install Maestro CLI
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+      - name: Run QR clue flow
+        run: |
+          maestro --device "$SIM_UDID" test apps/mobile/.maestro/flows/scan-qr-clue.yaml \
+            --format junit --output maestro-ios.xml
+      - name: Upload Maestro results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-ios
+          path: |
+            maestro-ios.xml
+            ~/.maestro/tests/
+          if-no-files-found: ignore

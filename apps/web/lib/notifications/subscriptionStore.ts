@@ -162,7 +162,7 @@ export async function upsertSubscription(
   const existing = memoryStore.get(key)
   const record: WebPushSubscriptionRecord = {
     subscription,
-    walletAddress: walletAddress.toLowerCase(),
+    walletAddress: normalizedWallet,
     registeredAt: existing?.registeredAt ?? Date.now(),
     preferences: preferences ?? existing?.preferences,
   }
@@ -210,6 +210,15 @@ export async function removeSubscriptionsForWallet(walletAddress: string): Promi
     } catch (err) {
       logger.warn("[subscriptionStore] Failed to remove subscriptions from database", err)
     }
+  }
+
+  if (!process.env.DATABASE_URL) return
+
+  try {
+    const sql = getDb()
+    await sql`DELETE FROM push_subscriptions WHERE wallet_address = ${target}`
+  } catch (error) {
+    logger.warn("[subscriptionStore] Failed to delete subscriptions from database", error)
   }
 }
 

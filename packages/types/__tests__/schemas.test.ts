@@ -678,7 +678,7 @@ import { huntRefundBodySchema, huntSponsorBodySchema } from "../src/api-schemas"
 describe("huntRefundBodySchema (#1173)", () => {
   it("accepts a valid creatorAddress", () => {
     expect(
-      huntRefundBodySchema.safeParse({ creatorAddress: "GCREATOR1AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" }).success
+      huntRefundBodySchema.safeParse({ creatorAddress: "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" }).success
     ).toBe(true)
   })
 

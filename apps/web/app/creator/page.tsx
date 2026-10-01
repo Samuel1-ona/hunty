@@ -9,7 +9,7 @@ import { Card } from "@hunty/ui";
 import { Header } from "@/components/Header";
 import { RewardHistorySection } from "@/components/RewardHistorySection";
 import { DraftListPanel } from "@/components/DraftListPanel";
-import { ConfirmationDialog, SaveTemplateDialog } from "./_components/creator-dialogs";
+import { ConfirmationDialog, SaveTemplateDialog, ExtendEndTimeDialog } from "./_components/creator-dialogs";
 import { HuntList } from "./_components/hunt-list";
 import { useCreatorPage } from "./_hooks/use-creator-page";
 
@@ -45,6 +45,10 @@ export default function CreatorPage() {
     auditLog,
     fetchAuditLog,
     selectedAuditHuntId,
+    extendEndTimeDialog,
+    setExtendEndTimeDialog,
+    handleExtendTime,
+    confirmExtendTime,
   } = useCreatorPage();
 
   const activeHunts = hunts.filter((h) => !h.isArchived);
@@ -273,6 +277,7 @@ export default function CreatorPage() {
                 onAction={handleAction}
                 onPromote={handlePromote}
                 onSaveTemplate={(hunt) => setTemplateDialog({ open: true, huntId: hunt.id })}
+                onExtendTime={handleExtendTime}
                 onViewAudit={fetchAuditLog}
               />
             </div>
@@ -303,6 +308,12 @@ export default function CreatorPage() {
           onOpenChange={(open) => setTemplateDialog({ ...templateDialog, open })}
           onAuthorChange={setTemplateAuthor}
           onSave={handleSaveTemplate}
+        />
+
+        <ExtendEndTimeDialog
+          extendEndTimeDialog={extendEndTimeDialog}
+          onOpenChange={(open) => setExtendEndTimeDialog({ ...extendEndTimeDialog, open })}
+          onExtend={confirmExtendTime}
         />
       </div>
     </div>

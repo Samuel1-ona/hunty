@@ -1,34 +1,49 @@
-import { beforeEach, describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
+import { createMockSql, resetTables, type Row } from "@/lib/test-utils/mockSql"
 import {
-  _clearReferralStore,
   _injectReferralRecord,
   awardServerReferralBonus,
   getReferralLeaderboard,
-  getReferralLeaderboardStats,
   getReferrerRank,
   processReferralPayouts,
   recordReferral,
   validateReferralEligibility,
 } from "@/lib/referralStore"
 
+// ---------------------------------------------------------------------------
+// In-memory table store — shared across all queries in a single test.
+// ---------------------------------------------------------------------------
+
+const tables: Record<string, Row[]> = {
+  referrals: [],
+  referrer_devices: [],
+  referral_payouts: [],
+}
+
+const mockSql = createMockSql(tables)
+
+vi.mock("@/lib/db", () => ({
+  getDb: () => mockSql,
+}))
+
 describe("referralStore", () => {
   beforeEach(() => {
-    _clearReferralStore()
+    resetTables(tables)
   })
 
   describe("validateReferralEligibility", () => {
-    it("rejects when referrer and referred addresses are identical (wallet match)", () => {
+    it("rejects when referrer and referred addresses are identical (wallet match)", async () => {
       const addr = "GREFERRER1111111111111111111111111111111111111111111111"
-      const result = validateReferralEligibility(addr, addr)
+      const result = await validateReferralEligibility(addr, addr)
       expect(result).toEqual({ valid: false, reason: "self_referral_wallet" })
     })
 
-    it("rejects when referred IP matches the referrer's IP", () => {
+    it("rejects when referred IP matches the referrer's IP", async () => {
       const referrer = "GREFERRER1111111111111111111111111111111111111111111111"
       const referred = "GPLAYER2222222222222222222222222222222222222222222222"
 
       // Record first referral to set referrer's IP
-      recordReferral({
+      await recordReferral({
         code: `wallet:${referrer}`,
         referrerAddress: referrer,
         referredAddress: referred,
@@ -37,15 +52,15 @@ describe("referralStore", () => {
 
       // Attempt second referral from the same IP
       const secondReferred = "GPLAYER3333333333333333333333333333333333333333333333"
-      const result = validateReferralEligibility(referrer, secondReferred, "192.168.1.100")
+      const result = await validateReferralEligibility(referrer, secondReferred, "192.168.1.100")
       expect(result).toEqual({ valid: false, reason: "self_referral_ip" })
     })
 
-    it("rejects when referred session ID matches the referrer's session ID", () => {
+    it("rejects when referred session ID matches the referrer's session ID", async () => {
       const referrer = "GREFERRER1111111111111111111111111111111111111111111111"
       const referred = "GPLAYER2222222222222222222222222222222222222222222222"
 
-      recordReferral({
+      await recordReferral({
         code: `wallet:${referrer}`,
         referrerAddress: referrer,
         referredAddress: referred,
@@ -53,31 +68,31 @@ describe("referralStore", () => {
       })
 
       const secondReferred = "GPLAYER3333333333333333333333333333333333333333333333"
-      const result = validateReferralEligibility(referrer, secondReferred, null, "sess-abc-123")
+      const result = await validateReferralEligibility(referrer, secondReferred, null, "sess-abc-123")
       expect(result).toEqual({ valid: false, reason: "self_referral_session" })
     })
 
-    it("rejects duplicate referrals for an already-referred wallet", () => {
+    it("rejects duplicate referrals for an already-referred wallet", async () => {
       const referrer = "GREFERRER1111111111111111111111111111111111111111111111"
       const referred = "GPLAYER2222222222222222222222222222222222222222222222"
 
-      recordReferral({
+      await recordReferral({
         code: `wallet:${referrer}`,
         referrerAddress: referrer,
         referredAddress: referred,
       })
 
-      const result = validateReferralEligibility("GOTHERREFERRER", referred)
+      const result = await validateReferralEligibility("GOTHERREFERRER", referred)
       expect(result).toEqual({ valid: false, reason: "already_referred" })
     })
   })
 
   describe("recordReferral", () => {
-    it("successfully creates a new pending referral record", () => {
+    it("successfully creates a new pending referral record", async () => {
       const referrer = "GREFERRER1111111111111111111111111111111111111111111111"
       const referred = "GPLAYER2222222222222222222222222222222222222222222222"
 
-      const res = recordReferral({
+      const res = await recordReferral({
         code: `wallet:${referrer}`,
         referrerAddress: referrer,
         referredAddress: referred,
@@ -95,33 +110,33 @@ describe("referralStore", () => {
   })
 
   describe("awardServerReferralBonus", () => {
-    it("awards bonus points to referrer upon first completion and is idempotent", () => {
+    it("awards bonus points to referrer upon first completion and is idempotent", async () => {
       const referrer = "GREFERRER1111111111111111111111111111111111111111111111"
       const referred = "GPLAYER2222222222222222222222222222222222222222222222"
 
-      recordReferral({
+      await recordReferral({
         code: `wallet:${referrer}`,
         referrerAddress: referrer,
         referredAddress: referred,
       })
 
-      const firstCall = awardServerReferralBonus(referred, 42, 50)
+      const firstCall = await awardServerReferralBonus(referred, 42, 50)
       expect(firstCall?.bonusAwarded).toBe(true)
       expect(firstCall?.bonusPoints).toBe(50)
 
       // Subsequent call does not duplicate award
-      const secondCall = awardServerReferralBonus(referred, 42, 50)
+      const secondCall = await awardServerReferralBonus(referred, 42, 50)
       expect(secondCall?.bonusPoints).toBe(50)
     })
   })
 
   describe("getReferralLeaderboard & getReferrerRank", () => {
-    it("ranks referrers by successful referrals descending and then bonus points", () => {
+    it("ranks referrers by successful referrals descending and then bonus points", async () => {
       const refA = "GREFERRER_A"
       const refB = "GREFERRER_B"
 
       // Injects records for Referrer A (2 successful, 50 bonus pts total)
-      _injectReferralRecord({
+      await _injectReferralRecord({
         code: `wallet:${refA}`,
         referrerAddress: refA,
         referredAddress: "GPLAYER_1",
@@ -129,7 +144,7 @@ describe("referralStore", () => {
         bonusAwarded: true,
         bonusPoints: 25,
       })
-      _injectReferralRecord({
+      await _injectReferralRecord({
         code: `wallet:${refA}`,
         referrerAddress: refA,
         referredAddress: "GPLAYER_2",
@@ -139,7 +154,7 @@ describe("referralStore", () => {
       })
 
       // Injects record for Referrer B (1 successful, 25 bonus pts)
-      _injectReferralRecord({
+      await _injectReferralRecord({
         code: `wallet:${refB}`,
         referrerAddress: refB,
         referredAddress: "GPLAYER_3",
@@ -148,7 +163,7 @@ describe("referralStore", () => {
         bonusPoints: 25,
       })
 
-      const board = getReferralLeaderboard()
+      const board = await getReferralLeaderboard()
       expect(board.length).toBe(2)
       expect(board[0].referrerAddress).toBe(refA)
       expect(board[0].rank).toBe(1)
@@ -156,24 +171,24 @@ describe("referralStore", () => {
       expect(board[1].referrerAddress).toBe(refB)
       expect(board[1].rank).toBe(2)
 
-      const rankA = getReferrerRank(refA)
+      const rankA = await getReferrerRank(refA)
       expect(rankA?.rank).toBe(1)
     })
   })
 
   describe("processReferralPayouts", () => {
-    it("creates payout allocations on dry run and stores records on execute", () => {
+    it("creates payout allocations on dry run and stores records on execute", async () => {
       const refA = "GREFERRER_A"
       const allocations = [
         { rank: 1, referrerAddress: refA, amount: 750, rewardType: "points" as const },
       ]
 
-      const dryRun = processReferralPayouts("weekly", allocations, false)
+      const dryRun = await processReferralPayouts("weekly", allocations, false)
       expect(dryRun.dryRun).toBe(true)
       expect(dryRun.payouts.length).toBe(1)
       expect(dryRun.payouts[0].status).toBe("pending")
 
-      const executed = processReferralPayouts("weekly", allocations, true)
+      const executed = await processReferralPayouts("weekly", allocations, true)
       expect(executed.dryRun).toBe(false)
       expect(executed.payouts.length).toBe(1)
       expect(executed.payouts[0].status).toBe("pending")

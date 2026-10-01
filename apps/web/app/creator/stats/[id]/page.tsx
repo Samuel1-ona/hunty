@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 
+import { ClueAnalyticsTable } from "@/components/ClueAnalyticsTable"
 import { Header } from "@/components/Header"
 import { Button } from "@hunty/ui"
 import { Card, CardContent, CardHeader, CardTitle } from "@hunty/ui"
@@ -227,6 +228,11 @@ export default function CreatorStatsPage() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Clue-level analytics — solve rate, avg attempts, hints, abandonment */}
+        {!Number.isNaN(huntId) && (
+          <ClueAnalyticsTable huntId={huntId} abandonmentThreshold={40} />
+        )}
       </div>
     </div>
   )

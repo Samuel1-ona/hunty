@@ -1,6 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
-import { act, renderHook, waitFor } from "@testing-library/react";
 
 import { useXlmUsdPrice } from "../useXlmUsdPrice";
 
@@ -56,6 +55,20 @@ describe("useXlmUsdPrice", () => {
     expect(result.current.price).toBeNull();
     expect(result.current.error).toContain("network error");
     expect(result.current.lastUpdated).toBeNull();
+  });
+
+  it("reports the provider HTTP failure when both providers answer with an error status", async () => {
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) });
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 503, json: async () => ({}) });
+
+    const { result } = renderHook(() => useXlmUsdPrice(60000));
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.price).toBeNull();
+    expect(result.current.error).toBe("CoinGecko price request failed (503)");
+    expect(result.current.lastUpdated).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("polls again after the polling interval", async () => {

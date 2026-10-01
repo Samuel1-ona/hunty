@@ -424,6 +424,54 @@ describe('huntStore', () => {
       expect(global.fetch).toHaveBeenCalledTimes(2);
       expect(AsyncStorage.removeItem).toHaveBeenCalledWith('hunty_clue_queue');
     });
+
+    it('submit → server → local-progress round trip with response reconciliation', async () => {
+      const wallet = 'G'.repeat(56);
+      const serverResponse = {
+        correct: true,
+        score: 10,
+        bonusPoints: 5,
+      };
+
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(serverResponse),
+      });
+
+      const result = await queueClueAnswer(1, 1, 'spiral mural', wallet);
+
+      // Verify answer was queued
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(
+        JSON.stringify([{ huntId: 1, clueId: 1, answer: 'spiral mural', wallet }]),
+      );
+
+      const queued = await getQueuedAnswers();
+      expect(queued).toHaveLength(1);
+
+      // Process queued answer (simulates submission when back online)
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(
+        JSON.stringify([{ huntId: 1, clueId: 1, answer: 'spiral mural', wallet }]),
+      );
+
+      await processQueuedAnswers();
+
+      // Verify server was called with correct payload
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/v1/answers'),
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            huntId: 1,
+            clueId: 1,
+            wallet,
+            answer: 'spiral mural',
+          }),
+        }),
+      );
+
+      // Verify queue was cleared on success
+      expect(AsyncStorage.removeItem).toHaveBeenCalledWith('hunty_clue_queue');
+    });
   });
 
   describe('saveClueLocally', () => {

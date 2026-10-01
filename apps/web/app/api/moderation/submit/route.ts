@@ -46,7 +46,9 @@ export const POST = withErrorHandling(async (req: Request) => {
     throw new ValidationError("challenge and signature are required");
   }
 
-  if (!verifySignedMessage({ address: wallet, challenge, signature, purpose: "moderation-submit" })) {
+  if (
+    !verifySignedMessage({ address: wallet, challenge, signature, purpose: "moderation-submit" })
+  ) {
     throw new AuthError("Invalid signature", { wallet });
   }
 

@@ -1,50 +1,77 @@
-import { useState, useEffect } from "react"
+/**
+ * usePlayerNfts
+ *
+ * React hook that fetches on-chain NFT rewards for the connected player.
+ * Calls `get_player_nfts` on the NFT_REWARD Soroban contract, resolves each
+ * token's IPFS metadata URI with `get_nft_uri`, then fetches the SEP-0039
+ * metadata JSON from the IPFS gateway.
+ *
+ * Returns `NftRewardDetail[]` ready for `<NftGallery nfts={…} />`.
+ */
 
-export interface NftAttribute {
-  trait_type: string
-  value: string
+import { useCallback, useEffect, useState } from "react";
+
+import type { NftRewardDetail } from "@/components/NftDetailModal";
+import { fetchPlayerNftsOnChain } from "@/lib/nft/fetchPlayerNftsOnChain";
+
+interface UsePlayerNftsState {
+  nfts: NftRewardDetail[];
+  loading: boolean;
+  error: string | null;
+  /** Re-trigger a fresh fetch (e.g. after a mint). */
+  refresh: () => void;
 }
 
-export interface NftItem {
-  id: string
-  name: string
-  description: string
-  image: string
-  huntName: string
-  earnedAt: string
-  attributes: NftAttribute[]
-}
+/**
+ * Fetches the NFT gallery for `ownerAddress`.
+ *
+ * @param ownerAddress Stellar public key of the wallet owner. An empty string
+ *                     skips the fetch and returns an empty list.
+ */
+export function usePlayerNfts(ownerAddress: string): UsePlayerNftsState {
+  const [nfts, setNfts] = useState<NftRewardDetail[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
 
-export function usePlayerNfts() {
-  const [address, setAddress] = useState<string>("GABC123DEF456")
-  const [loading, setLoading] = useState<boolean>(false)
-  const [error, setError] = useState<string | null>(null)
-  const [nfts, setNfts] = useState<NftItem[]>([
-    {
-      id: "1",
-      name: "Soroban Scavenger Champion",
-      description: "Awarded for completing the ultimate Soroban smart contract scavenger hunt.",
-      image: "ipfs://QmYwAPJg0hGc2bS4Z4A69A1sZ42Z84B79A3A4a5b6c7D8e",
-      huntName: "Stellar smart contracts",
-      earnedAt: "2026-07-20",
-      attributes: [
-        { trait_type: "Rarity", value: "Legendary" },
-        { trait_type: "Points", value: "100" },
-      ]
-    },
-    {
-      id: "2",
-      name: "Stellar Pioneer Badge",
-      description: "Awarded to early participants of the Hunty scavenger challenges.",
-      image: "ipfs://QmXoypizjW3WknFi2WDauHCX8Aax5b3BF6696s9a5b6c7D",
-      huntName: "Stellar Basics",
-      earnedAt: "2026-07-24",
-      attributes: [
-        { trait_type: "Rarity", value: "Rare" },
-        { trait_type: "Points", value: "50" },
-      ]
+  const refresh = useCallback(() => setTick((t) => t + 1), []);
+
+  useEffect(() => {
+    if (!ownerAddress) {
+      setNfts([]);
+      setLoading(false);
+      setError(null);
+      return;
     }
-  ])
 
-  return { address, nfts, loading, error }
+    let cancelled = false;
+
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const data = await fetchPlayerNftsOnChain(ownerAddress);
+        if (!cancelled) setNfts(data);
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Failed to load NFT rewards.",
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ownerAddress, tick]);
+
+  return { nfts, loading, error, refresh };
 }

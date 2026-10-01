@@ -8,7 +8,7 @@ import {
   Switch,
   TouchableOpacity,
 } from 'react-native';
-import { normalizeFont, getMaxFontScale, getSafeFontSize } from '../utils/fontScaling';
+import { getMaxFontScale, getSafeFontSize, normalizeFont } from '../utils/fontScaling';
 
 interface FontScalingTestProps {
   isTesting: boolean;

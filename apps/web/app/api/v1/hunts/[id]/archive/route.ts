@@ -17,6 +17,19 @@ const paramsSchema = z.object({ id: z.string() })
 export const POST = withValidation(
   { body: huntArchiveBodySchema, params: paramsSchema },
   async (req, _context, { body, params }) => {
+    const auth = await verifyCallerAuth(req, body);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error || "Unauthenticated" }, { status: auth.status || 401 });
+    }
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 403 });
+    }
+
+    const actorAddress = auth.actor;
+    if (!actorAddress) {
+      return NextResponse.json({ error: "Authenticated actor is missing" }, { status: 401 });
+    }
+
     const ip = getIP(req);
     const { success, reset } = await rateLimit(ip, rateLimitPresets.write);
     if (!success) return rateLimitResponse(reset);
@@ -26,7 +39,16 @@ export const POST = withValidation(
       throw new ValidationError("Invalid hunt ID", { id: params!.id });
     }
 
-    const actorAddress = body!.actorAddress;
+    const role = await dbGetRoleForWallet(huntId, actorAddress);
+    let isOwner = role === "owner";
+    if (!isOwner) {
+      const { getHuntById } = await import("@/lib/huntStore");
+      const hunt = getHuntById(huntId);
+      isOwner = hunt?.ownerAddress === actorAddress || hunt?.creator === actorAddress;
+    }
+    if (!isOwner) {
+      return NextResponse.json({ error: "Only the hunt owner can archive or unarchive hunts" }, { status: 403 });
+    }
 
     try {
       if (body.action === "archive") {

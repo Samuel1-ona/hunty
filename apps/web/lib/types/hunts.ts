@@ -107,6 +107,8 @@ export interface StoredHunt {
   averageRating?: number;
   /** Average user difficulty rating (1-4). */
   averageDifficulty?: number;
+  /** When true, this hunt can be played without a wallet as a practice demo. */
+  isPractice?: boolean;
   /** Number of user reviews. */
   reviewCount?: number;
   /** When true, the hunt is archived (hidden from public but data preserved). */

@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, ArrowLeft, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Archive, ArrowLeft, MoreHorizontal, Pencil, Trash2, Clock } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ interface HuntListProps {
   onAction: (action: string, huntIds: number[]) => void;
   onPromote: (huntId: number) => void;
   onSaveTemplate: (hunt: StoredHunt) => void;
+  onExtendTime?: (huntId: number, currentEndTime?: number) => void;
   onViewAudit?: (huntId: number) => void;
 }
 
@@ -29,6 +30,7 @@ export function HuntList({
   onAction,
   onPromote,
   onSaveTemplate,
+  onExtendTime,
   onViewAudit,
 }: HuntListProps) {
   if (hunts.length === 0) {
@@ -99,6 +101,17 @@ export function HuntList({
                   >
                     Template
                   </Button>
+                  {onExtendTime && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onExtendTime(hunt.id, hunt.endTime)}
+                      className="text-xs text-slate-600 hover:text-[#3737A4]"
+                    >
+                      <Clock className="w-3 h-3 mr-1" />
+                      Extend Time
+                    </Button>
+                  )}
                 </>
               )}
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">

@@ -8,7 +8,6 @@ import { useTheme } from '@providers/ThemeProvider';
 import { useToast } from '@providers/ToastProvider';
 import { getAllHunts } from '@store/huntStore';
 import { usePlayerStore, useWalletStore } from '@store/useStore';
-import type { StoredHunt } from '@hunty/types';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
@@ -24,12 +23,26 @@ export default function HuntsScreen() {
   const { colors } = useTheme();
   const haptics = useHaptics();
   const { showToast } = useToast();
-  const { network } = useWalletStore();
+  const { network, clearWallet } = useWalletStore();
   const { currentProgress, setProgress } = usePlayerStore();
   const { enabled: notificationsEnabled, toggle: toggleNotifications } = useNotifications();
   const [showDisconnect, setShowDisconnect] = useState(false);
   const [hunts, setHunts] = useState<StoredHunt[]>([]);
   const [loadingHuntId, setLoadingHuntId] = useState<number | null>(null);
+
+  const confirmDisconnect = () => {
+    Alert.alert('Disconnect wallet', 'Disconnect this wallet from Hunty?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Disconnect',
+        style: 'destructive',
+        onPress: () => {
+          clearWallet();
+          void unregister();
+        },
+      },
+    ]);
+  };
 
   useEffect(() => {
     getAllHunts()
@@ -147,7 +160,7 @@ export default function HuntsScreen() {
             label="Disconnect Wallet"
             description="Sign out and unlink this device"
             type="destructive"
-            onPress={() => setShowDisconnect(true)}
+            onPress={confirmDisconnect}
           />
         </SettingsSection>
 

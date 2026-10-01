@@ -8,7 +8,8 @@ module.exports = {
         root: ['.'],
         alias: {
           '@': './',
-          '@lib': './lib',
+          // No '@lib' alias: mobile's @lib/* imports live in apps/web/lib and
+          // are resolved by jest.config.js moduleNameMapper instead.
           '@store': './store',
           '@providers': './providers',
           '@components': './components',

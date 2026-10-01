@@ -5,7 +5,9 @@
 #   cd apps/mobile && pnpm start
 #   In another terminal: pnpm test:e2e
 #
-# CI runs these flows against an Android emulator via .github/workflows/mobile-e2e.yml
+# CI runs flows/scan-qr-clue.yaml against release builds on an Android emulator
+# and an iOS simulator via .github/workflows/mobile-e2e.yml
 
 flows:
   - flows/feed-and-wallet.yaml
+  - flows/scan-qr-clue.yaml

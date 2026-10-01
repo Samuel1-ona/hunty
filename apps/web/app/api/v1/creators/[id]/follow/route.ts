@@ -23,7 +23,11 @@ import { getIP, rateLimit, rateLimitPresets, rateLimitResponse } from "@/lib/rat
 type Context = { params: Promise<{ id: string }> };
 
 const paramsSchema = z.object({ id: z.string().min(1) });
-const bodySchema = z.object({ followerWallet: z.string().min(1) });
+const bodySchema = z.object({
+  followerWallet: z.string().min(1).optional(),
+  challenge: z.string().min(1),
+  signature: z.string().min(1),
+});
 
 function parseWallet(raw: string | null): string {
   if (!raw) throw new ValidationError("followerWallet is required");
@@ -60,7 +64,7 @@ export const DELETE = withValidation(
     return NextResponse.json({
       following: false,
       creatorWallet: params.id,
-      followerWallet: body.followerWallet,
+      followerWallet: actorWallet,
       removed,
       followersCount: await getFollowersCount(params.id),
     });

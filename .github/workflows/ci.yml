@@ -11,6 +11,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ─── Shared config resolution (fails fast) ─────────────────────────────
+  # Installs with --frozen-lockfile, so drift between pnpm-lock.yaml and the
+  # manifests / pnpm-workspace.yaml fails here instead of being silently
+  # re-resolved (a drifted lockfile aborts a frozen install before any
+  # workspace links exist). Then checks every workspace resolves @hunty/config
+  # the way tsc and ESLint do. See DEVELOPMENT.md.
+  workspace-config:
+    name: Workspace config resolution
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js with pnpm (frozen lockfile)
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          install-args: "--frozen-lockfile"
+
+      - name: Check shared config resolution
+        run: pnpm check:workspace-config
+
   # ─── Workspace quality (lint + typecheck) ──────────────────────────────
   quality:
     name: Quality — ${{ matrix.workspace }}
@@ -25,6 +46,9 @@ jobs:
 
       - name: Setup Node.js with pnpm
         uses: ./.github/actions/setup-node-pnpm
+
+      - name: Check shared config resolution
+        run: pnpm check:workspace-config
 
       - name: Lint and typecheck
         run: pnpm exec turbo run lint typecheck --filter=${{ matrix.workspace }}
@@ -44,6 +68,9 @@ jobs:
 
       - name: Setup Node.js with pnpm
         uses: ./.github/actions/setup-node-pnpm
+
+      - name: Check shared config resolution
+        run: pnpm check:workspace-config
 
       - name: Run root typecheck and assert all packages
         run: |
@@ -129,7 +156,7 @@ jobs:
   build:
     name: Build Verification
     runs-on: ubuntu-latest
-    needs: [quality, test]
+    needs: [quality-gate, test]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -204,12 +231,13 @@ jobs:
   ci-summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [quality, test, coverage, mutation, build, e2e, visual-regression, typecheck]
+    needs: [workspace-config, quality, test, coverage, mutation, build, e2e, visual-regression, typecheck]
     if: always()
     steps:
       - name: Check CI status
         run: |
-          if [ "${{ needs.quality.result }}" = "failure" ] || \
+          if [ "${{ needs.workspace-config.result }}" = "failure" ] || \
+             [ "${{ needs.quality.result }}" = "failure" ] || \
              [ "${{ needs.test.result }}" = "failure" ] || \
              [ "${{ needs.coverage.result }}" = "failure" ] || \
              [ "${{ needs.mutation.result }}" = "failure" ] || \

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Star,Trophy } from "lucide-react";
 import Image from "next/image";
 import React, { useMemo, useState } from "react";
@@ -27,6 +27,7 @@ type ViewMode = "grid" | "list";
 type SortOption = "newest" | "rarest" | "alphabetical";
 
 export function NftGallery({ nfts }: NftGalleryProps) {
+  const prefersReducedMotion = useReducedMotion();
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [selectedHunt, setSelectedHunt] = useState<string>("All");
   const [sortOption, setSortOption] = useState<SortOption>("newest");
@@ -84,7 +85,7 @@ export function NftGallery({ nfts }: NftGalleryProps) {
         }
         title="Complete hunts to earn NFTs"
         description="Your NFT gallery is empty right now. Finish a scavenger hunt to unlock your first collectible reward."
-        action={{ label: "Browse hunts", onPress: () => window.location.href = "/" }}
+        action={{ label: "Browse hunts", onClick: () => { window.location.href = "/" } }}
       />
     );
   }

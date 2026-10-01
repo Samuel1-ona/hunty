@@ -13,7 +13,7 @@ import {
 import { getIP, rateLimit, rateLimitPresets } from "@/lib/rate-limit"
 
 export const GET = withErrorHandling(async (req: NextRequest) => {
-  assertAdminAuth(req)
+  await assertAdminAuth(req);
 
   const ip = getIP(req)
   const ipResult = await rateLimit(`sync_ip:${ip}`, rateLimitPresets.read)
@@ -21,29 +21,29 @@ export const GET = withErrorHandling(async (req: NextRequest) => {
     throw new RateLimitError("Too many sync requests from this IP", {
       reset: ipResult.reset,
       remaining: ipResult.remaining,
-    })
+    });
   }
 
-  const { searchParams } = new URL(req.url)
-  const email = searchParams.get("email") || undefined
-  const huntIdsParam = searchParams.get("huntIds")
+  const { searchParams } = new URL(req.url);
+  const email = searchParams.get("email") || undefined;
+  const huntIdsParam = searchParams.get("huntIds");
 
   if (huntIdsParam) {
     const huntIds = huntIdsParam
       .split(",")
       .map((id) => parseInt(id.trim(), 10))
-      .filter((id) => !Number.isNaN(id))
-    return NextResponse.json({ statuses: await getModerationStatusForHunts(huntIds) })
+      .filter((id) => !Number.isNaN(id));
+    return NextResponse.json({ statuses: await getModerationStatusForHunts(huntIds) });
   }
 
-  return NextResponse.json({ notifications: await getCreatorNotifications(email) })
-})
+  return NextResponse.json({ notifications: await getCreatorNotifications(email) });
+});
 
 export const POST = withErrorHandling(
   withValidation(
     { body: moderationSyncBodySchema },
     async (req: NextRequest, _context, { body }) => {
-      assertAdminAuth(req)
+      await assertAdminAuth(req);
 
       const ip = getIP(req)
       const ipResult = await rateLimit(`sync_ip:${ip}`, rateLimitPresets.read)
@@ -51,14 +51,14 @@ export const POST = withErrorHandling(
         throw new RateLimitError("Too many sync requests from this IP", {
           reset: ipResult.reset,
           remaining: ipResult.remaining,
-        })
+        });
       }
 
-      const ok = await markNotificationRead(body.notificationId)
+      const ok = await markNotificationRead(body.notificationId);
       if (!ok) {
-        throw new NotFoundError("Notification not found")
+        throw new NotFoundError("Notification not found");
       }
-      return NextResponse.json({ success: true })
+      return NextResponse.json({ success: true });
     }
   )
 )

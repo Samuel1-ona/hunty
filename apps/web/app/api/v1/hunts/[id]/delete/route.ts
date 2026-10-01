@@ -26,7 +26,27 @@ export const POST = withValidation(
       throw new ValidationError("Invalid hunt ID", { id: params!.id });
     }
 
-    const actorAddress = body!.actorAddress;
+    const authResult = await verifyCallerAuth(req as unknown as NextRequest, body);
+    if (!authResult.authenticated) {
+      return NextResponse.json({ error: authResult.error }, { status: 401 });
+    }
+    if (!authResult.authorized || !authResult.actor) {
+      return NextResponse.json({ error: authResult.error }, { status: 403 });
+    }
+
+    const actorAddress = authResult.actor;
+
+    const hunt = getHuntById(huntId);
+    if (!hunt) {
+      return NextResponse.json({ error: "Hunt not found" }, { status: 404 });
+    }
+
+    const isAdmin = actorAddress.startsWith("sess_") || actorAddress === "session_authenticated_admin";
+    const isCreator = hunt.creator === actorAddress || hunt.ownerAddress === actorAddress;
+    
+    if (!isAdmin && !isCreator) {
+      return NextResponse.json({ error: "Forbidden: only the creator can delete this hunt" }, { status: 403 });
+    }
 
     try {
       if (body.action === "soft-delete") {

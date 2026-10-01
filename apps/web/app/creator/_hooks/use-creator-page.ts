@@ -25,6 +25,12 @@ interface TemplateDialogState {
   huntId: number | null;
 }
 
+interface ExtendEndTimeDialogState {
+  open: boolean;
+  huntId: number | null;
+  currentEndTime?: number;
+}
+
 interface UseCreatorPageReturn {
   connected: boolean;
   connect: () => void;
@@ -52,6 +58,10 @@ interface UseCreatorPageReturn {
   auditLog: unknown[];
   fetchAuditLog: (huntId: number) => Promise<void>;
   selectedAuditHuntId: number | null;
+  extendEndTimeDialog: ExtendEndTimeDialogState;
+  setExtendEndTimeDialog: (dialog: ExtendEndTimeDialogState) => void;
+  handleExtendTime: (huntId: number, currentEndTime?: number) => void;
+  confirmExtendTime: (huntId: number, newEndTime: number) => void;
 }
 
 export function useCreatorPage(): UseCreatorPageReturn {
@@ -77,6 +87,10 @@ export function useCreatorPage(): UseCreatorPageReturn {
   const [promotingHuntId, setPromotingHuntId] = useState<number | null>(null);
   const [auditLog, setAuditLog] = useState<unknown[]>([]);
   const [selectedAuditHuntId, setSelectedAuditHuntId] = useState<number | null>(null);
+  const [extendEndTimeDialog, setExtendEndTimeDialog] = useState<ExtendEndTimeDialogState>({
+    open: false,
+    huntId: null,
+  });
 
   const connect = useCallback(() => {
     setConnected(true);
@@ -157,6 +171,30 @@ export function useCreatorPage(): UseCreatorPageReturn {
     }
   }, []);
 
+  const handleExtendTime = useCallback((huntId: number, currentEndTime?: number) => {
+    setExtendEndTimeDialog({
+      open: true,
+      huntId,
+      currentEndTime,
+    });
+  }, []);
+
+  const confirmExtendTime = useCallback(async (huntId: number, newEndTime: number) => {
+    try {
+      const { extendEndTime } = await import("@/lib/contracts/hunt");
+      await extendEndTime(huntId, newEndTime);
+      
+      const { updateHuntEndTime } = await import("@/lib/huntStore");
+      updateHuntEndTime(huntId, newEndTime);
+      
+      setExtendEndTimeDialog({ open: false, huntId: null });
+      setHunts(getCreatorHunts());
+    } catch (error) {
+      console.error("Failed to extend hunt end time:", error);
+      throw error;
+    }
+  }, []);
+
   return {
     connected,
     connect,
@@ -184,5 +222,9 @@ export function useCreatorPage(): UseCreatorPageReturn {
     auditLog,
     fetchAuditLog,
     selectedAuditHuntId,
+    extendEndTimeDialog,
+    setExtendEndTimeDialog,
+    handleExtendTime,
+    confirmExtendTime,
   };
 }

@@ -1,0 +1,103 @@
+# Core play loop: join a hunt, scan a QR clue, submit it, and see progress.
+#
+# Runs against a release build of the app (see .github/workflows/mobile-e2e.yml).
+# Override the app id for other build variants with: maestro test -e APP_ID=... <flow>
+#
+# Emulators and simulators have no scannable camera feed, so the QR payload is
+# injected through the scanner's "Enter code manually" fallback. That fallback
+# calls the same processScan -> onScan path as a real barcode scan, so the play
+# screen receives and verifies the payload exactly as it would from the camera.
+appId: ${APP_ID}
+name: Scan a QR clue and submit an answer
+tags:
+  - play
+  - qr
+env:
+  APP_ID: io.hunty.mobile.dev
+  # hunty:v1 payload (base64url JSON) for hunt 1 / clue 1 of the seeded data,
+  # as produced by encodeHuntyQrPayload({ huntId: 1, clueId: 1, answer: 'spiral mural' }).
+  VALID_CLUE_QR: 'hunty:v1:eyJoIjoxLCJjIjoxLCJhIjoic3BpcmFsIG11cmFsIn0'
+  # Checkpoint URL for clue 2 while clue 1 is active; must be rejected.
+  WRONG_CLUE_QR: 'hunty://checkpoint/1/2?a=lantern%20statue'
+---
+# Fresh state: seeded hunts/clues, no joined hunt, onboarding not yet seen.
+# Granting permissions up front keeps system dialogs out of the flow.
+- launchApp:
+    clearState: true
+    permissions:
+      all: allow
+
+- extendedWaitUntil:
+    visible:
+      id: 'onboarding-skip'
+    timeout: 60000
+- tapOn:
+    id: 'onboarding-skip'
+
+# Join the seeded "City Secrets" hunt (id 1, 5 clues).
+- openLink: hunty://hunts
+- extendedWaitUntil:
+    visible:
+      id: 'join-hunt-button-1'
+    timeout: 20000
+- tapOn:
+    id: 'join-hunt-button-1'
+# The join transaction screen steps through its states, then opens the hunt.
+- extendedWaitUntil:
+    visible:
+      id: 'hunt-detail-screen'
+    timeout: 20000
+
+- openLink: hunty://play
+- extendedWaitUntil:
+    visible:
+      id: 'play-progress-label'
+      text: 'Clue 1 of 5'
+    timeout: 20000
+
+# A QR code for a different clue is rejected and progress does not move.
+- tapOn:
+    id: 'scan-qr-button'
+- extendedWaitUntil:
+    visible:
+      id: 'manual-entry-button'
+    timeout: 10000
+- tapOn:
+    id: 'manual-entry-button'
+- tapOn:
+    id: 'manual-code-input'
+- inputText: ${WRONG_CLUE_QR}
+# Enter triggers onSubmitEditing -> the same handler as the Submit button, and
+# avoids the on-screen keyboard covering the button.
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: 'answer-error'
+      text: 'QR code belongs to a different clue'
+    timeout: 10000
+- assertVisible:
+    id: 'play-progress-label'
+    text: 'Clue 1 of 5'
+
+# The correct QR code is accepted and the player advances to the next clue.
+- tapOn:
+    id: 'scan-qr-button'
+- extendedWaitUntil:
+    visible:
+      id: 'manual-entry-button'
+    timeout: 10000
+- tapOn:
+    id: 'manual-entry-button'
+- tapOn:
+    id: 'manual-code-input'
+- inputText: ${VALID_CLUE_QR}
+# Enter triggers onSubmitEditing -> the same handler as the Submit button, and
+# avoids the on-screen keyboard covering the button.
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: 'play-progress-label'
+      text: 'Clue 2 of 5'
+    timeout: 15000
+- assertNotVisible:
+    id: 'answer-error'
