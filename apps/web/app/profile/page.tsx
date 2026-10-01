@@ -343,7 +343,19 @@ export default function UserProfilePage() {
             </section>
 
             <section aria-label="NFT gallery" className="mt-6">
-              <NftGallery rewards={nftRewards} />
+              <Card className="bg-[#ececfa] border border-white/40 shadow-md">
+                <CardHeader>
+                  <CardTitle className="text-lg md:text-xl font-semibold text-slate-900">
+                    NFT Rewards
+                  </CardTitle>
+                  <CardDescription>
+                    Collectible NFTs earned by completing scavenger hunts on-chain.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <NftGallery nfts={nftRewards} />
+                </CardContent>
+              </Card>
             </section>
 
             <section aria-label="Reward history" className="mt-6">

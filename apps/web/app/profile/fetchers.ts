@@ -1,4 +1,8 @@
 import type { NftRewardDetail } from "@/components/NftDetailModal";
+import { resolveImageSrc } from "@/lib/ipfs";
+import { logger } from "@/lib/logger";
+import { getPlayerNftIds, getNftUris } from "@/lib/contracts/nftReward";
+import type { NftMetadata } from "@/lib/nft/types";
 import type { PlayerHuntProgress, RegisteredHunt } from "./types";
 
 type NftReward = NftRewardDetail;
@@ -75,51 +79,83 @@ export async function fetchPlayerHunts(address: string): Promise<PlayerHuntProgr
   ];
 }
 
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetches and parses IPFS metadata JSON from an `ipfs://` or HTTP URI.
+ * Returns null when the fetch fails or the response is not valid JSON.
+ */
+async function fetchIpfsMetadata(uri: string): Promise<NftMetadata | null> {
+  try {
+    const httpUrl = resolveImageSrc(uri);
+    const res = await fetch(httpUrl, { signal: AbortSignal.timeout(10_000) });
+    if (!res.ok) return null;
+    const json = await res.json() as NftMetadata;
+    return json;
+  } catch (err) {
+    logger.warn(`fetchIpfsMetadata failed for ${uri}:`, err);
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Public fetchers
+// ---------------------------------------------------------------------------
+
 export async function fetchPlayerRewards(address: string): Promise<NftReward[]> {
   if (!address) return [];
 
-  return [
-    {
-      id: 1,
-      name: "Golden Compass",
-      description:
-        "A legendary artifact awarded to those who uncover all secret murals in the City Secrets hunt.",
-      imageUri: "/static-images/nft1.png",
-      earnedAt: "2026-02-10T15:16:00Z",
-      claimed: true,
-      huntName: "City Secrets",
-      attributes: [
-        { trait_type: "Rarity", value: "Legendary" },
-        { trait_type: "Type", value: "Utility" },
-      ],
-    },
-    {
-      id: 2,
-      name: "Explorer Trophy",
-      description:
-        "Granted for successfully completing the Office Onboarding challenge within the time limit.",
-      imageUri: "/static-images/nft2.png",
-      earnedAt: "2026-02-20T11:26:00Z",
-      claimed: false,
-      huntName: "Office Onboarding",
-      attributes: [
-        { trait_type: "Rarity", value: "Rare" },
-        { trait_type: "Level", value: 5 },
-      ],
-    },
-    {
-      id: 3,
-      name: "Soroban Sage",
-      description:
-        "Awarded to players who demonstrate exceptional knowledge of smart contract riddles.",
-      imageUri: "ipfs://QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-      earnedAt: "2026-03-05T09:45:00Z",
-      claimed: true,
-      huntName: "Stellar Developer Hunt",
-      attributes: [
-        { trait_type: "Rarity", value: "Epic" },
-        { trait_type: "Skill", value: "Contracting" },
-      ],
-    },
-  ];
-      }
+  try {
+    // 1. Fetch the list of NFT IDs owned by this address from the on-chain contract.
+    const nftIds = await getPlayerNftIds(address);
+    if (nftIds.length === 0) return [];
+
+    // 2. Fetch the IPFS metadata URI for each NFT ID.
+    const uriMap = await getNftUris(nftIds);
+
+    // 3. For each URI, fetch and parse the IPFS metadata JSON in parallel.
+    const results = await Promise.all(
+      nftIds.map(async (id): Promise<NftReward | null> => {
+        const metadataUri = uriMap.get(id);
+        if (!metadataUri) return null;
+
+        const metadata = await fetchIpfsMetadata(metadataUri);
+
+        // Build a NftRewardDetail from the on-chain + IPFS data.
+        const nftIdNumber = Number(id); // safe: NFT IDs are practical small integers
+        const imageUri = metadata?.image ?? metadataUri;
+
+        // Find the hunt name from attributes if present
+        const huntNameAttr = metadata?.attributes?.find(
+          (a) => a.trait_type.toLowerCase() === "hunt" || a.trait_type.toLowerCase() === "hunt_name",
+        );
+        const huntName = huntNameAttr
+          ? String(huntNameAttr.value)
+          : metadata?.external_url
+          ? undefined
+          : undefined;
+
+        return {
+          id: nftIdNumber,
+          name: metadata?.name ?? `NFT #${nftIdNumber}`,
+          description: metadata?.description,
+          imageUri,
+          metadataUri,
+          earnedAt: metadata?.earned_at ?? new Date(0).toISOString(),
+          // On-chain NFTs are always minted (claimed). The "unclaimed" state
+          // only applies to off-chain pending rewards.
+          claimed: true,
+          attributes: metadata?.attributes ?? [],
+          huntName,
+        } satisfies NftReward;
+      }),
+    );
+
+    return results.filter((r): r is NftReward => r !== null);
+  } catch (err) {
+    logger.error("fetchPlayerRewards failed:", err);
+    return [];
+  }
+}
