@@ -24,8 +24,6 @@ jobs:
 
       - name: Setup Node.js with pnpm
         uses: ./.github/actions/setup-node-pnpm
-        with:
-          working-directory: apps/web
 
       - name: Install Playwright browsers (Chromium only)
         working-directory: apps/web
@@ -62,9 +60,11 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
 
       - name: Install Playwright browsers
+        working-directory: apps/web
         run: pnpm exec playwright install --with-deps
 
       - name: Run Playwright tests for project
+        working-directory: apps/web
         env:
           CI: true
           WALLET_EXTENSION_PATH: ${{ secrets.WALLET_EXTENSION_PATH }}
