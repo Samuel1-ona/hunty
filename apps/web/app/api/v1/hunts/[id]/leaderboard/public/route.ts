@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { get_hunt_leaderboard } from "@lib/contracts/hunt";
-import { getHuntById } from "@lib/huntStore";
+import { get_hunt_leaderboard } from "@/lib/contracts/hunt";
+import { getHuntById } from "@/lib/huntStore";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hunty.app";
 

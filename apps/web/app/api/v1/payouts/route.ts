@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server"
 
-import { withErrorHandling } from "/lib/api/withErrorHandling"
-import { getIP, rateLimit, rateLimitPresets, rateLimitResponse } from "/lib/rate-limit"
-import { getCreatorPayoutSummary } from "/lib/payouts"
-import { Keypair } from "stellar-sdk"
+import { Keypair } from "@stellar/stellar-sdk"
+
+import { withErrorHandling } from "@/lib/api/withErrorHandling"
+import { getIP, rateLimit, rateLimitPresets, rateLimitResponse } from "@/lib/rate-limit"
+import { getCreatorPayoutSummary } from "@/lib/payouts"
 
 /**
  * Verifies that a request is signed by the wallet that owns the given Stellar address.
