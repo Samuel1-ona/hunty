@@ -1,291 +1,185 @@
 # nft-reward
 
-Soroban smart contract for minting, transferring, and burning NFT reward tokens on the Stellar network. Each token is identified by a monotonically incrementing `u64` id and carries an IPFS/HTTPS URI pointing to its off-chain metadata.
+Soroban smart contract that mints, transfers, and burns non-fungible tokens (NFTs) as hunt-completion rewards on the Stellar/Soroban network.
 
-Built with `soroban-sdk 20.0.0`, compiled as `#![no_std]`.
-
-## Table of Contents
-
-- [Entry Points](#entry-points)
-  - [Write operations](#write-operations)
-  - [Read operations](#read-operations)
-- [Auth Requirements](#auth-requirements)
-- [Error Behaviour](#error-behaviour)
-- [Events](#events)
-- [Storage Layout](#storage-layout)
-- [Building and Testing](#building-and-testing)
+- **Crate:** `nft-reward` v0.1.0
+- **SDK:** `soroban-sdk = "=20.0.0"`
+- **Profile:** `no_std`, compiled to `cdylib` + `rlib`
 
 ---
 
 ## Entry Points
 
+All functions are exposed on `NftRewardContract`.
+
 ### Write operations
 
-#### `mint(env, minter, recipient, uri) -> u64`
+#### `mint(minter, recipient, uri) → u64`
 
 Mints a new NFT and assigns it to `recipient`.
 
-| Parameter   | Type      | Description                                      |
-|-------------|-----------|--------------------------------------------------|
-| `minter`    | `Address` | The authorised minter creating the token.        |
-| `recipient` | `Address` | The address that will own the new token.         |
-| `uri`       | `String`  | Metadata URI (`ipfs://…` or `https://…`).        |
+| Parameter   | Type      | Description                                   |
+|-------------|-----------|-----------------------------------------------|
+| `minter`    | `Address` | Account authorizing the mint                  |
+| `recipient` | `Address` | Address that will own the newly minted token  |
+| `uri`       | `String`  | Metadata URI (IPFS CID or HTTPS URL)          |
 
-Returns the new `nft_id` (starts at 1, monotonically incremented).
+**Returns:** the new `nft_id` (a monotonically increasing `u64` starting at 1).
 
-Auth: `minter.require_auth()`
+**Auth:** `minter.require_auth()` — the minter must sign the transaction.
+
+**Panics:** never under normal conditions (counter overflow aside).
+
+**Event emitted:**
+```
+topics: [Symbol("mint"), recipient]
+data:   nft_id (u64)
+```
 
 ---
 
-#### `mint_reward_nft_from_map(env, minter, recipient, uri) -> u64`
-
-Variant of `mint` designed for reward-manager integrations. Accepts a URI that must pass the same scheme validation rules as `update_nft_metadata` (must be `ipfs://` or `https://`; empty, `http://`, and `data:` URIs are rejected).
-
-Auth: `minter.require_auth()`
-
----
-
-#### `transfer(env, from, to, nft_id)`
+#### `transfer(from, to, nft_id)`
 
 Transfers ownership of `nft_id` from `from` to `to`.
 
-| Parameter | Type      | Description                      |
-|-----------|-----------|----------------------------------|
-| `from`    | `Address` | Current owner; must authorise.   |
-| `to`      | `Address` | New owner.                       |
-| `nft_id`  | `u64`     | Token to transfer.               |
-
-Auth: `from.require_auth()`
-
-Panics if the token does not exist or `from` is not the current owner.
-
----
-
-#### `burn(env, owner, nft_id)`
-
-Permanently destroys `nft_id`. The owner-index and ownership record are both cleared. `total_supply` is not decremented (it tracks tokens ever minted, not live tokens).
-
 | Parameter | Type      | Description                        |
 |-----------|-----------|------------------------------------|
-| `owner`   | `Address` | Current owner; must authorise.     |
-| `nft_id`  | `u64`     | Token to burn.                     |
+| `from`    | `Address` | Current owner initiating transfer  |
+| `to`      | `Address` | Recipient of the token             |
+| `nft_id`  | `u64`     | ID of the token to transfer        |
 
-Auth: `owner.require_auth()`
+**Auth:** `from.require_auth()`.
 
-Panics if the token does not exist or `owner` is not the current owner.
+**Panics:** see [Error Conditions](#error-conditions).
 
----
-
-#### `update_nft_metadata(env, owner, nft_id, new_uri)`
-
-Replaces the URI of `nft_id` with `new_uri`. Requires the token to be neither locked nor frozen.
-
-| Parameter  | Type      | Description                                      |
-|------------|-----------|--------------------------------------------------|
-| `owner`    | `Address` | Current owner; must authorise.                   |
-| `nft_id`   | `u64`     | Token whose metadata is being updated.           |
-| `new_uri`  | `String`  | Replacement URI (`ipfs://` or `https://` only).  |
-
-Auth: `owner.require_auth()`
-
-Panics if:
-- `owner` is not the current owner of `nft_id`
-- `new_uri` is empty, uses `http://`, or uses `data:`
-- the token is locked (see `lock_nft`)
-- the token is frozen (see `freeze_metadata`)
+**Event emitted:**
+```
+topics: [Symbol("transfer"), from, to]
+data:   nft_id (u64)
+```
 
 ---
 
-#### `admin_update_image_uri(env, admin, nft_id, new_uri)`
+#### `burn(owner, nft_id)`
 
-Admin override to replace the URI of `nft_id`. Requires the token to be neither locked nor frozen. Intended for post-mint CDN migration flows.
+Permanently destroys `nft_id`. The token's URI and minter metadata are retained in storage, but the ownership record is removed and the token disappears from the owner's index.
 
-| Parameter | Type      | Description                                                |
-|-----------|-----------|------------------------------------------------------------|
-| `admin`   | `Address` | Contract admin; must authorise.                            |
-| `nft_id`  | `u64`     | Token to update.                                           |
-| `new_uri` | `String`  | Replacement URI (`ipfs://` or `https://` only).            |
+| Parameter | Type      | Description               |
+|-----------|-----------|---------------------------|
+| `owner`   | `Address` | Current owner of the NFT  |
+| `nft_id`  | `u64`     | ID of the token to burn   |
 
-Auth: `admin.require_auth()`
+**Auth:** `owner.require_auth()`.
 
-Panics if the token is locked or frozen.
+**Panics:** see [Error Conditions](#error-conditions).
 
----
-
-#### `freeze_metadata(env, owner, nft_id)`
-
-Permanently prevents further metadata updates on `nft_id`. Freeze is irreversible — once frozen, neither `update_nft_metadata` nor `admin_update_image_uri` can modify the token's URI.
-
-| Parameter | Type      | Description                     |
-|-----------|-----------|---------------------------------|
-| `owner`   | `Address` | Current owner; must authorise.  |
-| `nft_id`  | `u64`     | Token to freeze.                |
-
-Auth: `owner.require_auth()`
+**Event emitted:**
+```
+topics: [Symbol("burn"), owner]
+data:   nft_id (u64)
+```
 
 ---
 
-#### `lock_nft(env, owner, nft_id)`
+### Read-only operations
 
-Temporarily prevents metadata updates on `nft_id`. Can be reversed with `unlock_nft`.
+These functions perform no state mutations and require no auth.
 
-| Parameter | Type      | Description                     |
-|-----------|-----------|---------------------------------|
-| `owner`   | `Address` | Current owner; must authorise.  |
-| `nft_id`  | `u64`     | Token to lock.                  |
+| Function                                          | Returns          | Description                                                                                      |
+|---------------------------------------------------|------------------|--------------------------------------------------------------------------------------------------|
+| `balance_of(owner)`                               | `u32`            | Number of NFTs currently owned by `owner`                                                        |
+| `total_supply()`                                  | `u64`            | Total number of NFTs ever minted (monotonically increasing; burned tokens are not subtracted)    |
+| `get_owner(nft_id)`                               | `Option<Address>`| Current owner of `nft_id`, or `None` if the token has been burned                               |
+| `get_nft_uri(nft_id)`                             | `Option<String>` | Metadata URI for `nft_id`, or `None` if the token was never minted                              |
+| `get_nft_minter(nft_id)`                          | `Option<Address>`| Address that originally minted `nft_id`, or `None` if the token was never minted                |
+| `get_player_nfts(owner)`                          | `Vec<u64>`       | All NFT ids currently owned by `owner` (unordered, allocation proportional to `balance_of`)     |
+| `get_player_nfts_page(owner, start, limit)` | `Vec<u64>`       | Paginated slice of `owner`'s NFT list; returns an empty vec when `start >= balance_of` or `limit == 0` |
 
-Auth: `owner.require_auth()`
+#### `get_player_nfts_page` parameters
 
----
-
-#### `unlock_nft(env, owner, nft_id)`
-
-Removes a temporary lock set by `lock_nft`. Has no effect if the token is frozen.
-
-| Parameter | Type      | Description                     |
-|-----------|-----------|---------------------------------|
-| `owner`   | `Address` | Current owner; must authorise.  |
-| `nft_id`  | `u64`     | Token to unlock.                |
-
-Auth: `owner.require_auth()`
+| Parameter | Type  | Description                                            |
+|-----------|-------|--------------------------------------------------------|
+| `owner`   | `Address` | Owner whose NFT list to page through             |
+| `start`   | `u32` | 0-based index into the owner's enumerable slot list   |
+| `limit`   | `u32` | Maximum number of ids to return                       |
 
 ---
 
-### Read operations
+## Error Conditions
 
-| Entry point                                          | Returns        | Description                                                                |
-|------------------------------------------------------|----------------|----------------------------------------------------------------------------|
-| `balance_of(env, owner)`                             | `u32`          | Number of tokens currently owned by `owner`.                               |
-| `total_supply(env)`                                  | `u64`          | Total tokens ever minted (monotonically increasing; not decremented by burn).|
-| `get_owner(env, nft_id)`                             | `Option<Address>` | Current owner of `nft_id`, or `None` if burned.                        |
-| `get_nft_uri(env, nft_id)`                           | `Option<String>`  | Metadata URI of `nft_id`, or `None` if not found.                      |
-| `get_nft_minter(env, nft_id)`                        | `Option<Address>` | Original minter of `nft_id`, or `None` if not found.                   |
-| `get_player_nfts(env, owner)`                        | `Vec<u64>`     | All token ids owned by `owner` (unordered).                                |
-| `get_player_nfts_page(env, owner, start, limit)`     | `Vec<u64>`     | Paginated slice of `owner`'s token ids, starting at index `start`. Returns an empty vec if `start >= balance_of(owner)` or `limit == 0`. |
+The contract uses `assert!` / `Option::expect` rather than a typed error enum. The following panic messages map to distinct failure modes:
 
----
+| Panic message                                         | Trigger                                                                                  |
+|-------------------------------------------------------|------------------------------------------------------------------------------------------|
+| `"nft does not exist"`                                | `transfer` or `burn` called with an `nft_id` whose owner record is absent (never minted or already burned) |
+| `"not owner"`                                         | `transfer` or `burn` called by an address that is not the current owner of `nft_id`     |
+| `"index corruption: slot missing"`                    | Internal: an expected slot entry in the owner index was absent during `remove_nft_from_owner` |
+| `"index corruption: exist-key set but slot not found"`| Internal: the existence sentinel for an NFT was set but the matching slot was not found during linear scan |
+| `"index corruption: last slot missing"`               | Internal: the last-slot entry was absent when attempting swap-and-pop                    |
 
-## Auth Requirements
-
-| Entry point            | Who must sign         | Notes                                              |
-|------------------------|-----------------------|----------------------------------------------------|
-| `mint`                 | `minter`              | Any address designated as minter.                  |
-| `mint_reward_nft_from_map` | `minter`          | Same as `mint`; called by the reward manager.      |
-| `transfer`             | `from`                | Must be the current owner.                         |
-| `burn`                 | `owner`               | Must be the current owner.                         |
-| `update_nft_metadata`  | `owner`               | Must be the current owner; token must be unlocked and unfrozen. |
-| `admin_update_image_uri` | `admin`             | Contract admin; token must be unlocked and unfrozen. |
-| `freeze_metadata`      | `owner`               | Must be the current owner.                         |
-| `lock_nft`             | `owner`               | Must be the current owner.                         |
-| `unlock_nft`           | `owner`               | Must be the current owner.                         |
-| `balance_of`           | —                     | View only; no auth required.                       |
-| `total_supply`         | —                     | View only; no auth required.                       |
-| `get_owner`            | —                     | View only; no auth required.                       |
-| `get_nft_uri`          | —                     | View only; no auth required.                       |
-| `get_nft_minter`       | —                     | View only; no auth required.                       |
-| `get_player_nfts`      | —                     | View only; no auth required.                       |
-| `get_player_nfts_page` | —                     | View only; no auth required.                       |
-
-All auth checks use `soroban_sdk::Address::require_auth()`, which enforces the Soroban auth framework (signature verification, nonce replay protection).
-
----
-
-## Error Behaviour
-
-This contract does not define a formal `NftError` enum. Errors are surfaced as host-level panics (contract abort). The table below maps each panic condition to the entry point(s) that trigger it and the panic message used in the source.
-
-| Condition                                      | Affected entry points                                     | Panic message / behaviour                           |
-|------------------------------------------------|-----------------------------------------------------------|-----------------------------------------------------|
-| Token does not exist (already burned)          | `transfer`, `burn`                                        | `"nft does not exist"` (via `.expect(...)`)         |
-| Caller is not the current owner                | `transfer` (`from` check), `burn` (`owner` check), `update_nft_metadata` | `"not owner"` (via `assert_eq!`)    |
-| URI is empty                                   | `mint_reward_nft_from_map`, `update_nft_metadata`         | panics with empty-URI message                       |
-| URI scheme is not `ipfs://` or `https://`      | `mint_reward_nft_from_map`, `update_nft_metadata`         | panics with invalid-scheme message                  |
-| Token is locked                                | `update_nft_metadata`, `admin_update_image_uri`           | panics with locked message                          |
-| Token is frozen                                | `update_nft_metadata`, `admin_update_image_uri`           | panics with frozen message (irrecoverable)          |
-| Owner-index corruption (slot missing)          | internal `remove_nft_from_owner`                          | `"index corruption: slot missing"` / `"exist-key set but slot not found"` — should never occur in normal operation |
-
-> **Note:** A future iteration of this contract may replace panics with a typed `NftError` enum returned as a `Result` for cleaner client-side error handling.
-
----
-
-## Events
-
-| Event name  | Topics                              | Data     | Emitted by  |
-|-------------|-------------------------------------|----------|-------------|
-| `mint`      | `("mint", recipient: Address)`      | `nft_id: u64` | `mint`, `mint_reward_nft_from_map` |
-| `transfer`  | `("transfer", from: Address, to: Address)` | `nft_id: u64` | `transfer` |
-| `burn`      | `("burn", owner: Address)`          | `nft_id: u64` | `burn`      |
-
-Events are published via `env.events().publish(topics, data)` and can be observed through Soroban RPC event streaming.
+The three `"index corruption: …"` panics indicate a storage inconsistency and should not occur during normal contract operation.
 
 ---
 
 ## Storage Layout
 
-All data is stored in `env.storage().persistent()`. No temporary or instance storage is used.
-
-### NFT metadata keys
-
-| Storage key              | Value type | Description                                       |
-|--------------------------|------------|---------------------------------------------------|
-| `("NFTU", nft_id: u64)`  | `String`   | Metadata URI for the token (`ipfs://` or `https://`). |
-| `("NFTM", nft_id: u64)`  | `Address`  | Original minter of the token.                     |
-| `("NFTO", nft_id: u64)`  | `Address`  | Current owner of the token. Removed on burn.      |
+All entries use `env.storage().persistent()`. There is no instance or temporary storage.
 
 ### Global counter
 
-| Storage key  | Value type | Description                                                   |
-|--------------|------------|---------------------------------------------------------------|
-| `"TOTAL"`    | `u64`      | Monotonically increasing total-supply counter. Never decremented. |
+| Key symbol | Type  | Description                                               |
+|------------|-------|-----------------------------------------------------------|
+| `TOTAL`    | `u64` | Next NFT id minus 1; i.e. the count of all minted tokens |
 
-### Per-owner enumerable index
+### Per-NFT metadata
 
-Three keys compose the owner NFT index. All are stored in `persistent()`.
+Keyed by `(symbol, nft_id: u64)`:
 
-| Storage key                             | Value type | Description                                                 |
-|-----------------------------------------|------------|-------------------------------------------------------------|
-| `("ONFC", owner: Address)`              | `u32`      | Number of NFTs currently owned by `owner`.                  |
-| `("ONFX", owner: Address, nft_id: u64)` | `bool`     | Existence sentinel: `true` when `owner` holds `nft_id`.     |
-| `("ONFT", owner: Address, slot: u32)`   | `u64`      | NFT id stored at `slot` index (0-based) in `owner`'s list.  |
+| Key tuple       | Value type | Description                                        |
+|-----------------|------------|----------------------------------------------------|
+| `(NFTU, nft_id)` | `String`  | Metadata URI (IPFS or HTTPS)                       |
+| `(NFTM, nft_id)` | `Address` | Minter address (set at mint time, never updated)   |
+| `(NFTO, nft_id)` | `Address` | Current owner; **removed** (not zeroed) on burn    |
+
+### Per-owner index
+
+The owner index is a compact enumerable list maintained via **swap-and-pop**. Three key shapes compose it:
+
+| Key tuple                  | Value type | Description                                                         |
+|----------------------------|------------|---------------------------------------------------------------------|
+| `(ONFC, owner)`            | `u32`      | Number of NFTs currently owned; the authoritative count             |
+| `(ONFX, owner, nft_id)`    | `bool`     | Existence sentinel — present and `true` iff `owner` holds `nft_id` |
+| `(ONFT, owner, slot_index)`| `u64`      | NFT id stored at 0-based `slot_index` for `owner`                  |
 
 #### Swap-and-pop removal
 
-The enumerable list is kept compact without gaps. When an NFT is removed from an owner's index:
+When an NFT is removed from an owner's list (on `transfer` or `burn`):
 
-1. Find the slot `i` holding `nft_id` by scanning `ONFT` slots.
-2. Move the last slot's value (`ONFT[last]`) into slot `i`.
-3. Delete the last slot entry.
-4. Delete the `ONFX` existence key for `nft_id`.
-5. Decrement `ONFC`.
+1. The slot that holds the target `nft_id` is located via a linear scan of `ONFT` entries.
+2. The last slot (`ONFC - 1`) is moved into the vacated slot.
+3. The last slot entry is deleted.
+4. The `ONFX` existence sentinel for `nft_id` is deleted.
+5. `ONFC` is decremented by one.
 
-This keeps all lookups O(n) while avoiding holes in the slot array. The invariants maintained are:
-
-- `ONFC` always equals the number of live `ONFT` slots.
-- Every `ONFX` key for `owner` has exactly one corresponding `ONFT` slot.
-- No `ONFX` key remains for a removed `nft_id`.
-
-### Metadata guard keys
-
-| Storage key                             | Value type | Description                                                        |
-|-----------------------------------------|------------|--------------------------------------------------------------------|
-| `("NFTL", nft_id: u64)`                 | `bool`     | Lock flag. `true` = metadata updates blocked (reversible).         |
-| `("NFTF", nft_id: u64)`                 | `bool`     | Freeze flag. `true` = metadata updates permanently blocked.        |
+This keeps the slot list compact (no holes) without preserving insertion order.
 
 ---
 
-## Building and Testing
-
-Requires the Rust toolchain with the `wasm32-unknown-unknown` target.
+## Building
 
 ```bash
-# Build the contract WASM
+# from contracts/nft-reward/
 cargo build --target wasm32-unknown-unknown --release
+```
 
-# Run all unit tests (host-side, no WASM)
+## Testing
+
+```bash
+# unit + integration tests (uses soroban-sdk testutils)
 cargo test
 
-# Run tests with the soroban testutils feature
+# with feature flag for snapshot testing
 cargo test --features testutils
 ```
 
-Test snapshots are stored in `test_snapshots/` and are used by the Soroban SDK's snapshot-testing infrastructure to detect unintended changes to ledger state or auth patterns.
+Tests live in `src/tests.rs` and `src/lib.rs` (inline `mod test`). Ledger snapshots for each test case are stored under `test_snapshots/`.
