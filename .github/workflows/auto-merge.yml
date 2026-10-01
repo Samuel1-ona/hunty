@@ -1,35 +1,58 @@
 name: Auto-merge PRs
 
-# Merges any non-draft PR into main as soon as GitHub reports it has no
-# conflicts. PRs with conflicts get a comment and are retried when the
-# author pushes a fix.
+# Merges a non-draft PR into main when all of these hold:
+#   - Drips Wave has posted its automated-assessment comment on the PR
+#     ("@<author> Great news! 🎉 Based on an automated assessment of this PR"),
+#     addressed to the PR's author;
+#   - 10 minutes have passed since the PR's last push or that comment;
+#   - GitHub reports the PR has no merge conflicts.
+# Closing the PR or converting it to a draft during the wait stops the merge.
+# The workflow never posts comments.
 #
-# pull_request_target runs in the context of the base repo so the token can
-# merge fork PRs. The PR's code is never checked out or executed here.
+# pull_request_target / issue_comment run in the context of the base repo so
+# the token can merge fork PRs. The PR's code is never checked out or executed
+# here: the job only calls the GitHub API.
 
 on:
   pull_request_target:
     types: [opened, reopened, synchronize, ready_for_review]
     branches: [main]
+  # Re-evaluate when Drips Wave posts its assessment after the PR was opened.
+  issue_comment:
+    types: [created]
   workflow_dispatch:
 
 permissions:
   contents: write
   pull-requests: write
 
+# One queue per PR: a new push or assessment cancels its pending run and
+# restarts the wait. Manual sweeps use their own group.
 concurrency:
-  group: auto-merge
-  cancel-in-progress: false
+  group: auto-merge-${{ github.event.pull_request.number || github.event.issue.number || 'sweep' }}
+  cancel-in-progress: true
 
 jobs:
   merge:
+    if: >-
+      ${{
+        github.event_name == 'workflow_dispatch' ||
+        (github.event_name == 'pull_request_target' && !github.event.pull_request.draft) ||
+        (github.event_name == 'issue_comment' && github.event.issue.pull_request &&
+         github.event.comment.user.login == 'drips-wave[bot]')
+      }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - name: Merge conflict-free PRs
+      - name: Wait 10 minutes before merging
+        if: github.event_name != 'workflow_dispatch'
+        run: sleep 600
+
+      - name: Merge assessed, conflict-free PRs
         env:
           GH_TOKEN: ${{ secrets.AUTO_MERGE_TOKEN || secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
         run: |
           if [ -n "$PR_NUMBER" ]; then
             prs="$PR_NUMBER"
@@ -38,9 +61,21 @@ jobs:
           fi
 
           for n in $prs; do
-            draft=$(gh pr view "$n" --json isDraft -q .isDraft)
-            if [ "$draft" = "true" ]; then
-              echo "#$n is a draft, skipping"
+            read -r pr_state draft base author < <(gh pr view "$n" --json state,isDraft,baseRefName,author \
+              -q '"\(.state) \(.isDraft) \(.baseRefName) \(.author.login)"')
+            if [ "$pr_state" != "OPEN" ] || [ "$draft" = "true" ] || [ "$base" != "main" ]; then
+              echo "#$n: not merging (state=$pr_state draft=$draft base=$base)"
+              continue
+            fi
+
+            # Drips Wave's assessment comment, addressed to the PR author.
+            assessed=$(gh api --paginate "repos/$GH_REPO/issues/$n/comments" \
+              -q ".[] | select(.user.login == \"drips-wave[bot]\")
+                      | select(.body | contains(\"automated assessment of this PR\"))
+                      | select(.body | startswith(\"@$author \"))
+                      | .created_at" | tail -n 1)
+            if [ -z "$assessed" ]; then
+              echo "#$n: not merging, no Drips Wave assessment for @$author yet"
               continue
             fi
 
@@ -52,18 +87,9 @@ jobs:
               sleep 5
             done
 
-            case "$state" in
-              MERGEABLE)
-                gh pr merge "$n" --merge && echo "Merged #$n" || echo "::warning::Failed to merge #$n"
-                ;;
-              CONFLICTING)
-                echo "#$n has conflicts"
-                if [ -n "$PR_NUMBER" ]; then
-                  gh pr comment "$n" --body "This PR has merge conflicts with \`main\`. Please rebase on (or merge) the latest \`main\`, resolve the conflicts and push — it will be merged automatically once it's conflict-free."
-                fi
-                ;;
-              *)
-                echo "::warning::#$n mergeability still $state, skipping"
-                ;;
-            esac
+            if [ "$state" = "MERGEABLE" ]; then
+              gh pr merge "$n" --merge && echo "#$n: merged" || echo "::warning::#$n: merge failed"
+            else
+              echo "#$n: not merging, mergeability is $state"
+            fi
           done

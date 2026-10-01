@@ -60,6 +60,7 @@ export const SEED_HUNTS: StoredHunt[] = [
     startTime: NOW_SECONDS - 86400,
     endTime: NOW_SECONDS + 7 * 86400,
     difficulty: "Easy",
+    isPractice: true,
     mapLatitude: 40.7128,
     mapLongitude: -74.006,
   },

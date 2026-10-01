@@ -47,12 +47,12 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   if (!ALLOWED_MIME_TYPES.has(file.type)) throw new ValidationError("File type not allowed", { field: "file" })
   const pinataForm = new FormData()
   pinataForm.append("file", file)
-  const pinataRes = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", { method: "POST", headers: { Authorization: `Bearer ${PINATA_JWT} ` }, body: pinataForm })
+  const pinataRes = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", { method: "POST", headers: { Authorization: `Bearer ${PINATA_JWT}` }, body: pinataForm })
   if (!pinataRes.ok) {
-    const errText = await pinataRes.text()
-    logger.error("Pinata upload error:", pinataRes.status, errText)
-    throw new BadGatewayError("Failed to pin file to IPFS")
+    const errText = await pinataRes.text();
+    logger.error("Pinata upload error:", pinataRes.status, errText);
+    throw new BadGatewayError("Failed to pin file to IPFS");
   }
-  const data = (await pinataRes.json()) as {"IpfsHash": string }
-  return NextResponse.json({ cid: data.IpfsHash })
-})
+  const data = (await pinataRes.json()) as { IpfsHash: string };
+  return NextResponse.json({ cid: data.IpfsHash });
+});

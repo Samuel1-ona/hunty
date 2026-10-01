@@ -5,8 +5,6 @@ import { getPlayerNftIds, getNftUris } from "@/lib/contracts/nftReward";
 import type { NftMetadata } from "@/lib/nft/types";
 import type { PlayerHuntProgress, RegisteredHunt } from "./types";
 
-type NftReward = NftRewardDetail;
-
 /**
  * Fetch all hunts the player has registered for from the PlayerRegistration
  * contract (or indexer). Returns registrations sorted by start time ascending.

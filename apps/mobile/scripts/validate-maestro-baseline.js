@@ -1,14 +1,25 @@
 #!/usr/bin/env node
 /**
- * Static validation for Maestro E2E baseline — ensures flow file exists
- * and required testIDs are present in mobile source.
+ * Static validation for Maestro E2E flows — ensures flow files exist, are
+ * registered in .maestro/config.yaml, and reference testIDs that are present
+ * in mobile source.
  */
 
 const fs = require('fs');
 const path = require('path');
 
 const root = path.join(__dirname, '..');
-const flowPath = path.join(root, '.maestro/flows/feed-and-wallet.yaml');
+const maestroDir = path.join(root, '.maestro');
+
+let ok = true;
+const fail = (...args) => {
+  console.error(...args);
+  ok = false;
+};
+
+// ─── Baseline feed & wallet flow ────────────────────────────────────────────
+
+const flowPath = path.join(maestroDir, 'flows/feed-and-wallet.yaml');
 const requiredTestIds = [
   'hunts-feed',
   'hunt-feed-item-1',
@@ -18,17 +29,13 @@ const requiredTestIds = [
   'wallet-option-xbull',
 ];
 
-let ok = true;
-
 if (!fs.existsSync(flowPath)) {
-  console.error('Missing Maestro flow:', flowPath);
-  ok = false;
+  fail('Missing Maestro flow:', flowPath);
 } else {
   const flow = fs.readFileSync(flowPath, 'utf8');
   for (const id of requiredTestIds) {
     if (!flow.includes(id)) {
-      console.error(`Flow missing reference to testID: ${id}`);
-      ok = false;
+      fail(`Flow missing reference to testID: ${id}`);
     }
   }
 }
@@ -41,23 +48,71 @@ const sourceFiles = [
 ];
 
 for (const rel of sourceFiles) {
-  const full = path.join(root, rel);
+  if (!fs.existsSync(path.join(root, rel))) {
+    fail('Missing source file:', rel);
+  }
+}
+
+// ─── Flows whose testIDs are checked against source ─────────────────────────
+
+const sourceCheckedFlows = ['flows/scan-qr-clue.yaml'];
+
+function listSourceFiles(dir) {
+  const results = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...listSourceFiles(full));
+    } else if (/\.(tsx|jsx)$/.test(entry.name)) {
+      results.push(full);
+    }
+  }
+  return results;
+}
+
+/** testIDs declared in source: exact ids plus prefixes of template-literal ids. */
+function collectSourceTestIds() {
+  const exact = new Set();
+  const prefixes = new Set();
+  const files = ['app', 'components'].flatMap((dir) => listSourceFiles(path.join(root, dir)));
+  for (const file of files) {
+    const src = fs.readFileSync(file, 'utf8');
+    for (const match of src.matchAll(/testID=(?:"([^"]+)"|\{'([^']+)'\}|\{"([^"]+)"\})/g)) {
+      exact.add(match[1] ?? match[2] ?? match[3]);
+    }
+    for (const match of src.matchAll(/testID=\{`([^`$]*)\$\{/g)) {
+      prefixes.add(match[1]);
+    }
+  }
+  return { exact, prefixes };
+}
+
+const configPath = path.join(maestroDir, 'config.yaml');
+const config = fs.existsSync(configPath) ? fs.readFileSync(configPath, 'utf8') : '';
+const sourceIds = collectSourceTestIds();
+
+for (const rel of sourceCheckedFlows) {
+  const full = path.join(maestroDir, rel);
   if (!fs.existsSync(full)) {
-    console.error('Missing source file:', rel);
-    ok = false;
+    fail('Missing Maestro flow:', full);
     continue;
   }
-  const src = fs.readFileSync(full, 'utf8');
-  for (const id of requiredTestIds) {
-    if (
-      src.includes(`testID="${id}"`) ||
-      src.includes(`testID={\`${id}`) ||
-      src.includes(`testID={\`hunt-feed-item-`)
-    ) {
-      continue;
+  if (!config.includes(rel)) {
+    fail(`Flow not registered in .maestro/config.yaml: ${rel}`);
+  }
+
+  const flow = fs.readFileSync(full, 'utf8');
+  const ids = [...flow.matchAll(/^\s*id:\s*['"]?([\w-]+)['"]?\s*$/gm)].map((m) => m[1]);
+  if (ids.length === 0) {
+    fail(`Flow references no testIDs: ${rel}`);
+  }
+  for (const id of new Set(ids)) {
+    const declared =
+      sourceIds.exact.has(id) || [...sourceIds.prefixes].some((prefix) => id.startsWith(prefix));
+    if (!declared) {
+      fail(`${rel}: testID "${id}" is not declared in app/ or components/`);
     }
-    if (id.startsWith('hunt-feed-item-') && src.includes('hunt-feed-item-')) continue;
-    if (id.startsWith('wallet-option-') && src.includes('wallet-option-')) continue;
   }
 }
 

@@ -16,6 +16,16 @@
 //!
 //! The enumerable list is kept compact via *swap-and-pop*: when removing entry
 //! `i`, the last slot is moved into `i` and the last slot is deleted.
+//!
+//! # Access-control layout (issue #1399)
+//!
+//! The contract admin and minter allow-list also live here:
+//!
+//! | Key                | Type | Purpose                                     |
+//! |--------------------|------|---------------------------------------------|
+//! | `ADMIN`            | Addr | Admin allowed to manage the allow-list      |
+//! | `INIT`             | bool | Present once `initialize` has run           |
+//! | `(MINTR, minter)`  | bool | Whether `minter` may call `mint`            |
 
 use soroban_sdk::{symbol_short, Address, Env};
 
@@ -27,6 +37,12 @@ const KEY_OWNER_COUNT: soroban_sdk::Symbol = symbol_short!("ONFC");
 const KEY_OWNER_EXIST: soroban_sdk::Symbol = symbol_short!("ONFX");
 /// Enumerable slot: the NFT id at index `i` for `owner`.
 const KEY_OWNER_SLOT: soroban_sdk::Symbol = symbol_short!("ONFT");
+/// Admin address authorised to manage the minter allow-list.
+const KEY_ADMIN: soroban_sdk::Symbol = symbol_short!("ADMIN");
+/// Initialisation sentinel: set once `initialize` has run.
+const KEY_INIT: soroban_sdk::Symbol = symbol_short!("INIT");
+/// Per-minter allow-list flag: `(KEY_MINTER, minter) -> bool`.
+const KEY_MINTER: soroban_sdk::Symbol = symbol_short!("MINTR");
 
 // ─── NFT metadata storage ─────────────────────────────────────────────────────
 
@@ -228,4 +244,42 @@ pub fn get_owner_nfts(env: &Env, owner: &Address) -> soroban_sdk::Vec<u64> {
         ids.push_back(get_owner_nft_at(env, owner, i));
     }
     ids
+}
+
+// ─── access control: admin & minter allow-list (issue #1399) ──────────────────
+//
+// Like every other key in this module these are persistent entries; keeping the
+// access-control layout here means `lib.rs` never constructs a raw key and the
+// admin / allow-list encoding only has to be changed in one place.
+
+/// Return `true` once `initialize` has run.
+pub fn is_initialized(env: &Env) -> bool {
+    env.storage().persistent().has(&KEY_INIT)
+}
+
+/// Persist the admin address and mark the contract initialised.
+pub fn set_admin(env: &Env, admin: &Address) {
+    env.storage().persistent().set(&KEY_ADMIN, admin);
+    env.storage().persistent().set(&KEY_INIT, &true);
+}
+
+/// Return the stored admin address, or `None` if the contract is not yet
+/// initialised.
+pub fn get_admin(env: &Env) -> Option<Address> {
+    env.storage().persistent().get(&KEY_ADMIN)
+}
+
+/// Allow or deny `minter` for future `mint` calls.
+pub fn set_minter_allowed(env: &Env, minter: &Address, allowed: bool) {
+    let key = (KEY_MINTER, minter.clone());
+    env.storage().persistent().set(&key, &allowed);
+}
+
+/// Return `true` when `minter` is on the allow-list (defaults to `false`).
+pub fn is_minter_allowed(env: &Env, minter: &Address) -> bool {
+    let key = (KEY_MINTER, minter.clone());
+    env.storage()
+        .persistent()
+        .get::<_, bool>(&key)
+        .unwrap_or(false)
 }

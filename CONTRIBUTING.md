@@ -344,6 +344,48 @@ posts it — no credential can exist).
 Anything else is authenticated. If you are not sure whether your route
 qualifies as public, treat it as authenticated and say so in the PR.
 
+## Required CI checks
+
+Every pull request targeting `main` must pass the **Quality Gate** status
+check before it can be merged. This check runs `lint` and `typecheck` via
+Turborepo across every workspace in the monorepo:
+
+| Workspace       | What runs                                      |
+| --------------- | ---------------------------------------------- |
+| `@hunty/web`    | ESLint + `tsc --noEmit`                        |
+| `mobile`        | ESLint + `tsc --noEmit`                        |
+| `@hunty/types`  | ESLint + `tsc --noEmit`                        |
+| `@hunty/ui`     | ESLint + `tsc --noEmit`                        |
+| `@hunty/config` | ESLint + `tsc --noEmit`                        |
+
+The individual workspace results feed into a single **Quality Gate** job
+(`quality-gate` in `.github/workflows/ci.yml`). If **any** workspace fails
+lint or typecheck, the gate fails and the PR is blocked.
+
+### Running locally before pushing
+
+```bash
+# Run lint + typecheck for all workspaces
+pnpm lint && pnpm typecheck
+
+# Or target a single workspace
+pnpm exec turbo run lint typecheck --filter=@hunty/web
+```
+
+### What to do if the gate fails
+
+1. Click the failing check in the PR to see the GitHub Actions log.
+2. Expand the workspace that failed to see the exact ESLint or TypeScript
+   errors.
+3. Fix the errors locally, commit, and push — the gate re-runs
+   automatically.
+
+### Verifying the gate works
+
+A helper script is provided at `scripts/ci/verify-quality-gate.sh`. It
+creates a throwaway branch with a deliberate type error so you can confirm
+the gate blocks the PR. See the script header for usage.
+
 ## Code Style Guidelines
 
 We're not super strict, but consistency helps everyone. Here's what we prefer:

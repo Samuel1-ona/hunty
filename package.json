@@ -23,17 +23,24 @@
     "storybook": "pnpm storybook --workspace @hunty/web",
     "build-storybook": "pnpm build-storybook --workspace @hunty/web",
     "clean": "turbo run clean",
+    "check:workspace-config": "node scripts/check-workspace-config.mjs",
     "prepare": "husky"
   },
   "lint-staged": {
-    "apps/mobile/**/*.{js,jsx,ts,tsx,json,md}": [
+    "apps/mobile/**/*.{ts,tsx}": [
+      "node scripts/check-ts-parse.mjs",
+      "npx prettier --write"
+    ],
+    "apps/mobile/**/*.{js,jsx,json,md}": [
       "npx prettier --write"
     ],
     "apps/web/**/*.{ts,tsx}": [
+      "node scripts/check-ts-parse.mjs",
       "eslint --fix --max-warnings=0",
       "prettier --write"
     ],
     "packages/**/*.{ts,tsx}": [
+      "node scripts/check-ts-parse.mjs",
       "eslint --fix --max-warnings=0",
       "prettier --write"
     ],

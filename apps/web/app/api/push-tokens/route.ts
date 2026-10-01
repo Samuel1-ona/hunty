@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ForbiddenError, ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
 import {
+  getOwnerSecretForWallet,
   getSubscriptionsForWallet,
   removeSubscriptionsForWallet,
   upsertSubscription,
@@ -12,22 +13,24 @@ import {
 
 /**
  * Push registration is bound to a per-wallet owner secret rather than a bare
- * walletAddress. The secret prevents a client that only knows another wallet
+ * walletAddress. The secret prevents a client that only knows the wallet
  * address from replacing or deleting its push registration.
  *
  * This is separate from notification preference sync: preferences are keyed by
  * wallet in the durable preference store, while this secret is only used to
  * manage a browser's PushSubscription.
  */
-const ownerSecrets = new Map<string, string>();
 
 function digest(value: string): Buffer {
   return createHash("sha256").update(value).digest();
 }
 
 /** Constant-time compare via fixed-length digests, so lengths never leak. */
-function secretMatches(walletAddress: string, candidate: string | null | undefined): boolean {
-  const stored = ownerSecrets.get(walletAddress.toLowerCase());
+async function secretMatches(
+  walletAddress: string,
+  candidate: string | null | undefined
+): Promise<boolean> {
+  const stored = await getOwnerSecretForWallet(walletAddress.toLowerCase());
   if (!stored || !candidate) return false;
   return timingSafeEqual(digest(stored), digest(candidate));
 }
@@ -66,9 +69,10 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
   }
 
   const key = walletAddress.toLowerCase();
-  const isFirstRegistration = !ownerSecrets.has(key);
+  const storedSecret = await getOwnerSecretForWallet(key);
+  const isFirstRegistration = !storedSecret;
 
-  if (!isFirstRegistration && !secretMatches(walletAddress, ownerSecret)) {
+  if (!isFirstRegistration && !(await secretMatches(walletAddress, ownerSecret))) {
     throw new ForbiddenError(
       "A valid ownerSecret is required to update this wallet's push registration"
     );
@@ -77,8 +81,6 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
   await upsertSubscription(subscription, walletAddress, preferences);
 
   if (isFirstRegistration) {
-    const secret = mintSecret();
-    ownerSecrets.set(key, secret);
     // Returned once. The client persists it and sends it on later updates or
     // when it unsubscribes.
     return NextResponse.json({ success: true, ownerSecret: secret });
@@ -101,13 +103,13 @@ export const DELETE = withErrorHandling(async (request: NextRequest) => {
     throw new ValidationError("Wallet address is required", { field: "walletAddress" });
   }
 
-  const key = walletAddress.toLowerCase();
-  if (!ownerSecrets.has(key)) {
+  const storedSecret = await getOwnerSecretForWallet(walletAddress.toLowerCase());
+  if (!storedSecret) {
     // Idempotent no-op. Do not reveal whether this wallet has registered.
     return NextResponse.json({ success: true });
   }
 
-  if (!secretMatches(walletAddress, ownerSecret)) {
+  if (!(await secretMatches(walletAddress, ownerSecret))) {
     throw new ForbiddenError(
       "A valid ownerSecret is required to remove this wallet's push registration"
     );
@@ -124,7 +126,7 @@ export const GET = withErrorHandling(async (request: Request) => {
   const walletAddress = searchParams.get("walletAddress");
   const ownerSecret = request.headers.get("x-owner-secret");
 
-  if (!walletAddress || !secretMatches(walletAddress, ownerSecret)) {
+  if (!walletAddress || !(await secretMatches(walletAddress, ownerSecret))) {
     // Identical response whether the wallet never registered or the secret is
     // wrong, so this cannot be used to probe which wallets use push.
     return NextResponse.json({ registered: false });

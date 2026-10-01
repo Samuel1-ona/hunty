@@ -85,7 +85,7 @@ export function NftGallery({ nfts }: NftGalleryProps) {
         }
         title="Complete hunts to earn NFTs"
         description="Your NFT gallery is empty right now. Finish a scavenger hunt to unlock your first collectible reward."
-        action={{ label: "Browse hunts", onPress: () => window.location.href = "/" }}
+        action={{ label: "Browse hunts", onClick: () => { window.location.href = "/" } }}
       />
     );
   }

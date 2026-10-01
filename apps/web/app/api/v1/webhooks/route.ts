@@ -1,22 +1,25 @@
 import { randomBytes, randomUUID } from "node:crypto"
 
 import { NextResponse } from "next/server"
-
-import { ValidationError } from "@/lib/api/errors"
+import { AuthError, ForbiddenError, ValidationError } from "@/lib/api/errors"
 import { withErrorHandling } from "@/lib/api/withErrorHandling"
 import { withValidation } from "@/lib/api/withValidation"
 import { getDb } from "@/lib/db"
+import { verifyCallerAuth } from "@/lib/walletAuth"
 import { webhookCreateBodySchema, webhookQuerySchema } from "@hunty/types/api-schemas"
 
-function creatorAddress(req: Request, bodyAddress?: string): string {
-  const address = req.headers.get("x-wallet-address") ?? req.headers.get("x-creator-address") ?? bodyAddress
-  if (!address) throw new ValidationError("Creator wallet address is required")
-  return address
+function actorFromAuth(auth: Awaited<ReturnType<typeof verifyCallerAuth>>): string {
+  if (!auth.authenticated) throw new AuthError(auth.error ?? "Authentication required")
+  if (!auth.authorized) throw new ForbiddenError(auth.error ?? "Forbidden")
+  if (!auth.actor) throw new AuthError("Authenticated caller has no actor")
+  return auth.actor
 }
 
 export const GET = withErrorHandling(async (req: Request) => {
   const result = webhookQuerySchema.safeParse(Object.fromEntries(new URL(req.url).searchParams.entries()))
   if (!result.success) throw new ValidationError("A valid creatorAddress query parameter is required")
+  const actor = actorFromAuth(await verifyCallerAuth(req as import("next/server").NextRequest))
+  if (result.data.creatorAddress !== actor) throw new AuthError("Cannot access another creator's webhooks")
   const sql = getDb()
   const webhooks = await sql`
     SELECT id, url, events, active, created_at, updated_at
@@ -36,7 +39,7 @@ export const GET = withErrorHandling(async (req: Request) => {
 export const POST = withValidation(
   { body: webhookCreateBodySchema },
   async (req, _context, { body }) => {
-    const owner = creatorAddress(req, body.creatorAddress)
+    const owner = actorFromAuth(await verifyCallerAuth(req as import("next/server").NextRequest, body))
     const id = randomUUID()
     const secret = `whsec_${randomBytes(32).toString("hex")}`
     const sql = getDb()

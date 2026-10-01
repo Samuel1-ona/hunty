@@ -178,31 +178,36 @@ export const pushTokenDeleteBodySchema = z
 
 // ─── Webhooks ───────────────────────────────────────────────────────────────
 
-export const webhookEventSchema = z.enum(["hunt.published", "hunt.joined", "hunt.completed"])
+export const webhookEventSchema = z.enum(["hunt.published", "hunt.joined", "hunt.completed"]);
 
 export const webhookCreateBodySchema = z.object({
   creatorAddress: stellarAddressSchema,
   url: z.string().url().max(2048),
   events: z.array(webhookEventSchema).min(1).max(3),
-})
+});
 
-export const webhookUpdateBodySchema = z.object({
-  url: z.string().url().max(2048).optional(),
-  events: z.array(webhookEventSchema).min(1).max(3).optional(),
-  active: z.boolean().optional(),
-}).refine((body) => body.url !== undefined || body.events !== undefined || body.active !== undefined, {
-  message: "At least one field is required",
-})
+export const webhookUpdateBodySchema = z
+  .object({
+    url: z.string().url().max(2048).optional(),
+    events: z.array(webhookEventSchema).min(1).max(3).optional(),
+    active: z.boolean().optional(),
+  })
+  .refine(
+    (body) => body.url !== undefined || body.events !== undefined || body.active !== undefined,
+    {
+      message: "At least one field is required",
+    }
+  );
 
 export const webhookQuerySchema = z.object({
   creatorAddress: stellarAddressSchema,
-})
+});
 
 export const webhookEmitBodySchema = z.object({
   type: webhookEventSchema,
   creatorAddress: stellarAddressSchema,
   data: z.record(z.string(), z.unknown()),
-})
+});
 
 // ─── Moderation / Submit ─────────────────────────────────────────────────────
 
@@ -226,15 +231,38 @@ export const notificationPreferencesPatchSchema = z.object({
   pushHuntCancelled: z.boolean().optional(),
   pushPlayerRegistered: z.boolean().optional(),
   pushFirstCompletion: z.boolean().optional(),
-})
+});
 
 export const notificationPreferencesQuerySchema = z.object({
   walletAddress: nonEmptyStringSchema,
-})
+});
 
 export const notificationPreferencesBodySchema = z.object({
   walletAddress: nonEmptyStringSchema,
   preferences: notificationPreferencesPatchSchema,
+});
+
+export const notificationPreferencesDocumentSchema = z.object({
+  enabled: z.boolean(),
+  huntEvents: z.boolean(),
+  rewards: z.boolean(),
+  social: z.boolean(),
+  achievements: z.boolean(),
+  rankImproved: z.boolean(),
+  rankDropped: z.boolean(),
+  overtaken: z.boolean(),
+  weeklyDigest: z.boolean(),
+  threshold: z.number().int().min(1),
+  pushEnabled: z.boolean(),
+  pushHuntStart: z.boolean(),
+  pushOvertake: z.boolean(),
+  pushHuntCancelled: z.boolean(),
+  pushPlayerRegistered: z.boolean(),
+  pushFirstCompletion: z.boolean(),
+})
+
+export const notificationPreferencesResponseSchema = z.object({
+  preferences: notificationPreferencesDocumentSchema,
 })
 
 export const moderationSubmitBodySchema = z.object({
@@ -283,6 +311,18 @@ export const tagsBodySchema = z.object({
   tags: z.array(z.string()).optional(),
 });
 
+export const tagsGetResponseSchema = z.object({
+  autocomplete: z.array(z.string()),
+  suggestions: z.array(z.string()),
+  corpusSize: z.number().int().min(0),
+})
+
+export const tagsPostResponseSchema = z.object({
+  ok: z.literal(true),
+  category: z.string().nullable(),
+  tags: z.array(z.string()),
+})
+
 // ─── v1 / Hunts / Bulk ───────────────────────────────────────────────────────
 
 export const huntsBulkBodySchema = z.object({
@@ -291,7 +331,8 @@ export const huntsBulkBodySchema = z.object({
     .array(z.union([z.string(), z.number()]))
     .min(1, { message: "huntIds must be a non-empty array" }),
   confirmed: z.boolean().optional(),
-  actorAddress: nonEmptyStringSchema,
+  // actorAddress is intentionally absent: the actor is derived from the verified
+  // caller identity (wallet signature or session), never trusted from the body.
 });
 
 // ─── v1 / Hunts / [id] / Archive ─────────────────────────────────────────────
@@ -299,6 +340,13 @@ export const huntsBulkBodySchema = z.object({
 export const huntArchiveBodySchema = z.object({
   action: z.enum(["archive", "unarchive"]),
   actorAddress: nonEmptyStringSchema,
+});
+
+// ─── v1 / Hunts / [id] / Refund ──────────────────────────────────────────────
+
+export const huntRefundBodySchema = z.object({
+  /** Stellar address of the hunt creator reclaiming unclaimed rewards. */
+  creatorAddress: nonEmptyStringSchema,
 });
 
 // ─── v1 / Hunts / [id] / Delete ──────────────────────────────────────────────
@@ -309,30 +357,41 @@ export const huntDeleteBodySchema = z.object({
   actorAddress: nonEmptyStringSchema,
 });
 
-// ─── v1 / Hunts / [id] / Refund ─────────────────────────────────────────────────
+// ─── v1 / Hunts / [id] / Refund ──────────────────────────────────────────────
+
+/**
+ * POST /api/v1/hunts/[id]/refund
+ * Lets the hunt creator reclaim unclaimed rewards after the hunt ends and the
+ * grace period has elapsed.
+ */
+export const huntRefundBodySchema = z.object({
+  creatorAddress: nonEmptyStringSchema,
+});
 
 export const huntRefundBodySchema = z.object({
   creatorAddress: nonEmptyStringSchema,
-})
+});
 
 // ─── v1 / Hunts / Versions ──────────────────────────────────────────────────
 
-export const huntSnapshotSchema = z.object({
-  id: positiveIntSchema,
-}).passthrough()
+export const huntSnapshotSchema = z
+  .object({
+    id: positiveIntSchema,
+  })
+  .passthrough();
 
 export const huntVersionEditBodySchema = z.object({
   actorAddress: nonEmptyStringSchema,
   snapshot: huntSnapshotSchema,
-})
+});
 
 export const huntVersionRestoreBodySchema = z.object({
   actorAddress: nonEmptyStringSchema,
-})
+});
 
 export const huntVersionsQuerySchema = z.object({
   actorAddress: nonEmptyStringSchema,
-})
+});
 
 // ─── v1 / Hunts / [id] / Collaborators ───────────────────────────────────────
 
@@ -368,11 +427,31 @@ export const collaboratorsBodySchema = z.discriminatedUnion("action", [
 export const presencePingBodySchema = z.object({
   walletAddress: nonEmptyStringSchema,
   editingField: z.string().optional().nullable(),
-})
+});
 
 export const presenceQuerySchema = z.object({
   walletAddress: nonEmptyStringSchema.optional(),
   staleMs: z.number().int().positive().optional().default(30000),
+});
+
+// ─── v1 / Hunts / [id] / Analytics / Clues ──────────────────────────────────
+
+export const clueAnalyticsQuerySchema = z.object({
+  /**
+   * Solve-rate percentage (0–100) below which a clue is flagged as an
+   * abandonment point. Defaults to 40 (i.e. fewer than 40 % of unique
+   * players solved the clue).
+   */
+  threshold: z
+    .string()
+    .optional()
+    .transform((v) => (v !== undefined ? Number(v) : 40))
+    .pipe(
+      z
+        .number()
+        .min(0, { message: "threshold must be ≥ 0" })
+        .max(100, { message: "threshold must be ≤ 100" }),
+    ),
 })
 
 // ─── v1 / Hunts / [id] / Progress ────────────────────────────────────────────
@@ -476,7 +555,7 @@ export const draftPatchBodySchema = z.object({
 export const huntSponsorBodySchema = z.object({
   sponsorAddress: stellarAddressSchema,
   amount: z.number().positive({ message: "amount must be a positive number" }),
-})
+});
 
 // ─── Paymaster / Sponsor ─────────────────────────────────────────────────────
 
@@ -506,7 +585,7 @@ export const referralLeaderboardQuerySchema = z.object({
   period: z.enum(["all", "week", "month"]).optional().default("all"),
   /** If provided, also returns this player's rank on the board. */
   address: z.string().optional(),
-})
+});
 
 // ─── v1 / Referrals / Track ───────────────────────────────────────────────────
 
@@ -521,7 +600,7 @@ export const referralTrackBodySchema = z.object({
   sessionId: z.string().optional(),
   /** Hunt context, if the referral was triggered from a hunt page. */
   huntId: z.number().int().positive().optional(),
-})
+});
 
 // ─── v1 / Referrals / Payouts ────────────────────────────────────────────────
 
@@ -534,7 +613,7 @@ export const referralPayoutAllocationSchema = z.object({
   amount: z.number().positive(),
   /** Type of reward being distributed. */
   rewardType: z.enum(["xlm", "points"]).default("points"),
-})
+});
 
 export const referralPayoutBodySchema = z.object({
   /** Time period this payout covers (for record-keeping). */
@@ -543,6 +622,33 @@ export const referralPayoutBodySchema = z.object({
   allocations: z.array(referralPayoutAllocationSchema).min(1),
   /** When true, actually executes the payouts. When false (default), dry-run only. */
   execute: z.boolean().optional().default(false),
+});
+
+export const referralLeaderboardEntrySchema = z.object({
+  rank: z.number().int().min(1),
+  referrerAddress: z.string(),
+  displayName: z.string().optional(),
+  successfulReferrals: z.number().int().min(0),
+  totalInvites: z.number().int().min(0),
+  bonusPoints: z.number().int().min(0),
+  lastActiveAt: z.number().int().min(0),
+  rewardPayoutStatus: z.enum(["pending", "processing", "paid", "failed"]).optional(),
+  rewardAmount: z.number().optional(),
+})
+
+export const referralLeaderboardStatsSchema = z.object({
+  totalReferrers: z.number().int().min(0),
+  totalSuccessfulReferrals: z.number().int().min(0),
+  totalBonusDistributed: z.number().min(0),
+  activeRewardPool: z.number().min(0),
+})
+
+export const referralLeaderboardResponseSchema = z.object({
+  leaderboard: z.array(referralLeaderboardEntrySchema),
+  stats: referralLeaderboardStatsSchema,
+  playerRank: referralLeaderboardEntrySchema.optional(),
+  period: z.enum(["all", "week", "month"]),
+  generatedAt: z.number().int().min(0),
 })
 
 // ─── Re-export convenience map ───────────────────────────────────────────────
@@ -564,12 +670,15 @@ export const apiSchemas = {
   notificationPreferencesPatch: notificationPreferencesPatchSchema,
   notificationPreferencesQuery: notificationPreferencesQuerySchema,
   notificationPreferencesBody: notificationPreferencesBodySchema,
+  notificationPreferencesResponse: notificationPreferencesResponseSchema,
   moderationSubmitBody: moderationSubmitBodySchema,
   moderationSyncBody: moderationSyncBodySchema,
   moderationSyncQuery: moderationSyncQuerySchema,
   notificationsCompleteBody: notificationsCompleteBodySchema,
   tagsQuery: tagsQuerySchema,
   tagsBody: tagsBodySchema,
+  tagsGetResponse: tagsGetResponseSchema,
+  tagsPostResponse: tagsPostResponseSchema,
   huntsBulkBody: huntsBulkBodySchema,
   huntArchiveBody: huntArchiveBodySchema,
   huntDeleteBody: huntDeleteBodySchema,
@@ -593,6 +702,7 @@ export const apiSchemas = {
   paymasterSponsorBody: paymasterSponsorBodySchema,
   paymasterAdminConfigBody: paymasterAdminConfigBodySchema,
   referralLeaderboardQuery: referralLeaderboardQuerySchema,
+  referralLeaderboardResponse: referralLeaderboardResponseSchema,
   referralTrackBody: referralTrackBodySchema,
   referralPayoutBody: referralPayoutBodySchema,
 } as const;

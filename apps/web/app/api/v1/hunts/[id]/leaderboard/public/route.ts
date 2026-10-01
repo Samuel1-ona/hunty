@@ -51,7 +51,9 @@ export async function GET(
     };
 
     return NextResponse.json(responseBody, {
-      headers: { "Cache-Control": "no-store" },
+      headers: {
+        "Cache-Control": "s-maxage=5, stale-while-revalidate=30",
+      },
     });
   } catch {
     return NextResponse.json({ error: "Failed to fetch public leaderboard" }, { status: 500 });

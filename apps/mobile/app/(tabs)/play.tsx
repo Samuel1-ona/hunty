@@ -4,17 +4,20 @@ import { BackgroundLocationControl } from '@components/BackgroundLocationControl
 import { EmptyState } from '@components/EmptyState';
 import { OfflineBanner } from '@components/OfflineBanner';
 import { QRScanner } from '@components/QRScanner';
+import { QueuedAnswersBanner } from '@components/QueuedAnswersBanner';
 import { ThemedButton, ThemedCustomText, ThemedView } from '@components/themed';
 import { useHaptics } from '@hooks/useHaptics';
+import { useQueuedAnswerCount } from '@hooks/useQueuedAnswerCount';
 import { matchesClueAnswer } from '@lib/clueAnswerVerification';
 import { verifyQrAgainstClue } from '@lib/qrCodeDecryptor';
 import type { Clue } from '@lib/types';
 import { useTheme } from '@providers/ThemeProvider';
 import { useToast } from '@providers/ToastProvider';
-import { getHuntClues, queueClueAnswer } from '@store/huntStore';
+import { getHuntClues, queueClueAnswer, submitAnswerToServerOnline } from '@store/huntStore';
 import { usePlayerStore, useWalletStore } from '@store/useStore';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
+import NetInfo from '@react-native-community/netinfo';
 import { ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 
@@ -30,6 +33,7 @@ export default function PlayScreen() {
     });
     return () => unsubscribe();
   }, []);
+  const queuedAnswerCount = useQueuedAnswerCount();
 
   const router = useRouter();
   const { colors } = useTheme();
@@ -98,18 +102,6 @@ export default function PlayScreen() {
       return;
     }
 
-    // If offline, queue the answer and update progress locally
-    if (!isOnline) {
-      await queueClueAnswer(currentProgress.hunt_id, activeClue.id, answer.trim(), walletAddress);
-      // Mark clue completed locally
-      markClueCompleted(currentProgress.hunt_id, activeClueIndex);
-      // Advance to next clue
-      updateClueIndex(activeClueIndex + 1);
-      setAnswer('');
-      showToast({ message: 'Answer queued. It will be submitted when back online.', type: 'info' });
-      return;
-    }
-
     if (network === 'mainnet') {
       showToast({
         message: 'Switch wallet to Stellar Testnet before submitting final proof.',
@@ -148,6 +140,31 @@ export default function PlayScreen() {
         return;
       }
 
+      // If offline, queue the answer
+      if (!isOnline) {
+        await queueClueAnswer(currentProgress.hunt_id, activeClue.id, submittedAnswer.trim(), walletAddress);
+        markClueCompleted(currentProgress.hunt_id, activeClueIndex);
+        updateClueIndex(activeClueIndex + 1);
+        setAnswer('');
+        showToast({ message: 'Answer queued. It will be submitted when back online.', type: 'info' });
+        return;
+      }
+
+      // Submit to server when online
+      const serverResponse = await submitAnswerToServerOnline(
+        currentProgress.hunt_id,
+        activeClue.id,
+        submittedAnswer.trim(),
+        walletAddress,
+      );
+
+      if (!serverResponse) {
+        setError('Failed to submit answer. Please try again.');
+        haptics.triggerNotification('error');
+        return;
+      }
+
+      // Update local progress based on server response
       const isLastClue = activeClueIndex === clues.length - 1;
       markClueCompleted(currentProgress.hunt_id, activeClueIndex);
 
@@ -185,6 +202,12 @@ export default function PlayScreen() {
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {queuedAnswerCount > 0 ? (
+          <QueuedAnswersBanner count={queuedAnswerCount} isOnline={isOnline} />
+        ) : !isOnline ? (
+          <OfflineBanner />
+        ) : null}
+
         <View
           style={[
             styles.heroCard,
@@ -194,7 +217,9 @@ export default function PlayScreen() {
           <ThemedCustomText variant="h2" color="primary" weight="800">
             Active Hunt Session
           </ThemedCustomText>
-          <ThemedCustomText variant="body">{progressLabel}</ThemedCustomText>
+          <ThemedCustomText variant="body" testID="play-progress-label">
+            {progressLabel}
+          </ThemedCustomText>
         </View>
 
         <View
@@ -279,7 +304,6 @@ export default function PlayScreen() {
 
         {!allSolved && activeClue ? (
           <>
-            <OfflineBanner />
             <View
               style={[
                 styles.answerPanel,
@@ -307,7 +331,7 @@ export default function PlayScreen() {
                 autoCorrect={false}
               />
               {error ? (
-                <ThemedCustomText variant="caption" color="error">
+                <ThemedCustomText variant="caption" color="error" testID="answer-error">
                   {error}
                 </ThemedCustomText>
               ) : null}
@@ -318,6 +342,7 @@ export default function PlayScreen() {
                 onPress={handleSubmit}
               />
               <ThemedButton
+                testID="scan-qr-button"
                 text="Scan QR checkpoint"
                 variant="secondary"
                 fullWidth

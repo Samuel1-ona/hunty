@@ -8,16 +8,13 @@ Hey there! 👋 Welcome to the Hunty frontend development guide. This is your fr
 
 Before we dive in, make sure you have these installed on your computer:
 
-**Node.js and npm** (or yarn/pnpm if you prefer)
-
-- You'll need Node.js version 18 or higher
-- Check if you have it: `node --version` and `npm --version`
-- If not, grab it from [nodejs.org](https://nodejs.org/)
 **Node.js and pnpm**
+
 - We have standardized on **pnpm** (version 10+) as our package manager to ensure fast, deterministic, and space-efficient builds across our monorepo workspaces.
 - You'll need Node.js version 18 or higher and pnpm version 10 or higher.
 - Check if you have them: `node --version` and `pnpm --version`
-- To install pnpm: `npm install -g pnpm` or visit [pnpm.io](https://pnpm.io/)
+- To install pnpm: `npm install -g pnpm` or visit [pnpm.io](https://pnpm.io/). The exact version is pinned in the root `package.json` (`packageManager`), so `corepack enable` picks it up automatically.
+- npm and yarn are **not** supported: the workspaces depend on each other with the `workspace:*` protocol, which only pnpm understands. See [Workspace packages and shared config](#workspace-packages-and-shared-config).
 - If Node.js is not installed, grab it from [nodejs.org](https://nodejs.org/)
 
 **A code editor**
@@ -45,9 +42,14 @@ First things first, let's get the code on your machine:
 2. **Install all the dependencies:**
 
    ```bash
-   #  pnpm
+   # Always from the repository root, never from inside apps/* or packages/*
    pnpm install
+
+   # Confirm every workspace can resolve the shared @hunty/config package
+   pnpm check:workspace-config
    ```
+
+   If the check fails, see [Workspace packages and shared config](#workspace-packages-and-shared-config).
 
 3. **Set up your environment variables:**
 
@@ -119,6 +121,32 @@ First things first, let's get the code on your machine:
    - You should see the Hunty landing page!
 
 That's it! The dev server will automatically reload when you make changes to the code. Pretty neat, right?
+
+### Workspace packages and shared config
+
+The repo is a pnpm workspace (`pnpm-workspace.yaml` lists `apps/*` and `packages/*`). Shared TypeScript and ESLint settings live in `packages/config` and are published to the other workspaces as `@hunty/config`:
+
+| Consumer                    | Uses                                                                                |
+| --------------------------- | ----------------------------------------------------------------------------------- |
+| `apps/web`                  | `@hunty/config/tsconfig/nextjs.json`, `@hunty/config/eslint/next.mjs`               |
+| `apps/mobile`               | `@hunty/config/tsconfig/react-native.json`, `@hunty/config/eslint/react-native.mjs` |
+| `packages/ui`               | `@hunty/config/tsconfig/base.json`, `@hunty/config/eslint/base.mjs`                 |
+| `packages/types`, repo root | `@hunty/config/eslint/base.mjs`                                                     |
+
+`tsc` (for `extends`) and Node (for `eslint.config.mjs` imports) find `@hunty/config` through a symlink that pnpm creates at `<workspace>/node_modules/@hunty/config -> packages/config`. pnpm uses an isolated `node_modules` layout, so that link only exists when **all** of the following are true:
+
+1. **The workspace declares the dependency.** Every workspace that references `@hunty/config` must list `"@hunty/config": "workspace:*"` in its `package.json`. Undeclared packages are not linked. (Some imports appear to work anyway because Node walks up to the root `node_modules`, but that breaks as soon as a workspace is installed with `--filter` or deployed on its own.)
+2. **`packages/config` declares what its configs import.** The ESLint configs load `@typescript-eslint/parser`, `@typescript-eslint/eslint-plugin`, `eslint-plugin-jsx-a11y`, and so on, and those are resolved from `packages/config`, not from the app. pnpm 10 no longer hoists `*eslint*` packages to the root `node_modules` (`public-hoist-pattern` is empty by default), so an undeclared plugin fails with `ERR_MODULE_NOT_FOUND ... imported from packages/config/eslint/base.mjs`. Add any new plugin to `packages/config/package.json`.
+3. **The install actually completed.** `pnpm install` has to run from the repo root with pnpm, and it has to finish. With `--frozen-lockfile` (the default when `CI=true`, and what `apps/web/Dockerfile` uses), pnpm refuses to install **anything** if `pnpm-lock.yaml` is out of sync with the manifests or with `pnpm-workspace.yaml` settings such as `overrides`, for example:
+
+   ```text
+   ERR_PNPM_LOCKFILE_CONFIG_MISMATCH  Cannot proceed with the frozen installation.
+   The current "overrides" configuration doesn't match the value found in the lockfile
+   ```
+
+   That leaves no `node_modules` at all, so `tsc` and ESLint report the shared config as missing. When you change a `package.json` or `pnpm-workspace.yaml`, run `pnpm install` and commit the updated `pnpm-lock.yaml` in the same PR.
+
+**CI:** the `Workspace config resolution` job in `.github/workflows/ci.yml` installs with `--frozen-lockfile` and then runs `pnpm check:workspace-config`, and the quality jobs run the same check before lint/typecheck. A drifted lockfile or a broken shared-config link fails there, with a clear message, before any TypeScript or ESLint errors appear. The check (`scripts/check-workspace-config.mjs`) confirms, for each workspace that uses `@hunty/config`, that the dependency is declared and linked, that each referenced subpath resolves through the package `exports`, that each ESLint config loads, and that `tsc --showConfig` succeeds.
 
 ## How We Work Around Here
 
@@ -370,6 +398,24 @@ We've all been there - something's not working and you're not sure why. Here are
 - Usually means you forgot to install dependencies
 - Fix: Run `pnpm install` again
 
+**`TS6053: File '@hunty/config/tsconfig/<name>.json' not found` or `ERR_MODULE_NOT_FOUND: Cannot find package '@hunty/config'`:**
+
+- The workspace symlink to `packages/config` is missing. See [Workspace packages and shared config](#workspace-packages-and-shared-config) for why.
+- Fix, from the repository root:
+
+  ```bash
+  pnpm check:workspace-config   # shows which workspace and which check fails
+  pnpm install                  # recreates the links (use pnpm, not npm/yarn)
+  pnpm check:workspace-config   # should now report "All ... checks passed"
+  ```
+
+- If `pnpm install` stops with `ERR_PNPM_OUTDATED_LOCKFILE` or `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`, the lockfile is out of sync. Run `pnpm install --no-frozen-lockfile` locally and commit the updated `pnpm-lock.yaml`.
+- If `node_modules` came from npm/yarn or an older layout, remove it first: `find . -name node_modules -type d -prune -exec rm -rf {} +` and then `pnpm install`.
+
+**`ERR_MODULE_NOT_FOUND: Cannot find package '<plugin>' imported from packages/config/eslint/...`:**
+
+- A shared ESLint config imports a package that `packages/config/package.json` does not declare. Add it there (`pnpm --filter @hunty/config add -D <plugin>`) and commit the lockfile.
+
 **Port 3000 already in use:**
 
 - Something else is running on that port
@@ -425,18 +471,19 @@ Just remember to remove these before committing!
 We want the codebase to be clean, readable, and consistent. Here's how we do things:
 
 ### Data Fetching & State Management
+
 To ensure a seamless user experience, every query-backed view must explicitly handle loading, error, and empty states. We use a standardized QueryStateWrapper to manage this systematically and prevent layout shifts.
 
 When creating a new view that fetches data via `@tanstack/react-query`, always wrap your component logic like this:
 
 ```tsx
-import { useQuery } from '@tanstack/react-query';
-import { QueryStateWrapper } from '@/components/QueryState';
-import { GenericPageSkeleton } from '@/components/LoadingSkeletons';
-import { FileSearch } from 'lucide-react'; // Example icon
+import { useQuery } from "@tanstack/react-query";
+import { QueryStateWrapper } from "@/components/QueryState";
+import { GenericPageSkeleton } from "@/components/LoadingSkeletons";
+import { FileSearch } from "lucide-react"; // Example icon
 
 export function DataBackedView() {
-  const query = useQuery({ queryKey: ['dataKey'], queryFn: fetchApiData });
+  const query = useQuery({ queryKey: ["dataKey"], queryFn: fetchApiData });
 
   return (
     <QueryStateWrapper
@@ -445,7 +492,7 @@ export function DataBackedView() {
       emptyProps={{
         icon: <FileSearch className="w-10 h-10" />,
         title: "No Data Found",
-        description: "There is currently nothing to display here."
+        description: "There is currently nothing to display here.",
       }}
     >
       {(data) => <YourDataComponent data={data} />}
@@ -453,8 +500,8 @@ export function DataBackedView() {
   );
 }
 ```
-This guarantees that errors offer a retry affordance, loading states use skeletons, and empty states match the app's design system.
 
+This guarantees that errors offer a retry affordance, loading states use skeletons, and empty states match the app's design system.
 
 ### Formatting
 

@@ -1,4 +1,4 @@
-import SpectatorLeaderboard from "/components/SpectatorLeaderboard";
+import SpectatorLeaderboard from "@/components/SpectatorLeaderboard";
 
 interface PageProps {
   params: Promise<{ id: string }>;

@@ -4,6 +4,7 @@ import { clearSession,loadSession, saveSession } from '@services/walletSession';
 import { useWalletStore } from '@store/useStore';
 import SignClient from '@walletconnect/sign-client';
 import Constants from 'expo-constants';
+import * as Linking from 'expo-linking';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 type SessionInfo = {
@@ -34,6 +35,23 @@ function getProjectId(): string {
     process.env.WALLETCONNECT_PROJECT_ID ??
     '';
   return id;
+}
+
+/**
+ * Brings the connected wallet app to the foreground so the user sees the
+ * signing prompt. Uses the redirect link the wallet advertised at pairing;
+ * wallets without one surface the request through their own notifications.
+ */
+function openWalletForApproval(client: InstanceType<typeof SignClient>, topic: string): void {
+  try {
+    const redirect = client.session.get(topic)?.peer?.metadata?.redirect;
+    const target = redirect?.native || redirect?.universal;
+    if (target) {
+      void Linking.openURL(target).catch(() => undefined);
+    }
+  } catch {
+    // Session metadata unavailable; the request is still delivered via the relay.
+  }
 }
 
 export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -248,7 +266,7 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('Transaction authorization failed.');
       }
 
-      const result = await client.request<{ signedXDR: string }>({
+      const pending = client.request<{ signedXDR: string }>({
         topic: session.topic,
         chainId: STELLAR_CHAIN,
         request: {
@@ -256,7 +274,12 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
           params: { xdr },
         },
       });
+      openWalletForApproval(client, session.topic);
 
+      const result = await pending;
+      if (!result?.signedXDR) {
+        throw new Error('Wallet returned no signed transaction.');
+      }
       return result.signedXDR;
     },
     [authenticate, session],

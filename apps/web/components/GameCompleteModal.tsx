@@ -37,6 +37,8 @@ interface GameCompleteModalProps {
   rewardReceipt?: RewardReceipt | null
   huntId?: number
   playerAddress?: string
+  showWalletPrompt?: boolean
+  onConnectWalletToClaim?: () => void
 }
 
 export function GameCompleteModal({
@@ -49,6 +51,8 @@ export function GameCompleteModal({
   rewardReceipt,
   huntId,
   playerAddress,
+  showWalletPrompt = false,
+  onConnectWalletToClaim,
 }: GameCompleteModalProps) {
   const prefersReducedMotion = useReducedMotion()
   const [newAchievements, setNewAchievements] = useState<string[]>([])
@@ -178,7 +182,6 @@ export function GameCompleteModal({
 
             <GameCompleteAchievements newAchievements={newAchievements} />
 
-            {/* Claim reward */}
             {playerProgress && (
               <div className="mt-6 border-t border-slate-100 pt-6">
                 <p className="mb-2 text-sm font-semibold text-slate-800">Claim your reward</p>
@@ -186,7 +189,6 @@ export function GameCompleteModal({
               </div>
             )}
 
-            {/* NFT mint progress */}
             <div className="mt-6 border-t border-slate-100 pt-6">
               <NftMintProgress
                 huntId={huntId ?? 0}

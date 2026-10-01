@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
-import { ValidationError } from "@/lib/api/errors"
+import { AuthError, ForbiddenError, ValidationError } from "@/lib/api/errors"
 import { withErrorHandling } from "@/lib/api/withErrorHandling"
 import { withValidation } from "@/lib/api/withValidation"
 import { getDb } from "@/lib/db"
