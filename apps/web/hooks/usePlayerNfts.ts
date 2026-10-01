@@ -1,43 +1,36 @@
 /**
- * usePlayerNfts
+ * usePlayerNfts — fetches a player's NFTs from the on-chain NftRewardContract
+ * and resolves their IPFS metadata.
  *
- * React hook that fetches on-chain NFT rewards for the connected player.
- * Calls `get_player_nfts` on the NFT_REWARD Soroban contract, resolves each
- * token's IPFS metadata URI with `get_nft_uri`, then fetches the SEP-0039
- * metadata JSON from the IPFS gateway.
- *
- * Returns `NftRewardDetail[]` ready for `<NftGallery nfts={…} />`.
+ * Usage:
+ *   const { nfts, loading, error } = usePlayerNfts(walletAddress);
  */
-
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { NftRewardDetail } from "@/components/NftDetailModal";
-import { fetchPlayerNftsOnChain } from "@/lib/nft/fetchPlayerNftsOnChain";
+import { fetchPlayerRewards } from "@/app/profile/fetchers";
 
-interface UsePlayerNftsState {
+export type { NftRewardDetail as NftItem };
+
+export interface UsePlayerNftsResult {
   nfts: NftRewardDetail[];
   loading: boolean;
   error: string | null;
-  /** Re-trigger a fresh fetch (e.g. after a mint). */
-  refresh: () => void;
 }
 
 /**
- * Fetches the NFT gallery for `ownerAddress`.
+ * Fetches the player's on-chain NFT rewards and resolves IPFS metadata for each.
  *
- * @param ownerAddress Stellar public key of the wallet owner. An empty string
- *                     skips the fetch and returns an empty list.
+ * @param address Stellar public key (G...) of the player. Pass an empty string
+ *   or undefined to skip fetching.
  */
-export function usePlayerNfts(ownerAddress: string): UsePlayerNftsState {
+export function usePlayerNfts(address?: string): UsePlayerNftsResult {
   const [nfts, setNfts] = useState<NftRewardDetail[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [tick, setTick] = useState(0);
-
-  const refresh = useCallback(() => setTick((t) => t + 1), []);
 
   useEffect(() => {
-    if (!ownerAddress) {
+    if (!address) {
       setNfts([]);
       setLoading(false);
       setError(null);
@@ -46,32 +39,28 @@ export function usePlayerNfts(ownerAddress: string): UsePlayerNftsState {
 
     let cancelled = false;
 
-    const load = async () => {
+    const run = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        const data = await fetchPlayerNftsOnChain(ownerAddress);
+        const data = await fetchPlayerRewards(address);
         if (!cancelled) setNfts(data);
       } catch (err) {
         if (!cancelled) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Failed to load NFT rewards.",
-          );
+          setError(err instanceof Error ? err.message : "Failed to load NFTs");
         }
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
 
-    load();
+    run();
 
     return () => {
       cancelled = true;
     };
-  }, [ownerAddress, tick]);
+  }, [address]);
 
-  return { nfts, loading, error, refresh };
+  return { nfts, loading, error };
 }

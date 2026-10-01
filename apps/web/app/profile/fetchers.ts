@@ -1,5 +1,8 @@
 import type { NftRewardDetail } from "@/components/NftDetailModal";
-import { fetchPlayerNftsOnChain } from "@/lib/nft/fetchPlayerNftsOnChain";
+import { resolveImageSrc } from "@/lib/ipfs";
+import { logger } from "@/lib/logger";
+import { getPlayerNftIds, getNftUris } from "@/lib/contracts/nftReward";
+import type { NftMetadata } from "@/lib/nft/types";
 import type { PlayerHuntProgress, RegisteredHunt } from "./types";
 
 /**
@@ -74,17 +77,83 @@ export async function fetchPlayerHunts(address: string): Promise<PlayerHuntProgr
   ];
 }
 
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
 /**
- * Fetches NFT rewards for the given player address from the on-chain
- * NFT_REWARD Soroban contract.
- *
- * Calls `get_player_nfts(owner)` → `Vec<u64>`, resolves each URI with
- * `get_nft_uri(id)`, and fetches the SEP-0039 IPFS metadata JSON from the
- * gateway.  Returns an empty array when the wallet has no NFTs or the
- * contract address is not configured.
+ * Fetches and parses IPFS metadata JSON from an `ipfs://` or HTTP URI.
+ * Returns null when the fetch fails or the response is not valid JSON.
  */
-export async function fetchPlayerRewards(
-  address: string,
-): Promise<NftRewardDetail[]> {
-  return fetchPlayerNftsOnChain(address);
+async function fetchIpfsMetadata(uri: string): Promise<NftMetadata | null> {
+  try {
+    const httpUrl = resolveImageSrc(uri);
+    const res = await fetch(httpUrl, { signal: AbortSignal.timeout(10_000) });
+    if (!res.ok) return null;
+    const json = await res.json() as NftMetadata;
+    return json;
+  } catch (err) {
+    logger.warn(`fetchIpfsMetadata failed for ${uri}:`, err);
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Public fetchers
+// ---------------------------------------------------------------------------
+
+export async function fetchPlayerRewards(address: string): Promise<NftReward[]> {
+  if (!address) return [];
+
+  try {
+    // 1. Fetch the list of NFT IDs owned by this address from the on-chain contract.
+    const nftIds = await getPlayerNftIds(address);
+    if (nftIds.length === 0) return [];
+
+    // 2. Fetch the IPFS metadata URI for each NFT ID.
+    const uriMap = await getNftUris(nftIds);
+
+    // 3. For each URI, fetch and parse the IPFS metadata JSON in parallel.
+    const results = await Promise.all(
+      nftIds.map(async (id): Promise<NftReward | null> => {
+        const metadataUri = uriMap.get(id);
+        if (!metadataUri) return null;
+
+        const metadata = await fetchIpfsMetadata(metadataUri);
+
+        // Build a NftRewardDetail from the on-chain + IPFS data.
+        const nftIdNumber = Number(id); // safe: NFT IDs are practical small integers
+        const imageUri = metadata?.image ?? metadataUri;
+
+        // Find the hunt name from attributes if present
+        const huntNameAttr = metadata?.attributes?.find(
+          (a) => a.trait_type.toLowerCase() === "hunt" || a.trait_type.toLowerCase() === "hunt_name",
+        );
+        const huntName = huntNameAttr
+          ? String(huntNameAttr.value)
+          : metadata?.external_url
+          ? undefined
+          : undefined;
+
+        return {
+          id: nftIdNumber,
+          name: metadata?.name ?? `NFT #${nftIdNumber}`,
+          description: metadata?.description,
+          imageUri,
+          metadataUri,
+          earnedAt: metadata?.earned_at ?? new Date(0).toISOString(),
+          // On-chain NFTs are always minted (claimed). The "unclaimed" state
+          // only applies to off-chain pending rewards.
+          claimed: true,
+          attributes: metadata?.attributes ?? [],
+          huntName,
+        } satisfies NftReward;
+      }),
+    );
+
+    return results.filter((r): r is NftReward => r !== null);
+  } catch (err) {
+    logger.error("fetchPlayerRewards failed:", err);
+    return [];
+  }
 }
