@@ -20,13 +20,12 @@ import { NextResponse } from "next/server";
 
 import { NotFoundError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
-import { getPaymasterConfig } from "@/lib/paymaster/config";
+import { getPaymasterConfig, parseNumericConfig } from "@/lib/paymaster/config";
 import { ensureUser, getConfigValue } from "@/lib/paymaster/db";
 import {
   CONFIG_KEYS,
   type BudgetInfo,
 } from "@/lib/paymaster/types";
-import { parseNumericConfig } from "@/lib/paymaster/config";
 
 export const dynamic = "force-dynamic";
 

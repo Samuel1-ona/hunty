@@ -3,7 +3,7 @@ import { fileURLToPath } from "url";
 
 import { FlatCompat } from "@eslint/eslintrc";
 
-import baseConfig from "@hunty/config/eslint/base.mjs";
+import baseConfig, { duplicateBindingRules } from "@hunty/config/eslint/base.mjs";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 import reactHooks from "eslint-plugin-react-hooks";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
@@ -52,6 +52,19 @@ eslintConfig.push({
   files: ["**/*.test.*", "**/*.spec.*", "**/__tests__/**/*"],
   rules: {
     "@typescript-eslint/no-explicit-any": "off",
+  },
+});
+
+// `compat.extends("next/typescript")` above turns the base `no-redeclare` off
+// in favour of its TypeScript-aware variant, and the shared base block is
+// applied before it — re-assert the duplicate-import/redeclare rules last so
+// root-level lint (lint-staged pre-commit) keeps them at error severity too.
+// The TypeScript parser does not feed duplicate bindings to the base rule, so
+// the plugin variant is required for it to have any effect here.
+eslintConfig.push({
+  rules: {
+    ...duplicateBindingRules,
+    "@typescript-eslint/no-redeclare": "error",
   },
 });
 

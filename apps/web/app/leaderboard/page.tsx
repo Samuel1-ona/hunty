@@ -10,8 +10,7 @@ import { Header } from "@/components/Header"
 import { LeaderboardTableSkeleton } from "@/components/LoadingSkeletons"
 import { ReferralLeaderboardTable } from "@/components/ReferralLeaderboardTable"
 import { Button } from "@/components/ui/button"
-import type { LeaderboardFilters, LeaderboardMetric, LeaderboardTimePeriod } from "@/lib/types"
-import type { ClueDifficulty } from "@/lib/types"
+import type { ClueDifficulty, LeaderboardFilters, LeaderboardMetric, LeaderboardTimePeriod } from "@/lib/types"
 
 const LeaderboardFilterBar = dynamic(() =>
   import("@/components/LeaderboardFilterBar").then((mod) => mod.LeaderboardFilterBar)

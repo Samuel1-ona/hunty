@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Clock, Trash2, FileEdit, ChevronDown, ChevronUp } from "lucide-react"
-import { Button } from "@hunty/ui"
 import {
+  Button,
   Card,
   CardTitle,
   CardDescription,

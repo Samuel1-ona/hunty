@@ -1,10 +1,6 @@
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@providers/ThemeProvider';
-import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "@providers/ThemeProvider";
-import React from "react";
 import {
   ActivityIndicator,
   Modal,

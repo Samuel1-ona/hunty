@@ -1,4 +1,4 @@
-import nextConfig from "@hunty/config/eslint/next";
+import nextConfig from "@hunty/config/eslint/next.mjs";
 
 import jsxA11y from "eslint-plugin-jsx-a11y";
 

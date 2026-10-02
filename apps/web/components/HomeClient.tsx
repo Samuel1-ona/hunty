@@ -1,5 +1,5 @@
 "use client";
-import { ArrowRight, Trophy, Search, HelpCircle } from "lucide-react";
+import { ArrowRight, Compass, HelpCircle, Search, Trophy, X } from "lucide-react";
 "use client";
 
 import { EmptyState } from "@/components/QueryState";
@@ -12,22 +12,20 @@ import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { X, ArrowRight, Trophy, Search, HelpCircle, Compass } from "lucide-react"
+
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
-import { getHuntCapacity, getRemainingSpots } from "@/lib/huntStore"
+import { getAllHunts, getHunt, getHuntCapacity, getRemainingSpots, getSpotlightHunts, isHuntPromoted, type StoredHunt } from "@/lib/huntStore"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Header } from "@/components/Header"
 import { HuntCoverImage } from "@/components/HuntCoverImage"
 import { HuntOfTheWeekBanner } from "@/components/HuntOfTheWeekBanner"
 import { HuntCardSkeletonGrid } from "@/components/LoadingSkeletons"
-import { Card, CardDescription, CardTitle } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
 import { usePlayerCounts } from "@/hooks/usePlayerCounts"
 import { useRecentlyCompleted } from "@/hooks/useRecentlyCompleted"
 import { hankenGrotesk } from "@/lib/font"
-import { getAllHunts, getHunt, getSpotlightHunts, isHuntPromoted, type StoredHunt } from "@/lib/huntStore"
+
 import { queryCachePolicy, queryKeys } from "@/lib/queryKeys"
 import { StarRating } from "@/components/StarRating"
 import { FavoriteButton } from "@/components/FavoriteButton"

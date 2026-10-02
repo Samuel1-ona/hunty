@@ -1,5 +1,4 @@
 import { ThemedCustomText, ThemedView } from '@components/themed';
-import type { StoredHunt } from '@lib/types';
 import { useTheme } from '@providers/ThemeProvider';
 import { getActiveHuntsForFeed } from '@store/huntStore';
 import { useQuery } from '@tanstack/react-query';

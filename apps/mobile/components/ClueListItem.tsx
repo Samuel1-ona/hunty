@@ -9,7 +9,6 @@
  * The animation fires once when `isUnlocked` transitions false → true.
  */
 
-import type { ClueInfo } from '@lib/types';
 import React, { useEffect } from 'react';
 import { Pressable,StyleSheet, Text, View } from 'react-native';
 import Animated, {

@@ -3,8 +3,12 @@
 import { ExternalLink, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { getCreatorPayoutSummary } from "@/lib/payouts";
-import type { PayoutRow, PayoutStatus, PayoutTransaction } from "@/lib/payouts";
+import {
+  getCreatorPayoutSummary,
+  type PayoutRow,
+  type PayoutStatus,
+  type PayoutTransaction,
+} from "@/lib/payouts";
 
 type View = "summary" | "transactions";
 

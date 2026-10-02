@@ -3,11 +3,7 @@ import { useRouter } from 'expo-router';
 import type { StoredHunt } from '@hunty/types';
 import { ThemedCustomText, ThemedView } from '@components/themed';
 import { HuntCoverImage } from '@components/HuntCoverImage';
-import { ThemedCustomText, ThemedView } from '@components/themed';
-import type { StoredHunt } from '@lib/types';
 import { useTheme } from '@providers/ThemeProvider';
-import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet } from 'react-native';
 
 interface HuntCardProps {
   hunt: StoredHunt;
