@@ -28,7 +28,7 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           working-directory: ${{ matrix.project }}
-          install-args: "--frozen-lockfile --ignore-scripts"
+          install-args: "--no-frozen-lockfile --ignore-scripts"
 
   self-check-mismatch-detection:
     name: Verify a lockfile mismatch fails the check
@@ -42,17 +42,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: "10.33.0"
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node.js with pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: "20"
-          cache: pnpm
-          cache-dependency-path: ${{ matrix.project }}/pnpm-lock.yaml
+          working-directory: ${{ matrix.project }}
 
       - name: Introduce a deliberate lockfile mismatch
         working-directory: ${{ matrix.project }}

@@ -5,6 +5,8 @@ import React, { useEffect, useState } from "react"
 import { CompletedHuntCard } from "@/components/CompletedHuntCard"
 import { get_hunt_leaderboard } from "@/lib/contracts/hunt"
 import type { StoredHunt } from "@/lib/types"
+import { useQueryClient } from "@tanstack/react-query"
+import { queryKeys } from "@/lib/queryKeys"
 
 interface RecentlyCompletedSectionProps {
   hunts: StoredHunt[]
@@ -24,15 +26,28 @@ interface RecentlyCompletedSectionProps {
  * giving native keyboard arrow-key scrolling when the container is focused.
  */
 export function RecentlyCompletedSection({ hunts }: RecentlyCompletedSectionProps) {
+  const queryClient = useQueryClient()
   // Map of huntId → top winner address (populated async after mount)
   const [winners, setWinners] = useState<Map<number, string>>(new Map())
 
   useEffect(() => {
     if (hunts.length === 0) return
 
+    // Prefetch all leaderboards to leverage TanStack Query caching
+    hunts.forEach((hunt) => {
+      queryClient.prefetchQuery({
+        queryKey: queryKeys.hunt.leaderboard(hunt.id),
+        queryFn: () => get_hunt_leaderboard(hunt.id),
+      })
+    })
+
     void Promise.allSettled(
       hunts.map(async (hunt) => {
-        const entries = await get_hunt_leaderboard(hunt.id)
+        const entries = await queryClient.fetchQuery({
+          queryKey: queryKeys.hunt.leaderboard(hunt.id),
+          queryFn: () => get_hunt_leaderboard(hunt.id),
+          staleTime: 30 * 1000, // 30 seconds
+        })
         // Sort descending by points; take the top address
         const sorted = [...entries].sort((a, b) => b.points - a.points)
         const top = sorted[0]
@@ -47,7 +62,7 @@ export function RecentlyCompletedSection({ hunts }: RecentlyCompletedSectionProp
       })
       setWinners(next)
     })
-  }, [hunts])
+  }, [hunts, queryClient])
 
   // Constraint: return null, not an empty container
   if (hunts.length === 0) return null

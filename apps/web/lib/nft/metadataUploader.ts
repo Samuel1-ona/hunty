@@ -9,6 +9,10 @@
  */
 
 import { logger } from "@/lib/logger"
+import {
+  exceedsUploadLimit,
+  IPFS_UPLOAD_TOO_LARGE_MESSAGE,
+} from "@/lib/upload-limits"
 
 import { IpfsUploadError,MetadataValidationError } from "./errors"
 import { validateNftMetadata } from "./metadataValidator"
@@ -53,6 +57,13 @@ export async function uploadNftMetadata(
     logger.warn(
       `NFT metadata payload is large (${encoded.byteLength} bytes). Consider reducing attribute count or description length.`
     )
+  }
+
+  // Step 3b: Fail fast when the payload cannot fit through the serverless proxy.
+  if (exceedsUploadLimit(encoded.byteLength)) {
+    throw new MetadataValidationError([
+      { field: "metadata", message: IPFS_UPLOAD_TOO_LARGE_MESSAGE },
+    ])
   }
 
   // Step 4: Build a File blob and POST to the IPFS proxy

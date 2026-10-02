@@ -1,48 +1,33 @@
-import { BarCodeScanner,Camera, CameraType, FlashMode } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
-import React, { useCallback,useEffect, useState } from 'react';
-import { ActivityIndicator,StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback } from 'react';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function QRCodeScanner({ onScanned }: { onScanned: (data: string) => void }) {
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [flash, setFlash] = useState<FlashMode>(FlashMode.off);
+  const [permission, requestPermission] = useCameraPermissions();
+  const [flash, setFlash] = React.useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    (async () => {
-      const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === 'granted');
-    })();
-  }, []);
-
-  const handleBarCodeScanned = useCallback(
-    ({ data }: BarCodeScanner.Result) => {
-      onScanned(data);
-      router.push({ pathname: '/qr-scanner/result', params: { data } });
+  const handleCodeScanned = useCallback(
+    (event: { data: string }) => {
+      onScanned(event.data);
     },
-    [onScanned, router],
+    [onScanned],
   );
 
-  if (hasPermission === null) {
+  if (permission === null) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator color="#fff" size="large" />
       </View>
     );
   }
 
-  if (hasPermission === false) {
+  if (!permission.granted) {
     return (
       <View style={styles.center}>
-        <Text style={styles.error}>Camera permission denied.</Text>
-        <TouchableOpacity
-          onPress={() =>
-            Camera.requestCameraPermissionsAsync().then((r) =>
-              setHasPermission(r.status === 'granted'),
-            )
-          }
-          style={styles.button}
-        >
+        <Text style={styles.error}>No access to camera</Text>
+        <TouchableOpacity onPress={requestPermission} style={styles.button}>
           <Text style={styles.buttonText}>Grant Permission</Text>
         </TouchableOpacity>
       </View>
@@ -51,23 +36,18 @@ export default function QRCodeScanner({ onScanned }: { onScanned: (data: string)
 
   return (
     <View style={styles.container}>
-      <Camera
+      <CameraView
         style={StyleSheet.absoluteFillObject}
-        type={CameraType.back}
-        flashMode={flash}
-        onBarCodeScanned={handleBarCodeScanned}
+        facing="back"
+        enableTorch={flash}
+        onBarcodeScanned={handleCodeScanned}
       >
         <View style={styles.overlay}>
-          <TouchableOpacity
-            onPress={() => setFlash(flash === FlashMode.torch ? FlashMode.off : FlashMode.torch)}
-            style={styles.flashButton}
-          >
-            <Text style={styles.flashText}>
-              {flash === FlashMode.torch ? 'Flash On' : 'Flash Off'}
-            </Text>
+          <TouchableOpacity onPress={() => setFlash(!flash)} style={styles.flashButton}>
+            <Text style={styles.flashText}>{flash ? 'Flash On' : 'Flash Off'}</Text>
           </TouchableOpacity>
         </View>
-      </Camera>
+      </CameraView>
     </View>
   );
 }

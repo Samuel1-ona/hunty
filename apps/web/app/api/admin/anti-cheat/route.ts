@@ -11,7 +11,6 @@ import {
   unbanUser,
 } from "@/lib/antiCheatDb"
 import { NotFoundError, UnauthorizedError } from "@/lib/api/errors"
-import { NotFoundError } from "@/lib/api/errors"
 import { withErrorHandling } from "@/lib/api/withErrorHandling"
 import { withValidation } from "@/lib/api/withValidation"
 import { assertAdminAuth } from "@/lib/api/adminAuth"
@@ -98,15 +97,6 @@ export const POST = withValidation(
     if (body.action === "ban") {
       audit(admin.email, "anti-cheat.ban", { wallet: body.wallet, ip: body.ip ?? "" })
       await banUser(body.wallet, body.ip ?? "", body.reason ?? "Manual ban by admin", body.bannedBy ?? admin.email)
-    const adminKey = req.headers.get("x-admin-key")
-    if (adminKey !== process.env.ADMIN_API_KEY) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    assertAdminAuth(req)
-
-    if (body.action === "ban") {
-      await banUser(body.wallet, body.ip ?? "", body.reason ?? "Manual ban by admin", body.bannedBy ?? "admin")
       return NextResponse.json({ success: true })
     }
 
@@ -121,10 +111,6 @@ export const POST = withValidation(
 
     // action === "updateConfig"
     audit(admin.email, "anti-cheat.config.update", { config: body.config })
-    await setConfig(body.config as Parameters<typeof setConfig>[0])
-    return NextResponse.json({ success: true, config: await getConfig() })
-  }
-)
     await setConfig(body.config as Parameters<typeof setConfig>[0])
     return NextResponse.json({ success: true, config: await getConfig() })
   }

@@ -1,6 +1,5 @@
-import { Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import type { StoredHunt } from '@hunty/types';
+import type { StoredHunt } from '@lib/types';
 import { ThemedCustomText, ThemedView } from '@components/themed';
 import { useTheme } from '@providers/ThemeProvider';
 

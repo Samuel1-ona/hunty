@@ -6,6 +6,7 @@ allowBuilds:
   '@parcel/watcher': true
   '@sentry/cli': true
   '@swc/core': true
+  dtrace-provider: true
   esbuild: true
   sharp: true
   unrs-resolver: true

@@ -7,7 +7,7 @@
  * `@hunty/types/schemas`.
  */
 
-import type { Clue } from "./clue"
+import { CLUE_TYPES, type Clue, type ClueType } from "./clue"
 import type { HuntStatus, StoredHunt } from "./hunt"
 import type { Achievement, AchievementId, AchievementRarity } from "./achievement"
 import type { PlayerProgress } from "./player"
@@ -24,6 +24,8 @@ const HUNT_STATUSES: readonly HuntStatus[] = [
 ]
 
 const REWARD_TYPES: readonly RewardType[] = ["XLM", "NFT", "Both"]
+
+const CLUE_IMAGE_MODES = ["identify-object", "spot-difference"] as const
 
 const ACHIEVEMENT_IDS: readonly AchievementId[] = [
   "first_hunt_completed",
@@ -64,6 +66,13 @@ export function isRewardType(value: unknown): value is RewardType {
   )
 }
 
+export function isClueType(value: unknown): value is ClueType {
+  return (
+    typeof value === "string" &&
+    (CLUE_TYPES as readonly string[]).includes(value)
+  )
+}
+
 export function isAchievementId(value: unknown): value is AchievementId {
   return (
     typeof value === "string" &&
@@ -79,6 +88,64 @@ export function isReward(value: unknown): value is Reward {
   )
 }
 
+function hasValidClueTypeConfiguration(value: Record<string, unknown>): boolean {
+  const type = value.type ?? "text"
+  if (!isClueType(type)) return false
+
+  if (
+    value.imageMode !== undefined &&
+    !(
+      typeof value.imageMode === "string" &&
+      (CLUE_IMAGE_MODES as readonly string[]).includes(value.imageMode)
+    )
+  ) {
+    return false
+  }
+
+  if (type === "text") return true
+
+  if (type === "image") {
+    return typeof value.imageCid === "string" && value.imageCid.trim().length > 0
+  }
+
+  if (type === "qr") {
+    return typeof value.qrPayload === "string" && value.qrPayload.trim().length > 0
+  }
+
+  if (type === "location") {
+    const hasCoordinates =
+      typeof value.latitude === "number" &&
+      Number.isFinite(value.latitude) &&
+      value.latitude >= -90 &&
+      value.latitude <= 90 &&
+      typeof value.longitude === "number" &&
+      Number.isFinite(value.longitude) &&
+      value.longitude >= -180 &&
+      value.longitude <= 180
+    const hasValidRadius =
+      value.geofenceRadiusMeters === undefined ||
+      (typeof value.geofenceRadiusMeters === "number" &&
+        Number.isFinite(value.geofenceRadiusMeters) &&
+        value.geofenceRadiusMeters > 0)
+    return hasCoordinates && hasValidRadius
+  }
+
+  const config = value.multipleChoice
+  if (!isRecord(config) || !Array.isArray(config.options)) return false
+  const options = config.options
+  if (options.length < 2 || !options.every(isRecord)) return false
+  if (!options.every((option) =>
+    typeof option.id === "string" &&
+    option.id.trim().length > 0 &&
+    typeof option.label === "string" &&
+    option.label.trim().length > 0
+  )) {
+    return false
+  }
+  const ids = options.map((option) => option.id)
+  return new Set(ids).size === ids.length && ids.includes(config.correctOptionId as string)
+}
+
 export function isClue(value: unknown): value is Clue {
   return (
     isRecord(value) &&
@@ -86,7 +153,8 @@ export function isClue(value: unknown): value is Clue {
     typeof value.huntId === "number" &&
     typeof value.question === "string" &&
     typeof value.answer === "string" &&
-    typeof value.points === "number"
+    typeof value.points === "number" &&
+    hasValidClueTypeConfiguration(value)
   )
 }
 

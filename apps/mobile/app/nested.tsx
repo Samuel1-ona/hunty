@@ -3,26 +3,42 @@ import { CluesList } from '@components/CluesList';
 import { QRScanner } from '@components/QRScanner';
 import { ThemedCustomText, ThemedView } from '@components/themed';
 import { useHaptics } from '@hooks/useHaptics';
+import type { Clue, StoredHunt } from '@hunty/types';
 import { useTheme } from '@providers/ThemeProvider';
 import { getHuntById, getHuntClues } from '@store/huntStore';
 import { usePlayerStore } from '@store/useStore';
-import type { Clue, StoredHunt } from '@hunty/types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { verifyClueGeofence } from '@/lib/locationGate';
+import { matchesClueAnswer } from '@lib/clueAnswerVerification';
+import { verifyQrAgainstClue } from '@lib/qrCodeDecryptor';
+
+const LazyARClueReveal = React.lazy(() =>
+  import('@components/ARClueReveal').then((mod) => ({ default: mod.ARClueReveal })),
+);
 
 export default function NestedScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const haptics = useHaptics();
-  const { huntId, clueIndex } = useLocalSearchParams<{ huntId?: string; clueIndex?: string }>();
+  const {
+    huntId,
+    clueIndex,
+    arEnabled: arEnabledParam,
+  } = useLocalSearchParams<{
+    huntId?: string;
+    clueIndex?: string;
+    arEnabled?: string;
+  }>();
   const [hunt, setHunt] = useState<StoredHunt | null>(null);
   const [clues, setClues] = useState<Clue[]>([]);
   const [answer, setAnswer] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [arOpen, setArOpen] = useState(false);
+  const [arEnabled] = useState(arEnabledParam === 'true');
   const { markClueCompleted, getCompletedClues } = usePlayerStore();
   const [showCluesDropdown] = useState(true);
 
@@ -39,11 +55,12 @@ export default function NestedScreen() {
     });
   }, [hId]);
 
-  useEffect(() => {
-    setAnswer('');
-  }, [idx]);
+  const handleAnswerChange = (text: string) => {
+    setAnswer(text);
+  };
 
   const navigateToClue = (clueIdx: number) => {
+    setAnswer('');
     router.replace(`/nested?huntId=${hId}&clueIndex=${clueIdx}`);
   };
 
@@ -105,6 +122,10 @@ export default function NestedScreen() {
     await submitAnswer(data, true);
   };
 
+  const handleArReveal = () => {
+    setArOpen(false);
+  };
+
   const canGoPrev = idx > 0;
   const canGoNext = idx < clues.length - 1 && completedClues.has(idx);
   const progressWidth = `${((idx + 1) / clues.length) * 100}%` as `${number}%`;
@@ -151,7 +172,7 @@ export default function NestedScreen() {
           placeholder="Your answer..."
           placeholderTextColor="#bbb"
           value={answer}
-          onChangeText={setAnswer}
+          onChangeText={handleAnswerChange}
           autoCapitalize="none"
           autoCorrect={false}
           editable={true}
@@ -172,6 +193,17 @@ export default function NestedScreen() {
               Previous
             </ThemedCustomText>
           </Pressable>
+
+          {arEnabled && hunt?.arEnabled && (
+            <Pressable
+              style={[styles.arButton, { backgroundColor: colors.primary }]}
+              onPress={() => setArOpen(true)}
+            >
+              <ThemedCustomText variant="caption" lightColor="#fff" darkColor="#fff" weight="700">
+                AR View
+              </ThemedCustomText>
+            </Pressable>
+          )}
 
           <Pressable
             style={[styles.scanButton, { backgroundColor: colors.warning }]}
@@ -232,6 +264,21 @@ export default function NestedScreen() {
         onScan={handleQrScan}
         title="Scan checkpoint QR"
       />
+      {arOpen && (
+        <React.Suspense fallback={null}>
+          <LazyARClueReveal
+            isOpen={arOpen}
+            onClose={() => setArOpen(false)}
+            onReveal={handleArReveal}
+            clueText={clue.question}
+            targetLocation={
+              clue.latitude && clue.longitude
+                ? { latitude: clue.latitude, longitude: clue.longitude }
+                : undefined
+            }
+          />
+        </React.Suspense>
+      )}
     </ThemedView>
   );
 }
@@ -292,6 +339,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   scanButton: {
+    flex: 0.9,
+    paddingVertical: 11,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  arButton: {
     flex: 0.9,
     paddingVertical: 11,
     borderRadius: 6,

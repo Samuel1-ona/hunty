@@ -77,6 +77,13 @@ const serverSchema = z.object({
   /** Bearer token protecting /api/admin/* routes */
   ADMIN_API_SECRET: z.string().optional(),
 
+  /**
+   * Comma-separated Stellar addresses allowed to call admin-only routes via a
+   * signed wallet challenge (e.g. POST /api/v1/seasons). Empty means no wallet
+   * is an admin.
+   */
+  ADMIN_WALLET_ADDRESSES: z.string().optional(),
+
   // -- Deep-linking --
   APPLE_TEAM_ID: z.string().optional(),
   IOS_BUNDLE_ID: z.string().optional(),

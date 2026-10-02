@@ -136,7 +136,7 @@ async function HuntPageContent({
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hunty.app";
 
   return (
-    <div clasName="min-h-screen bg-[#0b0c10] text-white pb-24">
+    <div className="min-h-screen bg-[#0b0c10] text-white pb-24">
       <StructuredData data={huntStructuredData(huntDetails, baseUrl)} />
 
       <div className="fixed inset pointer-events-none">
@@ -147,12 +147,10 @@ async function HuntPageContent({
       <Header />
 
       <div role="main" className="relative max-w-3xl mx-auto px-6 pt-16">
-        <!-- Status badge -->
+        {/* Status badge */}
         <div className="mb-6">
-          <span
-            className={`[infline-items gap-2 px-3 py-1 rounded-full text-xs font-semibold tracking-widest uppercase ${status.classes}`,
-          ~
-            {HuntDetails?.status === "Active" && (
+          <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold tracking-widest uppercase ${status.classes}`}>
+            {huntDetails?.status === "Active" && (
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             )}
             {status.label}
@@ -181,16 +179,15 @@ async function HuntPageContent({
             <span aria-hidden="true">&rarr;</span>
           </Link>
         )}
-        <!-- Metadata cards -->
+        {/* Metadata cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-12">
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col justify-center">
             <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Rating</p>
             <StarRating rating={huntDetails.averageRating} count={huntDetails.reviewCount} />
           </div>
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-          <div className="bg-white/5 border border-white/10 rounded-2x p-5">
             <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Hunt ID</p>
-            <p className="text-white font-semibold text-lg"># {HuntDetails.id}</p>
+            <p className="text-white font-semibold text-lg"># {huntDetails.id}</p>
           </div>
           <div className="bg-white/5 border border-white/10 rounded-2x p-5">
             <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Clues</p>
@@ -223,7 +220,7 @@ async function HuntPageContent({
 
         <FastestPlayersStrip huntId={huntDetails.id} />
 
-        {spectator ? null : <HuntDetailClient hunt={HuntDetails} />}
+        {spectator ? null : <HuntDetailClient hunt={huntDetails} />}
       </div>
     </div>
   );
@@ -235,7 +232,7 @@ const page = async ({ params, searchParams }: PageProps) => {
   const isSpectator = spectator === "true";
 
   return (
-    <Suspense fallback=<{!XuntPageSkeleton }>
+    <Suspense fallback={<HuntPageSkeleton />}>
       <HuntPageContent id={id} spectator={isSpectator} />
     </Suspense>
   );

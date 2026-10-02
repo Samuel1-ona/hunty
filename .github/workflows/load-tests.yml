@@ -1,0 +1,47 @@
+name: Leaderboard Load Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      hunt_id:
+        description: "Stable staging hunt ID with a populated leaderboard"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: leaderboard-load-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  leaderboard:
+    name: Leaderboard read load test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: staging
+    env:
+      BASE_URL: ${{ vars.STAGING_URL || 'https://staging.hunty.app' }}
+      HUNT_ID: ${{ inputs.hunt_id }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up k6
+        uses: grafana/setup-k6-action@v1.2.2
+        with:
+          k6-version: "2.3.0"
+
+      - name: Validate load-test input
+        shell: bash
+        run: |
+          if [[ ! "$HUNT_ID" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::hunt_id must be a positive integer."
+            exit 1
+          fi
+          echo "Running leaderboard reads against $BASE_URL for hunt $HUNT_ID"
+
+      - name: Run leaderboard read load test
+        run: k6 run load-tests/k6/leaderboard-read-test.js

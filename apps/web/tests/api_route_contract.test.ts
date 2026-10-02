@@ -130,6 +130,14 @@ vi.mock("@sentry/nextjs", () => ({
   captureEvent: vi.fn(),
 }))
 
+vi.mock("@/lib/answerDisputes", () => ({
+  getAnswerDisputesForAnswer: () => [],
+  getAnswerDisputeById: () => null,
+  getAnswerDisputeAuditLog: () => [],
+  createAnswerDispute: vi.fn(),
+  resolveAnswerDispute: vi.fn(),
+}))
+
 interface RouteEntry {
   /** Filesystem path relative to app/api/, e.g. "admin/moderation/route.ts" */
   file: string
@@ -189,6 +197,7 @@ const ROUTE_MANIFEST: RouteEntry[] = [
   // ── og ───────────────────────────────────────────────────────────────
   { file: "og/hunt/[id]/route.ts",                  path: "/api/og/hunt/[id]",                  methods: ["GET"],           auth: "public" },
   { file: "og/leaderboard/route.ts",                path: "/api/og/leaderboard",                methods: ["GET"],           auth: "public" },
+  { file: "og/result/route.ts",                     path: "/api/og/result",                     methods: ["GET"],           auth: "public" },
 
   // ── push ─────────────────────────────────────────────────────────────
   // Requires PUSH_API_SECRET or ADMIN_API_SECRET as a bearer token; see
@@ -200,6 +209,13 @@ const ROUTE_MANIFEST: RouteEntry[] = [
 
   // ── v1 / answers ─────────────────────────────────────────────────────
   { file: "v1/answers/route.ts",                    path: "/api/v1/answers",                    methods: ["POST"],          auth: "public" },
+  // Deprecated shims – redirect / 410 to canonical answers/disputes routes
+  { file: "v1/answers/[id]/dispute/route.ts",       path: "/api/v1/answers/[id]/dispute",       methods: ["GET", "POST"],   auth: "public", noBody: true },
+  { file: "v1/answers/[id]/dispute/audit/route.ts", path: "/api/v1/answers/[id]/dispute/audit", methods: ["GET"],           auth: "public" },
+  // Canonical dispute routes
+  { file: "v1/answers/disputes/route.ts",           path: "/api/v1/answers/disputes",           methods: ["GET", "POST"],   auth: "public" },
+  { file: "v1/answers/disputes/[id]/route.ts",      path: "/api/v1/answers/disputes/[id]",      methods: ["GET", "PATCH"],  auth: "public" },
+  { file: "v1/answers/disputes/[id]/audit/route.ts",path: "/api/v1/answers/disputes/[id]/audit",methods: ["GET"],           auth: "public" },
 
   // ── v1 / feature-flags ───────────────────────────────────────────────
   { file: "v1/feature-flags/route.ts",              path: "/api/v1/feature-flags",              methods: ["GET"],           auth: "public" },
@@ -224,7 +240,10 @@ const ROUTE_MANIFEST: RouteEntry[] = [
   { file: "v1/hunts/[id]/reviews/[reviewId]/moderate/route.ts", path: "/api/v1/hunts/[id]/reviews/[reviewId]/moderate", methods: ["POST"], auth: "public" },
 
   // ── v1 / seasons ─────────────────────────────────────────────────────
-  { file: "v1/seasons/route.ts",                    path: "/api/v1/seasons",                    methods: ["GET", "POST"],   auth: "public" },
+  // GET is public; POST requires a signed wallet challenge from an address in
+  // ADMIN_WALLET_ADDRESSES or the ADMIN_API_SECRET bearer token — see
+  // app/api/v1/seasons/route.ts and its __tests__ for the credential checks.
+  { file: "v1/seasons/route.ts",                    path: "/api/v1/seasons",                    methods: ["GET", "POST"],   auth: "admin" },
   { file: "v1/seasons/[id]/route.ts",               path: "/api/v1/seasons/[id]",               methods: ["GET", "POST", "PATCH"], auth: "public" },
   { file: "v1/seasons/archived/route.ts",           path: "/api/v1/seasons/archived",           methods: ["GET"],           auth: "public" },
   { file: "v1/seasons/badges/route.ts",             path: "/api/v1/seasons/badges",             methods: ["GET", "POST"],   auth: "public" },

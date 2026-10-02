@@ -12,6 +12,8 @@ export * from "./tokens/index"
 // Shared hooks
 export * from "./hooks/index"
 
+export * from "./toast/index"
+
 // Web components
 export * from "./web/index"
 

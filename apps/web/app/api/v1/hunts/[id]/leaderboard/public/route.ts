@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { get_hunt_leaderboard } from "@lib/contracts/hunt";
-import { getHuntById } from "@lib/huntStore";
+import { get_hunt_leaderboard } from "@/lib/contracts/hunt";
+import { getHuntById } from "@/lib/huntStore";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://hunty.app";
 
 export async function GET(
   req: Request,
-  { params : { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
   const huntId = parseInt(id, 10);
@@ -38,12 +38,12 @@ export async function GET(
         name: entry.name || entry.address,
         points: entry.points,
         completionCount: entry.completionCount ?? 0,
-      }));
+      })),
       summary: {
         topRankName: topEntry?.name || topEntry?.address || "No entries yet",
         topRankPoints: topEntry?.points ?? 0,
         playerCount,
-        lastUpdated: new Date().toISoString(),
+        lastUpdated: new Date().toISOString(),
       },
       embedUrl: `${baseUrl}/api/og/leaderboard?huntId=${huntId}`,
       shareUrl: `${baseUrl}/hunt/${huntId}/leaderboard`,
@@ -51,7 +51,9 @@ export async function GET(
     };
 
     return NextResponse.json(responseBody, {
-      headers: { "Cache-Control": "no-store" },
+      headers: {
+        "Cache-Control": "s-maxage=5, stale-while-revalidate=30",
+      },
     });
   } catch {
     return NextResponse.json({ error: "Failed to fetch public leaderboard" }, { status: 500 });

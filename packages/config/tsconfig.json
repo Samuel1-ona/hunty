@@ -12,5 +12,5 @@
     "checkJs": false,
     "resolveJsonModule": true
   },
-  "include": ["eslint/**/*.mjs", "tailwind/**/*.js", "tsconfig/**/*.json"]
+  "include": ["eslint/**/*.mjs", "tailwind/**/*.js"]
 }

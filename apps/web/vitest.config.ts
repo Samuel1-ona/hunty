@@ -1,6 +1,5 @@
-import path from "path";
-
 import react from "@vitejs/plugin-react";
+import path from "path";
 import { defineConfig } from "vitest/config";
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
@@ -41,17 +40,46 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      "@hunty/config": path.resolve(__dirname, "../../packages/config"),
-      "@hunty/config/*": path.resolve(__dirname, "../../packages/config/*"),
-      "@hunty/types/schemas": path.resolve(__dirname, "../../packages/types/src/schemas.ts"),
-      "@hunty/types": path.resolve(__dirname, "../../packages/types/src/index.ts"),
-      "@": path.resolve(__dirname, "./"),
-    },
     // Keep subpath aliases ahead of the package root alias. Vite matches
     // aliases by prefix, so @hunty/types would otherwise swallow
     // @hunty/types/api-schemas.
     alias: [
+      // @upstash/redis is an optional runtime dependency not installed in the
+      // dev/test environment.  Redirect it to a lightweight stub so Vite's
+      // static import-analysis does not fail when it encounters the dynamic
+      // `await import("@upstash/redis")` inside lib/rate-limit.ts.
+      {
+        find: "@upstash/redis",
+        replacement: path.resolve(__dirname, "./__mocks__/@upstash/redis.ts"),
+      },
+      // next-auth/jwt is a runtime dependency that requires a full NextAuth
+      // setup not present in the test environment.  Redirect to a stub so
+      // routes that transitively import lib/api/adminAuth.ts can be loaded
+      // by Vite's import-analysis without errors.
+      {
+        find: "next-auth/jwt",
+        replacement: path.resolve(__dirname, "./__mocks__/next-auth/jwt.ts"),
+      },
+      {
+        find: "next-auth/jwt",
+        replacement: path.resolve(__dirname, "./__mocks__/next-auth/jwt.ts"),
+      },
+      {
+        find: "@hunty/ui/toast",
+        replacement: path.resolve(__dirname, "../../packages/ui/src/toast/index.ts"),
+      },
+      {
+        find: "@hunty/config",
+        replacement: path.resolve(__dirname, "../../packages/config"),
+      },
+      {
+        find: "@hunty/config/(.*)",
+        replacement: path.resolve(__dirname, "../../packages/config/$1"),
+      },
+      {
+        find: "next-auth/jwt",
+        replacement: path.resolve(__dirname, "./__mocks__/next-auth/jwt.ts"),
+      },
       {
         find: "@hunty/types/api-schemas",
         replacement: path.resolve(__dirname, "../../packages/types/src/api-schemas.ts"),
@@ -68,4 +96,3 @@ export default defineConfig({
     ],
   },
 });
-

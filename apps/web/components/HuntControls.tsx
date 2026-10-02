@@ -1,11 +1,13 @@
 "use client";
 
 import Server, { Account, Networks, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
-import { AlertTriangle, Code2, Loader2, X } from "lucide-react";
+import { AlertTriangle, Code2, Loader2, Trash2, X } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { EmbedModal } from "@/components/EmbedModal";
 import { Button } from "@hunty/ui";
+import { TypeToConfirmDialog } from "@/components/ui/type-to-confirm-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { logger } from "@/lib/logger";
 import { withSorobanRpcRetry } from "@/lib/soroban/rpcRetry";
@@ -90,6 +92,42 @@ async function cancelHuntOnChain(huntId: number): Promise<{ txHash: string }> {
   };
   if (!res?.hash) throw new Error("Transaction submission failed");
   return { txHash: res.hash };
+}
+
+async function softDeleteHunt(huntId: number): Promise<void> {
+  const res = await fetch(`/api/v1/hunts/${huntId}/delete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "soft-delete" }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to soft-delete hunt");
+  }
+}
+
+async function permanentDeleteHunt(huntId: number): Promise<void> {
+  const res = await fetch(`/api/v1/hunts/${huntId}/delete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "permanent-delete", confirmed: true }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to permanently delete hunt");
+  }
+}
+
+async function restoreHunt(huntId: number): Promise<void> {
+  const res = await fetch(`/api/v1/hunts/${huntId}/delete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "restore" }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to restore hunt");
+  }
 }
 
 interface HuntControlsProps {
@@ -221,8 +259,11 @@ function CancelModal({
 export function HuntControls({ hunt, connectedPublicKey, onCancelled }: HuntControlsProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [embedModalOpen, setEmbedModalOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isSoftDeleting, setIsSoftDeleting] = useState(false);
+  const [isPermanentlyDeleting, setIsPermanentlyDeleting] = useState(false);
   const [_error, setError] = useState<string | null>(null);
 
   // Gate: only the creator sees this, and only for cancellable statuses
@@ -261,6 +302,48 @@ export function HuntControls({ hunt, connectedPublicKey, onCancelled }: HuntCont
     }
   };
 
+  const handleSoftDelete = async () => {
+    setIsSoftDeleting(true);
+    try {
+      await softDeleteHunt(hunt.id);
+      toast("Hunt soft-deleted", {
+        duration: 10000,
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            try {
+              await restoreHunt(hunt.id);
+              toast.success("Hunt restored");
+            } catch {
+              toast.error("Failed to restore hunt");
+            }
+          },
+        },
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Soft delete failed");
+    } finally {
+      setIsSoftDeleting(false);
+    }
+  };
+
+  const handlePermanentDelete = async () => {
+    setIsPermanentlyDeleting(true);
+    try {
+      await permanentDeleteHunt(hunt.id);
+      setDeleteConfirmOpen(false);
+      toast.success("Hunt permanently deleted");
+      // Navigate to hunts list after a short delay so the toast is visible
+      setTimeout(() => {
+        window.location.href = "/hunts";
+      }, 1500);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Permanent delete failed");
+    } finally {
+      setIsPermanentlyDeleting(false);
+    }
+  };
+
   return (
     <>
       <Button
@@ -281,6 +364,25 @@ export function HuntControls({ hunt, connectedPublicKey, onCancelled }: HuntCont
         Cancel Hunt
       </Button>
 
+      <Button
+        onClick={handleSoftDelete}
+        variant="outline"
+        disabled={isSoftDeleting}
+        className="border-amber-800/50 text-amber-400 hover:bg-amber-950/60 hover:text-amber-300 hover:border-amber-600/70 active:scale-95 transition-all duration-150 font-semibold disabled:opacity-50"
+      >
+        <Trash2 className="w-4 h-4 mr-2 shrink-0" />
+        {isSoftDeleting ? "Deleting…" : "Soft Delete"}
+      </Button>
+
+      <Button
+        onClick={() => setDeleteConfirmOpen(true)}
+        variant="destructive"
+        className="active:scale-95 transition-all duration-150 font-semibold"
+      >
+        <Trash2 className="w-4 h-4 mr-2 shrink-0" />
+        Delete Permanently
+      </Button>
+
       <EmbedModal hunt={hunt} open={embedModalOpen} onClose={() => setEmbedModalOpen(false)} />
 
       <CancelModal
@@ -292,6 +394,16 @@ export function HuntControls({ hunt, connectedPublicKey, onCancelled }: HuntCont
         onConfirmFirst={handleConfirmFirst}
         onConfirmFinal={handleConfirmFinal}
         step={step}
+      />
+
+      <TypeToConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Delete Permanently?"
+        description="This will permanently remove the hunt and all its data."
+        huntTitle={hunt.title}
+        onConfirm={handlePermanentDelete}
+        loading={isPermanentlyDeleting}
       />
     </>
   );

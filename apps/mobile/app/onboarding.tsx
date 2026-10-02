@@ -114,7 +114,7 @@ export default function OnboardingScreen() {
         </View>
 
         <View style={styles.actionsRow}>
-          <Pressable onPress={handleSkip} style={styles.skipButton}>
+          <Pressable testID="onboarding-skip" onPress={handleSkip} style={styles.skipButton}>
             <ThemedCustomText variant="label" weight="600" style={styles.skipText}>
               Skip
             </ThemedCustomText>

@@ -1,3 +1,5 @@
+import { TOAST_DURATION_MS } from "@hunty/ui/toast"
+
 /**
  * Centralized constants and configuration for the Hunty application.
  *
@@ -77,7 +79,7 @@ export const UI = {
   /** Card hover animation duration in seconds. */
   CARD_HOVER_DURATION_S: 0.2,
   /** Toast notification auto-dismiss duration in milliseconds. */
-  TOAST_DURATION_MS: 5_000,
+  TOAST_DURATION_MS,
   /** Debounce delay for search inputs (ms). */
   SEARCH_DEBOUNCE_MS: 300,
   /** Maximum number of hunt cards displayed per page in the arcade. */
@@ -102,6 +104,19 @@ export const PLAYER_COUNT = {
   TRENDING_THRESHOLD: 50,
   /** How long a fetched player count is considered fresh (ms). */
   CACHE_TTL_MS: 60_000,
+} as const
+
+// ─── Player Profile Stats ────────────────────────────────────────────────────
+
+export const PLAYER_PROFILE_STATS = {
+  /** How long a derived profile summary is considered fresh (ms). */
+  CACHE_TTL_MS: 60_000,
+  /**
+   * Hard cap on cached profile summaries. The cache is keyed by player address
+   * and hunt set, so without a cap an attacker enumerating addresses would grow
+   * it without bound. Least-recently-used entries are evicted first.
+   */
+  CACHE_MAX_ENTRIES: 200,
 } as const
 
 // ─── API Rate Limiting ──────────────────────────────────────────────────────

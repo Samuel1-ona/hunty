@@ -9,8 +9,38 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
+import { unregisterPushToken } from './tokenRegistry';
 
 const BADGE_COUNT_KEY = 'hunty_badge_count';
+
+/**
+ * Handle an expired or revoked push token (e.g. DeviceNotRegistered error from Expo).
+ * Unregisters the push token both locally and on the backend server.
+ */
+export async function handleDeviceNotRegistered(error?: unknown): Promise<boolean> {
+  const errorMsg =
+    typeof error === 'string'
+      ? error
+      : error && typeof error === 'object' && 'message' in error
+        ? String((error as { message: unknown }).message)
+        : error && typeof error === 'object' && 'error' in error
+          ? String((error as { error: unknown }).error)
+          : '';
+
+  const isNotRegistered =
+    errorMsg.includes('DeviceNotRegistered') ||
+    errorMsg.includes('DeviceNotRegisteredError') ||
+    error === 'DeviceNotRegistered';
+
+  if (isNotRegistered || !error) {
+    if (__DEV__) console.warn('[BadgeService] Push token expired/revoked (DeviceNotRegistered). Unregistering token...');
+    await unregisterPushToken();
+    await resetBadge();
+    return true;
+  }
+
+  return false;
+}
 
 /**
  * Read the current badge count from local storage.
@@ -37,8 +67,9 @@ export async function incrementBadge(): Promise<number> {
   try {
     await AsyncStorage.setItem(BADGE_COUNT_KEY, String(next));
     await Notifications.setBadgeCountAsync(next);
-  } catch {
-    if (__DEV__) console.warn('[BadgeService] Failed to update badge count');
+  } catch (err) {
+    const handled = await handleDeviceNotRegistered(err);
+    if (!handled && __DEV__) console.warn('[BadgeService] Failed to update badge count');
   }
 
   return next;
@@ -52,7 +83,9 @@ export async function resetBadge(): Promise<void> {
   try {
     await AsyncStorage.setItem(BADGE_COUNT_KEY, '0');
     await Notifications.setBadgeCountAsync(0);
-  } catch {
-    if (__DEV__) console.warn('[BadgeService] Failed to reset badge count');
+  } catch (err) {
+    const handled = await handleDeviceNotRegistered(err);
+    if (!handled && __DEV__) console.warn('[BadgeService] Failed to reset badge count');
   }
 }
+

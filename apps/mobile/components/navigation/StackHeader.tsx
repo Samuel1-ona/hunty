@@ -6,28 +6,27 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface HeaderRenderArgs {
   tintColor?: string;
-  canGoBack: boolean;
+  canGoBack?: boolean;
+  children?: React.ReactNode;
 }
 
 interface StackHeaderProps {
+  layout?: unknown;
   navigation: {
     canGoBack: () => boolean;
     goBack: () => void;
   };
-  options: {
-    title?: string;
-    headerTitle?: string | ((props: HeaderRenderArgs) => React.ReactNode);
-    headerTintColor?: string;
-    headerRight?: (props: HeaderRenderArgs) => React.ReactNode;
-  };
+  options: Record<string, unknown>;
   route: {
     name: string;
   };
 }
 
 const getTitle = (options: StackHeaderProps['options'], routeName: string): string => {
-  if (typeof options.headerTitle === 'string') return options.headerTitle;
-  if (typeof options.title === 'string') return options.title;
+  const headerTitle = options['headerTitle'];
+  if (typeof headerTitle === 'string') return headerTitle;
+  const title = options['title'];
+  if (typeof title === 'string') return title;
   return routeName;
 };
 
@@ -35,9 +34,11 @@ export function StackHeader({ navigation, options, route }: StackHeaderProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const canGoBack = navigation.canGoBack();
-  const tintColor = options.headerTintColor || '#ffffff';
+  const tintColor = (options['headerTintColor'] as string | undefined) || '#ffffff';
   const title = getTitle(options, route.name);
-  const rightAction = options.headerRight?.({ tintColor, canGoBack });
+  const rightAction = (
+    options['headerRight'] as ((props: HeaderRenderArgs) => React.ReactNode) | undefined
+  )?.({ tintColor, canGoBack });
 
   return (
     <View style={[styles.container, { backgroundColor: colors.primary, paddingTop: insets.top }]}>

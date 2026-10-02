@@ -16,6 +16,7 @@
       "@/types/*": ["./types/*"],
       "@hunty/types": ["../../packages/types/src/index.ts"],
       "@hunty/types/*": ["../../packages/types/src/*"],
+      "@hunty/ui/toast": ["../../packages/ui/src/toast/index.ts"],
       "@stellar/stellar-sdk": ["../../node_modules/@stellar/stellar-sdk"],
       "@stellar/*": ["../../node_modules/@stellar/*"],
       "@stellar/freighter-api": ["../../node_modules/@stellar/freighter-api"]

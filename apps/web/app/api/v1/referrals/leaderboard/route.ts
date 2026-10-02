@@ -1,12 +1,13 @@
+import { referralLeaderboardQuerySchema } from "@hunty/types/api-schemas"
 import { NextResponse } from "next/server"
+
 import { withValidation } from "@/lib/api/withValidation"
-import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit"
+import { getIP, rateLimit, rateLimitPresets, rateLimitResponse } from "@/lib/rate-limit"
 import {
   getReferralLeaderboard,
   getReferralLeaderboardStats,
   getReferrerRank,
 } from "@/lib/referralStore"
-import { referralLeaderboardQuerySchema } from "@hunty/types/api-schemas"
 import type { ReferralLeaderboardPeriod } from "@/lib/types"
 
 /**
@@ -23,17 +24,17 @@ export const GET = withValidation(
   { query: referralLeaderboardQuerySchema },
   async (req: Request, _context, { query }) => {
     const ip = getIP(req)
-    const { success, reset } = await rateLimit(ip, { limit: 100, windowMs: 60_000 })
+    const { success, reset } = await rateLimit(ip, rateLimitPresets.read)
     if (!success) return rateLimitResponse(reset)
 
     const period = (query.period ?? "all") as ReferralLeaderboardPeriod
     const limit = query.limit ?? 50
 
-    const leaderboard = getReferralLeaderboard({ period, limit })
-    const stats = getReferralLeaderboardStats()
+    const leaderboard = await getReferralLeaderboard({ period, limit })
+    const stats = await getReferralLeaderboardStats()
 
     const playerRank = query.address
-      ? getReferrerRank(query.address, period)
+      ? await getReferrerRank(query.address, period)
       : null
 
     return NextResponse.json({

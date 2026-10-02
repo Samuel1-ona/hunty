@@ -1,6 +1,6 @@
 import dynamic from "next/dynamic"
 
-const GameArcade = dynamic(() => import("@/components/HomeClient"), {
+const GameArcade = dynamic(() => import("/components/HomeClient"), {
   ssr: true,
 })
 

@@ -16,7 +16,7 @@ import {
 } from '@services/analytics';
 import { useWalletStore } from '@store/useStore';
 import { usePathname } from 'expo-router';
-import React, { createContext, useCallback,useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 // ───────────────────────────────────────────────────────────
 // Context
@@ -65,7 +65,7 @@ export function AnalyticsProvider({ children, appStartTime }: AnalyticsProviderP
   const [isReady, setIsReady] = useState(false);
   const [isOptedOut, setIsOptedOut] = useState(false);
   const pathname = usePathname();
-  const { address } = useWalletStore();
+  const { walletAddress } = useWalletStore();
 
   // Initialize analytics on mount
   useEffect(() => {
@@ -101,9 +101,9 @@ export function AnalyticsProvider({ children, appStartTime }: AnalyticsProviderP
   // Sync wallet address as user context (no PII)
   useEffect(() => {
     if (isReady) {
-      setUserContext(address ?? null);
+      setUserContext(walletAddress || null);
     }
-  }, [address, isReady]);
+  }, [walletAddress, isReady]);
 
   const track = useCallback((event: AnalyticsEvent) => {
     trackEvent(event);

@@ -121,6 +121,15 @@ export function LeaderboardSharePage({ huntId, hunt }: LeaderboardSharePageProps
                 <Image src={ogImageUrl} alt={`${hunt.title} leaderboard preview`} width={1200} height={630} className="w-full max-w-2xl rounded-xl border border-white/10" />
               </div>
               <div className="bg-white/5 border border-white/10 rounded-2xl p-6 shadow-inner">
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-white">Active Leaderboard</h2>
+                  <Link
+                    href={`/hunt/${huntId}/players`}
+                    className="text-sm font-medium text-[#3737A4] hover:underline"
+                  >
+                    View all players →
+                  </Link>
+                </div>
                 <LeaderboardTable huntId={huntId} />
               </div>
             </div>

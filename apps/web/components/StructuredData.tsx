@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/safeJsonLd"
 import type { StoredHunt } from "@/lib/types"
 
 type JsonLd = Record<string, unknown>
@@ -13,7 +14,7 @@ export function StructuredData({ data }: Props) {
     <script
       type="application/ld+json"
       dangerouslySetInnerHTML={{
-        __html: JSON.stringify(items),
+        __html: safeJsonLd(items),
       }}
     />
   )

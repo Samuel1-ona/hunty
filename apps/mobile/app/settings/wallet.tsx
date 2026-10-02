@@ -156,7 +156,7 @@ export default function WalletSecurityScreen() {
               />
               <ThemedButton
                 text="Remove PIN"
-                variant="destructive"
+                variant="danger"
                 onPress={handleRemovePin}
                 isLoading={isSubmitting}
               />

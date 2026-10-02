@@ -12,6 +12,7 @@ import {
   generateBreadcrumbs,
   truncateBreadcrumbs,
 } from "@/lib/breadcrumbs";
+import { safeJsonLd } from "@/lib/safeJsonLd";
 
 interface BreadcrumbProps {
   /**
@@ -110,7 +111,7 @@ export default function Breadcrumb({
       {/* Schema.org markup for SEO */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
 
       <nav

@@ -1,0 +1,1 @@
+export type PreviewClue = { id: number }

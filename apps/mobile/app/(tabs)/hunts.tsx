@@ -1,10 +1,8 @@
 import { ThemedButton, ThemedCustomText, ThemedView } from '@components/themed';
 import { useHaptics } from '@hooks/useHaptics';
 import { useTheme } from '@providers/ThemeProvider';
-import { useToast } from '@providers/ToastProvider';
 import { getAllHunts } from '@store/huntStore';
 import { usePlayerStore, useWalletStore } from '@store/useStore';
-import type { StoredHunt } from '@hunty/types';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -19,11 +17,9 @@ export default function HuntsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const haptics = useHaptics();
-  const { showToast } = useToast();
-  const { network } = useWalletStore();
-  const { currentProgress, setProgress } = usePlayerStore();
+  const { walletAddress } = useWalletStore();
+  const { currentProgress } = usePlayerStore();
   const [hunts, setHunts] = useState<StoredHunt[]>([]);
-  const [loadingHuntId, setLoadingHuntId] = useState<number | null>(null);
 
   useEffect(() => {
     getAllHunts()
@@ -40,33 +36,10 @@ export default function HuntsScreen() {
     [hunts.length],
   );
 
+  // Joining happens on the hunt detail screen, where the wallet signs the
+  // Soroban registration transaction.
   const handleJoinHunt = (hunt: StoredHunt) => {
-    if (loadingHuntId !== null) return;
-
-    if (network === 'mainnet') {
-      showToast({ message: 'Switch wallet to Stellar Testnet to join hunts.', type: 'warning' });
-      router.push('/network/switch');
-      return;
-    }
-
-    setLoadingHuntId(hunt.id);
-    setProgress({
-      hunt_id: hunt.id,
-      player: 'GD72...3W9A',
-      current_clue_index: 0,
-      completed: false,
-      reward_claimed: false,
-    });
-
-    router.push({
-      pathname: '/transaction/pending',
-      params: {
-        action: 'join',
-        huntId: String(hunt.id),
-        huntTitle: hunt.title,
-      },
-    });
-    setLoadingHuntId(null);
+    router.push(`/hunt/${hunt.id}`);
   };
 
   return (
@@ -113,8 +86,8 @@ export default function HuntsScreen() {
 
         <View style={styles.listContainer}>
           {hunts.map((hunt) => {
-            const isCurrent = currentProgress?.hunt_id === hunt.id;
-            const isLoading = loadingHuntId === hunt.id;
+            const isCurrent =
+              currentProgress?.hunt_id === hunt.id && currentProgress.player === walletAddress;
 
             return (
               <View
@@ -168,12 +141,10 @@ export default function HuntsScreen() {
                 </View>
 
                 <ThemedButton
-                  text={isCurrent ? 'View Hunt' : isLoading ? 'Joining...' : 'Join Hunt'}
+                  text={isCurrent ? 'View Hunt' : 'Join Hunt'}
                   variant={isCurrent ? 'success' : 'primary'}
                   size="md"
                   fullWidth
-                  disabled={isLoading || (!isCurrent && loadingHuntId !== null)}
-                  loading={isLoading}
                   onPress={() => {
                     if (isCurrent) {
                       router.push(`/details?huntId=${hunt.id}`);

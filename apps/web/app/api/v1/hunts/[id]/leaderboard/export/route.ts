@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { get_hunt_leaderboard, get_hunt_fastest_players } from "@/lib/contracts/hunt";
-import { rateLimit, getIP, rateLimitResponse } from "@/lib/rate-limit";
+
 import { ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
+import { get_hunt_fastest_players,get_hunt_leaderboard } from "@/lib/contracts/hunt";
+import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 /**
  * GET /api/v1/hunts/[id]/leaderboard/export
@@ -21,7 +22,7 @@ import { withErrorHandling } from "@/lib/api/withErrorHandling";
 export const GET = withErrorHandling<{ params: Promise<{ id: string }> }>(
   async (req, { params }) => {
     const ip = getIP(req);
-    const { success, reset } = rateLimit(ip, { limit: 30, windowMs: 60 * 1000 });
+    const { success, reset } = await rateLimit(ip, { limit: 30, windowMs: 60 * 1000 });
 
     if (!success) {
       return rateLimitResponse(reset);
@@ -182,4 +183,3 @@ function toCsv(rows: ExportRow[], aggregation: Record<string, unknown>): string 
 
   return [...aggLines, header, ...body].join("\n");
 }
- 

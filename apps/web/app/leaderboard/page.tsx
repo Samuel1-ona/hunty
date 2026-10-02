@@ -9,7 +9,7 @@ import { Suspense, useCallback, useEffect, useState } from "react"
 import { Header } from "@/components/Header"
 import { LeaderboardTableSkeleton } from "@/components/LoadingSkeletons"
 import { ReferralLeaderboardTable } from "@/components/ReferralLeaderboardTable"
-import { Button } from "@/components/ui/button"
+import { Button } from "@hunty/ui"
 import type { ClueDifficulty, LeaderboardFilters, LeaderboardMetric, LeaderboardTimePeriod } from "@/lib/types"
 
 const LeaderboardFilterBar = dynamic(() =>

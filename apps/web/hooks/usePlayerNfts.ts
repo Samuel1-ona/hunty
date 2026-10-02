@@ -1,50 +1,66 @@
-import { useState, useEffect } from "react"
+/**
+ * usePlayerNfts — fetches a player's NFTs from the on-chain NftRewardContract
+ * and resolves their IPFS metadata.
+ *
+ * Usage:
+ *   const { nfts, loading, error } = usePlayerNfts(walletAddress);
+ */
+import { useEffect, useState } from "react";
 
-export interface NftAttribute {
-  trait_type: string
-  value: string
+import type { NftRewardDetail } from "@/components/NftDetailModal";
+import { fetchPlayerRewards } from "@/app/profile/fetchers";
+
+export type { NftRewardDetail as NftItem };
+
+export interface UsePlayerNftsResult {
+  nfts: NftRewardDetail[];
+  loading: boolean;
+  error: string | null;
 }
 
-export interface NftItem {
-  id: string
-  name: string
-  description: string
-  image: string
-  huntName: string
-  earnedAt: string
-  attributes: NftAttribute[]
-}
+/**
+ * Fetches the player's on-chain NFT rewards and resolves IPFS metadata for each.
+ *
+ * @param address Stellar public key (G...) of the player. Pass an empty string
+ *   or undefined to skip fetching.
+ */
+export function usePlayerNfts(address?: string): UsePlayerNftsResult {
+  const [nfts, setNfts] = useState<NftRewardDetail[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-export function usePlayerNfts() {
-  const [address, setAddress] = useState<string>("GABC123DEF456")
-  const [loading, setLoading] = useState<boolean>(false)
-  const [error, setError] = useState<string | null>(null)
-  const [nfts, setNfts] = useState<NftItem[]>([
-    {
-      id: "1",
-      name: "Soroban Scavenger Champion",
-      description: "Awarded for completing the ultimate Soroban smart contract scavenger hunt.",
-      image: "ipfs://QmYwAPJg0hGc2bS4Z4A69A1sZ42Z84B79A3A4a5b6c7D8e",
-      huntName: "Stellar smart contracts",
-      earnedAt: "2026-07-20",
-      attributes: [
-        { trait_type: "Rarity", value: "Legendary" },
-        { trait_type: "Points", value: "100" },
-      ]
-    },
-    {
-      id: "2",
-      name: "Stellar Pioneer Badge",
-      description: "Awarded to early participants of the Hunty scavenger challenges.",
-      image: "ipfs://QmXoypizjW3WknFi2WDauHCX8Aax5b3BF6696s9a5b6c7D",
-      huntName: "Stellar Basics",
-      earnedAt: "2026-07-24",
-      attributes: [
-        { trait_type: "Rarity", value: "Rare" },
-        { trait_type: "Points", value: "50" },
-      ]
+  useEffect(() => {
+    if (!address) {
+      setNfts([]);
+      setLoading(false);
+      setError(null);
+      return;
     }
-  ])
 
-  return { address, nfts, loading, error }
+    let cancelled = false;
+
+    const run = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const data = await fetchPlayerRewards(address);
+        if (!cancelled) setNfts(data);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Failed to load NFTs");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [address]);
+
+  return { nfts, loading, error };
 }

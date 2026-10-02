@@ -1,0 +1,36 @@
+[
+  {
+    "id": "5c560dbc-b536-48aa-a11f-dd3c2bcaf868",
+    "answerId": "answer-99",
+    "huntId": 9,
+    "clueId": 4,
+    "playerWallet": "GPLAYER",
+    "submittedAnswer": "london",
+    "rejectedReason": "case mismatch",
+    "status": "overridden",
+    "submittedAt": 1790721444209,
+    "auditTrail": [
+      {
+        "id": "39b1c84d-71c2-4a54-972c-9589393b5d9f",
+        "type": "created",
+        "actor": "GPLAYER",
+        "note": "Player disputed a rejected answer.",
+        "timestamp": 1790721444209,
+        "newStatus": "pending"
+      },
+      {
+        "id": "aa0f56e2-ca5e-49d6-bb81-0671fb34d04d",
+        "type": "override",
+        "actor": "creator@example.com",
+        "note": "Accepted after review because the answer was valid",
+        "timestamp": 1790721444219,
+        "previousStatus": "pending",
+        "newStatus": "overridden"
+      }
+    ],
+    "reviewedAt": 1790721444218,
+    "reviewedBy": "creator@example.com",
+    "resolutionNote": "Accepted after review because the answer was valid",
+    "overrideDecision": "accepted"
+  }
+]

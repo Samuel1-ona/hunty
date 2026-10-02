@@ -1,5 +1,7 @@
 import { afterEach,beforeEach, describe, expect, it, vi } from "vitest"
 
+import { MAX_IPFS_UPLOAD_BYTES } from "@/lib/upload-limits"
+
 import { IpfsUploadError,MetadataValidationError } from "../errors"
 import { uploadNftMetadata } from "../metadataUploader"
 import type { NftMetadata } from "../types"
@@ -120,6 +122,24 @@ describe("uploadNftMetadata", () => {
     await expect(uploadNftMetadata(VALID_METADATA, WALLET)).rejects.toBeInstanceOf(
       IpfsUploadError
     )
+  })
+
+  it("rejects oversized metadata before calling fetch", async () => {
+    // Force the serialised payload over the platform cap without allocating it.
+    vi.stubGlobal(
+      "TextEncoder",
+      class {
+        encode() {
+          return { byteLength: MAX_IPFS_UPLOAD_BYTES + 1 }
+        }
+      }
+    )
+    const fetchMock = global.fetch as ReturnType<typeof vi.fn>
+
+    await expect(uploadNftMetadata(VALID_METADATA, WALLET)).rejects.toBeInstanceOf(
+      MetadataValidationError
+    )
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })
 

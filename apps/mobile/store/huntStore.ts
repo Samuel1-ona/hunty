@@ -3,6 +3,8 @@
  * Persisted in SecureStore for mobile, with AsyncStorage offline cache for clues.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import env from '@config/env';
+import { ANSWER_QUEUE_KEY, notifyAnswerQueueChanged } from '@store/answerQueue';
 import * as SecureStore from 'expo-secure-store';
 import type { Clue, HuntStatus, StoredHunt } from '@hunty/types';
 import { scheduleHuntExpiryNotification } from '@utils/huntNotifications';
@@ -225,14 +227,21 @@ export async function queueClueAnswer(
   huntId: number,
   clueId: number,
   answer: string,
+  wallet: string,
 ): Promise<void> {
   try {
-    const existing = await AsyncStorage.getItem('hunty_clue_queue');
+    const existing = await AsyncStorage.getItem(ANSWER_QUEUE_KEY);
     const queue = existing
-      ? (JSON.parse(existing) as Array<{ huntId: number; clueId: number; answer: string }>)
+      ? (JSON.parse(existing) as Array<{
+          huntId: number;
+          clueId: number;
+          answer: string;
+          wallet: string;
+        }>)
       : [];
-    queue.push({ huntId, clueId, answer });
-    await AsyncStorage.setItem('hunty_clue_queue', JSON.stringify(queue));
+    queue.push({ huntId, clueId, answer, wallet });
+    await AsyncStorage.setItem(ANSWER_QUEUE_KEY, JSON.stringify(queue));
+    notifyAnswerQueueChanged(queue.length);
   } catch {
     // ignore errors
   }
@@ -240,24 +249,99 @@ export async function queueClueAnswer(
 
 // Retrieve queued answers
 export async function getQueuedAnswers(): Promise<
-  Array<{ huntId: number; clueId: number; answer: string }>
+  Array<{ huntId: number; clueId: number; answer: string; wallet: string }>
 > {
   try {
-    const data = await AsyncStorage.getItem('hunty_clue_queue');
+    const data = await AsyncStorage.getItem(ANSWER_QUEUE_KEY);
     return data ? JSON.parse(data) : [];
   } catch {
     return [];
   }
 }
 
+// Submit answer to server with retries
+async function submitAnswerToServer(
+  huntId: number,
+  clueId: number,
+  answer: string,
+  wallet: string,
+): Promise<{
+  correct: boolean;
+  score: number;
+  bonusPoints: number;
+} | null> {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const response = await fetch(`${env.apiUrl}/v1/answers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          huntId,
+          clueId,
+          wallet,
+          answer,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json() as {
+          correct: boolean;
+          score: number;
+          bonusPoints: number;
+        };
+        return data;
+      }
+    } catch {
+      // Retry below
+    }
+
+    if (attempt < 3) {
+      await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** (attempt - 1)));
+    }
+  }
+
+  return null;
+}
+
 // Process queued answers: attempt to submit them when back online
 export async function processQueuedAnswers(): Promise<void> {
   const queue = await getQueuedAnswers();
+  const failed: Array<{
+    huntId: number;
+    clueId: number;
+    answer: string;
+    wallet: string;
+  }> = [];
+
   for (const item of queue) {
-    // TODO: integrate with server submission and update local progress
-    // Placeholder: assume success and remove from queue
+    const result = await submitAnswerToServer(
+      item.huntId,
+      item.clueId,
+      item.answer,
+      item.wallet,
+    );
+
+    if (!result) {
+      failed.push(item);
+    }
   }
-  await AsyncStorage.removeItem('hunty_clue_queue');
+
+  if (failed.length > 0) {
+    await AsyncStorage.setItem(ANSWER_QUEUE_KEY, JSON.stringify(failed));
+  } else {
+    await AsyncStorage.removeItem(ANSWER_QUEUE_KEY);
+  }
+  notifyAnswerQueueChanged(failed.length);
+}
+
+// Public function to submit answer when online
+export async function submitAnswerToServerOnline(
+  huntId: number,
+  clueId: number,
+  answer: string,
+  wallet: string,
+): Promise<{ correct: boolean; score: number; bonusPoints: number } | null> {
+  return submitAnswerToServer(huntId, clueId, answer, wallet);
 }
 
 export async function getOfflineCachedClues(huntId: number): Promise<Clue[]> {

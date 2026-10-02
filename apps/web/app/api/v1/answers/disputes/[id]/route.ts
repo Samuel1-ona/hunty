@@ -1,8 +1,10 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 
+import { getAnswerDisputeAuditLog, getAnswerDisputeById, resolveAnswerDispute } from "@/lib/answerDisputes"
 import { ValidationError } from "@/lib/api/errors"
 import { withErrorHandling } from "@/lib/api/withErrorHandling"
-import { getAnswerDisputeAuditLog, getAnswerDisputeById, resolveAnswerDispute } from "@/lib/answerDisputes"
+import { getHuntById } from "@/lib/huntStore"
+import { verifyCallerAuth } from "@/lib/walletAuth"
 
 export const GET = withErrorHandling(async (req: Request) => {
   const url = new URL(req.url)
@@ -28,24 +30,44 @@ export const PATCH = withErrorHandling(async (req: Request) => {
     throw new ValidationError("Dispute ID is required")
   }
 
-  let body: {
-    reviewer?: string
-    decision?: "approved" | "rejected" | "override" | "reviewed"
-    note?: string
-  }
+  let body: Record<string, any> = {}
 
   try {
     body = await req.json()
   } catch {
-    throw new ValidationError("Invalid request body")
+    body = {}
   }
 
-  if (!body.reviewer || typeof body.reviewer !== "string" || body.reviewer.trim().length === 0) {
-    throw new ValidationError("reviewer is required", { field: "reviewer" })
+  const auth = await verifyCallerAuth(req as NextRequest, body)
+  if (!auth.authenticated) {
+    return NextResponse.json({ error: auth.error || "Unauthenticated" }, { status: auth.status || 401 })
+  }
+
+  if (!auth.authorized) {
+    return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 403 })
+  }
+
+  const actor = auth.actor!
+
+  const dispute = getAnswerDisputeById(disputeId)
+  if (!dispute) {
+    return NextResponse.json({ dispute: null }, { status: 404 })
+  }
+
+  const hunt = getHuntById(dispute.huntId)
+  if (hunt && hunt.creator) {
+    const isSessionAdmin = actor.startsWith("sess_") || actor === "session_authenticated_admin"
+    const isCreator = hunt.creator.toLowerCase() === actor.toLowerCase()
+    if (!isCreator && !isSessionAdmin) {
+      return NextResponse.json(
+        { error: "Forbidden: only the hunt creator can resolve disputes" },
+        { status: 403 }
+      )
+    }
   }
 
   const updated = resolveAnswerDispute(disputeId, {
-    reviewer: body.reviewer.trim(),
+    reviewer: actor,
     decision: body.decision ?? "reviewed",
     note: body.note,
   })
@@ -56,3 +78,4 @@ export const PATCH = withErrorHandling(async (req: Request) => {
 
   return NextResponse.json({ dispute: updated, auditLog: getAnswerDisputeAuditLog(disputeId) })
 })
+

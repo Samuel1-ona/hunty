@@ -1,13 +1,49 @@
+import { huntSponsorBodySchema } from "@hunty/types/api-schemas";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { NotFoundError,ValidationError } from "@/lib/api/errors";
 import { withValidation } from "@/lib/api/withValidation";
-import { ValidationError, NotFoundError } from "@/lib/api/errors";
-import { huntSponsorBodySchema } from "@hunty/types/api-schemas";
-import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { getIP, rateLimit, rateLimitPresets, rateLimitResponse } from "@/lib/rate-limit";
 
 const paramsSchema = z.object({ id: z.string() });
+
+/**
+ * The sponsor address is no longer trusted from the body; it is optional and,
+ * when present, must match the verified wallet. The signed challenge may be
+ * sent in the body or via the x-wallet-challenge / x-wallet-signature headers.
+ */
+const sponsorPostBodySchema = huntSponsorBodySchema
+  .partial({ sponsorAddress: true })
+  .extend({
+    challenge: z.string().optional(),
+    signature: z.string().optional(),
+  });
+
+/** Must match CHALLENGE_VALIDITY_MS in lib/signature.ts. */
+const CHALLENGE_TTL_MS = 5 * 60 * 1000;
+
+/** Challenges already accepted, keyed by challenge string → expiry timestamp. */
+const usedChallenges = new Map<string, number>();
+
+/**
+ * Marks a challenge as used. Returns false if it was already consumed, so a
+ * captured signature cannot be replayed within its validity window.
+ */
+function consumeChallenge(challenge: string): boolean {
+  const now = Date.now();
+  for (const [key, expiresAt] of usedChallenges) {
+    if (expiresAt <= now) usedChallenges.delete(key);
+  }
+  if (usedChallenges.has(challenge)) return false;
+  usedChallenges.set(challenge, now + CHALLENGE_TTL_MS);
+  return true;
+}
+
+function sponsorChallengePurpose(huntId: number): string {
+  return `sponsor-hunt-${huntId}`;
+}
 
 /**
  * POST /api/v1/hunts/[id]/sponsor
@@ -17,7 +53,15 @@ const paramsSchema = z.object({ id: z.string() });
  * separately from creator funds so attribution is preserved and sponsor totals
  * can be queried independently.
  *
- * Body: { sponsorAddress: string (Stellar G-address), amount: number }
+ * Auth: the caller must prove wallet ownership with a signed challenge.
+ *   Header  x-wallet-address: Stellar G-address of the sponsor
+ *   Challenge/signature via body { challenge, signature } or headers
+ *   x-wallet-challenge / x-wallet-signature. The challenge purpose must be
+ *   `sponsor-hunt-<huntId>` (see lib/signature.ts) and each challenge is
+ *   single-use. Missing/invalid credentials → 401; a body sponsorAddress that
+ *   differs from the verified wallet → 403.
+ *
+ * Body: { amount: number, sponsorAddress?: string (must equal verified wallet) }
  *
  * Returns: {
  *   success: true,
@@ -27,16 +71,49 @@ const paramsSchema = z.object({ id: z.string() });
  * }
  */
 export const POST = withValidation(
-  { body: huntSponsorBodySchema, params: paramsSchema },
+  { body: sponsorPostBodySchema, params: paramsSchema },
   async (req, _context, { body, params }) => {
     const ip = getIP(req);
-    const { success, reset } = await rateLimit(ip, { limit: 30, windowMs: 60 * 1000 });
+    const { success, reset } = await rateLimit(ip, rateLimitPresets.write);
     if (!success) return rateLimitResponse(reset);
 
     const huntId = parseInt(params!.id, 10);
     if (isNaN(huntId)) {
       throw new ValidationError("Invalid hunt ID", { id: params!.id });
     }
+
+    const wallet = req.headers.get("x-wallet-address")?.trim();
+    const challenge = body.challenge ?? req.headers.get("x-wallet-challenge")?.trim();
+    const signature = body.signature ?? req.headers.get("x-wallet-signature")?.trim();
+
+    if (!wallet || !challenge || !signature) {
+      throw new AuthError(
+        "Authentication required: x-wallet-address header and a signed challenge are required"
+      );
+    }
+
+    if (
+      !verifySignedMessage({
+        address: wallet,
+        challenge,
+        signature,
+        purpose: sponsorChallengePurpose(huntId),
+      })
+    ) {
+      throw new AuthError("Invalid or expired wallet signature");
+    }
+
+    // The actor is the verified wallet. A body-supplied address is only
+    // accepted as a consistency check and can never override it.
+    if (body.sponsorAddress && body.sponsorAddress !== wallet) {
+      throw new ForbiddenError("sponsorAddress does not match the authenticated wallet");
+    }
+
+    if (!consumeChallenge(challenge)) {
+      throw new AuthError("Challenge has already been used");
+    }
+
+    const sponsor = wallet;
 
     try {
       const { getHunt } = await import("@/lib/huntStore");
@@ -57,13 +134,8 @@ export const POST = withValidation(
         "@/lib/contracts/rewardManager"
       );
 
-      // sponsorHunt reads the active wallet adapter — here we pass sponsorAddress
-      // as part of the recorded contribution payload via the escrow layer.
       const contribution = await sponsorHunt(huntId, body.amount);
 
-      // Attribute the recorded sponsorAddress to the contribution in the escrow.
-      // The contract layer captures the wallet's public key; we surface the
-      // caller-supplied address in the response for display / attribution.
       const sponsorContributions = getSponsorContributions(huntId);
       const sponsorTotal = getSponsorTotal(huntId);
 
@@ -71,8 +143,8 @@ export const POST = withValidation(
         success: true,
         contribution: {
           ...contribution,
-          // Expose the canonical sponsor address supplied in the request body.
-          sponsor: body.sponsorAddress,
+          // Attribute the contribution to the verified wallet, never the body.
+          sponsor,
         },
         sponsorTotal,
         sponsors: sponsorContributions,
@@ -97,7 +169,7 @@ export const GET = withValidation(
   { params: paramsSchema },
   async (req, _context, { params }) => {
     const ip = getIP(req);
-    const { success, reset } = await rateLimit(ip, { limit: 60, windowMs: 60 * 1000 });
+    const { success, reset } = await rateLimit(ip, rateLimitPresets.read);
     if (!success) return rateLimitResponse(reset);
 
     const huntId = parseInt(params!.id, 10);

@@ -1,10 +1,31 @@
-import { NextResponse } from "next/server"
-import { getAllHuntsIncludingPrivate, updateHuntStatus } from "@/lib/huntStore"
+import { NextRequest, NextResponse } from "next/server"
+
 import { applyHuntScheduleTransitions, getReminderCandidates } from "@/lib/huntScheduling"
+import { getAllHuntsIncludingPrivate, updateHuntStatus } from "@/lib/huntStore"
 import { logger } from "@/lib/logger"
 import { sendHuntStartReminder } from "@/lib/notifications/huntScheduleNotifications"
+import { verifyCallerAuth } from "@/lib/walletAuth"
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  let body: Record<string, any> | undefined
+  try {
+    body = await request.json()
+  } catch {
+    body = undefined
+  }
+
+  const auth = await verifyCallerAuth(request, body)
+  if (!auth.authenticated) {
+    return NextResponse.json({ error: auth.error || "Unauthenticated" }, { status: auth.status || 401 })
+  }
+
+  if (!auth.authorized) {
+    return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 403 })
+  }
+
+  const actor = auth.actor
+  logger.info(`[hunts/schedule] Processing schedule transitions triggered by verified actor: ${actor}`)
+
   try {
     const hunts = getAllHuntsIncludingPrivate()
     const updated = applyHuntScheduleTransitions(hunts)
@@ -33,6 +54,7 @@ export async function POST() {
       updated: updated.filter((hunt) => hunt.status === "active" || hunt.status === "ended" || hunt.status === "scheduled").length,
       reminders: reminderCandidates.map((hunt) => hunt.id),
       sent: reminderResults.filter(Boolean).length,
+      actor,
     })
   } catch (error) {
     logger.error("Failed to process hunt schedule", error)

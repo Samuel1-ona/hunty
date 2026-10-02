@@ -1,4 +1,6 @@
 import { ThemedCustomText, ThemedView } from '@components/themed';
+import { useReducedMotion } from '@hooks/useReducedMotion';
+import type { StoredHunt } from '@lib/types';
 import { useTheme } from '@providers/ThemeProvider';
 import { getActiveHuntsForFeed } from '@store/huntStore';
 import { useQuery } from '@tanstack/react-query';
@@ -9,7 +11,6 @@ import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import { HuntyRefreshControl } from './HuntyRefreshControl';
 import { FeedItemSkeleton } from './skeletons/FeedItemSkeleton';
-import type { StoredHunt } from '@hunty/types';
 
 const PAGE_SIZE = 8;
 const INITIAL_PAGE_SIZE = 6;
@@ -25,6 +26,7 @@ const blurhash = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
 interface OptimizedHuntFeedProps {
   onRefresh?: () => Promise<void>;
   refreshing?: boolean;
+  accessibilityMode?: boolean;
 }
 
 export function OptimizedHuntFeed({
@@ -33,6 +35,7 @@ export function OptimizedHuntFeed({
 }: OptimizedHuntFeedProps) {
   const router = useRouter();
   const { colors } = useTheme();
+  const reduceMotion = useReducedMotion();
   const flatListRef = useRef<FlatList<ListItem>>(null);
   const [displayCount, setDisplayCount] = useState(INITIAL_PAGE_SIZE);
   const [localRefreshing, setLocalRefreshing] = useState(false);
@@ -124,17 +127,21 @@ export function OptimizedHuntFeed({
     setDisplayCount((prev) => prev + PAGE_SIZE);
   }, [hasMore, isLoadingMore]);
 
-  const getItemLayout = useCallback((data: ListItem[] | null | undefined, index: number) => {
-    if (!data) return { length: 0, offset: 0, index };
+  const getItemLayout = useCallback(
+    (data: ArrayLike<ListItem> | null | undefined, index: number) => {
+      if (!data) return { length: 0, offset: 0, index };
 
-    let offset = 0;
-    for (let i = 0; i < index; i++) {
-      offset += data[i].kind === 'sectionHeader' ? SECTION_HEADER_HEIGHT : HUNT_CARD_HEIGHT;
-    }
+      let offset = 0;
+      for (let i = 0; i < index; i++) {
+        offset += data[i].kind === 'sectionHeader' ? SECTION_HEADER_HEIGHT : HUNT_CARD_HEIGHT;
+      }
 
-    const length = data[index].kind === 'sectionHeader' ? SECTION_HEADER_HEIGHT : HUNT_CARD_HEIGHT;
-    return { length, offset, index };
-  }, []);
+      const length =
+        data[index].kind === 'sectionHeader' ? SECTION_HEADER_HEIGHT : HUNT_CARD_HEIGHT;
+      return { length, offset, index };
+    },
+    [],
+  );
 
   const keyExtractor = useCallback((item: ListItem) => item.id, []);
 
@@ -168,7 +175,7 @@ export function OptimizedHuntFeed({
                 contentFit="cover"
                 recyclingKey={`hunt-cover-${hunt.id}`}
                 cachePolicy="memory-disk"
-                transition={200}
+                transition={reduceMotion ? 0 : 200}
               />
             )}
             <View style={styles.cardContent}>
@@ -188,7 +195,7 @@ export function OptimizedHuntFeed({
         </Pressable>
       );
     },
-    [colors],
+    [colors, reduceMotion],
   );
 
   const renderFooter = useCallback(() => {

@@ -1,11 +1,13 @@
+import { huntRefundBodySchema } from "@hunty/types/api-schemas";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { NotFoundError,ValidationError } from "@/lib/api/errors";
 import { withValidation } from "@/lib/api/withValidation";
-import { ValidationError, NotFoundError } from "@/lib/api/errors";
-import { huntRefundBodySchema } from "@hunty/types/api-schemas";
-import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { recordHuntAudit } from "@/lib/db/huntAuditLog";
 import { logger } from "@/lib/logger";
+import { getIP, rateLimit, rateLimitPresets, rateLimitResponse } from "@/lib/rate-limit";
+import { verifyCallerAuth } from "@/lib/walletAuth";
 
 const paramsSchema = z.object({ id: z.string() });
 
@@ -33,8 +35,21 @@ const DEFAULT_GRACE_PERIOD_SECONDS = 60 * 60 * 24 * 7; // 7 days
 export const POST = withValidation(
   { body: huntRefundBodySchema, params: paramsSchema },
   async (req, _context, { body, params }) => {
+    const auth = await verifyCallerAuth(req, body);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error || "Unauthenticated" }, { status: auth.status || 401 });
+    }
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 403 });
+    }
+
+    const actorAddress = auth.actor;
+    if (!actorAddress) {
+      return NextResponse.json({ error: "Authenticated actor is missing" }, { status: 401 });
+    }
+
     const ip = getIP(req);
-    const { success, reset } = await rateLimit(ip, { limit: 20, windowMs: 60 * 1000 });
+    const { success, reset } = await rateLimit(ip, rateLimitPresets.sensitive);
     if (!success) return rateLimitResponse(reset);
 
     const huntId = parseInt(params!.id, 10);
@@ -48,6 +63,10 @@ export const POST = withValidation(
 
       if (!hunt) {
         throw new NotFoundError("Hunt not found", { huntId });
+      }
+
+      if (hunt.creator !== actorAddress) {
+        return NextResponse.json({ error: "Forbidden: only the verified hunt creator can request a refund" }, { status: 403 });
       }
 
       if (hunt.status !== "Ended" && hunt.status !== "Completed") {
@@ -64,9 +83,14 @@ export const POST = withValidation(
       const { refundUnclaimedRewards } = await import("@/lib/contracts/rewardManager");
       const receipt = await refundUnclaimedRewards(
         huntId,
-        body.creatorAddress,
+        actorAddress,
         gracePeriodSeconds
       );
+
+      await recordHuntAudit(huntId, "hunt refund", actorAddress, {
+        amount: receipt.amount,
+        txHash: receipt.txHash,
+      });
 
       return NextResponse.json({ success: true, receipt });
     } catch (error) {

@@ -134,11 +134,8 @@ echo ""
 # 5. Check documentation
 echo "📚 Checking documentation..."
 DOCS=(
-    "NETWORK_SWITCHING_GUIDE.md"
-    "NETWORK_MIGRATION.md"
-    "NETWORK_SWITCHING_IMPLEMENTATION_SUMMARY.md"
+    "docs/network-switching.md"
     "TEST_NETWORK_SWITCHING.md"
-    "NETWORK_QUICK_REFERENCE.md"
     "BUGS_FIXED.md"
     "DEPLOYMENT_CHECKLIST.md"
     "IMPLEMENTATION_STATUS.md"

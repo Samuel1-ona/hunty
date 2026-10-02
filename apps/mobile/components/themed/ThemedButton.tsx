@@ -28,13 +28,13 @@ interface ThemedButtonProps extends PressableProps {
 }
 
 type ThemeColors = {
-  primary: string
-  secondary: string
-  error: string
-  success: string
-  border: string
-  text: string
-}
+  primary: string;
+  secondary: string;
+  error: string;
+  success: string;
+  border: string;
+  text: string;
+};
 
 const variantStyles = {
   primary: (colors: ThemeColors) => ({
@@ -131,11 +131,7 @@ export const ThemedButton: React.FC<ThemedButtonProps> = ({
       onPressIn={() => !disabled && setPressed(true)}
       onPressOut={() => setPressed(false)}
       disabled={disabled || loading}
-      style={[
-        containerStyle,
-        pressed && !disabled && { opacity: 0.8 },
-        Array.isArray(style) ? StyleSheet.flatten(style) : style,
-      ]}
+      style={StyleSheet.flatten([containerStyle, pressed && !disabled && { opacity: 0.8 }, style])}
       {...otherProps}
     >
       {loadingState && (

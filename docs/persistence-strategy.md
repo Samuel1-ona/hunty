@@ -58,6 +58,8 @@ The PostgreSQL database (connection string in `DATABASE_URL`) is the canonical s
 | `004_create_anti_cheat_tables.sql` | `anti_cheat_answers`, `anti_cheat_anomalies`, `anti_cheat_bans`, `anti_cheat_tracking` | Answer history, anomaly detection, bans, per-key submission tracking                                                           |
 | `005_create_hunt_drafts.sql`       | `hunt_drafts`                                                                          | Cloud-synced creator draft auto-saves                                                                                          |
 | `010_create_hunt_versions.sql`     | `hunt_versions`                                                                        | Immutable creator hunt snapshots for edit history and restore; retained for 90 days                                           |
+| `011_create_hunt_audit_log.sql`    | `hunt_audit_log`                                                                       | Append-only audit trail of hunt lifecycle events (create, update, activate, delete)                                         |
+| `012_create_referrals.sql`         | `referrals`, `referrer_devices`, `referral_payouts`                                    | Referral leaderboard & anti-self-referral tracking (replaces the in-memory `referralStore` Map)                             |
 | `008_create_analytics.sql`         | `hunt_views`, `hint_usage_events`                                                      | Hunt view counters and hint-reveal event log (replaces `data/hunt-views.json`, `data/hint-usage.json`)                         |
 | `009_create_hunt_analytics.sql`    | `hunt_analytics`                                                                       | Per-hunt analytics: views, starts, completions, clue drop-off, demographics, time-series (replaces `data/hunt-analytics.json`) |
 
@@ -108,6 +110,16 @@ the same cleanup query from a scheduled maintenance job.
 #### Hunt analytics (`lib/huntAnalytics.ts`)
 
 `hunt_analytics` stores per-hunt scalar counters (`views`, `starts`, `completions`, `total_completion_time_seconds`) as integer columns for cheap aggregation, and three evolving arrays (`clue_drop_off`, `demographics`, `time_series`) as JSONB so the schema never needs to change when those shapes evolve. Updates use a read-modify-write pattern inside each event handler.
+
+#### Referral store (`lib/referralStore.ts`)
+
+Three tables replace the previous process-scoped in-memory `Map`:
+
+- `referrals` — one row per referred wallet, with the referrer address, registration time, first-completion details, and awarded bonus points. A `bonus_awarded` flag makes the server-side bonus award idempotent: `awardServerReferralBonus` uses an atomic conditional `UPDATE … WHERE bonus_awarded = false`.
+- `referrer_devices` — IP / session fingerprint per referrer address. Each column is upserted independently so a missing IP or session never overwrites the other. Used by `validateReferralEligibility` to block self-referrals.
+- `referral_payouts` — one payout record per `(period, referrer_address)`. The `UNIQUE (period, referrer_address)` constraint makes payout creation idempotent: re-running a payout allocation reuses the existing record instead of inserting a duplicate.
+
+The leaderboard is computed in code from the aggregated rows rather than with a SQL `GROUP BY`, keeping the ranking rules (successful referrals desc, bonus points desc, earliest last activity) explicit and testable. Migration 012 uses equality-based query operators only, so it works with the in-memory `mockSql` test double in addition to real PostgreSQL.
 
 ---
 

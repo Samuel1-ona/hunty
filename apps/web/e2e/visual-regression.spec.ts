@@ -212,31 +212,42 @@ test.describe("Visual regression — Create Hunt", () => {
   });
 });
 
-// ─── Creator Dashboard ────────────────────────────────────────────────────────
+// ─── Creator Dashboard (/creator) ──────────────────────────────────────────────
 
 test.describe("Visual regression — Creator Dashboard", () => {
-  test.beforeEach(async ({ page }) => {
-    await injectMockWallet(page);
-    await seedHuntData(page);
-  });
-
-  test("@desktop light mode matches snapshot", async ({ page }) => {
+  test("@desktop empty state matches snapshot", async ({ page }) => {
     await setTheme(page, "light");
-    await page.goto("/dashboard");
+    await page.goto("/creator");
     await waitForPageReady(page);
 
-    await expect(page).toHaveScreenshot("creator-dashboard-desktop-light.png", {
+    await expect(page).toHaveScreenshot("creator-dashboard-empty-light.png", {
+      ...SCREENSHOT_OPTS,
+      mask: dynamicMasks(page),
+    });
+  });
+
+  test("@desktop populated state matches snapshot", async ({ page }) => {
+    await injectMockWallet(page);
+    await seedHuntData(page);
+    await setTheme(page, "light");
+    await page.goto("/creator");
+    await waitForPageReady(page);
+
+    await expect(page).toHaveScreenshot("creator-dashboard-populated-light.png", {
       ...SCREENSHOT_OPTS,
       mask: dynamicMasks(page),
     });
   });
 
   test("@desktop dark mode matches snapshot", async ({ page }) => {
+    await injectMockWallet(page);
+    await seedHuntData(page);
     await setTheme(page, "dark");
-    await page.goto("/dashboard");
+    await page.goto("/creator");
     await waitForPageReady(page);
 
-    await expect(page).toHaveScreenshot("creator-dashboard-desktop-dark.png", {
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    await expect(page).toHaveScreenshot("creator-dashboard-dark.png", {
       ...SCREENSHOT_OPTS,
       mask: dynamicMasks(page),
     });
@@ -336,30 +347,40 @@ test.describe("Visual regression — Create Hunt Mobile (iPhone 13)", () => {
   });
 });
 
-test.describe("Visual regression — Dashboard Mobile (iPhone 13)", () => {
-  test.beforeEach(async ({ page }) => {
-    await injectMockWallet(page);
-    await seedHuntData(page);
-  });
-
-  test("@mobile mobile light mode matches snapshot", async ({ page }) => {
+test.describe("Visual regression — Creator Dashboard Mobile (iPhone 13)", () => {
+  test("@mobile empty state matches snapshot", async ({ page }) => {
     await setTheme(page, "light");
-    await page.goto("/dashboard");
+    await page.goto("/creator");
     await waitForPageReady(page);
 
-    await expect(page).toHaveScreenshot("dashboard-mobile-light.png", {
+    await expect(page).toHaveScreenshot("creator-dashboard-mobile-empty-light.png", {
       ...SCREENSHOT_OPTS,
       mask: dynamicMasks(page),
     });
   });
 
-  test("@mobile mobile dark mode matches snapshot", async ({ page }) => {
+  test("@mobile populated state matches snapshot", async ({ page }) => {
+    await injectMockWallet(page);
+    await seedHuntData(page);
+    await setTheme(page, "light");
+    await page.goto("/creator");
+    await waitForPageReady(page);
+
+    await expect(page).toHaveScreenshot("creator-dashboard-mobile-populated-light.png", {
+      ...SCREENSHOT_OPTS,
+      mask: dynamicMasks(page),
+    });
+  });
+
+  test("@mobile dark mode matches snapshot", async ({ page }) => {
+    await injectMockWallet(page);
+    await seedHuntData(page);
     await setTheme(page, "dark");
-    await page.goto("/dashboard");
+    await page.goto("/creator");
     await waitForPageReady(page);
 
     await expect(page.locator("html")).toHaveClass(/dark/);
-    await expect(page).toHaveScreenshot("dashboard-mobile-dark.png", {
+    await expect(page).toHaveScreenshot("creator-dashboard-mobile-dark.png", {
       ...SCREENSHOT_OPTS,
       mask: dynamicMasks(page),
     });

@@ -8,8 +8,8 @@
  * - ○ for pending clues
  */
 
-import type { Clue } from '@hunty/types';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import type { Clue } from '@hunty/types';
 
 interface CluesListProps {
   clues: Clue[];

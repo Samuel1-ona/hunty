@@ -1,4 +1,4 @@
-import { type AnalyticsConfig,analyticsConfig } from '@config/analytics';
+import { type AnalyticsConfig, analyticsConfig } from '@config/analytics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 
@@ -97,7 +97,6 @@ export async function initializeAnalytics(config: Partial<AnalyticsConfig> = {})
     dsn: merged.sentryDsn,
     environment: merged.environment,
     tracesSampleRate: merged.tracesSampleRate,
-    replaysSessionSampleRate: merged.replaysSessionSampleRate,
     attachScreenshot: merged.attachScreenshot,
     beforeSend: (event) => {
       // Privacy scrub: strip any potential PII from breadcrumbs
@@ -215,9 +214,7 @@ export function trackScreenView(screenName: string, previousScreen?: string): vo
   });
 
   // Also set the current route in Sentry scope for crash context
-  Sentry.configureScope((scope) => {
-    scope.setTag('current_screen', screenName);
-  });
+  Sentry.getCurrentScope()?.setTag('current_screen', screenName);
 }
 
 /**

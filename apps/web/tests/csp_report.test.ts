@@ -1,13 +1,27 @@
 /**
  * Tests for the /api/csp-report route.
  *
- * Covers all four acceptance-criteria items from issue #863:
+ * Covers all acceptance-criteria items:
  *   1. Body size limit
  *   2. Rate limiting per IP
  *   3. Schema validation
  *   4. Sampling (log volume reduction)
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+// ---------------------------------------------------------------------------
+// Module mocks (must be top-level — Vitest hoists vi.mock calls)
+// ---------------------------------------------------------------------------
+
+// @upstash/redis is an optional runtime dependency; mock it so Vite's static
+// import analysis doesn't fail in environments where the package is absent.
+vi.mock("@upstash/redis", () => ({
+  Redis: class {
+    eval() {
+      return Promise.resolve([0, 0]);
+    }
+  },
+}));
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -233,10 +247,7 @@ describe("POST /api/csp-report", () => {
 
       expect(res.status).toBe(204);
       // With random = 0.5, 0.5 * 10 = 5 which is NOT < 1, so the warn should NOT be called
-      expect(warnSpy).not.toHaveBeenCalledWith(
-        "CSP Violation Detected:",
-        expect.anything()
-      );
+      expect(warnSpy).not.toHaveBeenCalledWith("CSP Violation Detected:", expect.anything());
     });
 
     it("does log when the sampler fires (random returns near-zero)", async () => {

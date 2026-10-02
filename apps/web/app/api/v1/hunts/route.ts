@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 
-import { listPublicActiveHuntsByCursorOptimized } from "@/lib/db/queryOptimizer";
-import { ValidationError } from "@/lib/api/errors";
+import { AuthError,ValidationError } from "@/lib/api/errors";
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
-import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { listPublicActiveHuntsByCursorOptimized } from "@/lib/db/queryOptimizer";
 import { getFollowing } from "@/lib/follows";
+import { submitHuntForModeration } from "@/lib/moderation/dbStore";
+import { getIP, rateLimit, rateLimitPresets, rateLimitResponse } from "@/lib/rate-limit";
+import { verifySignedMessage } from "@/lib/signature";
 import type { StoredHunt } from "@/lib/types";
 
 /**
@@ -13,7 +15,7 @@ import type { StoredHunt } from "@/lib/types";
  */
 export const GET = withErrorHandling(async (req: Request) => {
   const ip = getIP(req);
-  const { success, reset } = await rateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
+  const { success, reset } = await rateLimit(ip, rateLimitPresets.read);
 
   if (!success) {
     return rateLimitResponse(reset);
@@ -35,13 +37,11 @@ export const GET = withErrorHandling(async (req: Request) => {
   const remotePlayableParam = searchParams.get("remotePlayable");
   const remotePlayable =
     remotePlayableParam === "true"
-      ? 
-      remotePlayableParam === "true"
-        ? ? 
-      true
+      ? true
       : remotePlayableParam === "false"
         ? false
-      : undefined;
+        : undefined;
+  const following = searchParams.get("following") ?? undefined;
   const requestId = req.headers.get("x-request-id") ?? undefined;
 
   if (
@@ -71,7 +71,7 @@ export const GET = withErrorHandling(async (req: Request) => {
   let filteredData = data;
   let filteredTotal = total;
   if (following) {
-    const follows = getFollowing(following);
+    const follows = await getFollowing(following);
     const followSet = new Set(follows.map((w) => w.toLowerCase()));
     filteredData = data.filter((hunt) => {
       const creator = (hunt as StoredHunt & { creator?: string }).creator;
@@ -89,4 +89,43 @@ export const GET = withErrorHandling(async (req: Request) => {
       nextCursor,
     },
   });
+});
+
+/**
+ * POST /api/v1/hunts
+ * Create a new hunt. Requires proof of wallet ownership via signed challenge.
+ */
+export const POST = withErrorHandling(async (req: Request) => {
+  const ip = getIP(req);
+  const { success, reset } = await rateLimit(ip, rateLimitPresets.write);
+  if (!success) return rateLimitResponse(reset);
+
+  const wallet = req.headers.get("x-wallet-address")?.trim();
+  if (!wallet) {
+    throw new AuthError("Wallet address required", { header: "x-wallet-address" });
+  }
+
+  let body: { hunt?: StoredHunt; challenge?: string; signature?: string };
+  try {
+    body = await req.json();
+  } catch {
+    throw new ValidationError("Invalid request body");
+  }
+
+  const { hunt, challenge, signature } = body ?? {};
+  if (!hunt?.id || !hunt?.title) {
+    throw new ValidationError("hunt with id and title is required");
+  }
+  if (!challenge || !signature) {
+    throw new ValidationError("challenge and signature are required");
+  }
+
+  if (!verifySignedMessage({ address: wallet, challenge, signature, purpose: "create-hunt" })) {
+    throw new AuthError("Invalid signature", { wallet });
+  }
+
+  // Persist the new hunt. For now we reuse the moderation store so the route is functional.
+  const submission = await submitHuntForModeration(hunt, wallet);
+
+  return NextResponse.json({ success: true, huntId: hunt.id, submission }, { status: 201 });
 });

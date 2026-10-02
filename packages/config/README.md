@@ -45,5 +45,17 @@ export default base
 
 ## Scripts
 
-This package has no scripts — it is a configuration-only package consumed by
-other workspaces.
+| Script | What it does |
+| --- | --- |
+| `lint` | Lints this package against its own flat config |
+| `typecheck` | Type-checks `tsconfig.json` |
+| `check:next-pins` | Asserts the Next.js ESLint packages match the pinned `next` version |
+| `test` | Runs `validate-exports.mjs`, then the Next.js pin check |
+
+`scripts/validate-exports.mjs` loads every export the way a consumer would —
+ESLint configs through the real ESLint CLI, tsconfigs through TypeScript's own
+loader, the Tailwind preset via `import` — so a broken export fails here instead
+of in a consuming workspace. `scripts/check-next-eslint-pins.mjs` keeps
+`eslint-config-next` and `@next/eslint-plugin-next` pinned to the same version as
+`next`; see
+[Next.js ESLint version pinning](../../docs/development/NEXT_ESLINT_PINNING.md).

@@ -5,8 +5,8 @@
  * with durable, multi-instance-safe database operations.
  */
 
-import { getDb } from "@/lib/db"
 import type { CollaboratorRole, HuntCollaborator } from "@/lib/collaboration"
+import { getDb } from "@/lib/db"
 
 const COLLAB_KEY = "hunty_collaborators"
 
@@ -48,8 +48,6 @@ export async function dbSaveCollaborators(huntId: number, list: HuntCollaborator
         updated_at = NOW()
     `
   }
-}
-  })
 }
 
 export async function dbUpsertCollaborator(huntId: number, collaborator: HuntCollaborator): Promise<void> {

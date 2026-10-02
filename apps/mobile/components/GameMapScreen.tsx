@@ -1,13 +1,12 @@
 import { usePlayerLocation } from '@app/hooks/usePlayerLocation';
 import { ThemedCustomText } from '@components/themed';
+import type { StoredHunt } from '@lib/types';
 import { useTheme } from '@providers/ThemeProvider';
 import { getAllHunts } from '@store/huntStore';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import MapView, { Circle, Marker, PROVIDER_DEFAULT } from 'react-native-maps';
-import type { StoredHunt } from '@hunty/types';
-
-import { buildClueZones, type ClueZone, zoneColor } from '@/lib/clueZones';
+import { buildClueZones, zoneColor, type ClueZone } from '@/lib/clueZones';
 
 const INITIAL_DELTA = 0.02;
 

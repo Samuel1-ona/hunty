@@ -6,13 +6,13 @@
  * that a player's rank on their profile always matches their rank on the hunt
  * leaderboard. This module is the single source of truth for that derivation.
  *
- * Everything here is pure / server-safe: callers pass in the raw ranked
- * leaderboards and hunt metadata, and these helpers turn them into the
- * aggregate stats and completion timeline the profile page renders. Keeping it
- * free of React and `window` access means it is unit-testable and can run in a
- * server component for the public (wallet-less) profile view.
+ * Everything here is free of React and `window` access, so it is unit-testable
+ * and can run in a server component for the public (wallet-less) profile view.
+ * The aggregation helpers themselves are pure; the only stateful part is the
+ * bounded summary cache in front of `getPlayerProfileSummary` (see below).
  */
 
+import { PLAYER_PROFILE_STATS } from "@/lib/config/constants";
 import {
   computeLeaderboardStats,
   findPlayerRank,
@@ -187,7 +187,74 @@ export function summariseCompletions(
 }
 
 /**
+ * Bounded, TTL'd cache of derived profile summaries.
+ *
+ * Deriving a summary costs one on-chain leaderboard read per hunt, so a busy
+ * profile page would otherwise re-read every leaderboard on every render. Two
+ * bounds keep the cache from becoming a leak:
+ *
+ *  - **TTL** (`PLAYER_PROFILE_STATS.CACHE_TTL_MS`) caps how long one instance
+ *    may serve stats that a peer instance has already refreshed.
+ *  - **LRU cap** (`PLAYER_PROFILE_STATS.CACHE_MAX_ENTRIES`) caps total memory.
+ *    The key space is attacker-controlled (any wallet address), so a size bound
+ *    is what actually guarantees the footprint.
+ *
+ * `Map` preserves insertion order, so the first key is always the least
+ * recently used one. Entries are treated as immutable: the cached summary is
+ * shared by reference with every caller, so consumers must not mutate it.
+ */
+const summaryCache = new Map<string, { summary: PlayerProfileSummary; expiresAt: number }>();
+
+/** Drops every cached summary. Exposed for tests and for explicit invalidation. */
+export function clearProfileSummaryCache(): void {
+  summaryCache.clear();
+}
+
+/**
+ * Cache key for a summary. Includes the hunt set, because a summary derived
+ * from a different set of hunts is a different value.
+ */
+function summaryCacheKey(address: string, huntIds: number[]): string {
+  const ids = [...huntIds].sort((a, b) => a - b).join(",");
+  return `${address.trim().toLowerCase()}|${ids}`;
+}
+
+function readSummaryCache(key: string): PlayerProfileSummary | null {
+  const entry = summaryCache.get(key);
+  if (!entry) return null;
+
+  if (entry.expiresAt <= Date.now()) {
+    summaryCache.delete(key);
+    return null;
+  }
+
+  // Re-insert so insertion order tracks recency, making eviction true LRU.
+  summaryCache.delete(key);
+  summaryCache.set(key, entry);
+  return entry.summary;
+}
+
+function writeSummaryCache(key: string, summary: PlayerProfileSummary): void {
+  // Delete first so a refresh moves the key to the most-recently-used end.
+  summaryCache.delete(key);
+  summaryCache.set(key, {
+    summary,
+    expiresAt: Date.now() + PLAYER_PROFILE_STATS.CACHE_TTL_MS,
+  });
+
+  while (summaryCache.size > PLAYER_PROFILE_STATS.CACHE_MAX_ENTRIES) {
+    const oldest = summaryCache.keys().next();
+    if (oldest.done) break;
+    summaryCache.delete(oldest.value);
+  }
+}
+
+/**
  * Fetches every supplied hunt's leaderboard and derives the player's profile.
+ *
+ * Results are memoised per (address, hunt set) for
+ * `PLAYER_PROFILE_STATS.CACHE_TTL_MS`, bounded to
+ * `PLAYER_PROFILE_STATS.CACHE_MAX_ENTRIES` least-recently-used entries.
  *
  * Leaderboard reads are issued in parallel and individual failures are logged
  * and skipped, so one unreachable hunt cannot blank out the whole profile.
@@ -200,6 +267,10 @@ export async function getPlayerProfileSummary(
   if (!trimmed || !hunts.length) {
     return { address: trimmed, stats: emptyProfileStats(), timeline: [] };
   }
+
+  const cacheKey = summaryCacheKey(trimmed, hunts.map((hunt) => hunt.id));
+  const cached = readSummaryCache(cacheKey);
+  if (cached) return cached;
 
   const huntsById = new Map(hunts.map((hunt) => [hunt.id, hunt]));
 
@@ -216,10 +287,14 @@ export async function getPlayerProfileSummary(
 
   const timeline = buildCompletionTimeline(trimmed, boards, huntsById);
 
-  return {
+  const summary: PlayerProfileSummary = {
     address: trimmed,
     stats: summariseCompletions(timeline, huntsById),
     timeline,
   };
+
+  writeSummaryCache(cacheKey, summary);
+
+  return summary;
 }
  
