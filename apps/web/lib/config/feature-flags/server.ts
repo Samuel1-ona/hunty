@@ -1,5 +1,9 @@
-import type { FeatureFlagKey, FeatureFlagMap, FeatureFlagValue } from "./definitions"
-import { FEATURE_FLAG_DEFINITIONS } from "./definitions"
+import {
+  FEATURE_FLAG_DEFINITIONS,
+  type FeatureFlagKey,
+  type FeatureFlagMap,
+  type FeatureFlagValue,
+} from "./definitions"
 import { evaluateFlag } from "./evaluate"
 
 export function isFeatureEnabled(key: FeatureFlagKey): boolean {

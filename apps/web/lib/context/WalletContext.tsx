@@ -15,7 +15,7 @@ import { truncateAddress } from "@/lib/walletAddress"
 import { useWalletMachine } from "@/lib/wallet/walletMachine"
 import { useWalletStore } from "@/lib/wallets/walletStore"
 import { usePlayerStore, useWalletStore as useLegacyWalletStore } from "@/store/useStore";
-import type { WalletProvider } from "@/lib/wallets/types";
+import type { WalletProvider as WalletProviderType } from "@/lib/wallets/types";
 
 // ─── Address display helper ────────────────────────────────────────────────
 
@@ -42,9 +42,9 @@ interface WalletContextValue {
   /** Shortened public key suitable for display in header */
   displayKey: string;
   /** Call this when the user clicks "Connect Wallet" — triggers wallet popup */
-  connect: (provider?: WalletProvider) => Promise<{ error?: string }>;
+  connect: (provider?: WalletProviderType) => Promise<{ error?: string }>;
   /** Current selected wallet provider. */
-  walletProvider: WalletProvider | null;
+  walletProvider: WalletProviderType | null;
   /** Disconnects, clears all wallet/session state, and redirects home */
   disconnect: () => void;
 }
@@ -87,7 +87,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   // ── Connect wrapper (matches existing interface) ───────────────────
   // machineConnect handles all errors internally by dispatching CONNECT_ERROR.
   const connect = useCallback(
-    async (provider?: WalletProvider): Promise<{ error?: string }> => {
+    async (provider?: WalletProviderType): Promise<{ error?: string }> => {
       await machineConnect(provider);
       return {};
     },

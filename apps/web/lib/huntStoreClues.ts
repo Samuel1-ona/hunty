@@ -1,6 +1,12 @@
 import { getClueTypeConfigurationError } from "./clueTypeSystem";
-import type { Clue } from "./huntStoreCore";
-import { MAX_CLUES_PER_HUNT, readClues, readHunts, writeClues, writeHunts } from "./huntStoreCore";
+import {
+  MAX_CLUES_PER_HUNT,
+  readClues,
+  readHunts,
+  writeClues,
+  writeHunts,
+  type Clue,
+} from "./huntStoreCore";
 
 export function getHuntClues(huntId: number): Clue[] {
   return readClues().filter((c) => c.huntId === huntId);

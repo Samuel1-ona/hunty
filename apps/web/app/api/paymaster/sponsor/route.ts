@@ -13,8 +13,7 @@
  */
 
 import { paymasterSponsorBodySchema } from "@hunty/types/api-schemas";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 import { withValidation } from "@/lib/api/withValidation";
 import { getPaymaster } from "@/lib/paymaster";

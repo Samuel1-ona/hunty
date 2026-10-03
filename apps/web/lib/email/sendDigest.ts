@@ -8,8 +8,7 @@ import React from "react"
 import { Resend } from "resend"
 import { logger } from "@/lib/logger"
 import { EmailDigest } from "@/components/emails/EmailDigest"
-import type { EmailDigestContent } from "./types"
-import type { PlayerEmailPreference } from "./types"
+import type { EmailDigestContent, PlayerEmailPreference } from "./types"
 import {
   recordDigestSend,
   getLastDigestSend,

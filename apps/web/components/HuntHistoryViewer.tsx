@@ -4,8 +4,7 @@ import { ArrowRight, History } from "lucide-react"
 import Link from "next/link"
 import { useMemo, useState } from "react"
 
-import { Button } from "@hunty/ui"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@hunty/ui"
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@hunty/ui"
 import { formatDuration } from "@/lib/huntAttemptHistory"
 import type { HuntAttemptRecord, HuntAttemptStatus } from "@/lib/types"
 

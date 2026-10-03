@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { Sparkles, Users } from "lucide-react"
 
-import { Button } from "@hunty/ui"
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,

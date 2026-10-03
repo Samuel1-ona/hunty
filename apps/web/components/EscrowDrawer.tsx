@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@hunty/ui";
 import { Input } from "@/components/ui/input";
-import { getAllRewardEscrows } from "@/lib/contracts/rewardManager";
+import { getAllRewardEscrows, type RewardEscrow } from "@/lib/contracts/rewardManager";
 import { getHuntById } from "@/lib/huntStore";
 import { getActiveWalletAdapter } from "@/lib/walletAdapter";
 import {
@@ -14,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { RewardEscrow } from "@/lib/contracts/rewardManager";
+
 
 type EscrowStatus = "all" | "approved" | "active" | "disputed" | "resolved" | "released";
 type EscrowRole = "all" | "sender" | "receiver" | "disputeResolver";

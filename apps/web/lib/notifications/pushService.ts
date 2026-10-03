@@ -17,8 +17,12 @@ import {
   getSubscriptionsForWallet,
   removeSubscription,
 } from "./subscriptionStore"
-import type { PushEventType, PushPayload, WebPushSubscriptionRecord } from "./types"
-import { PUSH_EVENT_PREFERENCE_KEY } from "./types"
+import {
+  PUSH_EVENT_PREFERENCE_KEY,
+  type PushEventType,
+  type PushPayload,
+  type WebPushSubscriptionRecord,
+} from "./types"
 
 // ─── VAPID Configuration ──────────────────────────────────────────────────────
 

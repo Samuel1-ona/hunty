@@ -3,7 +3,7 @@ import { fileURLToPath } from "url";
 
 import { FlatCompat } from "@eslint/eslintrc";
 
-import baseConfig from "@hunty/config/eslint/base.mjs";
+import baseConfig, { duplicateBindingRules } from "@hunty/config/eslint/base.mjs";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 import reactHooks from "eslint-plugin-react-hooks";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
@@ -93,7 +93,7 @@ const unknownA11yRule = {
       }
     };
   }
-};
+}
 
 eslintConfig.push({
   files: ["apps/mobile/**/*.tsx", "apps/mobile/**/*.ts"],
@@ -107,6 +107,34 @@ eslintConfig.push({
   rules: {
     "local-rules/no-unknown-a11y-prop": "error"
   }
+});
+
+// `compat.extends("next/typescript")` above turns the base `no-redeclare` off
+// in favour of its TypeScript-aware variant, and the shared base block is
+// applied before it — re-assert the duplicate-import/redeclare rules last so
+// root-level lint (lint-staged pre-commit) keeps them at error severity too.
+// The TypeScript parser does not feed duplicate bindings to the base rule, so
+// the plugin variant is required for it to have any effect here.
+eslintConfig.push({
+  languageOptions: {
+    parserOptions: {
+      // `next/typescript` sets `ecmaFeatures.globalReturn: true`, which makes
+      // the parser wrap the file in a function-style global scope.  Duplicate
+      // *module-scope* bindings then never reach the rule's scope list, so
+      // `no-redeclare` reports nothing for the most common case (two
+      // `const x = ...` in the same file) even though it is set to "error".
+      // Nothing here uses a top-level `return`, so turning it off is safe.
+      // `jsx` must be repeated: flat config replaces `ecmaFeatures` wholesale.
+      ecmaFeatures: {
+        jsx: true,
+        globalReturn: false,
+      },
+    },
+  },
+  rules: {
+    ...duplicateBindingRules,
+    "@typescript-eslint/no-redeclare": "error",
+  },
 });
 
 export default eslintConfig;

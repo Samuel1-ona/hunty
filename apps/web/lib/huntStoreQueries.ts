@@ -1,8 +1,7 @@
 import { applyHuntScheduleTransitions } from "@/lib/huntScheduling";
 import { isHuntEnded } from "@/lib/huntStatus";
 import { getHuntsWithClientRatings } from "@/lib/reviewRatings";
-import type { StoredHunt } from "./huntStoreCore";
-import { readHunts } from "./huntStoreCore";
+import { readHunts, type StoredHunt } from "./huntStoreCore";
 
 export function getHuntCapacity(
   hunt: Pick<StoredHunt, "maxParticipants" | "maxCapacity"> | undefined

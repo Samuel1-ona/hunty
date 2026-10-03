@@ -4,9 +4,10 @@ import {
   getRewardEscrow,
   getSponsorContributions,
   getSponsorTotal,
+  type RewardEscrow,
+  type RewardReceipt,
 } from "@/lib/contracts/rewardManager"
 import { getHuntById } from "@/lib/huntStore"
-import type { RewardEscrow, RewardReceipt } from "@/lib/contracts/rewardManager"
 
 export type PayoutStatus = "funded" | "paying" | "settled" | "refunded"
 

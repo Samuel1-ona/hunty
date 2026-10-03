@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 
-import { Badge } from "@hunty/ui";
-import { Card, CardDescription,CardTitle } from "@hunty/ui";
+import { Badge, Card, CardDescription, CardTitle } from "@hunty/ui";
 
 export interface NftReward {
   id: number;

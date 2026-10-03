@@ -9,9 +9,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import type { HuntAttemptRecord, RewardReceipt } from "@/lib/types"
-import { buildResultCardImageUrl } from "@/lib/downloadAsImage"
 import {
   buildDeepLink,
+  buildResultCardImageUrl,
   downloadElementAsImage,
   shareOnTwitter,
   shareOnFarcaster,

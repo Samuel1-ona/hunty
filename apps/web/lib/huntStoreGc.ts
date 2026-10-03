@@ -1,5 +1,4 @@
-import type { HuntStorageGcResult } from "./huntStoreCore";
-import { readHunts } from "./huntStoreCore";
+import { readHunts, type HuntStorageGcResult } from "./huntStoreCore";
 import { clearHuntProgress } from "./huntStoreProgress";
 import { getHuntById } from "./huntStoreQueries";
 

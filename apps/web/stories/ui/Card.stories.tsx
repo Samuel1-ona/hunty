@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@hunty/ui"
-import { Button } from "@hunty/ui"
+import { Button, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@hunty/ui"
 
 const meta = {
   title: "UI/Card",

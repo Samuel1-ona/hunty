@@ -1,7 +1,11 @@
 import { getEnvironmentConfig, type Environment } from "@/lib/config/environment"
 
-import type { FeatureFlagKey, FeatureFlagOverride, FeatureFlagValue } from "./definitions"
-import { FEATURE_FLAG_DEFINITIONS } from "./definitions"
+import {
+  FEATURE_FLAG_DEFINITIONS,
+  type FeatureFlagKey,
+  type FeatureFlagOverride,
+  type FeatureFlagValue,
+} from "./definitions"
 
 const OVERRIDE_STORAGE_KEY = "hunty-flag-overrides"
 

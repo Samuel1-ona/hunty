@@ -357,21 +357,6 @@ export const huntDeleteBodySchema = z.object({
   actorAddress: nonEmptyStringSchema,
 });
 
-// ─── v1 / Hunts / [id] / Refund ──────────────────────────────────────────────
-
-/**
- * POST /api/v1/hunts/[id]/refund
- * Lets the hunt creator reclaim unclaimed rewards after the hunt ends and the
- * grace period has elapsed.
- */
-export const huntRefundBodySchema = z.object({
-  creatorAddress: nonEmptyStringSchema,
-});
-
-export const huntRefundBodySchema = z.object({
-  creatorAddress: nonEmptyStringSchema,
-});
-
 // ─── v1 / Hunts / Versions ──────────────────────────────────────────────────
 
 export const huntSnapshotSchema = z

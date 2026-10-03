@@ -16,8 +16,7 @@ import { get_hunt_leaderboard } from "@/lib/contracts/hunt";
 import { logger } from "@/lib/logger";
 import { handleRankNotifications } from "@/lib/notifications/notificationService";
 import { getActiveSeason } from "@/lib/seasonStore";
-import type { LeaderboardDisplayEntry, LeaderboardFilters } from "@/lib/types";
-import type { LeaderboardEntry } from "@/lib/types";
+import type { LeaderboardDisplayEntry, LeaderboardEntry, LeaderboardFilters } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_FILTERS: LeaderboardFilters = {

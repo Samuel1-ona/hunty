@@ -2,15 +2,15 @@
  * Tests for notification payload types and navigation target resolution.
  */
 
-import type {
-  AchievementPayload,
-  CorrectAnswerPayload,
-  HuntEndingSoonPayload,
-  HuntStartPayload,
-  LeaderboardOutrankedPayload,
-  RewardPayload,
+import {
+  resolveNavTarget,
+  type AchievementPayload,
+  type CorrectAnswerPayload,
+  type HuntEndingSoonPayload,
+  type HuntStartPayload,
+  type LeaderboardOutrankedPayload,
+  type RewardPayload,
 } from '../../services/notifications/types';
-import { resolveNavTarget } from '../../services/notifications/types';
 
 describe('resolveNavTarget', () => {
   it('routes hunt_start to /hunt/:id', () => {

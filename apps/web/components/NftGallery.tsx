@@ -6,8 +6,7 @@ import Image from "next/image";
 import React, { useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/QueryState";
-import { Button } from "@hunty/ui";
-import { Card, CardContent } from "@hunty/ui";
+import { Button, Card, CardContent } from "@hunty/ui";
 import {
   DropdownMenu,
   DropdownMenuContent,

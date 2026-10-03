@@ -6,8 +6,7 @@ import { AuthError, ForbiddenError, NotFoundError, ValidationError } from "@/lib
 import { withErrorHandling } from "@/lib/api/withErrorHandling";
 import { withValidation } from "@/lib/api/withValidation";
 import { recordHuntAudit } from "@/lib/db/huntAuditLog";
-import { getHuntVersion, listHuntVersions } from "@/lib/db/huntVersions";
-import { createHuntVersion } from "@/lib/db/huntVersions";
+import { createHuntVersion, getHuntVersion, listHuntVersions } from "@/lib/db/huntVersions";
 import { getPublicHuntByIdOptimized } from "@/lib/db/queryOptimizer";
 import { getIP, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { verifyCallerAuth } from "@/lib/walletAuth";

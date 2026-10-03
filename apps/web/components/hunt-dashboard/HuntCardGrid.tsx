@@ -1,5 +1,4 @@
-import { Button } from "@hunty/ui";
-import { Card, CardDescription, CardTitle } from "@hunty/ui";
+import { Button, Card, CardDescription, CardTitle } from "@hunty/ui";
 import { Copy, Eye, Plus, Trophy } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";

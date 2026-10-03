@@ -17,7 +17,6 @@ import { getHuntClues, queueClueAnswer, submitAnswerToServerOnline } from '@stor
 import { usePlayerStore, useWalletStore } from '@store/useStore';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import NetInfo from '@react-native-community/netinfo';
 import { ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 

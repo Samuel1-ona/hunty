@@ -4,8 +4,7 @@ import { Archive, ArrowLeft, HelpCircle, RefreshCw, Trash2 } from "lucide-react"
 import dynamic from "next/dynamic";
 import Link from "next/link";
 
-import { Button } from "@hunty/ui";
-import { Card } from "@hunty/ui";
+import { Button, Card } from "@hunty/ui";
 import { Header } from "@/components/Header";
 import { RewardHistorySection } from "@/components/RewardHistorySection";
 import { DraftListPanel } from "@/components/DraftListPanel";
